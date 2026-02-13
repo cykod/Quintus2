@@ -3,7 +3,6 @@ import { Game, Node2D } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 
 class Ball extends Node2D {
-	override hasVisualContent = true;
 	velocity = new Vec2(200, 150);
 	radius = 10;
 	color = Color.RED;
@@ -38,7 +37,6 @@ class Ball extends Node2D {
 }
 
 class FPSDisplay extends Node2D {
-	override hasVisualContent = true;
 	private frames = 0;
 	private timer = 0;
 	private fps = 0;

@@ -1,4 +1,4 @@
-import { Color, Matrix2D, Vec2 } from "@quintus/math";
+import { Matrix2D, Vec2 } from "@quintus/math";
 import type { DrawContext } from "./draw-context.js";
 import type { NodeProps } from "./node.js";
 import { applyNodeProps, Node } from "./node.js";
@@ -9,42 +9,33 @@ export interface Node2DProps extends NodeProps {
 	scale?: Vec2;
 	zIndex?: number;
 	visible?: boolean;
-	tint?: Color;
-	selfTint?: Color;
 }
 
 export class Node2D extends Node {
 	// === Transform state ===
-	private _position = new Vec2(0, 0);
-	private _positionProxy: Vec2;
+	private _position: Vec2;
 	private _rotation = 0;
-	private _scale = new Vec2(1, 1);
-	private _scaleProxy: Vec2;
+	private _scale: Vec2;
 	private _localTransformDirty = true;
 	private _globalTransformDirty = true;
 	private _cachedLocalTransform = Matrix2D.IDENTITY;
 	private _cachedGlobalTransform = Matrix2D.IDENTITY;
 
-	// === Tint state ===
-	private _tint = Color.WHITE;
-	private _selfTint = Color.WHITE;
-	private _tintDirty = true;
-	private _cachedEffectiveTint = Color.WHITE;
-
 	// === Rendering ===
 	zIndex = 0;
 	visible = true;
-	protected hasVisualContent = false;
 
 	constructor() {
 		super();
-		this._positionProxy = createVec2Proxy(this._position, () => this._markTransformDirty());
-		this._scaleProxy = createVec2Proxy(this._scale, () => this._markTransformDirty());
+		this._position = new Vec2(0, 0);
+		this._position._onChange = () => this._markTransformDirty();
+		this._scale = new Vec2(1, 1);
+		this._scale._onChange = () => this._markTransformDirty();
 	}
 
 	// === Local Transform ===
 	get position(): Vec2 {
-		return this._positionProxy;
+		return this._position;
 	}
 
 	set position(v: Vec2) {
@@ -64,7 +55,7 @@ export class Node2D extends Node {
 	}
 
 	get scale(): Vec2 {
-		return this._scaleProxy;
+		return this._scale;
 	}
 
 	set scale(v: Vec2) {
@@ -117,51 +108,6 @@ export class Node2D extends Node {
 		return this._cachedLocalTransform;
 	}
 
-	// === Tint ===
-	get tint(): Color {
-		return this._tint;
-	}
-
-	set tint(c: Color) {
-		if (this._tint === c) return;
-		this._tint = c;
-		this._tintDirty = true;
-		// Always propagate to children regardless of own dirty state
-		for (const child of this.children) {
-			if (child instanceof Node2D) {
-				child._markTintDirty();
-			}
-		}
-	}
-
-	get selfTint(): Color {
-		return this._selfTint;
-	}
-
-	set selfTint(c: Color) {
-		if (this._selfTint === c) return;
-		this._selfTint = c;
-		this._tintDirty = true;
-	}
-
-	/**
-	 * The inherited tint (all ancestor tints * self tint), WITHOUT selfTint.
-	 * Used by children to inherit tint without picking up our selfTint.
-	 */
-	get _inheritedTint(): Color {
-		const parent = this.parent;
-		const parentTint = parent instanceof Node2D ? parent._inheritedTint : Color.WHITE;
-		return parentTint.multiply(this._tint);
-	}
-
-	get effectiveTint(): Color {
-		if (this._tintDirty) {
-			this._cachedEffectiveTint = this._inheritedTint.multiply(this._selfTint);
-			this._tintDirty = false;
-		}
-		return this._cachedEffectiveTint;
-	}
-
 	// === Custom Drawing ===
 	override onDraw(_ctx: DrawContext): void {}
 
@@ -184,11 +130,6 @@ export class Node2D extends Node {
 	}
 
 	// === Internal ===
-	/** @internal */
-	get _hasVisualContent(): boolean {
-		return this.hasVisualContent;
-	}
-
 	private _markTransformDirty(): void {
 		this._localTransformDirty = true;
 		this._globalTransformDirty = true;
@@ -209,30 +150,6 @@ export class Node2D extends Node {
 			}
 		}
 	}
-
-	private _markTintDirty(): void {
-		if (this._tintDirty) return;
-		this._tintDirty = true;
-		for (const child of this.children) {
-			if (child instanceof Node2D) {
-				child._markTintDirty();
-			}
-		}
-	}
-}
-
-function createVec2Proxy(target: Vec2, onDirty: () => void): Vec2 {
-	return new Proxy(target, {
-		set(obj, prop, value) {
-			if (prop === "x" || prop === "y") {
-				const old = obj[prop];
-				obj[prop] = value;
-				if (old !== value) onDirty();
-				return true;
-			}
-			return Reflect.set(obj, prop, value);
-		},
-	});
 }
 
 /** @internal Apply typed props to a Node2D. */
@@ -244,7 +161,5 @@ export function applyNode2DProps(node: Node, props: Node2DProps): void {
 		if (props.scale !== undefined) node.scale = props.scale;
 		if (props.zIndex !== undefined) node.zIndex = props.zIndex;
 		if (props.visible !== undefined) node.visible = props.visible;
-		if (props.tint !== undefined) node.tint = props.tint;
-		if (props.selfTint !== undefined) node.selfTint = props.selfTint;
 	}
 }

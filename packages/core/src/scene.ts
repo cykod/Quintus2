@@ -55,22 +55,12 @@ export class Scene extends Node {
 	// === Entity Spawning ===
 	add(node: Node): this;
 	add<T extends Node>(NodeClass: NodeConstructor<T>, props?: NodeProps & Node2DProps): T;
-	add<T extends Node, Args extends unknown[]>(
-		NodeClass: NodeConstructor<T, Args>,
-		...args: Args
-	): T;
-	add(nodeOrClass: Node | NodeConstructor<Node>, ...rest: unknown[]): Node | this {
+	add(nodeOrClass: Node | NodeConstructor<Node>, props?: NodeProps & Node2DProps): Node | this {
 		if (typeof nodeOrClass === "function") {
-			const NodeClass = nodeOrClass;
-			if (rest.length <= 1 && (rest.length === 0 || isPropsObject(rest[0]))) {
-				const node = new NodeClass();
-				if (rest[0]) {
-					applyNode2DProps(node, rest[0] as NodeProps & Node2DProps);
-				}
-				this.addChild(node);
-				return node;
+			const node = new nodeOrClass();
+			if (props) {
+				applyNode2DProps(node, props);
 			}
-			const node = new (NodeClass as NodeConstructor<Node, unknown[]>)(...rest);
 			this.addChild(node);
 			return node;
 		}
@@ -172,8 +162,4 @@ export class Scene extends Node {
 		this.sceneDestroyed.disconnectAll();
 		this.sceneReady.disconnectAll();
 	}
-}
-
-function isPropsObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !(value instanceof Node);
 }

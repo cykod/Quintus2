@@ -141,6 +141,9 @@ class Canvas2DDrawContext implements DrawContext {
 	}
 }
 
+/** The base Node2D.onDraw — used to detect overrides via prototype comparison. */
+const baseOnDraw = Node2D.prototype.onDraw;
+
 /**
  * Canvas2D implementation of the rendering pipeline.
  * Handles: transform cascade, z-sorting, visibility culling, draw dispatch.
@@ -155,10 +158,6 @@ export class Canvas2DRenderer {
 	// Pre-allocated render list — reused between frames
 	private renderList: Node2D[] = [];
 	private _renderListDirty = true;
-
-	// Offscreen canvas for color tinting (lazy-created)
-	private tintCanvas: HTMLCanvasElement | null = null;
-	private tintCtx: CanvasRenderingContext2D | null = null;
 
 	constructor(
 		canvas: HTMLCanvasElement,
@@ -211,18 +210,10 @@ export class Canvas2DRenderer {
 			const t = node.globalTransform;
 			ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
 
-			const mod = node.effectiveTint;
-			ctx.globalAlpha = mod.a;
-
-			const hasTint = mod.r < 1 || mod.g < 1 || mod.b < 1;
-			if (hasTint) {
-				this.drawWithTint(node, mod);
-			} else {
-				try {
-					node.onDraw(this.drawContext);
-				} catch (_err) {
-					// Lifecycle error handling is done by scene
-				}
+			try {
+				node.onDraw(this.drawContext);
+			} catch (_err) {
+				// Lifecycle error handling is done by scene
 			}
 
 			ctx.restore();
@@ -232,48 +223,13 @@ export class Canvas2DRenderer {
 	private collectVisible(node: Node, list: Node2D[]): void {
 		if (node instanceof Node2D) {
 			if (!node.visible) return;
-			if (node._hasVisualContent) {
+			// Prototype check: only collect nodes that override onDraw beyond Node2D's no-op
+			if (node.onDraw !== baseOnDraw) {
 				list.push(node);
 			}
 		}
 		for (const child of node.children) {
 			this.collectVisible(child, list);
 		}
-	}
-
-	private drawWithTint(node: Node2D, mod: Color): void {
-		if (!this.tintCanvas) {
-			this.tintCanvas = document.createElement("canvas");
-			this.tintCtx = this.tintCanvas.getContext("2d");
-		}
-
-		const tc = this.tintCanvas;
-		const tctx = this.tintCtx!;
-		if (tc.width !== this.gameWidth || tc.height !== this.gameHeight) {
-			tc.width = this.gameWidth;
-			tc.height = this.gameHeight;
-		}
-
-		tctx.clearRect(0, 0, tc.width, tc.height);
-		tctx.save();
-		const t = node.globalTransform;
-		tctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
-		const tintDrawContext = new Canvas2DDrawContext(tctx, this.drawContext.assets);
-		try {
-			node.onDraw(tintDrawContext);
-		} catch (_err) {
-			// handled elsewhere
-		}
-		tctx.restore();
-
-		tctx.globalCompositeOperation = "source-atop";
-		tctx.fillStyle = mod.toCSS();
-		tctx.fillRect(0, 0, tc.width, tc.height);
-		tctx.globalCompositeOperation = "source-over";
-
-		this.ctx.save();
-		this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-		this.ctx.drawImage(tc, 0, 0);
-		this.ctx.restore();
 	}
 }

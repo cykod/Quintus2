@@ -115,7 +115,7 @@ describe("Signal", () => {
 		expect(lateHandler).toHaveBeenCalledTimes(1);
 	});
 
-	it("disconnect during emit: disconnected handler is skipped", () => {
+	it("disconnect during emit: handler still fires in current emission (snapshot-based)", () => {
 		const s = signal<void>();
 		const b = vi.fn();
 		s.connect(() => {
@@ -123,18 +123,13 @@ describe("Signal", () => {
 		});
 		s.connect(b);
 		s.emit();
-		expect(b).not.toHaveBeenCalled();
-	});
-
-	it("disconnect during emit with no disconnections: no overhead", () => {
-		const s = signal<void>();
-		const a = vi.fn();
-		const b = vi.fn();
-		s.connect(a);
-		s.connect(b);
-		s.emit();
-		expect(a).toHaveBeenCalledTimes(1);
+		// b fires once in this emission (was in snapshot), but is removed for future emissions
 		expect(b).toHaveBeenCalledTimes(1);
+
+		// On next emit, b should NOT fire
+		b.mockClear();
+		s.emit();
+		expect(b).not.toHaveBeenCalled();
 	});
 
 	it("disconnect a handler that was already disconnected (no error)", () => {

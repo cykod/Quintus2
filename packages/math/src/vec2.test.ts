@@ -277,6 +277,7 @@ describe("Vec2", () => {
 
 	// === Frozen Constants ===
 	it("static constants are frozen (throw on mutation)", () => {
+		// Object.freeze prevents setter from running on frozen objects
 		expect(() => {
 			(Vec2.ZERO as Vec2).x = 1;
 		}).toThrow();
@@ -295,6 +296,26 @@ describe("Vec2", () => {
 		expect(() => {
 			(Vec2.RIGHT as Vec2).y = 2;
 		}).toThrow();
+	});
+
+	// === _onChange callback ===
+	it("_onChange fires when x or y changes", () => {
+		const v = new Vec2(1, 2);
+		let callCount = 0;
+		v._onChange = () => callCount++;
+		v.x = 5;
+		expect(callCount).toBe(1);
+		v.y = 10;
+		expect(callCount).toBe(2);
+	});
+
+	it("_onChange does not fire when setting same value", () => {
+		const v = new Vec2(1, 2);
+		let callCount = 0;
+		v._onChange = () => callCount++;
+		v.x = 1;
+		v.y = 2;
+		expect(callCount).toBe(0);
 	});
 
 	// === Static Factories ===

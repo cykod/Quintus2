@@ -13,25 +13,14 @@ export interface SignalConnection {
  */
 export class Signal<T = void> {
 	private handlers: Array<SignalHandler<T>> = [];
-	private emitting = false;
-	private dirtyDuringEmit = false;
-	private disconnectedDuringEmit: Set<SignalHandler<T>> | null = null;
 
 	/** Emit this signal with the given payload. All connected handlers fire synchronously. */
 	emit(...args: T extends void ? [] | [T] : [T]): void {
 		const payload = args[0] as T;
 		const snapshot = [...this.handlers];
-		this.emitting = true;
-		this.dirtyDuringEmit = false;
-
 		for (const handler of snapshot) {
-			if (!this.dirtyDuringEmit || !this.disconnectedDuringEmit?.has(handler)) {
-				handler(payload);
-			}
+			handler(payload);
 		}
-
-		this.emitting = false;
-		this.disconnectedDuringEmit = null;
 	}
 
 	/** Connect a handler. Returns a SignalConnection for disconnection. */
@@ -63,14 +52,6 @@ export class Signal<T = void> {
 		const idx = this.handlers.indexOf(handler);
 		if (idx === -1) return;
 		this.handlers.splice(idx, 1);
-
-		if (this.emitting) {
-			this.dirtyDuringEmit = true;
-			if (!this.disconnectedDuringEmit) {
-				this.disconnectedDuringEmit = new Set();
-			}
-			this.disconnectedDuringEmit.add(handler);
-		}
 	}
 
 	/** Remove all handlers. Called automatically when the owning node is destroyed. */

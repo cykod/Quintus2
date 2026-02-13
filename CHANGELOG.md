@@ -1,3 +1,16 @@
+## Simplify Phase 1: remove Proxy, tinting, and boilerplate
+*Friday, February 13th at 2pm*
+Simplify Phase 1 core engine based on LLM-friendliness review. Replace 
+Proxy-based Vec2 dirty flagging with getter/setter + _onChange callback. 
+Simplify Signal emission to snapshot-only iteration, removing mid-emit 
+disconnect tracking. Remove entire tint system (tint/selfTint/effectiveTint and 
+offscreen canvas compositing) from Phase 1, deferring to a later phase. Drop 
+third addChild overload (constructor args) keeping only instance and 
+class+props variants. Replace hasVisualContent boolean flag with prototype 
+comparison (node.onDraw !== baseOnDraw) for automatic render list inclusion.
+
+---
+
 ## Implement Phase 1: math and core packages with design-aligned API
 *Friday, February 13th at 2pm*
 Implement the @quintus/math and @quintus/core packages for Phase 1 of the 

@@ -18,7 +18,6 @@ function createTestSetup() {
 }
 
 class VisualNode extends Node2D {
-	override hasVisualContent = true;
 	drawCalled = false;
 	override onDraw(_ctx: DrawContext): void {
 		this.drawCalled = true;
@@ -41,7 +40,6 @@ describe("Canvas2DRenderer", () => {
 		const order: string[] = [];
 
 		class OrderedNode extends Node2D {
-			override hasVisualContent = true;
 			label: string;
 			constructor(label: string) {
 				super();
@@ -72,7 +70,6 @@ describe("Canvas2DRenderer", () => {
 		const order: string[] = [];
 
 		class OrderedNode extends Node2D {
-			override hasVisualContent = true;
 			label: string;
 			constructor(label: string) {
 				super();
@@ -108,9 +105,9 @@ describe("Canvas2DRenderer", () => {
 		expect(child.drawCalled).toBe(false);
 	});
 
-	it("hasVisualContent = false nodes are not in render list", () => {
+	it("nodes without onDraw override are not in render list", () => {
 		const { scene, renderer } = createTestSetup();
-		const logicNode = new Node2D(); // hasVisualContent = false by default
+		const logicNode = new Node2D(); // no onDraw override
 		scene.addChild(logicNode);
 
 		renderer.markRenderDirty();
@@ -118,7 +115,7 @@ describe("Canvas2DRenderer", () => {
 		// Logic node should not cause draw (we verify by no error)
 	});
 
-	it("hasVisualContent = true nodes ARE in render list", () => {
+	it("nodes with onDraw override ARE in render list", () => {
 		const { scene, renderer } = createTestSetup();
 		const visual = new VisualNode();
 		scene.addChild(visual);
@@ -148,7 +145,6 @@ describe("Canvas2DRenderer", () => {
 		const order: string[] = [];
 
 		class OrderedNode extends Node2D {
-			override hasVisualContent = true;
 			label: string;
 			constructor(label: string) {
 				super();

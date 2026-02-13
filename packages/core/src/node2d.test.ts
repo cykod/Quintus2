@@ -1,4 +1,4 @@
-import { Color, Matrix2D, Vec2 } from "@quintus/math";
+import { Matrix2D, Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";
 import { Game } from "./game.js";
 import { Node2D } from "./node2d.js";
@@ -109,7 +109,7 @@ describe("Node2D", () => {
 		expect(child.globalPosition.approxEquals(new Vec2(60, 0))).toBe(true);
 	});
 
-	it("mutating position.x/y through proxy marks transform dirty", () => {
+	it("mutating position.x/y marks transform dirty via _onChange", () => {
 		const scene = createTestScene();
 		const parent = new Node2D();
 		const child = new Node2D();
@@ -118,13 +118,13 @@ describe("Node2D", () => {
 		scene.addChild(parent);
 		// Force compute + cache
 		child.globalTransform;
-		// Mutate parent position through proxy
+		// Mutate parent position field
 		parent.position.x = 50;
 		// Child should recompute
 		expect(child.globalPosition.approxEquals(new Vec2(60, 0))).toBe(true);
 	});
 
-	it("mutating scale.x/y through proxy marks transform dirty", () => {
+	it("mutating scale.x/y marks transform dirty via _onChange", () => {
 		const scene = createTestScene();
 		const node = new Node2D();
 		node.position = new Vec2(10, 5);
@@ -172,81 +172,6 @@ describe("Node2D", () => {
 	it("visible defaults to true", () => {
 		const node = new Node2D();
 		expect(node.visible).toBe(true);
-	});
-
-	// === Tint ===
-	it("default tint is Color.WHITE", () => {
-		const node = new Node2D();
-		expect(node.tint.equals(Color.WHITE)).toBe(true);
-	});
-
-	it("effectiveTint inherits parent tint", () => {
-		const scene = createTestScene();
-		const parent = new Node2D();
-		parent.tint = new Color(1, 0.5, 0.5, 1);
-		const child = new Node2D();
-		parent.addChild(child);
-		scene.addChild(parent);
-		const eff = child.effectiveTint;
-		expect(eff.r).toBeCloseTo(1);
-		expect(eff.g).toBeCloseTo(0.5);
-		expect(eff.b).toBeCloseTo(0.5);
-	});
-
-	it("changing parent tint dirties child effectiveTint", () => {
-		const scene = createTestScene();
-		const parent = new Node2D();
-		const child = new Node2D();
-		parent.addChild(child);
-		scene.addChild(parent);
-		// Force cache
-		child.effectiveTint;
-		parent.tint = new Color(0.5, 0.5, 0.5, 1);
-		const eff = child.effectiveTint;
-		expect(eff.r).toBeCloseTo(0.5);
-	});
-
-	it("selfTint only affects self, not children", () => {
-		const scene = createTestScene();
-		const parent = new Node2D();
-		parent.selfTint = new Color(0.5, 0.5, 0.5, 1);
-		const child = new Node2D();
-		parent.addChild(child);
-		scene.addChild(parent);
-		// Parent's effectiveTint includes selfTint
-		expect(parent.effectiveTint.r).toBeCloseTo(0.5);
-		// Child should NOT inherit selfTint
-		expect(child.effectiveTint.r).toBeCloseTo(1);
-	});
-
-	it("nested tint multiplication is correct", () => {
-		const scene = createTestScene();
-		const gp = new Node2D();
-		gp.tint = new Color(0.5, 1, 1, 1);
-		const parent = new Node2D();
-		parent.tint = new Color(1, 0.5, 1, 1);
-		const child = new Node2D();
-		gp.addChild(parent);
-		parent.addChild(child);
-		scene.addChild(gp);
-		const eff = child.effectiveTint;
-		expect(eff.r).toBeCloseTo(0.5);
-		expect(eff.g).toBeCloseTo(0.5);
-		expect(eff.b).toBeCloseTo(1);
-	});
-
-	// === hasVisualContent ===
-	it("default hasVisualContent is false", () => {
-		const node = new Node2D();
-		expect(node._hasVisualContent).toBe(false);
-	});
-
-	it("subclass with hasVisualContent = true", () => {
-		class VisualNode extends Node2D {
-			override hasVisualContent = true;
-		}
-		const node = new VisualNode();
-		expect(node._hasVisualContent).toBe(true);
 	});
 
 	// === Global rotation and scale ===

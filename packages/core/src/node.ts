@@ -3,8 +3,8 @@ import { type Signal, signal } from "./signal.js";
 
 export type PauseMode = "inherit" | "independent";
 
-export interface NodeConstructor<T extends Node = Node, Args extends unknown[] = []> {
-	new (...args: Args): T;
+export interface NodeConstructor<T extends Node = Node> {
+	new (): T;
 }
 
 export type NodeProps = {
@@ -89,22 +89,12 @@ export class Node {
 	// === Tree Manipulation ===
 	addChild(node: Node): this;
 	addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: NodeProps): T;
-	addChild<T extends Node, Args extends unknown[]>(
-		NodeClass: NodeConstructor<T, Args>,
-		...args: Args
-	): T;
-	addChild(nodeOrClass: Node | NodeConstructor<Node>, ...rest: unknown[]): Node | this {
+	addChild(nodeOrClass: Node | NodeConstructor<Node>, props?: NodeProps): Node | this {
 		if (typeof nodeOrClass === "function") {
-			const NodeClass = nodeOrClass;
-			if (rest.length <= 1 && (rest.length === 0 || isPropsObject(rest[0]))) {
-				const node = new NodeClass();
-				if (rest[0]) {
-					applyNodeProps(node, rest[0] as NodeProps);
-				}
-				this._addChildNode(node);
-				return node;
+			const node = new nodeOrClass();
+			if (props) {
+				applyNodeProps(node, props);
 			}
-			const node = new (NodeClass as NodeConstructor<Node, unknown[]>)(...rest);
 			this._addChildNode(node);
 			return node;
 		}
@@ -341,10 +331,6 @@ export class Node {
 		if (this._parent) return this._parent._resolvePauseMode();
 		return "inherit";
 	}
-}
-
-function isPropsObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !(value instanceof Node);
 }
 
 /** @internal Apply typed props to a node. Only assigns known, safe properties. */
