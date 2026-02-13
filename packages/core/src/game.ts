@@ -4,6 +4,7 @@ import { Canvas2DRenderer } from "./canvas2d-renderer.js";
 import { GameLoop } from "./game-loop.js";
 import type { Node } from "./node.js";
 import type { Plugin } from "./plugin.js";
+import type { Renderer } from "./renderer.js";
 import type { SceneDefinition, SceneSetupFn } from "./scene.js";
 import { Scene } from "./scene.js";
 import { type Signal, signal } from "./signal.js";
@@ -25,6 +26,8 @@ export interface GameOptions {
 	seed?: number;
 	/** Fixed timestep in seconds. Default: 1/60. */
 	fixedDeltaTime?: number;
+	/** Custom renderer. Pass `null` for headless (no rendering). Default: Canvas2DRenderer. */
+	renderer?: Renderer | null;
 }
 
 export class Game {
@@ -51,7 +54,7 @@ export class Game {
 
 	// === Internal ===
 	private readonly loop: GameLoop;
-	private renderer: Canvas2DRenderer | null = null;
+	private renderer: Renderer | null = null;
 
 	// === Signals ===
 	readonly started: Signal<void> = signal<void>();
@@ -95,13 +98,19 @@ export class Game {
 		this.assets = new AssetLoader();
 
 		// Renderer
-		this.renderer = new Canvas2DRenderer(
-			this.canvas,
-			this.width,
-			this.height,
-			this.backgroundColor,
-			this.assets,
-		);
+		if (options.renderer === null) {
+			this.renderer = null;
+		} else if (options.renderer) {
+			this.renderer = options.renderer;
+		} else {
+			this.renderer = new Canvas2DRenderer(
+				this.canvas,
+				this.width,
+				this.height,
+				this.backgroundColor,
+				this.assets,
+			);
+		}
 
 		// Game loop
 		this.loop = new GameLoop(
@@ -172,6 +181,7 @@ export class Game {
 
 	stop(): void {
 		this.loop.stop();
+		this.renderer?.dispose?.();
 		this.stopped.emit();
 	}
 
@@ -188,6 +198,12 @@ export class Game {
 
 	hasPlugin(name: string): boolean {
 		return this._plugins.has(name);
+	}
+
+	/** @internal Used by renderer plugins (e.g. ThreePlugin) to replace the active renderer. */
+	_setRenderer(renderer: Renderer | null): void {
+		this.renderer?.dispose?.();
+		this.renderer = renderer;
 	}
 
 	// === Internal: Scene Loading ===

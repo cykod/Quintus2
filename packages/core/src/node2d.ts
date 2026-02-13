@@ -109,7 +109,7 @@ export class Node2D extends Node {
 	}
 
 	// === Custom Drawing ===
-	override onDraw(_ctx: DrawContext): void {}
+	onDraw(_ctx: DrawContext): void {}
 
 	// === Convenience ===
 	lookAt(target: Vec2): void {

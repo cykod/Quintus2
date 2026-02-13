@@ -1,4 +1,3 @@
-import type { DrawContext } from "./draw-context.js";
 import { type Signal, signal } from "./signal.js";
 
 export type PauseMode = "inherit" | "independent";
@@ -273,7 +272,6 @@ export class Node {
 	onUpdate(_dt: number): void {}
 	onFixedUpdate(_dt: number): void {}
 	onDestroy(): void {}
-	onDraw(_ctx: DrawContext): void {}
 
 	// === Destruction ===
 	destroy(): void {

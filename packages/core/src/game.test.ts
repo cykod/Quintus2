@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Game } from "./game.js";
 import { Node } from "./node.js";
 import { definePlugin } from "./plugin.js";
+import type { Renderer } from "./renderer.js";
 
 function createGame(opts?: Partial<Parameters<typeof Game.prototype.constructor>[0]>): Game {
 	const canvas = document.createElement("canvas");
@@ -195,5 +196,75 @@ describe("Game", () => {
 	it("throws on unregistered scene", () => {
 		const game = createGame();
 		expect(() => game.start("nonexistent")).toThrow("not registered");
+	});
+
+	describe("pluggable renderer", () => {
+		function mockRenderer(): Renderer & { calls: string[] } {
+			const calls: string[] = [];
+			return {
+				calls,
+				render: vi.fn(() => calls.push("render")),
+				markRenderDirty: vi.fn(() => calls.push("markRenderDirty")),
+				dispose: vi.fn(() => calls.push("dispose")),
+			};
+		}
+
+		it("renderer: null creates headless game (no rendering)", () => {
+			const game = createGame({ renderer: null });
+			game.scene("main", () => {});
+			game.start("main");
+			game.step();
+			// Should not throw — rendering is simply skipped
+			expect(game.currentScene).not.toBeNull();
+		});
+
+		it("renderer: custom uses provided renderer", () => {
+			const renderer = mockRenderer();
+			const game = createGame({ renderer });
+			game.scene("main", () => {});
+			game.start("main");
+			game.step();
+			expect(renderer.render).toHaveBeenCalled();
+		});
+
+		it("_setRenderer replaces active renderer", () => {
+			const renderer1 = mockRenderer();
+			const renderer2 = mockRenderer();
+			const game = createGame({ renderer: renderer1 });
+			game.scene("main", () => {});
+			game.start("main");
+			game._setRenderer(renderer2);
+			game.step();
+			expect(renderer2.render).toHaveBeenCalled();
+		});
+
+		it("_setRenderer(null) disables rendering", () => {
+			const renderer = mockRenderer();
+			const game = createGame({ renderer });
+			game.scene("main", () => {});
+			game.start("main");
+			game._setRenderer(null);
+			game.step();
+			// render called during start's markRenderDirty, but not after setRenderer(null)
+			expect(game.currentScene).not.toBeNull();
+		});
+
+		it("_setRenderer disposes old renderer", () => {
+			const renderer = mockRenderer();
+			const game = createGame({ renderer });
+			game.scene("main", () => {});
+			game.start("main");
+			game._setRenderer(null);
+			expect(renderer.dispose).toHaveBeenCalled();
+		});
+
+		it("stop() calls renderer.dispose()", () => {
+			const renderer = mockRenderer();
+			const game = createGame({ renderer });
+			game.scene("main", () => {});
+			game.start("main");
+			game.stop();
+			expect(renderer.dispose).toHaveBeenCalled();
+		});
 	});
 });

@@ -9,6 +9,7 @@ import type {
 } from "./draw-context.js";
 import type { Node } from "./node.js";
 import { Node2D } from "./node2d.js";
+import type { Renderer } from "./renderer.js";
 import type { Scene } from "./scene.js";
 
 class Canvas2DDrawContext implements DrawContext {
@@ -148,7 +149,7 @@ const baseOnDraw = Node2D.prototype.onDraw;
  * Canvas2D implementation of the rendering pipeline.
  * Handles: transform cascade, z-sorting, visibility culling, draw dispatch.
  */
-export class Canvas2DRenderer {
+export class Canvas2DRenderer implements Renderer {
 	private readonly ctx: CanvasRenderingContext2D;
 	private readonly drawContext: Canvas2DDrawContext;
 	private readonly gameWidth: number;

@@ -25,6 +25,8 @@ export { Node2D } from "./node2d.js";
 export type { Plugin } from "./plugin.js";
 // Plugins
 export { definePlugin } from "./plugin.js";
+// Renderer
+export type { Renderer } from "./renderer.js";
 export type { SceneDefinition, SceneSetupFn } from "./scene.js";
 // Scene
 export { defineScene, Scene } from "./scene.js";

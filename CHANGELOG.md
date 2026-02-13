@@ -1,3 +1,15 @@
+## Extract Renderer interface and make Game renderer pluggable
+*Friday, February 13th at 3pm*
+Extract a Renderer interface from Canvas2DRenderer and make the Game class 
+accept pluggable renderers via GameOptions. This enables headless mode 
+(renderer: null), custom renderers, and runtime renderer swapping via 
+_setRenderer() for future plugins like ThreePlugin. Also moves onDraw from Node 
+to Node2D, making the base Node class dimension-agnostic with zero 
+math/rendering imports — a key architectural invariant for future 3D support. 
+Includes 6 new tests for renderer pluggability.
+
+---
+
 ## Simplify Phase 1: remove Proxy, tinting, and boilerplate
 *Friday, February 13th at 2pm*
 Simplify Phase 1 core engine based on LLM-friendliness review. Replace 
