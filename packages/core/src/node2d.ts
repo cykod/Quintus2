@@ -39,9 +39,7 @@ export class Node2D extends Node {
 	}
 
 	set position(v: Vec2) {
-		this._position.x = v.x;
-		this._position.y = v.y;
-		this._markTransformDirty();
+		this._position._set(v.x, v.y);
 	}
 
 	get rotation(): number {
@@ -59,9 +57,7 @@ export class Node2D extends Node {
 	}
 
 	set scale(v: Vec2) {
-		this._scale.x = v.x;
-		this._scale.y = v.y;
-		this._markTransformDirty();
+		this._scale._set(v.x, v.y);
 	}
 
 	// === Global Transform ===
@@ -73,13 +69,10 @@ export class Node2D extends Node {
 		const parent = this.parent;
 		if (parent instanceof Node2D) {
 			const local = parent.globalTransform.inverseTransformPoint(v);
-			this._position.x = local.x;
-			this._position.y = local.y;
+			this._position._set(local.x, local.y);
 		} else {
-			this._position.x = v.x;
-			this._position.y = v.y;
+			this._position._set(v.x, v.y);
 		}
-		this._markTransformDirty();
 	}
 
 	get globalRotation(): number {

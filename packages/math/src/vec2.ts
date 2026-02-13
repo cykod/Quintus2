@@ -34,6 +34,14 @@ export class Vec2 {
 		}
 	}
 
+	/** @internal Bulk-set both components, firing _onChange at most once. */
+	_set(x: number, y: number): void {
+		const changed = this._x !== x || this._y !== y;
+		this._x = x;
+		this._y = y;
+		if (changed) this._onChange?.();
+	}
+
 	// === Static Constants ===
 	// Cast back to Vec2 — freeze still prevents mutation at runtime,
 	// but Readonly<Vec2> is incompatible due to private fields.

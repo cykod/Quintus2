@@ -1,3 +1,14 @@
+## Add Vec2._set() to reduce redundant dirty notifications
+*Friday, February 13th at 4pm*
+Add a bulk _set(x, y) method to Vec2 that writes both components and fires the 
+_onChange callback at most once. Node2D's position, scale, and globalPosition 
+setters now use _set() instead of writing x/y individually through setters, 
+which previously triggered _markTransformDirty() up to three times per 
+assignment (once per component via _onChange, plus once explicitly). This 
+reduces dirty-propagation overhead from 3x to 1x per vector assignment.
+
+---
+
 ## Extract Renderer interface and make Game renderer pluggable
 *Friday, February 13th at 3pm*
 Extract a Renderer interface from Canvas2DRenderer and make the Game class 
