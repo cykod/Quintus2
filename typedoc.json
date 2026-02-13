@@ -1,0 +1,11 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": ["packages/*"],
+	"entryPointStrategy": "packages",
+	"out": "docs/api",
+	"name": "Quintus 2.0",
+	"readme": "README.md",
+	"excludePrivate": true,
+	"excludeInternal": true,
+	"includeVersion": true
+}
