@@ -8,6 +8,11 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
+		},
+		"./internal": {
+			"types": "./dist/internal.d.ts",
+			"import": "./dist/internal.js",
+			"require": "./dist/internal.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

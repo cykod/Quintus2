@@ -4,21 +4,21 @@ Complete rewrite of the Quintus HTML5 game engine for the AI/LLM era.
 
 ## Project Status
 
-**Pre-implementation.** Only design documents exist. No source code has been written yet. Phase 0 (project bootstrap) is the next step.
+**Phase 1 complete.** Monorepo bootstrapped, `@quintus/math` and `@quintus/core` implemented with tests. Bouncing ball demo runs.
 
 ## Architecture
 
 Godot-inspired **Node/Scene Tree** (NOT ECS) with TypeScript. The key abstraction chain:
 
 ```
-Node → Node2D → Body / StaticBody / Area
+Node → Node2D → Actor / StaticCollider / Sensor
 ```
 
 - `Node` — base class, pure logic, parent/child tree
 - `Node2D` — adds 2D transform (position, rotation, scale) with cascade
-- `Body` — movement + collision response via `moveAndSlide()`
-- `StaticBody` — immovable collision
-- `Area` — overlap detection (triggers, pickups)
+- `Actor` — code-controlled movement + collision response via `move()`
+- `StaticCollider` — immovable collision (platforms, walls)
+- `Sensor` — overlap detection only (triggers, pickups)
 - `Signal<T>` — typed observer pattern for decoupled communication
 
 ## Monorepo Layout
@@ -29,7 +29,7 @@ pnpm workspace. 19 packages under `packages/`:
 |---------|----------|---------|
 | `core` | `@quintus/core` | Node, Node2D, Scene, Game, signals, game loop, renderer |
 | `math` | `@quintus/math` | Vec2, Matrix2D, Color, Rect, AABB, SeededRandom |
-| `physics` | `@quintus/physics` | Body, StaticBody, Area, CollisionShape, SAT, spatial hash |
+| `physics` | `@quintus/physics` | Actor, StaticCollider, Sensor, CollisionShape, SAT, spatial hash |
 | `sprites` | `@quintus/sprites` | Sprite, AnimatedSprite, sprite sheets |
 | `tilemap` | `@quintus/tilemap` | TileMap, Tiled JSON import, tile collision |
 | `input` | `@quintus/input` | Input actions, keyboard, mouse, touch, gamepad |
@@ -115,25 +115,25 @@ The engine uses Godot-style patterns adapted for TypeScript:
 
 ```typescript
 // Extend nodes via class inheritance
-class Player extends Body {
+class Player extends Actor {
   speed = 200;
   jumpForce = -400;
 
-  update(dt: number) {
+  onUpdate(dt: number) {
     if (this.game.input.isPressed('right')) this.velocity.x = this.speed;
     if (this.game.input.isJustPressed('jump') && this.isOnFloor()) {
       this.velocity.y = this.jumpForce;
     }
-    this.moveAndSlide(dt);
+    this.move(dt);
   }
 }
 
 // Signals for decoupled events
-class Coin extends Area {
+class Coin extends Sensor {
   readonly collected = signal<void>();
-  ready() {
-    this.bodyEntered.connect((body) => {
-      if (body.hasTag('player')) {
+  onReady() {
+    this.entered.connect((other) => {
+      if (other.hasTag('player')) {
         this.collected.emit();
         this.destroy();
       }
@@ -141,22 +141,24 @@ class Coin extends Area {
   }
 }
 
-// Scenes as node tree factories
-game.scene('level1', (scene) => {
-  scene.add(TileMap, { asset: 'level1.json' });
-  scene.add(Player, { position: new Vec2(100, 400) });
-});
+// Class-based scenes
+class Level1 extends Scene {
+  onReady() {
+    this.add(TileMap, { asset: 'level1.json' });
+    this.add(Player, { position: new Vec2(100, 400) });
+  }
+}
 
-game.start('level1');
+game.start(Level1);
 ```
 
 ## Implementation Phases
 
 | Phase | What | Status |
 |-------|------|--------|
-| 0 | Project bootstrap (monorepo, tooling) | Not started |
-| 1 | Core engine (Node, Node2D, math, signals, game loop) | — |
-| 2 | Physics (Body, StaticBody, Area, SAT, moveAndSlide) | — |
+| 0 | Project bootstrap (monorepo, tooling) | Done |
+| 1 | Core engine (Node, Node2D, math, signals, game loop) | Done |
+| 2 | Physics (Actor, StaticCollider, Sensor, SAT, move) | — |
 | 3 | Sprites & Input (AnimatedSprite, action map, gamepad) | — |
 | 4 | Tilemap & Camera (Tiled import, follow, shake, zoom) | — |
 | 5 | Audio, Tween, UI (sounds, animations, HUD widgets) | — |

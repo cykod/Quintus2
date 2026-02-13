@@ -5,6 +5,7 @@ export default defineConfig({
 		environment: "jsdom",
 		globals: true,
 		passWithNoTests: true,
+		setupFiles: ["vitest-canvas-mock"],
 		include: ["packages/*/src/**/*.test.ts"],
 		coverage: {
 			provider: "v8",
