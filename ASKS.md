@@ -49,3 +49,9 @@
 [DVLP] fri 2/13 10pm - Devil's advocate review of Phase 2 Subphase 2 collision detection design document for correctness, performance, and integration issues
 
 [COLL] sat 2/14 9am - Implement Phase 2 Subphase 2: SpatialHash broad phase, SAT narrow phase, and swept collision detection with tests
+
+[COLL] sat 2/14 2pm - Implement Phase 2 Subphase 2 collision detection (SpatialHash, SAT, swept collision) and commit milestone
+
+[SATX] sat 2/14 2pm - Review SAT collision detection test cases for exhaustiveness across all supported collision shapes with and without transforms
+
+[DVLP] sat 2/14 2pm - Devil's advocate review of Phase 2 Subphase 3 physics infrastructure design document for registration timing, SAT gaps, and multi-shape collision issues

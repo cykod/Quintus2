@@ -1,3 +1,15 @@
+## Dramatically increase SAT collision test coverage
+*Saturday, February 14th at 2pm*
+Add 57 new tests to SAT collision detection covering all previously untested 
+shape pairs (Circle×Polygon, Capsule×Polygon), transform variations (rotation, 
+scale, composed), swept collision for 7 additional shape combinations, argument 
+order swap symmetry, and full containment scenarios. Test count grows from 46 
+to 103, achieving 100% shape pair coverage for static tests and 90% for swept 
+collision pairs. Includes new txrs helper for composed transforms and shared 
+polygon shape constants.
+
+---
+
 ## Implement Phase 2 Subphase 2 collision detection
 *Saturday, February 14th at 2pm*
 Add SpatialHash generic broad-phase with Cantor pairing and smart cell updates, 
