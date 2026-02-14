@@ -199,6 +199,91 @@ describe("Node2D", () => {
 		expect(gs.y).toBeCloseTo(15);
 	});
 
+	// === Convenience Methods ===
+	it("lookAt() sets rotation toward target point", () => {
+		const scene = createTestScene();
+		const node = new Node2D();
+		scene.addChild(node);
+		node.position = new Vec2(0, 0);
+		node.lookAt(new Vec2(10, 0)); // target to the right
+		expect(node.rotation).toBeCloseTo(0);
+		node.lookAt(new Vec2(0, 10)); // target below
+		expect(node.rotation).toBeCloseTo(Math.PI / 2);
+	});
+
+	it("moveToward() moves position toward target at speed * dt", () => {
+		const node = new Node2D();
+		node.position = new Vec2(0, 0);
+		node.moveToward(new Vec2(100, 0), 50, 1); // speed=50, dt=1 => move 50 units
+		expect(node.position.x).toBeCloseTo(50);
+		expect(node.position.y).toBeCloseTo(0);
+	});
+
+	it("moveToward() does not overshoot target", () => {
+		const node = new Node2D();
+		node.position = new Vec2(0, 0);
+		node.moveToward(new Vec2(10, 0), 100, 1); // speed*dt=100, but target is only 10 away
+		expect(node.position.x).toBeCloseTo(10);
+		expect(node.position.y).toBeCloseTo(0);
+	});
+
+	// === Dirty Flag Edge Cases ===
+	it("_markGlobalTransformDirty early return when already dirty", () => {
+		const scene = createTestScene();
+		const parent = new Node2D();
+		const child = new Node2D();
+		parent.addChild(child);
+		scene.addChild(parent);
+		// Don't access globalTransform so it stays dirty from addChild
+		// Calling _markGlobalTransformDirty again should be a no-op (early return)
+		child._markGlobalTransformDirty();
+		// Still works correctly after
+		child.position = new Vec2(5, 0);
+		parent.position = new Vec2(10, 0);
+		expect(child.globalPosition.approxEquals(new Vec2(15, 0))).toBe(true);
+	});
+
+	it("deep nesting dirty propagation (3+ levels)", () => {
+		const scene = createTestScene();
+		const grandparent = new Node2D();
+		const parent = new Node2D();
+		const child = new Node2D();
+		grandparent.addChild(parent);
+		parent.addChild(child);
+		scene.addChild(grandparent);
+
+		grandparent.position = new Vec2(100, 0);
+		parent.position = new Vec2(50, 0);
+		child.position = new Vec2(10, 0);
+		// Force compute + cache
+		expect(child.globalPosition.approxEquals(new Vec2(160, 0))).toBe(true);
+
+		// Change grandparent — should propagate dirty through parent to child
+		grandparent.position = new Vec2(200, 0);
+		expect(child.globalPosition.approxEquals(new Vec2(260, 0))).toBe(true);
+	});
+
+	it("dirty propagation with multiple children", () => {
+		const scene = createTestScene();
+		const parent = new Node2D();
+		const childA = new Node2D();
+		const childB = new Node2D();
+		childA.position = new Vec2(10, 0);
+		childB.position = new Vec2(0, 10);
+		parent.addChild(childA);
+		parent.addChild(childB);
+		scene.addChild(parent);
+
+		// Cache
+		childA.globalTransform;
+		childB.globalTransform;
+
+		// Change parent — both children should recompute
+		parent.position = new Vec2(100, 100);
+		expect(childA.globalPosition.approxEquals(new Vec2(110, 100))).toBe(true);
+		expect(childB.globalPosition.approxEquals(new Vec2(100, 110))).toBe(true);
+	});
+
 	// === zIndex ===
 	it("zIndex defaults to 0", () => {
 		const node = new Node2D();

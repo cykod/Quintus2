@@ -112,4 +112,57 @@ describe("AssetLoader", () => {
 		await loader.load({ images: ["missing.png"] });
 		expect(completeFn).toHaveBeenCalled();
 	});
+
+	// === T4c: Edge Cases ===
+	it("allLoaded returns true when no failures", async () => {
+		globalThis.fetch = mockFetchSuccess({}, "image/png") as typeof fetch;
+		const loader = new AssetLoader();
+		expect(loader.allLoaded).toBe(true);
+		await loader.load({ images: ["hero.png"] });
+		expect(loader.allLoaded).toBe(true);
+	});
+
+	it("allLoaded returns false when failures exist", async () => {
+		globalThis.fetch = mockFetchFailure(404) as typeof fetch;
+		const loader = new AssetLoader();
+		await loader.load({ images: ["missing.png"] });
+		expect(loader.allLoaded).toBe(false);
+	});
+
+	it("retry() with image extension re-loads as image", async () => {
+		// First fail
+		globalThis.fetch = mockFetchFailure(404) as typeof fetch;
+		const loader = new AssetLoader();
+		await loader.load({ images: ["hero.png"] });
+		expect(loader.failedAssets).toContain("hero.png");
+
+		// Now succeed on retry
+		globalThis.fetch = mockFetchSuccess({}, "image/png") as typeof fetch;
+		await loader.retry("hero.png");
+		expect(loader.getImage("hero")).toBe(mockImageBitmap);
+		expect(loader.failedAssets).not.toContain("hero.png");
+	});
+
+	it("retry() with JSON extension re-loads as JSON", async () => {
+		globalThis.fetch = mockFetchFailure(404) as typeof fetch;
+		const loader = new AssetLoader();
+		await loader.load({ json: ["data.json"] });
+		expect(loader.failedAssets).toContain("data.json");
+
+		const jsonData = { key: "value" };
+		globalThis.fetch = mockFetchSuccess(jsonData, "application/json") as typeof fetch;
+		await loader.retry("data.json");
+		expect(loader.getJSON("data")).toEqual(jsonData);
+		expect(loader.failedAssets).not.toContain("data.json");
+	});
+
+	it("network error (fetch throws) is handled gracefully", async () => {
+		globalThis.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch")) as typeof fetch;
+		const loader = new AssetLoader();
+		const errorFn = vi.fn();
+		loader.error.connect(errorFn);
+		await loader.load({ images: ["hero.png"] });
+		expect(errorFn).toHaveBeenCalledTimes(1);
+		expect(loader.failedAssets).toContain("hero.png");
+	});
 });

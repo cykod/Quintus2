@@ -77,3 +77,7 @@
 [MILE] sat 2/14 4pm - Added Canvas2DDrawContext and render pipeline tests, bringing canvas2d-renderer coverage from 44% to 100%
 
 [IMPL] sat 2/14 4pm - Implement Phase 2 test gap subphase T3: GameLoop RAF tick method tests for full coverage
+
+[MILE] sat 2/14 4pm - Added GameLoop RAF tick tests for 100% game-loop coverage, completing Phase 2 test gap subphase T3
+
+[IMPL] sat 2/14 4pm - Implement Phase 2 test gap subphase T4: core edge cases for game.ts, node2d.ts, and asset-loader.ts

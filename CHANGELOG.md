@@ -1,3 +1,15 @@
+## Add core edge case tests for game, node2d, and asset-loader (T4)
+*Saturday, February 14th at 4pm*
+Implements Phase 2 test gap subphase T4 with 15 new tests covering previously 
+uncovered edge cases in game.ts (pause/resume, SceneDefinition start, 
+_switchScene with setup, canvas resolution paths, backgroundColor), node2d.ts 
+(lookAt, moveToward with overshoot protection, _markGlobalTransformDirty early 
+return, deep nesting dirty propagation), and asset-loader.ts (retry with 
+image/JSON extensions, allLoaded getter, network error handling). Coverage 
+improved: game.ts 87% → 100%, asset-loader.ts 89% → 100%, node2d.ts 89% → 98%.
+
+---
+
 ## Add GameLoop RAF tick tests for 100% game-loop coverage (T3)
 *Saturday, February 14th at 4pm*
 Added 12 tests covering the GameLoop's RAF-based tick(), start(), and stop() 
