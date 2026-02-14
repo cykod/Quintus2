@@ -1,3 +1,15 @@
+## Add Canvas2DDrawContext and render pipeline tests (T2)
+*Saturday, February 14th at 4pm*
+Add 28 new tests covering the Canvas2DDrawContext drawing primitives (line, 
+rect, circle, polygon, text, measureText, image with flip/sourceRect, 
+save/restore, setAlpha) and render pipeline edge cases (globalTransform 
+application, exception resilience, empty scene). Uses property setter spies to 
+work around jsdom's color normalization behavior. Coverage for 
+canvas2d-renderer.ts goes from 44.62% to 100% line coverage, bringing total 
+tests to 613 across 26 files.
+
+---
+
 ## Add physics integration tests for CollisionObject and PhysicsPlugin
 *Saturday, February 14th at 4pm*
 Implement T1 subphase from PHASE_2_TEST_GAPS.md: 31 new tests across two files 
