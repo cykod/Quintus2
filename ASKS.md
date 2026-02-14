@@ -61,3 +61,11 @@
 [PH2C] sat 2/14 2pm - Implement Phase 2 Subphase 3: CollisionShape, CollisionObject, PhysicsWorld, PhysicsPlugin, and contact point computation with tests
 
 [TCOV] sat 2/14 4pm - Review test coverage across the entire engine and identify gaps in testing
+
+[PH2C] sat 2/14 4pm - Implement Phase 2 Subphase 3 physics infrastructure (CollisionShape, CollisionObject, PhysicsWorld, PhysicsPlugin, contact points) and commit milestone
+
+[DEVL] sat 2/14 4pm - Review Phase 2 Subphase 4 (Actor, StaticCollider, Sensor) design for implementation gaps, missing edge cases, and codebase mismatches
+
+[ASKS] sat 2/14 4pm - Create steering/PHASE_2_TEST_GAPS.md breaking down test coverage gaps into addressable subphases
+
+[IMPL] sat 2/14 4pm - Implement Phase 2 test gap subphase T1: physics integration tests for collision-object and physics-plugin

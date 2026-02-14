@@ -1,3 +1,17 @@
+## Add physics integration tests for CollisionObject and PhysicsPlugin
+*Saturday, February 14th at 4pm*
+Implement T1 subphase from PHASE_2_TEST_GAPS.md: 31 new tests across two files 
+covering PhysicsPlugin factory/wiring (defaults, custom config, WeakMap 
+isolation, postFixedUpdate hook) and CollisionObject lifecycle (getShapes, 
+getWorldAABB, auto-registration on tree enter, auto-unregistration on exit, 
+auto-install with warning, full game loop sensor integration). Coverage for 
+collision-object.ts goes from 48% to 100% and physics-plugin.ts from 0% to 
+100%, bringing physics package statement coverage to 98%. Also adds the test 
+gap analysis doc and refines the Phase 2 Subphase 4 design with depenetration, 
+safe margin, batched displacement, and actor-vs-actor skip decisions.
+
+---
+
 ## Implement Phase 2 Subphase 3 physics infrastructure
 *Saturday, February 14th at 4pm*
 Implement the physics infrastructure layer: CollisionShape node for defining 

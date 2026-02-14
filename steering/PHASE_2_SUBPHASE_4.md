@@ -30,10 +30,12 @@ export class Actor extends CollisionObject {
 
   /**
    * Gravity in pixels/second² applied during move().
-   * Defaults to PhysicsWorld.gravity.y at registration time.
+   * Initialized to PhysicsWorld.gravity.y in onReady() (after registration).
    * Set to 0 for zero-gravity actors (e.g., top-down games, flying enemies).
    */
   gravity = 0;
+
+  // In onReady(): this.gravity = this._getWorld()?.gravity.y ?? 0;
 
   /**
    * Whether move() should apply gravity automatically.
@@ -49,7 +51,7 @@ export class Actor extends CollisionObject {
    * Default: Vec2.UP (0, -1) for standard side-view platformer.
    * Set to Vec2.ZERO for a top-down game (no floor concept).
    */
-  upDirection: Vec2 = Vec2.UP;
+  upDirection: Vec2 = new Vec2(0, -1);
 
   /**
    * Maximum angle (radians) between a surface normal and upDirection
@@ -68,8 +70,9 @@ export class Actor extends CollisionObject {
   private _onFloor = false;
   private _onWall = false;
   private _onCeiling = false;
-  private _floorNormal = Vec2.ZERO;
-  private _wallNormal = Vec2.ZERO;
+  private _floorNormal = new Vec2(0, 0);
+  private _wallNormal = new Vec2(0, 0);
+  private _floorCollider: CollisionObject | null = null;
   private _slideCollisions: CollisionInfo[] = [];
 
   /** True if the last move() detected floor contact. */
@@ -87,13 +90,15 @@ export class Actor extends CollisionObject {
   /** Normal of the wall surface. Zero if not on wall. */
   getWallNormal(): Vec2 { return this._wallNormal; }
 
-  /** All collisions from the last move() call. */
+  /** All collisions from the last move() call. Only valid until the next move(). */
   getSlideCollisions(): readonly CollisionInfo[] { return this._slideCollisions; }
 
   // === Signals ===
 
   /** Emitted when this actor collides with another CollisionObject during move(). */
   readonly collided: Signal<CollisionInfo> = signal<CollisionInfo>();
+
+  // onDestroy(): disconnect custom signals (collided) to prevent memory leaks.
 
   // === Movement API ===
 
@@ -131,6 +136,7 @@ export class Actor extends CollisionObject {
 - **`upDirection` for flexible orientation.** Side-scrollers: `Vec2.UP`. Top-down: `Vec2.ZERO`.
 - **`floorMaxAngle` for slopes.** 45° default. Slopes up to this angle are floors; steeper = walls.
 - **`collided` signal.** Emitted for each collision during `move()`.
+- **Actors only collide with statics, not other actors.** `castMotion()` skips candidates with `bodyType === "actor"`. Godot allows CharacterBody-to-CharacterBody collision by default, but it causes well-known "sticking together" bugs because resolution is one-directional and depends on `onFixedUpdate` execution order. Our approach: use Sensors or collision groups for actor-vs-actor interaction (e.g., enemies pushing the player = a Sensor + knockback signal). This is simpler, deterministic, and avoids an entire class of ordering bugs.
 
 ### The move() Slide Loop
 
@@ -140,29 +146,50 @@ This is the most important algorithm in the physics package.
 move(dt):
   ┌─── 1. GRAVITY ─────────────────────────────────────────┐
   │  if applyGravity:                                       │
-  │    velocity.y += gravity * dt                           │
+  │    if _onFloor:                                         │
+  │      velocity.y = FLOOR_SNAP_GRAVITY  // small constant │
+  │      // (e.g. 1 px/s — just enough to re-detect floor  │
+  │      //  without accumulating large downward velocity)  │
+  │    else:                                                │
+  │      velocity.y += gravity * dt                         │
   └─────────────────────────────────────────────────────────┘
   ┌─── 2. INITIAL MOTION ──────────────────────────────────┐
   │  motion = velocity * dt                                 │
-  │  slideCollisions = []                                   │
+  │  _slideCollisions.length = 0  // reuse array            │
+  │  totalDisplacement = Vec2(0, 0)                         │
   └─────────────────────────────────────────────────────────┘
   ┌─── 3. SLIDE LOOP (up to maxSlides iterations) ─────────┐
   │  for i in 0..maxSlides:                                 │
   │    if motion.lengthSquared < EPSILON²: break            │
   │                                                         │
   │    collision = world.castMotion(this, motion)           │
+  │    // castMotion skips sensors AND other actors          │
   │                                                         │
   │    if no collision:                                     │
-  │      position += motion                                 │
+  │      totalDisplacement += motion                        │
   │      break                                              │
   │                                                         │
+  │    ┌─── DEPENETRATION (toi = 0) ───────────────────┐   │
+  │    │  if collision.toi == 0:                        │   │
+  │    │    // Already overlapping — push out first     │   │
+  │    │    totalDisplacement += normal * collision.    │   │
+  │    │                                     depth     │   │
+  │    │    // Recompute motion from corrected position │   │
+  │    │    continue                                    │   │
+  │    └────────────────────────────────────────────────┘   │
+  │                                                         │
   │    ┌─── RESOLVE COLLISION ──────────────────────────┐   │
-  │    │  position += collision.travel                  │   │
-  │    │  slideCollisions.push(collision)               │   │
+  │    │  // Apply safe margin: stop slightly before    │   │
+  │    │  // contact to prevent float-precision embed   │   │
+  │    │  safeTravel = collision.travel                 │   │
+  │    │              - normal * SAFE_MARGIN            │   │
+  │    │  totalDisplacement += safeTravel               │   │
+  │    │  _slideCollisions.push(collision)              │   │
   │    │  collided.emit(collision)                      │   │
   │    │                                                │   │
   │    │  // Slide: project remainder onto surface      │   │
   │    │  remainder = collision.remainder               │   │
+  │    │              + normal * SAFE_MARGIN            │   │
   │    │  motion = remainder - normal * dot(remainder,  │   │
   │    │                                    normal)     │   │
   │    │                                                │   │
@@ -172,37 +199,61 @@ move(dt):
   │    │    velocity -= normal * velDot                  │   │
   │    └────────────────────────────────────────────────┘   │
   └─────────────────────────────────────────────────────────┘
-  ┌─── 4. MOVING PLATFORM CARRY ───────────────────────────┐
-  │  If standing on a StaticCollider with constantVelocity: │
-  │    position += platform.constantVelocity * dt           │
-  └─────────────────────────────────────────────────────────┘
+  ┌─── 4. APPLY DISPLACEMENT (batched) ───────────────────┐
+  │  position += totalDisplacement                         │
+  │  // Single position write → one dirty propagation      │
+  └────────────────────────────────────────────────────────┘
   ┌─── 5. UPDATE CONTACT FLAGS ────────────────────────────┐
   │  _onFloor = false; _onWall = false; _onCeiling = false │
-  │  for each collision in slideCollisions:                 │
+  │  _floorCollider = null                                  │
+  │  for each collision in _slideCollisions:                │
   │    angle = acos(dot(collision.normal, upDirection))     │
   │    if angle <= floorMaxAngle:                           │
   │      _onFloor = true                                    │
   │      _floorNormal = collision.normal                    │
+  │      _floorCollider = collision.other                   │
   │    elif angle >= π - floorMaxAngle:                     │
   │      _onCeiling = true                                  │
   │    else:                                                │
   │      _onWall = true                                     │
-  │      _wallNormal = collision.normal                     │
+  │      _wallNormal = collision.normal  // last wall wins  │
   └─────────────────────────────────────────────────────────┘
-  ┌─── 6. RE-HASH ─────────────────────────────────────────┐
+  ┌─── 6. MOVING PLATFORM CARRY ───────────────────────────┐
+  │  if _floorCollider is StaticCollider                    │
+  │     && _floorCollider.constantVelocity != Vec2.ZERO:   │
+  │    carry = _floorCollider.constantVelocity * dt         │
+  │    carryCollision = world.castMotion(this, carry)       │
+  │    if carryCollision:                                   │
+  │      position += carryCollision.travel                  │
+  │    else:                                                │
+  │      position += carry                                  │
+  └─────────────────────────────────────────────────────────┘
+  ┌─── 7. RE-HASH ─────────────────────────────────────────┐
   │  world.updatePosition(this)                             │
   └─────────────────────────────────────────────────────────┘
 ```
+
+**SAFE_MARGIN constant:** `0.01` pixels. Prevents float-precision embedding without visible gaps. Godot uses `0.08` as its `safe_margin` default; ours is smaller because we're pixel-art-oriented.
+
+**FLOOR_SNAP_GRAVITY:** A small constant (e.g., `1 px/s`) applied when already on the floor. Avoids accumulating large downward velocity every frame (which signal handlers on `collided` would see as a phantom impulse). Just enough to re-detect the floor via the slide loop.
 
 **Why slide, not bounce?** Sliding projects remaining motion onto the surface tangent. Walking along walls feels natural instead of stopping dead.
 
 **Why up to 4 iterations?** A single slide can push into another surface (e.g., corner). Each iteration resolves one collision.
 
+**Batched displacement:** The slide loop accumulates `totalDisplacement` instead of writing to `position` each iteration. This triggers `_markTransformDirty()` only once at the end, avoiding redundant dirty propagation through child CollisionShapes. The `castMotion` calls use the actor's current position + accumulated displacement.
+
+**Depenetration at toi=0:** If `castMotion` returns `toi = 0`, the shapes already overlap (from float rounding, platform carry, etc.). The loop pushes the actor out by `normal * depth` before continuing. Without this, the slide loop makes zero progress and the actor gets stuck.
+
+**Safe margin:** After computing travel, the actor stops `SAFE_MARGIN` (0.01px) before the contact surface. This prevents float-precision embedding that causes toi=0 on the next frame. The remainder is increased by the same amount so total motion is preserved.
+
 **Transform-aware internally:** The slide loop calls `world.castMotion(this, motion)`, which internally uses `CollisionShape.getWorldTransform()` to pass `(shape, Matrix2D)` pairs to the SAT functions. The actor's public API (`move(dt)`, `moveAndCollide(motion)`, `isOnFloor()`, etc.) is unchanged. During a single `move()` call, only translation changes — rotation and scale are constant for the duration of the motion cast.
 
-**Moving platform carry:** After the slide loop, if the actor is on a floor that's a StaticCollider with `constantVelocity`, position is adjusted by platform velocity × dt.
+**Actor-vs-actor:** `castMotion` skips candidates with `bodyType === "actor"`. Actors pass through each other. Use Sensors for actor-vs-actor game logic (damage zones, push areas, etc.).
 
-**One-way platform handling:** During `castMotion`, if the candidate is a StaticCollider with `oneWay = true`, the collision is only counted if the actor's motion opposes the one-way direction and the actor's bottom is above the platform's top.
+**Moving platform carry:** After contact flags are computed (so we know which collider is the floor), if the floor is a StaticCollider with `constantVelocity`, the actor is carried by `platform.constantVelocity * dt`. The carry displacement is collision-tested via `castMotion` to prevent clipping into walls.
+
+**One-way platform handling:** `castMotion` must implement one-way filtering. When the candidate is a StaticCollider with `oneWay = true`, the collision is only counted if the actor's motion opposes the one-way direction and the actor's bottom is above the platform's top. This requires `castMotion` to check `bodyType === "static"` and access one-way properties — either via a type check or an abstract `shouldCollideWith(body, motion)` method on `CollisionObject` that `StaticCollider` overrides.
 
 ---
 
@@ -244,7 +295,7 @@ export class StaticCollider extends CollisionObject {
    * Only relevant when oneWay is true.
    * Default: Vec2.UP (0, -1) — collisions from above only.
    */
-  oneWayDirection: Vec2 = Vec2.UP;
+  oneWayDirection: Vec2 = new Vec2(0, -1);
 }
 ```
 
@@ -253,6 +304,7 @@ export class StaticCollider extends CollisionObject {
 - **`constantVelocity` for moving platforms.** Actor on top is carried. The actor's `move()` adds the platform velocity × dt.
 - **One-way platforms.** Actors pass through from below, land on top. Only resolved when motion opposes `oneWayDirection` and actor is above platform.
 - **No `onFixedUpdate` override.** StaticColliders just exist in the spatial hash. Users can override for custom behavior (e.g., moving platform code).
+- **Platform sync ordering.** If a StaticCollider moves in its `onFixedUpdate`, the spatial hash has its old position until re-hashed. This means collision detection against a moving platform is one frame behind. Acceptable for most games. If precise sync is needed, the user should call `world.updatePosition(this)` after moving the StaticCollider.
 
 ### 8.2 Sensor
 
@@ -274,13 +326,6 @@ export class Sensor extends CollisionObject {
    */
   monitoring = true;
 
-  /**
-   * Whether other sensors can detect this sensor.
-   * When false, this sensor is invisible to other sensors' entered/exited.
-   * Default: true.
-   */
-  monitorable = true;
-
   // === Signals ===
 
   /** Emitted when an Actor or StaticCollider enters this sensor's area. */
@@ -295,6 +340,8 @@ export class Sensor extends CollisionObject {
   /** Emitted when another Sensor exits this sensor's area. */
   readonly sensorExited: Signal<Sensor> = signal<Sensor>();
 
+  // onDestroy(): disconnect all custom signals to prevent memory leaks.
+
   // === Overlap Queries ===
 
   /** Get all Actors and StaticColliders currently overlapping this sensor. */
@@ -306,6 +353,7 @@ export class Sensor extends CollisionObject {
   /** Get all other Sensors currently overlapping this sensor. */
   getOverlappingSensors(): Sensor[] {
     const world = this._getWorld();
+    // PhysicsWorld.getOverlappingSensors must return Sensor[] (type-safe filter)
     return world ? world.getOverlappingSensors(this) : [];
   }
 }
@@ -314,7 +362,7 @@ export class Sensor extends CollisionObject {
 **Design decisions:**
 - **Signals for enter/exit events.** Type-safe, discoverable, auto-disconnect on destroy.
 - **Separate body/sensor signals.** Most game logic only cares about bodies.
-- **`monitoring`/`monitorable` toggles.** Save CPU for inactive sensors.
+- **`monitoring` toggle.** Save CPU for inactive sensors. No `monitorable` flag — all sensors are detectable. Use collision groups to hide a sensor from other sensors if needed.
 - **Enter/exit tracking is global.** PhysicsWorld maintains `Map<Sensor, Set<CollisionObject>>`. Diffs each frame.
 - **`getOverlappingBodies()` queries current state.** Returns the cached set from the last `stepSensors()` call.
 
@@ -418,11 +466,17 @@ class DamageZone extends Sensor {
 - Slope within `floorMaxAngle` → `isOnFloor()` true, slides along slope
 - Slope beyond `floorMaxAngle` → `isOnWall()` true, slides down
 - `maxSlides = 1` → stops at first collision, no slide
-- Actor gravity defaults to PhysicsWorld gravity
+- Actor gravity defaults to PhysicsWorld gravity (initialized in `onReady`)
+- Actor does not collide with other actors (passes through)
+- Depenetration: actor overlapping at toi=0 is pushed out, not stuck
+- Safe margin: actor stops slightly before contact surface, no embedding
+- Gravity snap: on floor, velocity.y stays small (no phantom accumulation)
+- Batched displacement: position is written once per `move()`, not per slide iteration
 
 ### static-collider.test.ts
 - Actor collides with StaticCollider → Actor stops, StaticCollider doesn't move
 - StaticCollider with `constantVelocity` → Actor on top is carried
+- Moving platform carry is collision-tested (actor not pushed into wall)
 - `oneWay = true` → Actor passes through from below, stops from above
 - One-way platform: actor on top, walks off edge, can re-land
 
@@ -432,11 +486,16 @@ class DamageZone extends Sensor {
 - `sensorEntered` fires when two Sensors overlap
 - `sensorExited` fires when Sensors separate
 - `monitoring = false` → no signals fire
-- `monitorable = false` → other sensors don't detect this one
 - `getOverlappingBodies()` returns current overlaps
+- `getOverlappingSensors()` returns `Sensor[]` (type-safe)
 - Signal fires once per enter (no duplicates on sustained overlap)
 - Exited fires when overlapping body is destroyed
 - Exited fires when sensor is disabled
+- Sensor moves to overlap stationary actor → `bodyEntered` fires
+- Multiple bodies enter sensor in same frame → all get `bodyEntered`
+- Sensor with no CollisionShape children → no errors, no signals
+- Mutual detection: sensor A overlaps B → both fire `sensorEntered`
+- Re-enabling `monitoring` while overlapping → `bodyEntered` fires for existing overlaps
 
 ---
 
@@ -447,11 +506,19 @@ class DamageZone extends Sensor {
 - [ ] `isOnFloor()`/`isOnWall()`/`isOnCeiling()` work correctly
 - [ ] Floor detection uses `upDirection` and `floorMaxAngle`
 - [ ] `collided` signal fires for each collision
+- [ ] Actor gravity initialized from `PhysicsWorld.gravity.y` in `onReady()`
+- [ ] Actors skip other actors in `castMotion` (no actor-vs-actor collision)
+- [ ] Safe margin prevents float-precision embedding
+- [ ] Depenetration handles toi=0 (overlapping shapes pushed apart)
+- [ ] Floor snap gravity prevents phantom velocity accumulation on floor
+- [ ] Slide loop batches displacement (single `position` write)
 - [ ] `StaticCollider` is immovable, blocks actors
-- [ ] `constantVelocity` carries actors on moving platforms
+- [ ] `constantVelocity` carries actors on moving platforms (collision-tested)
 - [ ] One-way platforms work (pass through below, land above)
+- [ ] One-way filtering implemented in `castMotion`
 - [ ] `Sensor.bodyEntered`/`bodyExited` fire correctly
 - [ ] `Sensor.sensorEntered`/`sensorExited` fire correctly
-- [ ] `monitoring`/`monitorable` toggles work
+- [ ] `monitoring` toggle works
+- [ ] Custom signals disconnected in `onDestroy()` (Actor + Sensor)
 - [ ] No phantom events on destroy
 - [ ] All tests pass, `pnpm build` succeeds
