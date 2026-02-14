@@ -1,3 +1,17 @@
+## Implement Phase 2 Subphase 1 foundation types for physics
+*Friday, February 13th at 10pm*
+Add Shape2D types (rect, circle, capsule, polygon) with Shape factory and 
+transform-aware shapeAABB() computation including a fast path for 
+translation-only transforms. Add CollisionInfo interface for collision response 
+data and CollisionGroups class that compiles named string groups to bitmasks 
+for O(1) shouldCollide() checks. Includes 34 new tests covering all shape 
+types, AABB computation across identity/translate/rotate/scale/composed 
+transforms, and collision group compilation with asymmetric collision and 
+validation. Step 1 core changes (postFixedUpdate signal, props removal from 
+addChild) were already completed in prior commits.
+
+---
+
 ## Apply devil's advocate fixes to core, math, and Phase 2 design
 *Friday, February 13th at 9pm*
 Fix 14 issues from devil's advocate review of Phase 2 design. In code: fix 

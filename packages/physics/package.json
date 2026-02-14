@@ -1,7 +1,7 @@
 {
 	"name": "@quintus/physics",
 	"version": "0.0.0",
-	"description": "Body, StaticBody, RigidBody, Area, CollisionShape, SAT, spatial hash",
+	"description": "Actor, StaticCollider, Sensor, CollisionShape, SAT, spatial hash",
 	"type": "module",
 	"exports": {
 		".": {
@@ -26,6 +26,10 @@
 		"html5",
 		"2d"
 	],
+	"dependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/math": "workspace:*"
+	},
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",

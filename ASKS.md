@@ -39,3 +39,7 @@
 [DVLP] fri 2/13 5pm - Devil's advocate review of Phase 2 Subphase 1 design doc identifying 12 issues across type safety, collision groups, and build ordering
 
 [PH2T] fri 2/13 9pm - Devil's advocate review of Phase 2 Subphase 1 and Design Core documents for transform-aware collision detection
+
+[DVAD] fri 2/13 9pm - Implement devil's advocate fixes to Phase 2 design and core code: destroy queue bug, remove props from addChild, postFixedUpdate signal, epsilon-based isTranslationOnly, and design doc updates
+
+[PH2A] fri 2/13 9pm - Implement Phase 2 Subphase 1: postFixedUpdate signal, remove props from addChild, Shape2D types, CollisionInfo, and CollisionGroups

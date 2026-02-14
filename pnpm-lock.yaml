@@ -66,7 +66,14 @@ importers:
 
   packages/particles: {}
 
-  packages/physics: {}
+  packages/physics:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/quintus-core: {}
 
