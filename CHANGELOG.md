@@ -1,3 +1,15 @@
+## Add math micro-gap tests for Vec2, Color, Matrix2D (T5)
+*Saturday, February 14th at 4pm*
+Implements Phase 2 test gap subphase T5 with 7 new tests covering math package 
+micro-gaps: Vec2._set() onChange behavior (fire once on change, skip when 
+unchanged), Color.fromHex() 4-char #RGBA format, SeededRandom.weighted() edge 
+case, and Matrix2D negative determinant handling in decompose()/getScale() plus 
+singular matrix inverse fallback. Coverage improved: vec2.ts 96% → 100%, 
+matrix2d.ts branches 90% → 100%, color.ts line 83-84 now covered. Only 
+seeded-random.ts line 93 remains uncovered (unreachable defensive fallback).
+
+---
+
 ## Add core edge case tests for game, node2d, and asset-loader (T4)
 *Saturday, February 14th at 4pm*
 Implements Phase 2 test gap subphase T4 with 15 new tests covering previously 

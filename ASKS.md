@@ -81,3 +81,7 @@
 [MILE] sat 2/14 4pm - Added GameLoop RAF tick tests for 100% game-loop coverage, completing Phase 2 test gap subphase T3
 
 [IMPL] sat 2/14 4pm - Implement Phase 2 test gap subphase T4: core edge cases for game.ts, node2d.ts, and asset-loader.ts
+
+[MILE] sat 2/14 4pm - Added core edge case tests for game.ts, node2d.ts, and asset-loader.ts, completing Phase 2 test gap subphase T4
+
+[IMPL] sat 2/14 4pm - Implement Phase 2 test gap subphase T5: math micro-gaps for Vec2, Color, SeededRandom, and Matrix2D

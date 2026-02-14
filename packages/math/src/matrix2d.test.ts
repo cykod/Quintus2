@@ -249,6 +249,30 @@ describe("Matrix2D", () => {
 		expect(m.isTranslationOnly()).toBe(true);
 	});
 
+	// === Negative determinant (reflection) ===
+	it("decompose with negative determinant (reflection)", () => {
+		// Negative x-scale creates a reflection with negative determinant
+		const m = Matrix2D.scale(-2, 3);
+		const d = m.decompose();
+		expect(d.scale.y).toBeCloseTo(-3); // det < 0 flips sy sign
+	});
+
+	it("getScale with negative determinant (reflection)", () => {
+		const m = Matrix2D.scale(-2, 3);
+		const s = m.getScale();
+		expect(s.x).toBeCloseTo(2); // magnitude
+		expect(s.y).toBeCloseTo(-3); // det < 0 flips sign
+	});
+
+	// === Zero determinant ===
+	it("inverse of singular (zero determinant) matrix returns identity", () => {
+		// A matrix with zero determinant (all zeros in one row)
+		const singular = new Matrix2D(0, 0, 0, 0, 5, 10);
+		expect(singular.determinant()).toBe(0);
+		const inv = singular.inverse();
+		expect(inv.equals(Matrix2D.IDENTITY)).toBe(true);
+	});
+
 	// === Utility ===
 	it("toArray returns 6 values", () => {
 		const m = new Matrix2D(1, 2, 3, 4, 5, 6);

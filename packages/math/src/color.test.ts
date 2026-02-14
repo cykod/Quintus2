@@ -66,6 +66,14 @@ describe("Color", () => {
 		expect(c.a).toBeCloseTo(128 / 255);
 	});
 
+	it("fromHex 4-char #RGBA", () => {
+		const c = Color.fromHex("#f008");
+		expect(c.r).toBeCloseTo(1);
+		expect(c.g).toBeCloseTo(0);
+		expect(c.b).toBeCloseTo(0);
+		expect(c.a).toBeCloseTo(0x88 / 255);
+	});
+
 	it("fromHex without #", () => {
 		const c = Color.fromHex("00ff00");
 		expect(c.g).toBeCloseTo(1);

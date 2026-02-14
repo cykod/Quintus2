@@ -318,6 +318,25 @@ describe("Vec2", () => {
 		expect(callCount).toBe(0);
 	});
 
+	// === _set() ===
+	it("_set() with change fires _onChange exactly once", () => {
+		const v = new Vec2(1, 2);
+		let callCount = 0;
+		v._onChange = () => callCount++;
+		v._set(3, 4);
+		expect(callCount).toBe(1);
+		expect(v.x).toBe(3);
+		expect(v.y).toBe(4);
+	});
+
+	it("_set() with no change does not fire _onChange", () => {
+		const v = new Vec2(1, 2);
+		let callCount = 0;
+		v._onChange = () => callCount++;
+		v._set(1, 2);
+		expect(callCount).toBe(0);
+	});
+
 	// === Static Factories ===
 	it("from", () => {
 		const v = Vec2.from({ x: 5, y: 6 });
