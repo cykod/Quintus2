@@ -1,3 +1,17 @@
+## Implement Phase 2 Subphase 3 physics infrastructure
+*Saturday, February 14th at 4pm*
+Implement the physics infrastructure layer: CollisionShape node for defining 
+collision geometry, CollisionObject abstract base class with auto-registration 
+and shape queries, PhysicsWorld orchestrator with castMotion(), testOverlap(), 
+and sensor overlap detection, PhysicsPlugin with WeakMap-based world storage 
+and postFixedUpdate hook, and contact point computation via support point 
+midpoint. Circular dependency between CollisionObject and PhysicsPlugin 
+resolved via a registration pattern. Includes 55 new tests covering all 
+modules. Updates collision-info.ts to use real CollisionObject/CollisionShape 
+types instead of Node2D aliases.
+
+---
+
 ## Dramatically increase SAT collision test coverage
 *Saturday, February 14th at 2pm*
 Add 57 new tests to SAT collision detection covering all previously untested 

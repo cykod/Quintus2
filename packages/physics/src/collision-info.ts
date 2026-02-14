@@ -1,18 +1,13 @@
-import type { Node2D } from "@quintus/core";
 import type { Vec2 } from "@quintus/math";
-
-/** The other object involved in a collision. Narrowed to specific physics nodes in later subphases. */
-export type CollisionObject = Node2D;
-
-/** The specific shape node that was hit. Narrowed to CollisionShape in later subphases. */
-export type CollisionShapeNode = Node2D;
+import type { CollisionObject } from "./collision-object.js";
+import type { CollisionShape } from "./collision-shape.js";
 
 export interface CollisionInfo {
 	/** The other object involved in the collision. */
 	readonly collider: CollisionObject;
 
 	/** The specific CollisionShape on the other object that was hit. */
-	readonly colliderShape: CollisionShapeNode;
+	readonly colliderShape: CollisionShape;
 
 	/** Collision normal pointing away from the collider (into the moving body). */
 	readonly normal: Vec2;

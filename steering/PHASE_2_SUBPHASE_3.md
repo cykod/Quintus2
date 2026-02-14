@@ -66,10 +66,18 @@ export class PhysicsWorld {
    * 1. Compute swept AABB (body AABB expanded along motion)
    * 2. Broad phase: query spatial hash with swept AABB
    * 3. Filter by collision groups
-   * 4. For each candidate: find time of impact via binary search + SAT
-   *    - Uses shape transforms (Matrix2D) from CollisionShape.getWorldTransform()
+   * 4. For each candidate, iterate all shape pairs:
+   *    - For each (bodyShape, bodyTransform) in body.getShapeTransforms():
+   *      For each (otherShape, otherTransform) in candidate.getShapeTransforms():
+   *        Find TOI via sweptAABB (rect-rect fast path) or findTOI (binary search + SAT)
+   *        Track minimum TOI across all pairs, along with the hit shape pair
    *    - During sweep, only translation interpolates; rotation/scale are constant
-   * 5. Return earliest collision
+   * 5. From the earliest hit: compute travel = motion * toi, remainder = motion - travel
+   * 6. Normal convention: CollisionInfo.normal points away from the collider
+   *    (into the mover). Use SAT flip() if the raw normal points the wrong way.
+   * 7. Contact point: call computeContactPoint() with the hit shape pair
+   *    (see contact-point.ts — support point midpoint, NOT computed inside SAT)
+   * 8. Return CollisionInfo with { collider, colliderShape, normal, depth, point, travel, remainder }
    */
   castMotion(
     body: CollisionObject,
@@ -110,12 +118,63 @@ export class PhysicsWorld {
 **Design decisions:**
 
 - **Single responsibility.** PhysicsWorld orchestrates — it delegates broad phase to SpatialHash and narrow phase to SAT functions. It doesn't implement collision algorithms directly.
-- **`castMotion` is the hot path.** Every `Actor.move()` call invokes this 1-4 times (once per slide iteration). It must be fast. Uses analytical swept AABB for rect-vs-rect, binary search TOI for other pairs (see Subphase 2).
+- **`castMotion` is the hot path.** Every `Actor.move()` call invokes this 1-4 times (once per slide iteration). It must be fast. Uses analytical swept AABB for rect-vs-rect, binary search TOI for other pairs (see Subphase 2). Multi-shape bodies require iterating all shape pairs (N mover × M obstacle); recommend 1-2 shapes per body in practice.
+- **Normal convention.** `CollisionInfo.normal` always points away from the collider (into the mover). SAT's `flip()` is used when the raw normal points the wrong way. This is consistent across all collision query methods.
+- **Contact point computation.** `castMotion` calls `computeContactPoint()` (from `contact-point.ts`) when building `CollisionInfo`. This uses the support point midpoint approach — a standalone function, not embedded in SAT. See "Contact Point Computation" section below.
 - **Sensor overlap tracking uses diffing.** `Map<Sensor, Set<CollisionObject>>` stores current overlaps. Each `stepSensors()` call computes new overlaps, diffs against the previous set, and fires entered/exited signals. Guarantees:
   - No duplicate entered events
   - Exited fires even if the body was destroyed (removed from set during unregister)
   - Deterministic ordering (bodies processed in insertion order)
 - **`updatePosition` is called by `Actor.move()` internally.** After the slide loop, the actor re-hashes itself. Users never call this.
+
+### 5.1b Contact Point Computation
+
+**File:** `packages/physics/src/contact-point.ts`
+
+A standalone function for computing an approximate world-space contact point from two colliding shapes. Called by `PhysicsWorld.castMotion()` when building `CollisionInfo` — not embedded in SAT to avoid wasted work on sensor overlap tests.
+
+**Algorithm: Support Point Midpoint**
+
+For each shape, find its "support point" — the furthest point along the collision normal:
+
+| Shape   | Support Point Along Direction `d`                          |
+|---------|------------------------------------------------------------|
+| Circle  | `center + d * radius`                                      |
+| Rect    | Corner: `(sign(d.x) * hw, sign(d.y) * hh)` transformed   |
+| Capsule | Endpoint closest to `d` + `d * radius`                     |
+| Polygon | Vertex with `max dot(vertex, d)`                           |
+
+Then:
+```
+supportA = shapeSupport(shapeA, transformA, +normal)   // deepest point of A into B
+supportB = shapeSupport(shapeB, transformB, -normal)   // deepest point of B into A
+contactPoint = midpoint(supportA, supportB)
+```
+
+```typescript
+import type { Shape2D } from "./shapes.js";
+import type { Matrix2D, Vec2 } from "@quintus/math";
+
+/** Find the support point (furthest point along a direction) for a shape in world space. */
+export function shapeSupport(shape: Shape2D, transform: Matrix2D, direction: Vec2): Vec2;
+
+/**
+ * Compute an approximate contact point between two colliding shapes.
+ * Accurate for circles and vertex-face contacts (the common platformer cases).
+ * Approximate for edge-edge (off by at most half the overlap width — fine for effects/debug).
+ */
+export function computeContactPoint(
+  shapeA: Shape2D, transformA: Matrix2D,
+  shapeB: Shape2D, transformB: Matrix2D,
+  normal: Vec2,
+): Vec2;
+```
+
+**Why this approach:**
+- Zero per-pair dispatch — `shapeSupport()` is generic over all `Shape2D` variants
+- Exact for circle-vs-anything and vertex-face contacts (most common in platformers)
+- Zero allocations possible (compute in-place with scalars)
+- `shapeSupport()` is the standard building block for upgrading to GJK/clipping later if needed
 
 ### 5.2 PhysicsPlugin
 
@@ -177,12 +236,13 @@ export function PhysicsPlugin(config: PhysicsPluginConfig = {}): Plugin {
 For the simplest getting-started experience, if a `CollisionObject` enters the tree and no PhysicsPlugin is installed, one is auto-installed with defaults:
 
 ```typescript
-// In CollisionObject.onEnterTree():
-override onEnterTree(): void {
-  super.onEnterTree();
+// In CollisionObject.onReady():
+override onReady(): void {
+  super.onReady();
   const game = this.game;
-  if (game && !getPhysicsWorld(game)) {
+  if (game && !game.hasPlugin("physics")) {
     // Auto-install with defaults
+    console.warn("PhysicsPlugin auto-installed with defaults. For custom gravity/groups, call game.use(PhysicsPlugin({...})) explicitly.");
     game.use(PhysicsPlugin());
   }
   const world = this._getWorld();
@@ -269,23 +329,24 @@ export class CollisionShape extends Node2D {
 
 ```typescript
 class Player extends Actor {
+  private standingShape!: CollisionShape;
+  private crouchingShape!: CollisionShape;
+
   onReady() {
     // Standing collision shape
-    const standing = this.addChild(CollisionShape);
-    standing.shape = Shape.rect(14, 24);
-    standing.name = "standing";
+    this.standingShape = this.addChild(CollisionShape);
+    this.standingShape.shape = Shape.rect(14, 24);
 
     // Crouching collision shape (disabled by default)
-    const crouching = this.addChild(CollisionShape);
-    crouching.shape = Shape.rect(14, 14);
-    crouching.position = new Vec2(0, 5);
-    crouching.disabled = true;
-    crouching.name = "crouching";
+    this.crouchingShape = this.addChild(CollisionShape);
+    this.crouchingShape.shape = Shape.rect(14, 14);
+    this.crouchingShape.position = new Vec2(0, 5);
+    this.crouchingShape.disabled = true;
   }
 
   crouch() {
-    this.find("standing")!.disabled = true;
-    this.find("crouching")!.disabled = false;
+    this.standingShape.disabled = true;
+    this.crouchingShape.disabled = false;
   }
 }
 ```
@@ -317,7 +378,7 @@ export abstract class CollisionObject extends Node2D {
 
   /**
    * Whether this body is currently registered in the PhysicsWorld.
-   * Set internally by onEnterTree/onExitTree.
+   * Set internally by onReady/onExitTree.
    */
   private _registered = false;
 
@@ -350,9 +411,14 @@ export abstract class CollisionObject extends Node2D {
 
   // === PhysicsWorld Registration ===
 
-  /** @internal */
-  override onEnterTree(): void {
-    super.onEnterTree();
+  /** @internal — uses onReady (not onEnterTree) so CollisionShape children are available. */
+  override onReady(): void {
+    super.onReady();
+    const game = this.game;
+    if (game && !game.hasPlugin("physics")) {
+      console.warn("PhysicsPlugin auto-installed with defaults. For custom gravity/groups, call game.use(PhysicsPlugin({...})) explicitly.");
+      game.use(PhysicsPlugin());
+    }
     const world = this._getWorld();
     if (world) {
       world.register(this);
@@ -381,7 +447,7 @@ export abstract class CollisionObject extends Node2D {
 **Design decisions:**
 - **Abstract class, exported for `instanceof` checks.** Users extend `Actor`/`StaticCollider`/`Sensor`, never `CollisionObject` directly.
 - **`bodyType` discriminant.** PhysicsWorld uses this to determine collision response (separate+slide vs. signal-only).
-- **Auto-registration.** Bodies register on tree enter, unregister on tree exit. No manual registration.
+- **Auto-registration in `onReady()`.** Bodies register when ready (not on tree enter), ensuring CollisionShape children are available. Unregister on tree exit. No manual registration.
 - **Collision group validated on registration.** `PhysicsWorld.register()` validates against compiled groups.
 - **`getShapes()` not cached.** Walks immediate children. Fast enough for 1-3 shapes.
 
@@ -396,6 +462,14 @@ export abstract class CollisionObject extends Node2D {
 - `getWorldAABB()` returns null when shape is null
 - Multiple shapes produce merged AABB on parent body
 
+### contact-point.test.ts
+- `shapeSupport` returns correct point for rect along +x, +y, diagonal
+- `shapeSupport` returns correct point for circle along any direction
+- `shapeSupport` respects transform (offset, rotation)
+- `computeContactPoint` circle-vs-rect gives exact contact
+- `computeContactPoint` rect-vertex-vs-rect-face gives exact contact
+- `computeContactPoint` edge-edge gives reasonable midpoint approximation
+
 ### physics-world.test.ts
 - `castMotion` with no obstacles → null
 - `castMotion` with obstacle → correct TOI, travel, normal
@@ -408,12 +482,14 @@ export abstract class CollisionObject extends Node2D {
 
 ## Completion Checklist
 
-- [ ] `PhysicsWorld` registers/unregisters bodies, queries spatial hash
-- [ ] `castMotion` finds first collision along motion vector
-- [ ] `PhysicsPlugin` installs correctly, hooks into `postFixedUpdate`
-- [ ] Auto-install works when no plugin explicitly configured
-- [ ] `getPhysicsWorld` WeakMap pattern works
-- [ ] `CollisionShape` computes correct world AABB with offset
-- [ ] `CollisionObject` auto-registers on tree enter/exit
-- [ ] Collision group validation throws on invalid names
-- [ ] All tests pass, `pnpm build` succeeds
+- [x] `PhysicsWorld` registers/unregisters bodies, queries spatial hash
+- [x] `castMotion` finds first collision along motion vector
+- [x] `PhysicsPlugin` installs correctly, hooks into `postFixedUpdate`
+- [x] Auto-install works when no plugin explicitly configured
+- [x] `getPhysicsWorld` WeakMap pattern works
+- [x] `CollisionShape` computes correct world AABB with offset
+- [x] `CollisionObject` auto-registers on tree enter/exit
+- [x] Collision group validation throws on invalid names
+- [x] `computeContactPoint` + `shapeSupport` implemented and tested
+- [x] Replace `CollisionObject`/`CollisionShapeNode` type aliases in `index.ts` with real class exports; update `collision-info.ts` imports and any Subphase 2 tests that pass plain `Node2D` as `CollisionObject`
+- [x] All tests pass, `pnpm build` succeeds

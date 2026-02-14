@@ -55,3 +55,9 @@
 [SATX] sat 2/14 2pm - Review SAT collision detection test cases for exhaustiveness across all supported collision shapes with and without transforms
 
 [DVLP] sat 2/14 2pm - Devil's advocate review of Phase 2 Subphase 3 physics infrastructure design document for registration timing, SAT gaps, and multi-shape collision issues
+
+[SATX] sat 2/14 2pm - Dramatically increase SAT collision test coverage with 57 new tests across all shape pairs, transforms, and swept collision and commit milestone
+
+[PH2C] sat 2/14 2pm - Implement Phase 2 Subphase 3: CollisionShape, CollisionObject, PhysicsWorld, PhysicsPlugin, and contact point computation with tests
+
+[TCOV] sat 2/14 4pm - Review test coverage across the entire engine and identify gaps in testing
