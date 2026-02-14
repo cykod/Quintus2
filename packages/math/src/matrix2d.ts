@@ -162,6 +162,31 @@ export class Matrix2D {
 		);
 	}
 
+	// === Basis Vectors ===
+
+	/** Get the X basis vector (first column: a, b). Used by SAT for separation axes. */
+	basisX(): Vec2 {
+		return new Vec2(this.a, this.b);
+	}
+
+	/** Get the Y basis vector (second column: c, d). Used by SAT for separation axes. */
+	basisY(): Vec2 {
+		return new Vec2(this.c, this.d);
+	}
+
+	/**
+	 * True if this transform has no rotation or scale (just translation).
+	 * Enables fast-path collision for axis-aligned shapes.
+	 */
+	isTranslationOnly(): boolean {
+		return (
+			Math.abs(this.a - 1) <= EPSILON &&
+			Math.abs(this.b) <= EPSILON &&
+			Math.abs(this.c) <= EPSILON &&
+			Math.abs(this.d - 1) <= EPSILON
+		);
+	}
+
 	// === Utility ===
 	toArray(): [number, number, number, number, number, number] {
 		return [this.a, this.b, this.c, this.d, this.e, this.f];

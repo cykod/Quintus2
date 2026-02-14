@@ -50,21 +50,23 @@ describe("Node", () => {
 		expect(child.parent).toBe(scene);
 	});
 
-	it("addChild(Class, props) constructs and applies whitelisted properties", () => {
+	it("addChild(Class) constructs and adds to tree", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
-		const child = scene.addChild(Node, { name: "myNode", pauseMode: "independent" });
-		expect(child.name).toBe("myNode");
-		expect(child.pauseMode).toBe("independent");
+		const child = scene.addChild(Node);
+		expect(child).toBeInstanceOf(Node);
+		expect(child.parent).toBe(scene);
+		expect(child.isReady).toBe(true);
 	});
 
-	it("addChild(Class, props) does NOT assign internal state", () => {
+	it("properties are set via direct assignment after addChild", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
-		// Even with bad props, internal state should be protected
-		const child = scene.addChild(Node, { name: "test" });
-		expect(child.parent).toBe(scene);
-		expect(child.isReady).toBe(true); // Ready was called by tree entry
+		const child = scene.addChild(Node);
+		child.name = "myNode";
+		child.pauseMode = "independent";
+		expect(child.name).toBe("myNode");
+		expect(child.pauseMode).toBe("independent");
 	});
 
 	it("removeChild removes from children and clears parent", () => {
@@ -410,6 +412,32 @@ describe("Node", () => {
 		node.destroy();
 		node._processDestroy();
 		expect(scene.children).not.toContain(node);
+	});
+
+	it("destroy() queues for deferred processing via game.step()", () => {
+		const game = createTestGame();
+		game.scene("test", (scene) => {
+			const node = new TestNode();
+			scene.addChild(node);
+			node.destroy();
+			// Node is still in tree before cleanup
+			expect(scene.children).toContain(node);
+		});
+		game.start("test");
+		// After step, the destroy queue should be processed
+		game.step();
+		const scene = game.currentScene;
+		expect(scene).not.toBeNull();
+		// The node destroyed in setup was already processed during the first step
+		// Add a fresh node, destroy it, step, and verify removal
+		const node = new TestNode();
+		scene?.addChild(node);
+		expect(scene?.children).toContain(node);
+		node.destroy();
+		expect(scene?.children).toContain(node); // Still in tree
+		game.step();
+		expect(scene?.children).not.toContain(node); // Removed after step
+		expect(node.destroyedCalled).toBe(true);
 	});
 
 	// === Unique ID ===

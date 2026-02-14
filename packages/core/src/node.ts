@@ -87,13 +87,10 @@ export class Node {
 
 	// === Tree Manipulation ===
 	addChild(node: Node): this;
-	addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: NodeProps): T;
-	addChild(nodeOrClass: Node | NodeConstructor<Node>, props?: NodeProps): Node | this {
+	addChild<T extends Node>(NodeClass: NodeConstructor<T>): T;
+	addChild(nodeOrClass: Node | NodeConstructor<Node>): Node | this {
 		if (typeof nodeOrClass === "function") {
 			const node = new nodeOrClass();
-			if (props) {
-				applyNodeProps(node, props);
-			}
 			this._addChildNode(node);
 			return node;
 		}
@@ -278,6 +275,7 @@ export class Node {
 		if (this._isDestroyed) return;
 		this._isDestroyed = true;
 		this._pendingDestroy = true;
+		this.scene?._queueDestroy(this);
 	}
 
 	/** @internal Process pending destruction. Called by game loop cleanup. */
@@ -329,10 +327,4 @@ export class Node {
 		if (this._parent) return this._parent._resolvePauseMode();
 		return "inherit";
 	}
-}
-
-/** @internal Apply typed props to a node. Only assigns known, safe properties. */
-export function applyNodeProps(node: Node, props: NodeProps): void {
-	if (props.name !== undefined) node.name = props.name;
-	if (props.pauseMode !== undefined) node.pauseMode = props.pauseMode;
 }

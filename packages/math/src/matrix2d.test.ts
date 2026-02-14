@@ -182,6 +182,73 @@ describe("Matrix2D", () => {
 		expect(a.approxEquals(b)).toBe(true);
 	});
 
+	// === Basis Vectors ===
+	it("basisX returns first column (a, b)", () => {
+		const m = Matrix2D.compose(new Vec2(10, 20), Math.PI / 4, new Vec2(2, 3));
+		const bx = m.basisX();
+		expect(bx.x).toBeCloseTo(m.a);
+		expect(bx.y).toBeCloseTo(m.b);
+	});
+
+	it("basisY returns second column (c, d)", () => {
+		const m = Matrix2D.compose(new Vec2(10, 20), Math.PI / 4, new Vec2(2, 3));
+		const by = m.basisY();
+		expect(by.x).toBeCloseTo(m.c);
+		expect(by.y).toBeCloseTo(m.d);
+	});
+
+	it("identity basisX is (1, 0)", () => {
+		const bx = Matrix2D.IDENTITY.basisX();
+		expect(bx.x).toBe(1);
+		expect(bx.y).toBe(0);
+	});
+
+	it("identity basisY is (0, 1)", () => {
+		const by = Matrix2D.IDENTITY.basisY();
+		expect(by.x).toBe(0);
+		expect(by.y).toBe(1);
+	});
+
+	it("rotated basisX/basisY are perpendicular", () => {
+		const m = Matrix2D.rotate(Math.PI / 3);
+		const bx = m.basisX();
+		const by = m.basisY();
+		expect(bx.dot(by)).toBeCloseTo(0);
+	});
+
+	// === isTranslationOnly ===
+	it("isTranslationOnly true for identity", () => {
+		expect(Matrix2D.IDENTITY.isTranslationOnly()).toBe(true);
+	});
+
+	it("isTranslationOnly true for pure translation", () => {
+		expect(Matrix2D.translate(50, 100).isTranslationOnly()).toBe(true);
+	});
+
+	it("isTranslationOnly false for rotation", () => {
+		expect(Matrix2D.rotate(0.1).isTranslationOnly()).toBe(false);
+	});
+
+	it("isTranslationOnly false for scale", () => {
+		expect(Matrix2D.scale(2, 2).isTranslationOnly()).toBe(false);
+	});
+
+	it("isTranslationOnly false for composed TRS with rotation", () => {
+		const m = Matrix2D.compose(new Vec2(10, 20), Math.PI / 4, Vec2.ONE);
+		expect(m.isTranslationOnly()).toBe(false);
+	});
+
+	it("isTranslationOnly true for compose with zero rotation and unit scale", () => {
+		const m = Matrix2D.compose(new Vec2(10, 20), 0, Vec2.ONE);
+		expect(m.isTranslationOnly()).toBe(true);
+	});
+
+	it("isTranslationOnly true for near-identity after multiply chain", () => {
+		// Rotate +45° then -45° — should be near-identity despite floating-point drift
+		const m = Matrix2D.rotate(Math.PI / 4).multiply(Matrix2D.rotate(-Math.PI / 4));
+		expect(m.isTranslationOnly()).toBe(true);
+	});
+
 	// === Utility ===
 	it("toArray returns 6 values", () => {
 		const m = new Matrix2D(1, 2, 3, 4, 5, 6);

@@ -11,10 +11,12 @@ function createTestGame(): Game {
 }
 
 describe("Scene", () => {
-	it("add(NodeClass, props) creates and adds node with typed props", () => {
+	it("add(NodeClass) creates and adds node to tree", () => {
 		const game = createTestGame();
 		const scene = new Scene("test", game);
-		const node = scene.add(Node2D, { position: new Vec2(10, 20), name: "myNode" });
+		const node = scene.add(Node2D);
+		node.position = new Vec2(10, 20);
+		node.name = "myNode";
 		expect(node.position.equals(new Vec2(10, 20))).toBe(true);
 		expect(node.name).toBe("myNode");
 		expect(scene.children).toContain(node);

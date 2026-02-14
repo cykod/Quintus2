@@ -1,3 +1,17 @@
+## Apply devil's advocate fixes to core, math, and Phase 2 design
+*Friday, February 13th at 9pm*
+Fix 14 issues from devil's advocate review of Phase 2 design. In code: fix 
+Node.destroy() to queue for deferred processing via scene._queueDestroy(), 
+remove the type-unsafe props parameter from addChild() and Scene.add() (delete 
+applyNodeProps/applyNode2DProps), add postFixedUpdate signal to Game that fires 
+after each fixed step, and fix Matrix2D.isTranslationOnly() to use 
+epsilon-based comparison instead of exact equality. Updates tests, examples, 
+CLAUDE.md, and Phase 2 steering docs (shapeAABB rewritten with zero-allocation 
+inline math, SAT helper functions for pool temporaries, collision direction 
+documented as unidirectional).
+
+---
+
 ## Add Vec2._set() to reduce redundant dirty notifications
 *Friday, February 13th at 4pm*
 Add a bulk _set(x, y) method to Vec2 that writes both components and fires the 

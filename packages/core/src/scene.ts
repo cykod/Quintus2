@@ -1,8 +1,6 @@
 import type { Game } from "./game.js";
-import type { NodeConstructor, NodeProps } from "./node.js";
+import type { NodeConstructor } from "./node.js";
 import { Node } from "./node.js";
-import type { Node2DProps } from "./node2d.js";
-import { applyNode2DProps } from "./node2d.js";
 import { type Signal, signal } from "./signal.js";
 
 /** Function that builds a scene's node tree. */
@@ -54,13 +52,10 @@ export class Scene extends Node {
 
 	// === Entity Spawning ===
 	add(node: Node): this;
-	add<T extends Node>(NodeClass: NodeConstructor<T>, props?: NodeProps & Node2DProps): T;
-	add(nodeOrClass: Node | NodeConstructor<Node>, props?: NodeProps & Node2DProps): Node | this {
+	add<T extends Node>(NodeClass: NodeConstructor<T>): T;
+	add(nodeOrClass: Node | NodeConstructor<Node>): Node | this {
 		if (typeof nodeOrClass === "function") {
 			const node = new nodeOrClass();
-			if (props) {
-				applyNode2DProps(node, props);
-			}
 			this.addChild(node);
 			return node;
 		}

@@ -144,8 +144,11 @@ class Coin extends Sensor {
 // Class-based scenes
 class Level1 extends Scene {
   onReady() {
-    this.add(TileMap, { asset: 'level1.json' });
-    this.add(Player, { position: new Vec2(100, 400) });
+    const map = this.add(TileMap);
+    map.asset = 'level1.json';
+
+    const player = this.add(Player);
+    player.position = new Vec2(100, 400);
   }
 }
 

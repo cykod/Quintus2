@@ -61,6 +61,7 @@ export class Game {
 	readonly stopped: Signal<void> = signal<void>();
 	readonly sceneSwitched: Signal<{ from: string | null; to: string }> = signal();
 	readonly onError: Signal<{ node: Node; lifecycle: string; error: unknown }> = signal();
+	readonly postFixedUpdate: Signal<number> = signal<number>();
 
 	constructor(options: GameOptions) {
 		this.width = options.width;
@@ -243,6 +244,7 @@ export class Game {
 	// === Internal: Frame Callbacks ===
 	private _fixedUpdate(dt: number): void {
 		this._currentScene?._walkFixedUpdate(dt);
+		this.postFixedUpdate.emit(dt);
 	}
 
 	private _update(dt: number): void {

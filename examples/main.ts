@@ -72,16 +72,16 @@ const game = new Game({
 game.scene("main", (scene) => {
 	// Spawn multiple balls with random velocities
 	for (let i = 0; i < 20; i++) {
-		const ball = scene.add(Ball, {
-			position: new Vec2(game.random.float(50, 750), game.random.float(50, 550)),
-		});
+		const ball = scene.add(Ball);
+		ball.position = new Vec2(game.random.float(50, 750), game.random.float(50, 550));
 		ball.velocity = game.random.direction().scale(game.random.float(100, 300));
 		ball.radius = game.random.float(5, 15);
 		ball.color = game.random.color();
 	}
 
 	// FPS counter in corner
-	scene.add(FPSDisplay, { position: new Vec2(10, 10) });
+	const fps = scene.add(FPSDisplay);
+	fps.position = new Vec2(10, 10);
 });
 
 // Start

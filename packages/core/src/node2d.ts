@@ -1,9 +1,8 @@
 import { Matrix2D, Vec2 } from "@quintus/math";
 import type { DrawContext } from "./draw-context.js";
-import type { NodeProps } from "./node.js";
-import { applyNodeProps, Node } from "./node.js";
+import { Node } from "./node.js";
 
-export interface Node2DProps extends NodeProps {
+export interface Node2DProps {
 	position?: Vec2;
 	rotation?: number;
 	scale?: Vec2;
@@ -142,17 +141,5 @@ export class Node2D extends Node {
 				child._markGlobalTransformDirty();
 			}
 		}
-	}
-}
-
-/** @internal Apply typed props to a Node2D. */
-export function applyNode2DProps(node: Node, props: Node2DProps): void {
-	applyNodeProps(node, props);
-	if (node instanceof Node2D) {
-		if (props.position !== undefined) node.position = props.position;
-		if (props.rotation !== undefined) node.rotation = props.rotation;
-		if (props.scale !== undefined) node.scale = props.scale;
-		if (props.zIndex !== undefined) node.zIndex = props.zIndex;
-		if (props.visible !== undefined) node.visible = props.visible;
 	}
 }
