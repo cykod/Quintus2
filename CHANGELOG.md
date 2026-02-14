@@ -1,3 +1,15 @@
+## Add GameLoop RAF tick tests for 100% game-loop coverage (T3)
+*Saturday, February 14th at 4pm*
+Added 12 tests covering the GameLoop's RAF-based tick(), start(), and stop() 
+methods, which were previously untested at 67% coverage. Tests mock 
+requestAnimationFrame and performance.now to precisely control timestamps, 
+verifying correct fixedUpdate call counts, accumulator clamping for 
+spiral-of-death prevention, fixed-vs-variable update separation, RAF 
+scheduling, and mid-frame stop behavior. This completes Phase 2 test gap 
+subphase T3, bringing game-loop.ts from 67% to 100% line coverage.
+
+---
+
 ## Add Canvas2DDrawContext and render pipeline tests (T2)
 *Saturday, February 14th at 4pm*
 Add 28 new tests covering the Canvas2DDrawContext drawing primitives (line, 
