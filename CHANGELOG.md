@@ -1,3 +1,15 @@
+## Implement Phase 2 Subphase 2 collision detection
+*Saturday, February 14th at 2pm*
+Add SpatialHash generic broad-phase with Cantor pairing and smart cell updates, 
+SAT narrow-phase with fast paths for axis-aligned rect-vs-rect, 
+circle-vs-circle, and rect-vs-circle, plus general SAT supporting rotated 
+shapes, capsules, and convex polygons. Includes swept collision via analytical 
+sweptAABB for rects and binary-search findTOI for arbitrary shape pairs. Normal 
+convention is consistently A-toward-B across all code paths. 68 new tests (16 
+spatial hash, 52 SAT/swept) all passing alongside existing 380 tests.
+
+---
+
 ## Implement Phase 2 Subphase 1 foundation types for physics
 *Friday, February 13th at 10pm*
 Add Shape2D types (rect, circle, capsule, polygon) with Shape factory and 

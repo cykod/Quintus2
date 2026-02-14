@@ -43,3 +43,9 @@
 [DVAD] fri 2/13 9pm - Implement devil's advocate fixes to Phase 2 design and core code: destroy queue bug, remove props from addChild, postFixedUpdate signal, epsilon-based isTranslationOnly, and design doc updates
 
 [PH2A] fri 2/13 9pm - Implement Phase 2 Subphase 1: postFixedUpdate signal, remove props from addChild, Shape2D types, CollisionInfo, and CollisionGroups
+
+[PH2A] fri 2/13 10pm - Implement Phase 2 Subphase 1 foundation types (shapes, collision-info, collision-groups) and commit milestone
+
+[DVLP] fri 2/13 10pm - Devil's advocate review of Phase 2 Subphase 2 collision detection design document for correctness, performance, and integration issues
+
+[COLL] sat 2/14 9am - Implement Phase 2 Subphase 2: SpatialHash broad phase, SAT narrow phase, and swept collision detection with tests
