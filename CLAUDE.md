@@ -162,7 +162,7 @@ game.start(Level1);
 | 1 | Core engine (Node, Node2D, math, signals, game loop) | Done |
 | 2 | Physics (Actor, StaticCollider, Sensor, SAT, move) | Done |
 | 3 | Sprites & Input (AnimatedSprite, action map, gamepad) | Done |
-| 4 | Tilemap & Camera (Tiled import, follow, shake, zoom) | — |
+| 4 | Tilemap & Camera (Tiled import, follow, shake, zoom) | Done |
 | 5 | Audio, Tween, UI (sounds, animations, HUD widgets) | — |
 | 6 | Meta-package & first complete platformer game | — |
 | 7 | Deterministic testing (headless, input scripts, snapshots) | — |

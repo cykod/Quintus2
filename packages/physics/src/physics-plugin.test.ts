@@ -1,7 +1,7 @@
 import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
-import { CollisionObject, type BodyType } from "./collision-object.js";
+import { type BodyType, CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";
 import { getPhysicsWorld, PhysicsPlugin } from "./physics-plugin.js";
 import { Shape } from "./shapes.js";

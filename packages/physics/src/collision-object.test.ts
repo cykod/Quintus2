@@ -1,11 +1,7 @@
 import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
-import {
-	type BodyType,
-	CollisionObject,
-	_registerPhysicsAccessors,
-} from "./collision-object.js";
+import { _registerPhysicsAccessors, type BodyType, CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";
 import { getPhysicsWorld, PhysicsPlugin } from "./physics-plugin.js";
 import { Shape } from "./shapes.js";
@@ -271,9 +267,7 @@ describe("CollisionObject", () => {
 			// PhysicsPlugin should have been auto-installed
 			expect(game.hasPlugin("physics")).toBe(true);
 			expect(getPhysicsWorld(game)).not.toBeNull();
-			expect(warnSpy).toHaveBeenCalledWith(
-				expect.stringContaining("PhysicsPlugin auto-installed"),
-			);
+			expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("PhysicsPlugin auto-installed"));
 
 			warnSpy.mockRestore();
 		});

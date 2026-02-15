@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quintus 2.0 — Tilemap + Camera Demo</title>
+  <style>
+    body { margin: 0; background: #1a1a2e; color: #e0e0e0; font-family: system-ui; }
+    canvas { display: block; margin: 2rem auto; border: 1px solid #333; image-rendering: pixelated; }
+    h1 { text-align: center; margin-top: 2rem; }
+    p { text-align: center; color: #888; }
+    a { color: #4fc3f7; }
+    #score { text-align: center; font-size: 1.2em; color: #ffd54f; }
+  </style>
+</head>
+<body>
+  <h1>Quintus 2.0 — Tilemap + Camera Demo</h1>
+  <p>Arrow keys to move, Up/Space to jump. Collect coins!</p>
+  <p id="score">Coins: 0 / 5</p>
+  <canvas id="game" width="320" height="240"></canvas>
+  <p>
+    <a href="/platformer-demo.html">&larr; Platformer Demo</a> |
+    <a href="/">Bouncing Balls</a>
+  </p>
+  <script type="module" src="./tilemap-demo.ts"></script>
+</body>
+</html>

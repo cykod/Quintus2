@@ -243,6 +243,11 @@ export class Game {
 		return this._plugins.has(name);
 	}
 
+	/** @internal Mark the render list as dirty (called by Node on tree changes). */
+	_markRenderDirty(): void {
+		this.renderer?.markRenderDirty();
+	}
+
 	/** @internal Used by renderer plugins (e.g. ThreePlugin) to replace the active renderer. */
 	_setRenderer(renderer: Renderer | null): void {
 		this.renderer?.dispose?.();

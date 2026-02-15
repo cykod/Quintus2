@@ -1,10 +1,5 @@
-import { EPSILON, Matrix2D, Vec2, clamp } from "@quintus/math";
-import type {
-	CapsuleShape,
-	CircleShape,
-	RectShape,
-	Shape2D,
-} from "./shapes.js";
+import { clamp, EPSILON, Matrix2D, Vec2 } from "@quintus/math";
+import type { CapsuleShape, CircleShape, RectShape, Shape2D } from "./shapes.js";
 
 /** Point-like type for intermediate calculations. */
 type XY = { x: number; y: number };
@@ -37,8 +32,7 @@ export function testOverlap(
 ): SATResult | null {
 	const a = shapeA.type;
 	const b = shapeB.type;
-	const bothAxisAligned =
-		transformA.isTranslationOnly() && transformB.isTranslationOnly();
+	const bothAxisAligned = transformA.isTranslationOnly() && transformB.isTranslationOnly();
 
 	// Fast path: axis-aligned rect vs rect (most common in platformers)
 	if (a === "rect" && b === "rect" && bothAxisAligned) {
@@ -54,22 +48,13 @@ export function testOverlap(
 
 	// Circle vs circle: rotation-invariant, only need centers + scaled radii
 	if (a === "circle" && b === "circle") {
-		return circleVsCircle(
-			shapeA as CircleShape,
-			transformA,
-			shapeB as CircleShape,
-			transformB,
-		);
+		return circleVsCircle(shapeA as CircleShape, transformA, shapeB as CircleShape, transformB);
 	}
 
 	// Fast path: axis-aligned rect vs circle
 	if (a === "rect" && b === "circle" && transformA.isTranslationOnly()) {
-		const sxB = Math.sqrt(
-			transformB.a * transformB.a + transformB.b * transformB.b,
-		);
-		const syB = Math.sqrt(
-			transformB.c * transformB.c + transformB.d * transformB.d,
-		);
+		const sxB = Math.sqrt(transformB.a * transformB.a + transformB.b * transformB.b);
+		const syB = Math.sqrt(transformB.c * transformB.c + transformB.d * transformB.d);
 		const radiusB = Math.max(sxB, syB) * (shapeB as CircleShape).radius;
 		return rectVsCircle(
 			shapeA as RectShape,
@@ -81,12 +66,8 @@ export function testOverlap(
 		);
 	}
 	if (a === "circle" && b === "rect" && transformB.isTranslationOnly()) {
-		const sxA = Math.sqrt(
-			transformA.a * transformA.a + transformA.b * transformA.b,
-		);
-		const syA = Math.sqrt(
-			transformA.c * transformA.c + transformA.d * transformA.d,
-		);
+		const sxA = Math.sqrt(transformA.a * transformA.a + transformA.b * transformA.b);
+		const syA = Math.sqrt(transformA.c * transformA.c + transformA.d * transformA.d);
 		const radiusA = Math.max(sxA, syA) * (shapeA as CircleShape).radius;
 		return flip(
 			rectVsCircle(
@@ -147,18 +128,10 @@ function circleVsCircle(
 	const ay = transformA.f;
 	const bx = transformB.e;
 	const by = transformB.f;
-	const sxA = Math.sqrt(
-		transformA.a * transformA.a + transformA.b * transformA.b,
-	);
-	const syA = Math.sqrt(
-		transformA.c * transformA.c + transformA.d * transformA.d,
-	);
-	const sxB = Math.sqrt(
-		transformB.a * transformB.a + transformB.b * transformB.b,
-	);
-	const syB = Math.sqrt(
-		transformB.c * transformB.c + transformB.d * transformB.d,
-	);
+	const sxA = Math.sqrt(transformA.a * transformA.a + transformA.b * transformA.b);
+	const syA = Math.sqrt(transformA.c * transformA.c + transformA.d * transformA.d);
+	const sxB = Math.sqrt(transformB.a * transformB.a + transformB.b * transformB.b);
+	const syB = Math.sqrt(transformB.c * transformB.c + transformB.d * transformB.d);
 	const radiusA = Math.max(sxA, syA) * a.radius;
 	const radiusB = Math.max(sxB, syB) * b.radius;
 
@@ -236,16 +209,9 @@ function rectVsCircle(
 // ── General SAT ──────────────────────────────────────────────────
 
 /** Compute effective radius for circle/capsule under a transform. */
-function getEffectiveRadius(
-	shape: CircleShape | CapsuleShape,
-	transform: Matrix2D,
-): number {
-	const sx = Math.sqrt(
-		transform.a * transform.a + transform.b * transform.b,
-	);
-	const sy = Math.sqrt(
-		transform.c * transform.c + transform.d * transform.d,
-	);
+function getEffectiveRadius(shape: CircleShape | CapsuleShape, transform: Matrix2D): number {
+	const sx = Math.sqrt(transform.a * transform.a + transform.b * transform.b);
+	const sy = Math.sqrt(transform.c * transform.c + transform.d * transform.d);
 	return Math.max(sx, sy) * shape.radius;
 }
 
@@ -296,11 +262,7 @@ function addEdgeNormals(verts: XY[], axes: XY[]): void {
 }
 
 /** Add axes from circle center to each vertex of the other shape. */
-function addCircleAxes(
-	transform: Matrix2D,
-	otherVerts: XY[],
-	axes: XY[],
-): void {
+function addCircleAxes(transform: Matrix2D, otherVerts: XY[], axes: XY[]): void {
 	const cx = transform.e;
 	const cy = transform.f;
 	for (const v of otherVerts) {
@@ -314,22 +276,13 @@ function addCircleAxes(
 }
 
 /** Add capsule separation axes: basis vectors + segment-to-vertex axes. */
-function addCapsuleAxes(
-	transform: Matrix2D,
-	endpoints: XY[],
-	otherVerts: XY[],
-	axes: XY[],
-): void {
+function addCapsuleAxes(transform: Matrix2D, endpoints: XY[], otherVerts: XY[], axes: XY[]): void {
 	// Basis vectors (perpendicular and parallel to capsule orientation)
-	const bxLen = Math.sqrt(
-		transform.a * transform.a + transform.b * transform.b,
-	);
+	const bxLen = Math.sqrt(transform.a * transform.a + transform.b * transform.b);
 	if (bxLen > EPSILON) {
 		axes.push({ x: transform.a / bxLen, y: transform.b / bxLen });
 	}
-	const byLen = Math.sqrt(
-		transform.c * transform.c + transform.d * transform.d,
-	);
+	const byLen = Math.sqrt(transform.c * transform.c + transform.d * transform.d);
 	if (byLen > EPSILON) {
 		axes.push({ x: transform.c / byLen, y: transform.d / byLen });
 	}
@@ -348,12 +301,7 @@ function addCapsuleAxes(
 }
 
 /** Find closest points between two line segments. */
-function closestPointsSegments(
-	p0: XY,
-	p1: XY,
-	q0: XY,
-	q1: XY,
-): { a: XY; b: XY } {
+function closestPointsSegments(p0: XY, p1: XY, q0: XY, q1: XY): { a: XY; b: XY } {
 	const d1x = p1.x - p0.x;
 	const d1y = p1.y - p0.y;
 	const d2x = q1.x - q0.x;
@@ -483,12 +431,7 @@ function getSeparationAxes(
 
 	// Special case: capsule-vs-capsule needs segment-to-segment axis
 	if (shapeA.type === "capsule" && shapeB.type === "capsule") {
-		const closest = closestPointsSegments(
-			vertsA[0]!,
-			vertsA[1]!,
-			vertsB[0]!,
-			vertsB[1]!,
-		);
+		const closest = closestPointsSegments(vertsA[0]!, vertsA[1]!, vertsB[0]!, vertsB[1]!);
 		const dx = closest.b.x - closest.a.x;
 		const dy = closest.b.y - closest.a.y;
 		const len = Math.sqrt(dx * dx + dy * dy);
@@ -509,14 +452,7 @@ function generalSAT(
 ): SATResult | null {
 	const vertsA = getWorldVertices(shapeA, transformA);
 	const vertsB = getWorldVertices(shapeB, transformB);
-	const axes = getSeparationAxes(
-		shapeA,
-		transformA,
-		vertsA,
-		shapeB,
-		transformB,
-		vertsB,
-	);
+	const axes = getSeparationAxes(shapeA, transformA, vertsA, shapeB, transformB, vertsB);
 
 	let minDepth = Infinity;
 	let minNormalX = 0;
@@ -525,10 +461,7 @@ function generalSAT(
 	for (const axis of axes) {
 		const projA = projectOntoAxis(shapeA, transformA, vertsA, axis);
 		const projB = projectOntoAxis(shapeB, transformB, vertsB, axis);
-		const overlap = Math.min(
-			projA.max - projB.min,
-			projB.max - projA.min,
-		);
+		const overlap = Math.min(projA.max - projB.min, projB.max - projA.min);
 
 		if (overlap <= 0) return null; // Separating axis found
 
@@ -588,21 +521,11 @@ export function findTOI(
 	};
 
 	// Check full motion endpoint
-	const endResult = testOverlap(
-		bodyShape,
-		txAtTime(1),
-		otherShape,
-		otherTransform,
-	);
+	const endResult = testOverlap(bodyShape, txAtTime(1), otherShape, otherTransform);
 	if (!endResult) return null;
 
 	// Check start: already overlapping?
-	const startResult = testOverlap(
-		bodyShape,
-		bodyTransform,
-		otherShape,
-		otherTransform,
-	);
+	const startResult = testOverlap(bodyShape, bodyTransform, otherShape, otherTransform);
 	if (startResult) {
 		return { toi: 0, result: startResult };
 	}
@@ -614,12 +537,7 @@ export function findTOI(
 
 	for (let i = 0; i < maxIterations; i++) {
 		const mid = (lo + hi) / 2;
-		const midResult = testOverlap(
-			bodyShape,
-			txAtTime(mid),
-			otherShape,
-			otherTransform,
-		);
+		const midResult = testOverlap(bodyShape, txAtTime(mid), otherShape, otherTransform);
 		if (midResult) {
 			hi = mid;
 			lastOverlap = midResult;
@@ -691,9 +609,7 @@ export function sweptAABB(
 		const overlapX = combinedHalfW - Math.abs(dx);
 		const overlapY = combinedHalfH - Math.abs(dy);
 		const normal =
-			overlapX < overlapY
-				? new Vec2(dx >= 0 ? 1 : -1, 0)
-				: new Vec2(0, dy >= 0 ? 1 : -1);
+			overlapX < overlapY ? new Vec2(dx >= 0 ? 1 : -1, 0) : new Vec2(0, dy >= 0 ? 1 : -1);
 		return { toi: 0, normal };
 	}
 

@@ -14,3 +14,14 @@ export interface Node2DSnapshot extends NodeSnapshot {
 	visible: boolean;
 	zIndex: number;
 }
+
+export interface CameraSnapshot extends NodeSnapshot {
+	position: { x: number; y: number };
+	zoom: number;
+	smoothing: number;
+	followTarget: string | null;
+	bounds: { x: number; y: number; width: number; height: number } | null;
+	isShaking: boolean;
+	deadZone: { x: number; y: number; width: number; height: number } | null;
+	pixelPerfectZoom: boolean;
+}

@@ -1,3 +1,17 @@
+## Add tilemap and camera packages (Phase 4)
+*Sunday, February 15th at 3pm*
+Implement Phase 4 of the Quintus 2.0 engine rewrite: @quintus/tilemap for Tiled 
+JSON map loading with greedy-merge tile collision generation and 
+viewport-culled rendering, and @quintus/camera for smooth follow, bounds 
+clamping, dead zones, zoom, pixel-perfect mode, deterministic shake, and 
+coordinate conversion. Core changes include Scene.viewTransform for camera 
+rendering, markRenderDirty propagation, and CameraSnapshot serialization with 
+informative debug tree output. Adds a scrolling platformer demo (tilemap-demo) 
+with Player, Coins, TileMap, and Camera. All 999 tests pass across 49 test 
+files.
+
+---
+
 ## Add move-to and nearby commands to debug-game skill
 *Sunday, February 15th at 1pm*
 Adds two new commands to the quintus-debug CLI based on lessons from a live 

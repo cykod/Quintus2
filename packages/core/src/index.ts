@@ -39,4 +39,8 @@ export { Scene } from "./scene.js";
 export type { SignalConnection, SignalHandler } from "./signal.js";
 export { Signal, signal } from "./signal.js";
 // Snapshot types
-export type { Node2DSnapshot, NodeSnapshot } from "./snapshot-types.js";
+export type {
+	CameraSnapshot,
+	Node2DSnapshot,
+	NodeSnapshot,
+} from "./snapshot-types.js";

@@ -120,6 +120,8 @@ export class Node {
 		if (this._isInsideTree || this._isSceneRoot()) {
 			this._enterTreeRecursive(node);
 		}
+
+		this.game?._markRenderDirty();
 	}
 
 	private _isAncestorOf(node: Node): boolean {
@@ -190,6 +192,8 @@ export class Node {
 
 		this._children.splice(idx, 1);
 		node._parent = null;
+
+		this.game?._markRenderDirty();
 	}
 
 	private _exitTreeRecursive(node: Node): void {

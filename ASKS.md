@@ -131,3 +131,15 @@
 [IMPL] sun 2/15 12pm - Review and fix TypeScript strictness across the monorepo, ensuring no anys and no warnings in the core engine
 
 [MILE] sun 2/15 12pm - Added AI debug protocol with node serialization, debug log, debug bridge, auto-instrumentation, and Phase 4 design refinements
+
+[MILE] sun 2/15 1pm - Added /debug-game skill with quintus-debug CLI wrapper, formatters exposure, reference docs, and debug session demo
+
+[MILE] sun 2/15 1pm - Added node IDs and collision shape details to debug tree output for better scene inspection
+
+[MILE] sun 2/15 1pm - Added move-to and nearby commands to debug-game skill with ceiling collision docs and updated recipes
+
+[IMPL] sun 2/15 1pm - Implement Phase 4 (Tilemap & Camera) from PHASE_4_DESIGN.md with exhaustive test coverage and debug-game verification
+
+[IMPL] sun 2/15 2pm - Implement Phase 4 (Tilemap and Camera) with exhaustive tests and a working scrolling platformer demo
+
+[ASKS] sun 2/15 2pm - Design Phase 5 (Audio, Tween, UI) by reviewing the implementation plan and creating steering/PHASE_5_DESIGN.md

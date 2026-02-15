@@ -11,9 +11,10 @@ import { StaticCollider } from "./static-collider.js";
 
 // === Helpers ===
 
-function setupScene(
-	bodies: import("@quintus/core").Node[],
-): { game: Game; world: ReturnType<typeof getPhysicsWorld> } {
+function setupScene(bodies: import("@quintus/core").Node[]): {
+	game: Game;
+	world: ReturnType<typeof getPhysicsWorld>;
+} {
 	const canvas = document.createElement("canvas");
 	const game = new Game({ width: 800, height: 600, canvas, renderer: null });
 	game.use(PhysicsPlugin());

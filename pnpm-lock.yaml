@@ -65,7 +65,14 @@ importers:
 
   packages/audio: {}
 
-  packages/camera: {}
+  packages/camera:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/core:
     dependencies:
@@ -118,7 +125,17 @@ importers:
 
   packages/three: {}
 
-  packages/tilemap: {}
+  packages/tilemap:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
+      '@quintus/physics':
+        specifier: workspace:*
+        version: link:../physics
 
   packages/tween: {}
 

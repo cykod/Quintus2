@@ -1,6 +1,6 @@
 import { EPSILON, Matrix2D, Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";
-import { type SATResult, findTOI, flip, sweptAABB, testOverlap } from "./sat.js";
+import { findTOI, flip, type SATResult, sweptAABB, testOverlap } from "./sat.js";
 import { Shape } from "./shapes.js";
 
 /** Helper: translation-only transform. */
@@ -19,13 +19,7 @@ function txs(x: number, y: number, sx: number, sy: number): Matrix2D {
 }
 
 /** Helper: compose transform from position + rotation + scale. */
-function txrs(
-	x: number,
-	y: number,
-	angle: number,
-	sx: number,
-	sy: number,
-): Matrix2D {
+function txrs(x: number, y: number, angle: number, sx: number, sy: number): Matrix2D {
 	return Matrix2D.compose(new Vec2(x, y), angle, new Vec2(sx, sy));
 }
 
@@ -47,11 +41,7 @@ const sqPoly = Shape.polygon([
 ]);
 
 /** Small equilateral-ish triangle (radius ~10). */
-const smallTri = Shape.polygon([
-	new Vec2(0, -10),
-	new Vec2(8.66, 5),
-	new Vec2(-8.66, 5),
-]);
+const smallTri = Shape.polygon([new Vec2(0, -10), new Vec2(8.66, 5), new Vec2(-8.66, 5)]);
 
 /** Large hexagon (radius ~20). */
 const bigHex = Shape.polygon([
@@ -156,12 +146,7 @@ describe("SAT: Circle vs Circle", () => {
 	});
 
 	it("scaled circle → uses effective radius", () => {
-		const result = testOverlap(
-			c10,
-			txs(0, 0, 2, 2),
-			c10,
-			tx(25, 0),
-		);
+		const result = testOverlap(c10, txs(0, 0, 2, 2), c10, tx(25, 0));
 		// radiusA = 20, radiusB = 10, dist = 25
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeCloseTo(5); // 20+10-25
@@ -246,12 +231,7 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 	it("rotated rect vs circle → correct collision", () => {
 		const r16 = Shape.rect(16, 16);
 		const c5 = Shape.circle(5);
-		const result = testOverlap(
-			r16,
-			txr(0, 0, Math.PI / 4),
-			c5,
-			tx(15, 0),
-		);
+		const result = testOverlap(r16, txr(0, 0, Math.PI / 4), c5, tx(15, 0));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -286,26 +266,13 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 		const capsule = Shape.capsule(5, 20);
 		const rect = Shape.rect(32, 32);
 		// Rotate capsule 90° to make it horizontal
-		const result = testOverlap(
-			capsule,
-			txr(0, 0, Math.PI / 2),
-			rect,
-			tx(20, 0),
-		);
+		const result = testOverlap(capsule, txr(0, 0, Math.PI / 2), rect, tx(20, 0));
 		expect(result).not.toBeNull();
 	});
 
 	it("triangle vs triangle → correct overlap", () => {
-		const tri1 = Shape.polygon([
-			new Vec2(0, -10),
-			new Vec2(10, 10),
-			new Vec2(-10, 10),
-		]);
-		const tri2 = Shape.polygon([
-			new Vec2(0, -10),
-			new Vec2(10, 10),
-			new Vec2(-10, 10),
-		]);
+		const tri1 = Shape.polygon([new Vec2(0, -10), new Vec2(10, 10), new Vec2(-10, 10)]);
+		const tri2 = Shape.polygon([new Vec2(0, -10), new Vec2(10, 10), new Vec2(-10, 10)]);
 		const result = testOverlap(tri1, tx(0, 0), tri2, tx(5, 0));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
@@ -326,22 +293,14 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 	});
 
 	it("no overlap between far-apart polygons → null", () => {
-		const tri = Shape.polygon([
-			new Vec2(0, -5),
-			new Vec2(5, 5),
-			new Vec2(-5, 5),
-		]);
+		const tri = Shape.polygon([new Vec2(0, -5), new Vec2(5, 5), new Vec2(-5, 5)]);
 		const result = testOverlap(tri, tx(0, 0), tri, tx(100, 0));
 		expect(result).toBeNull();
 	});
 
 	it("adjacent polygons (sharing edge) → depth near zero or null", () => {
 		// Two triangles placed edge-to-edge
-		const tri = Shape.polygon([
-			new Vec2(0, -10),
-			new Vec2(10, 10),
-			new Vec2(-10, 10),
-		]);
+		const tri = Shape.polygon([new Vec2(0, -10), new Vec2(10, 10), new Vec2(-10, 10)]);
 		// Place second triangle just barely touching (right edge of first)
 		const result = testOverlap(tri, tx(0, 0), tri, tx(20, 0));
 		// Should be null or very shallow
@@ -421,26 +380,14 @@ describe("Swept: findTOI", () => {
 		// At t=1: A at (95,0), overlaps B at (100,0) with dx=5
 		// Contact at x=84 (A right edge=92 meets B left edge=92)
 		// toi ≈ 84/95 = 0.884
-		const result = findTOI(
-			r16,
-			tx(0, 0),
-			new Vec2(95, 0),
-			r16,
-			tx(100, 0),
-		);
+		const result = findTOI(r16, tx(0, 0), new Vec2(95, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeCloseTo(84 / 95, 1);
 	});
 
 	it("works with rotated shapes", () => {
 		// Short enough motion that endpoint overlaps
-		const result = findTOI(
-			r16,
-			txr(0, 0, Math.PI / 4),
-			new Vec2(40, 0),
-			r16,
-			tx(50, 0),
-		);
+		const result = findTOI(r16, txr(0, 0, Math.PI / 4), new Vec2(40, 0), r16, tx(50, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
@@ -449,13 +396,7 @@ describe("Swept: findTOI", () => {
 	it("fast-moving body detected (no tunneling through thin wall)", () => {
 		// Thin wall (4px wide) at x=100. Motion ends inside wall.
 		const wall = Shape.rect(4, 100);
-		const result = findTOI(
-			r16,
-			tx(0, 0),
-			new Vec2(100, 0),
-			wall,
-			tx(100, 0),
-		);
+		const result = findTOI(r16, tx(0, 0), new Vec2(100, 0), wall, tx(100, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
@@ -468,13 +409,7 @@ describe("Swept: findTOI", () => {
 
 	it("motion parallel to wall surface → null", () => {
 		// Wall to the right at x=100, move straight up
-		const result = findTOI(
-			r16,
-			tx(0, 0),
-			new Vec2(0, -100),
-			r16,
-			tx(100, 0),
-		);
+		const result = findTOI(r16, tx(0, 0), new Vec2(0, -100), r16, tx(100, 0));
 		expect(result).toBeNull();
 	});
 
@@ -486,13 +421,7 @@ describe("Swept: findTOI", () => {
 
 	it("works with circles", () => {
 		// Motion ends with overlap: at t=1, body at (35,0), dist to (50,0)=15 < 20
-		const result = findTOI(
-			c10,
-			tx(0, 0),
-			new Vec2(35, 0),
-			c10,
-			tx(50, 0),
-		);
+		const result = findTOI(c10, tx(0, 0), new Vec2(35, 0), c10, tx(50, 0));
 		expect(result).not.toBeNull();
 		// Contact when distance = 20 (both radii = 10), so at x=30
 		// toi ≈ 30/35 = 0.857
@@ -527,13 +456,7 @@ describe("Swept: sweptAABB", () => {
 	});
 
 	it("returns null for non-colliding paths", () => {
-		const result = sweptAABB(
-			r16,
-			tx(0, 0),
-			new Vec2(100, 0),
-			r16,
-			tx(0, 100),
-		);
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(100, 0), r16, tx(0, 100));
 		expect(result).toBeNull();
 	});
 
@@ -543,25 +466,13 @@ describe("Swept: sweptAABB", () => {
 	});
 
 	it("correct normal for rightward motion", () => {
-		const result = sweptAABB(
-			r16,
-			tx(0, 0),
-			new Vec2(200, 0),
-			r16,
-			tx(100, 0),
-		);
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(200, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
 		expectNormal(result as unknown as SATResult, 1, 0); // A toward B
 	});
 
 	it("correct normal for downward motion", () => {
-		const result = sweptAABB(
-			r16,
-			tx(0, 0),
-			new Vec2(0, 200),
-			r16,
-			tx(0, 100),
-		);
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 200), r16, tx(0, 100));
 		expect(result).not.toBeNull();
 		expect(result!.normal.x).toBeCloseTo(0);
 		expect(result!.normal.y).toBeCloseTo(1);
@@ -571,39 +482,21 @@ describe("Swept: sweptAABB", () => {
 		// A at x=0, B at x=100, both 16x16, motion = (200, 0)
 		// A right edge starts at 8, B left edge at 92
 		// Contact when A moves 84: toi = 84/200 = 0.42
-		const result = sweptAABB(
-			r16,
-			tx(0, 0),
-			new Vec2(200, 0),
-			r16,
-			tx(100, 0),
-		);
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(200, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeCloseTo(0.42);
 	});
 
 	it("diagonal motion → correct entry axis", () => {
 		// Move diagonally, hit the Y face first
-		const result = sweptAABB(
-			r16,
-			tx(0, 0),
-			new Vec2(50, 200),
-			r32,
-			tx(0, 100),
-		);
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(50, 200), r32, tx(0, 100));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
 	});
 
 	it("motion past target → still detects collision within t=0..1", () => {
-		const result = sweptAABB(
-			r16,
-			tx(0, 0),
-			new Vec2(1000, 0),
-			r16,
-			tx(100, 0),
-		);
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(1000, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
@@ -611,13 +504,7 @@ describe("Swept: sweptAABB", () => {
 
 	it("grazing/tangent collision", () => {
 		// Move right, barely clip the top edge of B
-		const result = sweptAABB(
-			r16,
-			tx(0, -7),
-			new Vec2(200, 0),
-			r16,
-			tx(100, 0),
-		);
+		const result = sweptAABB(r16, tx(0, -7), new Vec2(200, 0), r16, tx(100, 0));
 		// Vertical separation: |-7| = 7 < 16 = combinedHalfH, so they do overlap vertically
 		expect(result).not.toBeNull();
 	});
@@ -734,12 +621,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		// d2=(-10,0), p0=(8,-5), q0=(5,0) → rx=3, ff=d2·r=(-10)*3=-30
 		// s=0.5, t=(0*0.5+(-30))/100=-0.3 < 0 → clamped to 0
 		const cap = Shape.capsule(5, 20);
-		const result = testOverlap(
-			cap,
-			tx(8, 0),
-			cap,
-			txr(0, 0, Math.PI / 2),
-		);
+		const result = testOverlap(cap, tx(8, 0), cap, txr(0, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -750,12 +632,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		// d2=(-10,0), p0=(-8,-5), q0=(5,0) → rx=-13, ff=(-10)*(-13)=130
 		// s near 0, t=(0+130)/100=1.3 > 1 → clamped to 1
 		const cap = Shape.capsule(5, 20);
-		const result = testOverlap(
-			cap,
-			tx(-8, 0),
-			cap,
-			txr(0, 0, Math.PI / 2),
-		);
+		const result = testOverlap(cap, tx(-8, 0), cap, txr(0, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -905,12 +782,7 @@ describe("SAT: Rect vs Rect (scaled)", () => {
 	it("both rects scaled → correct overlap", () => {
 		// A: 2x → 32×32, B: 1.5x → 24×24, distance 20
 		// Half widths: 16 + 12 = 28 > 20, overlap = 8
-		const result = testOverlap(
-			r16,
-			txs(0, 0, 2, 2),
-			r16,
-			txs(20, 0, 1.5, 1.5),
-		);
+		const result = testOverlap(r16, txs(0, 0, 2, 2), r16, txs(20, 0, 1.5, 1.5));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeCloseTo(8, 0);
 	});
@@ -938,12 +810,7 @@ describe("SAT: Rect vs Circle (scaled/rotated)", () => {
 	});
 
 	it("rotated rect vs scaled circle → overlap", () => {
-		const result = testOverlap(
-			r16,
-			txr(0, 0, Math.PI / 4),
-			c10,
-			txs(18, 0, 1.5, 1.5),
-		);
+		const result = testOverlap(r16, txr(0, 0, Math.PI / 4), c10, txs(18, 0, 1.5, 1.5));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -955,23 +822,13 @@ describe("SAT: Rect vs Polygon (rotated)", () => {
 	const r16 = Shape.rect(16, 16);
 
 	it("rotated rect vs polygon → overlap detected", () => {
-		const result = testOverlap(
-			r16,
-			txr(0, 0, Math.PI / 6),
-			sqPoly,
-			tx(15, 0),
-		);
+		const result = testOverlap(r16, txr(0, 0, Math.PI / 6), sqPoly, tx(15, 0));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
 	it("rotated polygon vs rect → overlap detected", () => {
-		const result = testOverlap(
-			r16,
-			tx(0, 0),
-			sqPoly,
-			txr(15, 0, Math.PI / 4),
-		);
+		const result = testOverlap(r16, tx(0, 0), sqPoly, txr(15, 0, Math.PI / 4));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -985,23 +842,13 @@ describe("SAT: Circle vs Capsule (rotated)", () => {
 
 	it("circle vs horizontally-rotated capsule → overlap", () => {
 		// Rotating capsule 90° makes it horizontal (extends along X)
-		const result = testOverlap(
-			c10,
-			tx(0, 0),
-			cap,
-			txr(12, 0, Math.PI / 2),
-		);
+		const result = testOverlap(c10, tx(0, 0), cap, txr(12, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
 	it("circle vs 45°-rotated capsule → overlap", () => {
-		const result = testOverlap(
-			c10,
-			tx(0, 0),
-			cap,
-			txr(10, 0, Math.PI / 4),
-		);
+		const result = testOverlap(c10, tx(0, 0), cap, txr(10, 0, Math.PI / 4));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -1014,34 +861,19 @@ describe("SAT: Capsule vs Capsule (rotated)", () => {
 
 	it("cross-shaped capsules (90° rotated) → overlap at center", () => {
 		// One vertical, one horizontal, both at origin
-		const result = testOverlap(
-			cap,
-			tx(0, 0),
-			cap,
-			txr(0, 0, Math.PI / 2),
-		);
+		const result = testOverlap(cap, tx(0, 0), cap, txr(0, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
 	it("45°-angled capsules nearby → overlap", () => {
-		const result = testOverlap(
-			cap,
-			txr(0, 0, Math.PI / 4),
-			cap,
-			txr(7, 0, -Math.PI / 4),
-		);
+		const result = testOverlap(cap, txr(0, 0, Math.PI / 4), cap, txr(7, 0, -Math.PI / 4));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
 	it("parallel rotated capsules far apart → null", () => {
-		const result = testOverlap(
-			cap,
-			txr(0, 0, Math.PI / 4),
-			cap,
-			txr(50, 50, Math.PI / 4),
-		);
+		const result = testOverlap(cap, txr(0, 0, Math.PI / 4), cap, txr(50, 50, Math.PI / 4));
 		expect(result).toBeNull();
 	});
 });
@@ -1050,35 +882,20 @@ describe("SAT: Capsule vs Capsule (rotated)", () => {
 
 describe("SAT: Polygon vs Polygon (rotated)", () => {
 	it("rotated square polygon vs unrotated → overlap", () => {
-		const result = testOverlap(
-			sqPoly,
-			txr(0, 0, Math.PI / 4),
-			sqPoly,
-			tx(16, 0),
-		);
+		const result = testOverlap(sqPoly, txr(0, 0, Math.PI / 4), sqPoly, tx(16, 0));
 		// 45° rotation extends square diagonal, so overlaps at distance 16
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
 	it("two rotated triangles → overlap", () => {
-		const result = testOverlap(
-			smallTri,
-			txr(0, 0, Math.PI / 6),
-			smallTri,
-			txr(8, 0, -Math.PI / 6),
-		);
+		const result = testOverlap(smallTri, txr(0, 0, Math.PI / 6), smallTri, txr(8, 0, -Math.PI / 6));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
 	it("rotated hexagon vs triangle → separation when far apart", () => {
-		const result = testOverlap(
-			bigHex,
-			txr(0, 0, Math.PI / 3),
-			smallTri,
-			tx(50, 0),
-		);
+		const result = testOverlap(bigHex, txr(0, 0, Math.PI / 3), smallTri, tx(50, 0));
 		expect(result).toBeNull();
 	});
 });
@@ -1120,12 +937,7 @@ describe("SAT: Composed transforms", () => {
 	it("translated + rotated + scaled rect vs rect → overlap", () => {
 		const r16 = Shape.rect(16, 16);
 		// Scale 1.5x + rotate 30° + translate to (10,0)
-		const result = testOverlap(
-			r16,
-			txrs(10, 0, Math.PI / 6, 1.5, 1.5),
-			r16,
-			tx(25, 0),
-		);
+		const result = testOverlap(r16, txrs(10, 0, Math.PI / 6, 1.5, 1.5), r16, tx(25, 0));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -1133,12 +945,7 @@ describe("SAT: Composed transforms", () => {
 	it("composed transform on circle vs polygon → overlap", () => {
 		const c5 = Shape.circle(5);
 		// Scale 2x + rotate 45° + translate to (5,5)
-		const result = testOverlap(
-			c5,
-			txrs(5, 5, Math.PI / 4, 2, 2),
-			sqPoly,
-			tx(15, 5),
-		);
+		const result = testOverlap(c5, txrs(5, 5, Math.PI / 4, 2, 2), sqPoly, tx(15, 5));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -1146,12 +953,7 @@ describe("SAT: Composed transforms", () => {
 	it("composed transform on capsule vs rect → overlap", () => {
 		const cap = Shape.capsule(5, 20);
 		const r16 = Shape.rect(16, 16);
-		const result = testOverlap(
-			cap,
-			txrs(0, 0, Math.PI / 3, 1.5, 1.5),
-			r16,
-			tx(18, 0),
-		);
+		const result = testOverlap(cap, txrs(0, 0, Math.PI / 3, 1.5, 1.5), r16, tx(18, 0));
 		expect(result).not.toBeNull();
 		expect(result!.depth).toBeGreaterThan(0);
 	});
@@ -1261,78 +1063,42 @@ describe("Swept: findTOI (extended)", () => {
 		// sqPoly (20×20) at x=0 moves right 50. Rect (16×16) at x=40.
 		// At t=1: poly center at 50, range [40,60] overlaps rect range [32,48].
 		// Contact at t ≈ 22/50 = 0.44
-		const result = findTOI(
-			sqPoly,
-			tx(0, 0),
-			new Vec2(50, 0),
-			r16,
-			tx(40, 0),
-		);
+		const result = findTOI(sqPoly, tx(0, 0), new Vec2(50, 0), r16, tx(40, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
 	});
 
 	it("capsule moving into circle → toi in (0,1)", () => {
-		const result = findTOI(
-			cap,
-			tx(0, 0),
-			new Vec2(50, 0),
-			c10,
-			tx(50, 0),
-		);
+		const result = findTOI(cap, tx(0, 0), new Vec2(50, 0), c10, tx(50, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
 	});
 
 	it("circle moving into polygon → toi in (0,1)", () => {
-		const result = findTOI(
-			c10,
-			tx(0, 0),
-			new Vec2(50, 0),
-			sqPoly,
-			tx(50, 0),
-		);
+		const result = findTOI(c10, tx(0, 0), new Vec2(50, 0), sqPoly, tx(50, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
 	});
 
 	it("polygon moving into polygon → toi in (0,1)", () => {
-		const result = findTOI(
-			sqPoly,
-			tx(0, 0),
-			new Vec2(60, 0),
-			sqPoly,
-			tx(60, 0),
-		);
+		const result = findTOI(sqPoly, tx(0, 0), new Vec2(60, 0), sqPoly, tx(60, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
 	});
 
 	it("capsule moving into capsule → toi in (0,1)", () => {
-		const result = findTOI(
-			cap,
-			tx(0, 0),
-			new Vec2(40, 0),
-			cap,
-			tx(40, 0),
-		);
+		const result = findTOI(cap, tx(0, 0), new Vec2(40, 0), cap, tx(40, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);
 	});
 
 	it("polygon moving into capsule → toi in (0,1)", () => {
-		const result = findTOI(
-			sqPoly,
-			tx(0, 0),
-			new Vec2(50, 0),
-			cap,
-			tx(50, 0),
-		);
+		const result = findTOI(sqPoly, tx(0, 0), new Vec2(50, 0), cap, tx(50, 0));
 		expect(result).not.toBeNull();
 		expect(result!.toi).toBeGreaterThan(0);
 		expect(result!.toi).toBeLessThan(1);

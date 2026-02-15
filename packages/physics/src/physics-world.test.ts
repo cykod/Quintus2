@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
 import { Matrix2D, Vec2 } from "@quintus/math";
+import { describe, expect, it, vi } from "vitest";
 import { CollisionGroups } from "./collision-groups.js";
-import { CollisionShape } from "./collision-shape.js";
 import { type BodyType, CollisionObject } from "./collision-object.js";
+import { CollisionShape } from "./collision-shape.js";
 import { PhysicsWorld } from "./physics-world.js";
-import { type Shape2D, Shape } from "./shapes.js";
+import { Shape, type Shape2D } from "./shapes.js";
 
 // === Test helpers ===
 
@@ -357,7 +357,12 @@ describe("PhysicsWorld", () => {
 			const groups = customGroups();
 			const world = new PhysicsWorld({ groups });
 
-			const sensor = createBody("sensor", Shape.rect(20, 20), new Vec2(0, 0), "player") as TestSensor;
+			const sensor = createBody(
+				"sensor",
+				Shape.rect(20, 20),
+				new Vec2(0, 0),
+				"player",
+			) as TestSensor;
 			const ghost = createBody("static", Shape.rect(20, 20), new Vec2(5, 0), "ghost");
 			world.register(sensor);
 			world.register(ghost);

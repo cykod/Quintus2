@@ -74,6 +74,24 @@ function formatNodeLine(snap: NodeSnapshot): string {
 		parts.push("onFloor");
 	}
 
+	// Show camera info
+	if (typeof s.zoom === "number" && typeof s.followTarget === "string") {
+		parts.push(`zoom=${s.zoom}`);
+	}
+	if (typeof s.followTarget === "string") {
+		parts.push(`follow=${s.followTarget}`);
+	}
+	if (typeof s.smoothing === "number" && s.smoothing > 0) {
+		parts.push(`smooth=${s.smoothing}`);
+	}
+	if (typeof s.isShaking === "boolean" && s.isShaking) {
+		parts.push("SHAKING");
+	}
+	if (s.bounds && typeof s.bounds === "object") {
+		const b = s.bounds as { x: number; y: number; width: number; height: number };
+		parts.push(`bounds=${b.width}x${b.height}`);
+	}
+
 	// Show tags
 	if (snap.tags.length > 0) {
 		parts.push(`[${snap.tags.join(",")}]`);

@@ -61,6 +61,54 @@ describe("formatTree", () => {
 		expect(result).toContain("vel=(150,-300)");
 		expect(result).toContain("onFloor");
 	});
+
+	it("shows camera info for CameraSnapshot-like data", () => {
+		const snap = {
+			id: 5,
+			type: "Camera",
+			name: "Camera",
+			tags: [],
+			children: [],
+			position: { x: 200, y: 150 },
+			zoom: 2,
+			smoothing: 0.15,
+			followTarget: "Player",
+			bounds: { x: 0, y: 0, width: 640, height: 240 },
+			isShaking: false,
+			deadZone: null,
+			pixelPerfectZoom: false,
+		};
+		const result = formatTree(snap as unknown as NodeSnapshot);
+		expect(result).toContain("(200, 150)");
+		expect(result).toContain("zoom=2");
+		expect(result).toContain("follow=Player");
+		expect(result).toContain("smooth=0.15");
+		expect(result).toContain("bounds=640x240");
+		expect(result).not.toContain("SHAKING");
+	});
+
+	it("shows SHAKING when camera is shaking", () => {
+		const snap = {
+			id: 5,
+			type: "Camera",
+			name: "Camera",
+			tags: [],
+			children: [],
+			position: { x: 100, y: 50 },
+			zoom: 1,
+			smoothing: 0,
+			followTarget: null,
+			bounds: null,
+			isShaking: true,
+			deadZone: null,
+			pixelPerfectZoom: false,
+		};
+		const result = formatTree(snap as unknown as NodeSnapshot);
+		expect(result).toContain("SHAKING");
+		expect(result).not.toContain("follow=");
+		expect(result).not.toContain("smooth=");
+		expect(result).not.toContain("bounds=");
+	});
 });
 
 describe("formatEvents", () => {

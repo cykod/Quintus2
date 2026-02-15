@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
 import { Matrix2D, Vec2 } from "@quintus/math";
-import { Shape } from "./shapes.js";
+import { describe, expect, it } from "vitest";
 import { computeContactPoint, shapeSupport } from "./contact-point.js";
+import { Shape } from "./shapes.js";
 
 describe("shapeSupport", () => {
 	describe("rect", () => {
@@ -64,8 +64,8 @@ describe("shapeSupport", () => {
 
 		it("normalizes direction for non-unit vector", () => {
 			const p = shapeSupport(circle, Matrix2D.IDENTITY, new Vec2(3, 4));
-			expect(p.x).toBeCloseTo(15 * 3 / 5);
-			expect(p.y).toBeCloseTo(15 * 4 / 5);
+			expect(p.x).toBeCloseTo((15 * 3) / 5);
+			expect(p.y).toBeCloseTo((15 * 4) / 5);
 		});
 
 		it("respects transform (offset)", () => {

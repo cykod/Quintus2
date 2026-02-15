@@ -1,3 +1,4 @@
+import { Matrix2D } from "@quintus/math";
 import type { Game } from "./game.js";
 import type { NodeConstructor } from "./node.js";
 import { Node } from "./node.js";
@@ -15,6 +16,13 @@ export class Scene extends Node {
 
 	/** Whether this scene is paused. */
 	paused = false;
+
+	/**
+	 * View transform applied during rendering.
+	 * Converts world coordinates to screen coordinates.
+	 * Set by Camera node or custom code. Default: identity (no transform).
+	 */
+	viewTransform: Matrix2D = Matrix2D.IDENTITY;
 
 	// === Signals ===
 	readonly sceneReady: Signal<void> = signal<void>();

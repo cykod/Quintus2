@@ -26,6 +26,18 @@
 		"html5",
 		"2d"
 	],
+	"dependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/math": "workspace:*"
+	},
+	"peerDependencies": {
+		"@quintus/physics": "workspace:*"
+	},
+	"peerDependenciesMeta": {
+		"@quintus/physics": {
+			"optional": true
+		}
+	},
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",

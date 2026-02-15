@@ -1,0 +1,351 @@
+import { Game, Node2D, Scene } from "@quintus/core";
+import { Vec2 } from "@quintus/math";
+import { CollisionShape, PhysicsPlugin, Shape, StaticCollider } from "@quintus/physics";
+import { beforeAll, describe, expect, it } from "vitest";
+import type { TiledMap } from "./tiled-types.js";
+import { TileMap } from "./tilemap.js";
+
+// Register physics factories for collision generation tests
+beforeAll(() => {
+	TileMap.registerPhysics({
+		StaticCollider: StaticCollider as never,
+		CollisionShape: CollisionShape as never,
+		shapeRect: Shape.rect,
+	});
+});
+
+function makeTiledJSON(overrides?: Partial<TiledMap>): TiledMap {
+	return {
+		width: 5,
+		height: 3,
+		tilewidth: 16,
+		tileheight: 16,
+		tilesets: [
+			{
+				firstgid: 1,
+				name: "terrain",
+				tilewidth: 16,
+				tileheight: 16,
+				image: "tiles.png",
+				imagewidth: 160,
+				imageheight: 160,
+				columns: 10,
+				tilecount: 100,
+			},
+		],
+		layers: [
+			{
+				name: "ground",
+				type: "tilelayer",
+				width: 5,
+				height: 3,
+				// Row 0: all empty
+				// Row 1: tiles 1,0,0,0,3
+				// Row 2: all tile 1 (ground)
+				data: [0, 0, 0, 0, 0, 1, 0, 0, 0, 3, 1, 1, 1, 1, 1],
+			},
+			{
+				name: "entities",
+				type: "objectgroup",
+				objects: [
+					{
+						id: 1,
+						name: "player_start",
+						type: "Player",
+						x: 32,
+						y: 16,
+						width: 0,
+						height: 0,
+						point: true,
+					},
+					{
+						id: 2,
+						name: "coin1",
+						type: "Coin",
+						x: 64,
+						y: 24,
+						width: 16,
+						height: 16,
+						properties: [{ name: "value", type: "int", value: 10 }],
+					},
+					{
+						id: 3,
+						name: "coin2",
+						type: "Coin",
+						x: 48,
+						y: 24,
+						width: 16,
+						height: 16,
+					},
+				],
+			},
+		],
+		...overrides,
+	};
+}
+
+function createTestGame(): Game {
+	return new Game({
+		width: 320,
+		height: 240,
+		canvas: document.createElement("canvas"),
+		renderer: null,
+	});
+}
+
+function setupTileMap(game: Game, json?: TiledMap): TileMap {
+	const data = json ?? makeTiledJSON();
+	game.assets._storeJSON("level1", data);
+
+	let tileMap: TileMap | undefined;
+	class TestScene extends Scene {
+		onReady() {
+			const map = this.add(TileMap);
+			map.asset = "level1";
+			tileMap = map;
+		}
+	}
+	game.start(TestScene);
+	if (!tileMap) throw new Error("TileMap not created — scene setup failed");
+	return tileMap;
+}
+
+describe("TileMap", () => {
+	describe("loading", () => {
+		it("loads JSON from asset loader in onReady", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.isLoaded).toBe(true);
+			expect(map.mapWidth).toBe(5);
+			expect(map.mapHeight).toBe(3);
+			expect(map.tileWidth).toBe(16);
+			expect(map.tileHeight).toBe(16);
+		});
+
+		it("throws on missing asset", () => {
+			const game = createTestGame();
+			expect(() => {
+				class TestScene extends Scene {
+					onReady() {
+						const map = this.add(TileMap);
+						map.asset = "nonexistent";
+					}
+				}
+				game.start(TestScene);
+			}).toThrow("Asset 'nonexistent' not found");
+		});
+
+		it("reports correct bounds", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.bounds.width).toBe(80); // 5 * 16
+			expect(map.bounds.height).toBe(48); // 3 * 16
+		});
+	});
+
+	describe("getTileAt / setTileAt", () => {
+		it("returns tile ID for populated cell", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			// Row 2, all tiles are ID 1 -> localId 0
+			expect(map.getTileAt(0, 2)).toBe(0); // GID 1 -> localId 0
+		});
+
+		it("returns 0 for empty cell", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.getTileAt(1, 0)).toBe(0);
+		});
+
+		it("returns 0 for out-of-bounds", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.getTileAt(-1, 0)).toBe(0);
+			expect(map.getTileAt(100, 0)).toBe(0);
+			expect(map.getTileAt(0, 100)).toBe(0);
+		});
+
+		it("sets tile to a new ID", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.getTileAt(1, 0)).toBe(0);
+			map.setTileAt(1, 0, 5);
+			expect(map.getTileAt(1, 0)).toBe(5);
+		});
+
+		it("clears tile when set to 0", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.getTileAt(0, 2)).toBe(0); // has a tile
+			map.setTileAt(0, 2, 0);
+			expect(map.getTileAt(0, 2)).toBe(0);
+		});
+
+		it("can read from named layer", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.getTileAt(0, 2, "ground")).toBe(0);
+		});
+	});
+
+	describe("worldToTile / tileToWorld", () => {
+		it("converts world position to tile coordinates", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const tile = map.worldToTile(new Vec2(24, 40));
+			expect(tile.x).toBe(1); // 24 / 16 = 1.5 -> floor = 1
+			expect(tile.y).toBe(2); // 40 / 16 = 2.5 -> floor = 2
+		});
+
+		it("converts tile coordinates to world position", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const world = map.tileToWorld(2, 1);
+			expect(world.x).toBe(32); // 2 * 16
+			expect(world.y).toBe(16); // 1 * 16
+		});
+	});
+
+	describe("getSpawnPoint", () => {
+		it("returns correct position", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const pos = map.getSpawnPoint("player_start");
+			expect(pos.x).toBe(32);
+			expect(pos.y).toBe(16);
+		});
+
+		it("throws on missing spawn point", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(() => map.getSpawnPoint("nonexistent")).toThrow("Spawn point 'nonexistent' not found");
+		});
+	});
+
+	describe("getObjects", () => {
+		it("returns all objects from named layer", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const objects = map.getObjects("entities");
+			expect(objects).toHaveLength(3);
+		});
+
+		it("returns empty array for missing layer", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const objects = map.getObjects("nonexistent");
+			expect(objects).toHaveLength(0);
+		});
+	});
+
+	describe("spawnObjects", () => {
+		it("creates nodes from type mapping", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+
+			class Coin extends Node2D {}
+
+			const spawned = map.spawnObjects("entities", { Coin });
+			expect(spawned).toHaveLength(2); // Two Coin objects
+
+			const coin1 = spawned[0] as Node2D;
+			expect(coin1).toBeInstanceOf(Coin);
+			expect(coin1.position.x).toBe(64);
+			expect(coin1.position.y).toBe(24);
+		});
+
+		it("applies Tiled properties to nodes", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+
+			class Coin extends Node2D {
+				value = 0;
+			}
+
+			const spawned = map.spawnObjects("entities", { Coin }) as Coin[];
+			// coin1 has value=10, coin2 has no value property
+			const coin1 = spawned.find((c) => c.name === "coin1") as Coin;
+			expect(coin1.value).toBe(10);
+		});
+
+		it("skips unmapped types", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+
+			class Coin extends Node2D {}
+			// Player type is not in mapping, should be skipped
+			const spawned = map.spawnObjects("entities", { Coin });
+			expect(spawned).toHaveLength(2);
+		});
+
+		it("sets name from Tiled object", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+
+			class Coin extends Node2D {}
+			const spawned = map.spawnObjects("entities", { Coin });
+			expect(spawned[0]?.name).toBe("coin1");
+		});
+	});
+
+	describe("generateCollision", () => {
+		it("creates StaticColliders from solid tiles", () => {
+			const game = createTestGame();
+			game.use(
+				PhysicsPlugin({
+					collisionGroups: {
+						default: { collidesWith: ["default"] },
+						world: { collidesWith: ["default"] },
+					},
+				}),
+			);
+			const map = setupTileMap(game);
+
+			const count = map.generateCollision({
+				layer: "ground",
+				allSolid: true,
+				collisionGroup: "world",
+			});
+			expect(count).toBeGreaterThan(0);
+
+			// Should have created StaticCollider children
+			const colliders = map.getChildren(StaticCollider);
+			expect(colliders.length).toBe(count);
+		});
+
+		it("only generates collision once", () => {
+			const game = createTestGame();
+			game.use(
+				PhysicsPlugin({
+					collisionGroups: {
+						default: { collidesWith: ["default"] },
+						world: { collidesWith: ["default"] },
+					},
+				}),
+			);
+			const map = setupTileMap(game);
+
+			const count1 = map.generateCollision({ allSolid: true });
+			const count2 = map.generateCollision({ allSolid: true });
+			expect(count1).toBeGreaterThan(0);
+			expect(count2).toBe(0);
+		});
+	});
+
+	describe("getProperty", () => {
+		it("returns map-level property", () => {
+			const game = createTestGame();
+			const json = makeTiledJSON({
+				properties: [{ name: "gravity", type: "float", value: 9.8 }],
+			});
+			const map = setupTileMap(game, json);
+			expect(map.getProperty<number>("gravity")).toBe(9.8);
+		});
+
+		it("returns undefined for missing property", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(map.getProperty("nonexistent")).toBeUndefined();
+		});
+	});
+});

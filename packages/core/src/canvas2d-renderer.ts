@@ -190,6 +190,7 @@ export class Canvas2DRenderer implements Renderer {
 		const ctx = this.ctx;
 
 		// 1. Clear
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.clearRect(0, 0, this.gameWidth, this.gameHeight);
 		if (this.backgroundColor) {
 			ctx.fillStyle = this.backgroundColor;
@@ -204,12 +205,32 @@ export class Canvas2DRenderer implements Renderer {
 			this._renderListDirty = false;
 		}
 
-		// 3. Draw each node
+		// 3. Get the view transform (set by Camera or custom code)
+		const vt = scene.viewTransform;
+		// Value-based identity check: avoids false negatives when a fresh
+		// identity matrix is assigned instead of the static Matrix2D.IDENTITY.
+		const hasView = !(
+			vt.a === 1 &&
+			vt.b === 0 &&
+			vt.c === 0 &&
+			vt.d === 1 &&
+			vt.e === 0 &&
+			vt.f === 0
+		);
+
+		// 4. Draw each node
 		for (const node of this.renderList) {
 			ctx.save();
 
-			const t = node.globalTransform;
-			ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
+			if (hasView) {
+				// Compose view × node global transform
+				const t = vt.multiply(node.globalTransform);
+				ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
+			} else {
+				// Fast path: no camera, same as before
+				const t = node.globalTransform;
+				ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
+			}
 
 			try {
 				node.onDraw(this.drawContext);
