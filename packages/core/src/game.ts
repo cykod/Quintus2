@@ -239,6 +239,8 @@ export class Game {
 	}
 
 	private _cleanup(): void {
-		this._currentScene?._processDestroyQueue();
+		if (this._currentScene?._processDestroyQueue()) {
+			this.renderer?.markRenderDirty();
+		}
 	}
 }

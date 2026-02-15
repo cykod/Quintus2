@@ -119,13 +119,15 @@ export class Scene extends Node {
 		this._destructionQueue.push(node);
 	}
 
-	/** @internal Process all pending destructions. */
-	_processDestroyQueue(): void {
+	/** @internal Process all pending destructions. Returns true if any nodes were destroyed. */
+	_processDestroyQueue(): boolean {
 		const queue = this._destructionQueue;
+		if (queue.length === 0) return false;
 		this._destructionQueue = [];
 		for (const node of queue) {
 			node._processDestroy();
 		}
+		return true;
 	}
 
 	/** @internal Destroy the entire scene tree. */

@@ -93,3 +93,15 @@
 [MILE] sat 2/14 8pm - Added physics world and SAT micro-gap tests covering all uncovered edge-case paths in T6, achieving 100% line coverage
 
 [IMPL] sat 2/14 8pm - Implement Phase 2 Subphase 4: Actor with move(), StaticCollider, and Sensor physics bodies
+
+[MILE] sat 2/14 9pm - Added Actor, StaticCollider, and Sensor physics bodies with move() slide loop, one-way platforms, and sensor signals
+
+[DEVL] sat 2/14 9pm - Review Phase 2 Subphase 5 integration tests & demo design for potential issues and risks
+
+[MILE] sat 2/14 9pm - Refactored scenes from callback-based to class-based API, eliminating defineScene/SceneDefinition in favor of SceneConstructor
+
+[IMPL] sat 2/14 9pm - Implement Phase 2 Subphase 5: integration tests and platformer demo for the physics system
+
+[IMPL] sun 2/15 6am - Debug platformer demo where player falls through ground, coins mispositioned, and collision objects not visible
+
+[IMPL] sun 2/15 6am - Debug platformer demo where player falls through ground, coins render at wrong position, and collision objects appear missing

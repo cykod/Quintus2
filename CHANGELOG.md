@@ -1,3 +1,17 @@
+## Fix physics registration, jump, rendering and add platformer demo
+*Sunday, February 15th at 7am*
+Fix four critical physics engine bugs and add the Phase 2.5 platformer demo 
+with integration tests. CollisionShape now notifies its parent CollisionObject 
+via _onShapeChanged() when the shape property is set, fixing the root cause 
+where bodies registered in the spatial hash before their shapes existed. 
+Actor.move() no longer clobbers jump velocity with floor snap gravity when 
+velocity.y is negative. Scene._processDestroyQueue() now returns a boolean so 
+Game can mark the render list dirty, fixing ghost nodes that persisted after 
+destroy(). The platformer demo includes a player with gravity/jumping, three 
+collectible coins with bobbing animation, stair-stepped platforms, and walls.
+
+---
+
 ## Refactor scenes from callbacks to class-based API
 *Saturday, February 14th at 9pm*
 Replaced the callback-based scene registration pattern (game.scene("name", fn) 

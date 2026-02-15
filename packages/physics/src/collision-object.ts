@@ -75,6 +75,19 @@ export abstract class CollisionObject extends Node2D {
 		this._registerInWorld();
 	}
 
+	/**
+	 * @internal Called by CollisionShape when its shape property changes.
+	 * Re-inserts this body into the spatial hash with the updated AABB.
+	 * This handles the common case where shapes are set after super.onReady()
+	 * already registered the body (with no shapes at that point).
+	 */
+	_onShapeChanged(): void {
+		if (this._registered) {
+			const world = this._getWorld();
+			if (world) world.updatePosition(this);
+		}
+	}
+
 	/** @internal */
 	override onExitTree(): void {
 		if (this._registered) {

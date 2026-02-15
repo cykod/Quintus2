@@ -139,8 +139,10 @@ export class Actor extends CollisionObject {
 		// 1. Apply gravity
 		if (this.applyGravity) {
 			if (this._onFloor) {
-				// Small constant to re-detect floor without accumulating large velocity
-				this.velocity.y = FLOOR_SNAP_GRAVITY;
+				// Only snap if not jumping upward — preserve negative velocity from jumps
+				if (this.velocity.y >= 0) {
+					this.velocity.y = FLOOR_SNAP_GRAVITY;
+				}
 			} else {
 				this.velocity.y += this.gravity * dt;
 			}

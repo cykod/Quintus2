@@ -9,11 +9,29 @@ export interface CollisionShapeProps extends Node2DProps {
 }
 
 export class CollisionShape extends Node2D {
-	/** The collision shape geometry. Must be set before the body enters the tree. */
-	shape: Shape2D | null = null;
+	/** The collision shape geometry. */
+	private _shape: Shape2D | null = null;
 
 	/** When true, this shape is ignored during collision detection. */
 	disabled = false;
+
+	get shape(): Shape2D | null {
+		return this._shape;
+	}
+
+	set shape(value: Shape2D | null) {
+		this._shape = value;
+		this._notifyParent();
+	}
+
+	/**
+	 * @internal Notify parent CollisionObject when this shape enters the tree
+	 * with a pre-set shape (e.g. shape was set before addChild).
+	 */
+	override onReady(): void {
+		super.onReady();
+		if (this._shape) this._notifyParent();
+	}
 
 	/**
 	 * Get the world-space transform for this shape.
@@ -25,7 +43,19 @@ export class CollisionShape extends Node2D {
 
 	/** Compute the world-space AABB for this shape. */
 	getWorldAABB(): AABB | null {
-		if (!this.shape || this.disabled) return null;
-		return shapeAABB(this.shape, this.globalTransform);
+		if (!this._shape || this.disabled) return null;
+		return shapeAABB(this._shape, this.globalTransform);
+	}
+
+	/**
+	 * Notify parent CollisionObject to update its spatial hash entry.
+	 * Uses duck-typing to avoid circular import with collision-object.
+	 */
+	private _notifyParent(): void {
+		if (!this.isInsideTree) return;
+		const parent = this.parent as unknown as { _onShapeChanged?: () => void } | null;
+		if (parent && typeof parent._onShapeChanged === "function") {
+			parent._onShapeChanged();
+		}
 	}
 }
