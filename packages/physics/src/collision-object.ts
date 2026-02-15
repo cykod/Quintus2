@@ -1,5 +1,5 @@
 import { Node2D } from "@quintus/core";
-import type { AABB, Matrix2D } from "@quintus/math";
+import type { AABB, Matrix2D, Vec2 } from "@quintus/math";
 import { CollisionShape } from "./collision-shape.js";
 import type { PhysicsWorld } from "./physics-world.js";
 import type { Shape2D } from "./shapes.js";
@@ -100,6 +100,11 @@ export abstract class CollisionObject extends Node2D {
 
 	/** @internal Whether this sensor should be monitored. Override in Sensor. */
 	get _monitoring(): boolean {
+		return false;
+	}
+
+	/** @internal Filter collision by normal direction. Override in StaticCollider for one-way. */
+	_shouldSkipCollision(_normal: Vec2): boolean {
 		return false;
 	}
 

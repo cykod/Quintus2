@@ -85,9 +85,24 @@ export class PhysicsWorld {
 	 * 4. For each candidate, iterate all shape pairs to find earliest TOI
 	 * 5. Build CollisionInfo with travel, remainder, contact point
 	 */
-	castMotion(body: CollisionObject, motion: Vec2): CollisionInfo | null {
-		const bodyAABB = body.getWorldAABB();
+	castMotion(body: CollisionObject, motion: Vec2, bodyOffset?: Vec2): CollisionInfo | null {
+		let bodyAABB = body.getWorldAABB();
 		if (!bodyAABB) return null;
+
+		// Apply body offset (used by Actor slide loop for batched displacement)
+		let bodyShapes = body.getShapeTransforms();
+		if (bodyShapes.length === 0) return null;
+
+		if (bodyOffset) {
+			bodyAABB = new AABB(
+				new Vec2(bodyAABB.min.x + bodyOffset.x, bodyAABB.min.y + bodyOffset.y),
+				new Vec2(bodyAABB.max.x + bodyOffset.x, bodyAABB.max.y + bodyOffset.y),
+			);
+			bodyShapes = bodyShapes.map((s) => ({
+				shape: s.shape,
+				transform: this._translateTransform(s.transform, bodyOffset),
+			}));
+		}
 
 		// 1. Compute swept AABB
 		const sweptMin = new Vec2(
@@ -112,9 +127,6 @@ export class PhysicsWorld {
 		let bestBodyShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
 		let bestColliderShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
 
-		const bodyShapes = body.getShapeTransforms();
-		if (bodyShapes.length === 0) return null;
-
 		for (const candidate of candidates) {
 			// 3. Filter by collision groups
 			if (!this.groups.shouldCollide(body.collisionGroup, candidate.collisionGroup)) {
@@ -122,6 +134,8 @@ export class PhysicsWorld {
 			}
 			// Don't collide actor with sensors (sensors handle their own overlap)
 			if (candidate.bodyType === "sensor") continue;
+			// Don't collide actor with other actors
+			if (candidate.bodyType === "actor") continue;
 
 			const candidateShapes = candidate.getShapeTransforms();
 
@@ -137,6 +151,9 @@ export class PhysicsWorld {
 					);
 
 					if (hit && hit.toi < bestTOI) {
+						// One-way platform filtering
+						if (candidate._shouldSkipCollision(hit.normal)) continue;
+
 						bestTOI = hit.toi;
 						bestNormal = hit.normal;
 						bestDepth = hit.depth;

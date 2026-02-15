@@ -1,5 +1,5 @@
-// Shapes
-
+// Physics bodies
+export { Actor } from "./actor.js";
 // Collision groups
 export type { CollisionGroupsConfig, GroupConfig } from "./collision-groups.js";
 export { CollisionGroups } from "./collision-groups.js";
@@ -8,7 +8,6 @@ export type { CollisionInfo } from "./collision-info.js";
 // Collision object
 export type { BodyType } from "./collision-object.js";
 export { CollisionObject } from "./collision-object.js";
-
 // Collision shape
 export type { CollisionShapeProps } from "./collision-shape.js";
 export { CollisionShape } from "./collision-shape.js";
@@ -23,6 +22,7 @@ export { PhysicsWorld } from "./physics-world.js";
 // SAT collision detection
 export type { SATResult } from "./sat.js";
 export { findTOI, flip, sweptAABB, testOverlap } from "./sat.js";
+export { Sensor } from "./sensor.js";
 export type {
 	CapsuleShape,
 	CircleShape,
@@ -33,3 +33,4 @@ export type {
 export { Shape, shapeAABB } from "./shapes.js";
 // Spatial hash (broad phase)
 export { SpatialHash } from "./spatial-hash.js";
+export { StaticCollider } from "./static-collider.js";

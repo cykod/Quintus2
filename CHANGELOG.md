@@ -1,3 +1,17 @@
+## Add Actor, StaticCollider, and Sensor physics bodies (Phase 2.4)
+*Saturday, February 14th at 9pm*
+Implement Phase 2 Subphase 4: the three concrete physics body types. Actor 
+provides the core move() slide loop with gravity, floor/wall/ceiling detection, 
+safe margin depenetration, velocity zeroing, collided signal, and moving 
+platform carry. StaticCollider adds constantVelocity for moving platforms and 
+oneWay/oneWayDirection for jump-through platforms. Sensor provides 
+bodyEntered/bodyExited/sensorEntered/sensorExited signals with monitoring 
+toggle and overlap queries. PhysicsWorld.castMotion gains bodyOffset for 
+batched displacement, actor-vs-actor filtering, and one-way normal alignment 
+filtering. 54 new tests (719 total), all passing.
+
+---
+
 ## Add physics world & SAT micro-gap tests (T6)
 *Saturday, February 14th at 8pm*
 Added 11 tests covering uncovered edge-case paths in physics-world.ts, sat.ts, 
