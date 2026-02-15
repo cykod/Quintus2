@@ -663,6 +663,66 @@ describe("Swept: sweptAABB (already-overlapping edge cases)", () => {
 		expect(result!.normal.x).toBeCloseTo(1);
 		expect(result!.normal.y).toBeCloseTo(0);
 	});
+
+	it("returns X-axis normal with negative dx (B to the left)", () => {
+		// A at (0,0), B at (-5,0). Both 16x16.
+		// overlapX = 16 - 5 = 11, overlapY = 16
+		// overlapX < overlapY → X-axis normal
+		// dx = -5 < 0 → normal = (-1, 0)
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 100), r16, tx(-5, 0));
+		expect(result).not.toBeNull();
+		expect(result!.toi).toBe(0);
+		expect(result!.normal.x).toBeCloseTo(-1);
+		expect(result!.normal.y).toBeCloseTo(0);
+	});
+});
+
+describe("Swept: sweptAABB (near-zero motion components)", () => {
+	const r16 = Shape.rect(16, 16);
+
+	it("near-zero x motion with overlapping x range uses Infinity entry", () => {
+		// motion.x ≈ 0, bodies overlap on x-axis
+		// This triggers txEntry = -Infinity, txExit = Infinity branch
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 200), r16, tx(0, 100));
+		expect(result).not.toBeNull();
+		expect(result!.toi).toBeGreaterThan(0);
+		expect(result!.toi).toBeLessThan(1);
+	});
+
+	it("near-zero x motion with non-overlapping x range returns null", () => {
+		// motion.x ≈ 0, bodies far apart on x-axis
+		// This triggers txEntry = Infinity, txExit = -Infinity → no collision
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 200), r16, tx(100, 100));
+		expect(result).toBeNull();
+	});
+
+	it("near-zero y motion with overlapping y range detects collision", () => {
+		// motion.y ≈ 0, bodies overlap on y-axis
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(200, 0), r16, tx(100, 0));
+		expect(result).not.toBeNull();
+	});
+
+	it("near-zero y motion with non-overlapping y range returns null", () => {
+		// motion.y ≈ 0, bodies far apart on y-axis
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(200, 0), r16, tx(100, 100));
+		expect(result).toBeNull();
+	});
+
+	it("leftward motion produces correct negative-x normal", () => {
+		// A moving left toward B
+		const result = sweptAABB(r16, tx(100, 0), new Vec2(-200, 0), r16, tx(0, 0));
+		expect(result).not.toBeNull();
+		expect(result!.normal.x).toBeCloseTo(-1);
+		expect(result!.normal.y).toBeCloseTo(0);
+	});
+
+	it("upward motion produces correct negative-y normal", () => {
+		// A moving up toward B
+		const result = sweptAABB(r16, tx(0, 100), new Vec2(0, -200), r16, tx(0, 0));
+		expect(result).not.toBeNull();
+		expect(result!.normal.x).toBeCloseTo(0);
+		expect(result!.normal.y).toBeCloseTo(-1);
+	});
 });
 
 // ── Capsule-vs-Capsule: closestPointsSegments edge cases ────────

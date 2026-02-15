@@ -394,4 +394,46 @@ describe("Actor", () => {
 			expect(actor.getFloorCollider()).toBeNull();
 		});
 	});
+
+	describe("move/moveAndCollide without physics world", () => {
+		it("move() is a no-op when no physics world is attached", () => {
+			const actor = new Actor();
+			actor.position = new Vec2(10, 20);
+			actor.velocity = new Vec2(100, 0);
+			// Not added to any scene with physics — _getWorld() returns null
+			actor.move(0.1);
+			// Position should be unchanged
+			expect(actor.position.x).toBe(10);
+			expect(actor.position.y).toBe(20);
+		});
+
+		it("moveAndCollide() returns null when no physics world is attached", () => {
+			const actor = new Actor();
+			actor.position = new Vec2(10, 20);
+			const result = actor.moveAndCollide(new Vec2(100, 0));
+			expect(result).toBeNull();
+			// Position should be unchanged
+			expect(actor.position.x).toBe(10);
+			expect(actor.position.y).toBe(20);
+		});
+	});
+
+	describe("floor snap preserves jump velocity", () => {
+		it("negative velocity.y is preserved on floor (allows jumping)", () => {
+			const actor = makeActor(new Vec2(100, 80));
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			// Land on floor
+			actor.velocity = new Vec2(0, 200);
+			actor.move(0.1);
+			expect(actor.isOnFloor()).toBe(true);
+
+			// Set negative (upward) velocity to simulate jump
+			actor.velocity.y = -400;
+			actor.move(1 / 60);
+			// Should not snap to floor — velocity.y should stay negative
+			expect(actor.velocity.y).toBeLessThan(0);
+		});
+	});
 });

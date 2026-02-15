@@ -449,6 +449,42 @@ describe("Node", () => {
 		expect(a.id).not.toBe(b.id);
 	});
 
+	// === Tree Queries: Not Found ===
+	it("find(name) returns null when no match exists", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const child = new Node();
+		child.name = "exists";
+		scene.addChild(child);
+		expect(scene.find("nonexistent")).toBeNull();
+	});
+
+	it("findByType(Type) returns null when no match exists", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		class SpecialNode extends Node {}
+		scene.addChild(new Node());
+		expect(scene.findByType(SpecialNode)).toBeNull();
+	});
+
+	// === exitTree with nested children ===
+	it("removeChild fires onExitTree recursively on nested children", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const parent = new TestNode();
+		const child = new TestNode();
+		const grandchild = new TestNode();
+		parent.addChild(child);
+		child.addChild(grandchild);
+		scene.addChild(parent);
+
+		expect(grandchild.isInsideTree).toBe(true);
+		scene.removeChild(parent);
+		expect(parent.exitTreeCalled).toBe(true);
+		expect(child.exitTreeCalled).toBe(true);
+		expect(grandchild.exitTreeCalled).toBe(true);
+	});
+
 	// === Scene/Game Access ===
 	it("scene accessor walks up to root Scene", () => {
 		const game = createTestGame();
@@ -466,5 +502,15 @@ describe("Node", () => {
 		const node = new Node();
 		scene.addChild(node);
 		expect(node.game).toBe(game);
+	});
+
+	it("scene accessor returns null for orphaned node", () => {
+		const node = new Node();
+		expect(node.scene).toBeNull();
+	});
+
+	it("game accessor returns null for orphaned node", () => {
+		const node = new Node();
+		expect(node.game).toBeNull();
 	});
 });

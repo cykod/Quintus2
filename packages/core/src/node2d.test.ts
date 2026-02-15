@@ -1,6 +1,7 @@
 import { Matrix2D, Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";
 import { Game } from "./game.js";
+import { Node } from "./node.js";
 import { Node2D } from "./node2d.js";
 import { Scene } from "./scene.js";
 
@@ -147,6 +148,16 @@ describe("Node2D", () => {
 		scene.addChild(parent);
 		child.globalPosition = new Vec2(150, 75);
 		expect(child.position.approxEquals(new Vec2(50, 25))).toBe(true);
+	});
+
+	it("setting globalPosition with non-Node2D parent sets position directly", () => {
+		const scene = createTestScene();
+		const parent = new Node(); // plain Node, not Node2D
+		const child = new Node2D();
+		parent.addChild(child);
+		scene.addChild(parent);
+		child.globalPosition = new Vec2(42, 99);
+		expect(child.position.approxEquals(new Vec2(42, 99))).toBe(true);
 	});
 
 	// === Coordinate Conversion ===

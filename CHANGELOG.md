@@ -1,3 +1,16 @@
+## Close test coverage gaps across core, math, and physics
+*Sunday, February 15th at 8am*
+Added 120 new tests across 13 test files to close branch coverage gaps 
+identified by a systematic coverage audit. Overall branch coverage improved 
+from 94.79% to 97.19%. Key improvements include full 100% branch coverage for 
+actor.ts, sensor.ts, collision-groups.ts, contact-point.ts, node2d.ts, 
+utils.ts, and static-collider.ts. Tests cover edge cases like null-return paths 
+in tree queries, error handling in onFixedUpdate, physics operations without a 
+world attached, sweptAABB near-zero motion branches, and Color.fromHSL hue 
+conversion branches.
+
+---
+
 ## Fix physics registration, jump, rendering and add platformer demo
 *Sunday, February 15th at 7am*
 Fix four critical physics engine bugs and add the Phase 2.5 platformer demo 

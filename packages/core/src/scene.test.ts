@@ -78,6 +78,45 @@ describe("Scene", () => {
 		expect(scene.paused).toBe(true);
 	});
 
+	it("onFixedUpdate error is caught and reported via game.onError", () => {
+		const game = createTestGame();
+		const errorHandler = vi.fn();
+		game.onError.connect(errorHandler);
+		class TestScene extends Scene {
+			onReady() {
+				class BuggyNode extends Node {
+					override onFixedUpdate(_dt: number): void {
+						throw new Error("fixedUpdate oops");
+					}
+				}
+				this.addChild(new BuggyNode());
+			}
+		}
+		game.start(TestScene);
+		game.step();
+		expect(errorHandler).toHaveBeenCalled();
+		expect(errorHandler.mock.calls[0]?.[0].lifecycle).toBe("onFixedUpdate");
+	});
+
+	it("onFixedUpdate error logged to console when no onError listener", () => {
+		const game = createTestGame();
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		class TestScene extends Scene {
+			onReady() {
+				class BuggyNode extends Node {
+					override onFixedUpdate(_dt: number): void {
+						throw new Error("fixedUpdate oops");
+					}
+				}
+				this.addChild(new BuggyNode());
+			}
+		}
+		game.start(TestScene);
+		game.step();
+		expect(errorSpy).toHaveBeenCalled();
+		errorSpy.mockRestore();
+	});
+
 	it("switchTo destroys current scene and loads new one", () => {
 		const game = createTestGame();
 		const destroyed = vi.fn();

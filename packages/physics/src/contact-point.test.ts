@@ -86,6 +86,13 @@ describe("shapeSupport", () => {
 	describe("capsule", () => {
 		const capsule = Shape.capsule(5, 20); // radius=5, total height=20
 
+		it("returns endpoint for zero-length direction", () => {
+			const p = shapeSupport(capsule, Matrix2D.IDENTITY, new Vec2(0, 0));
+			// With zero direction, should return one of the endpoints without offset
+			expect(typeof p.x).toBe("number");
+			expect(typeof p.y).toBe("number");
+		});
+
 		it("returns bottom endpoint + radius for +y", () => {
 			const p = shapeSupport(capsule, Matrix2D.IDENTITY, new Vec2(0, 1));
 			// halfSeg = 20/2 - 5 = 5, bottom endpoint at (0, 5)

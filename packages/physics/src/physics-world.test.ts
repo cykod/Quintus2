@@ -394,6 +394,20 @@ describe("PhysicsWorld", () => {
 			const sensors = world.getOverlappingSensors(sensorA);
 			expect(sensors).toContain(sensorB);
 		});
+
+		it("getOverlappingBodies returns empty for unregistered sensor", () => {
+			const world = new PhysicsWorld({ groups: defaultGroups() });
+			const sensor = createBody("sensor", Shape.rect(20, 20), new Vec2(0, 0)) as TestSensor;
+			// Don't register the sensor
+			expect(world.getOverlappingBodies(sensor)).toHaveLength(0);
+		});
+
+		it("getOverlappingSensors returns empty for unregistered sensor", () => {
+			const world = new PhysicsWorld({ groups: defaultGroups() });
+			const sensor = createBody("sensor", Shape.rect(20, 20), new Vec2(0, 0)) as TestSensor;
+			// Don't register the sensor
+			expect(world.getOverlappingSensors(sensor)).toHaveLength(0);
+		});
 	});
 
 	describe("castMotion (general TOI path)", () => {

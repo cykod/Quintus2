@@ -349,4 +349,17 @@ describe("Sensor", () => {
 			expect(sensor._monitoring).toBe(true);
 		});
 	});
+
+	describe("queries without physics world", () => {
+		it("getOverlappingBodies() returns empty when no world attached", () => {
+			const sensor = new Sensor();
+			// Not added to any scene — _getWorld() returns null
+			expect(sensor.getOverlappingBodies()).toHaveLength(0);
+		});
+
+		it("getOverlappingSensors() returns empty when no world attached", () => {
+			const sensor = new Sensor();
+			expect(sensor.getOverlappingSensors()).toHaveLength(0);
+		});
+	});
 });

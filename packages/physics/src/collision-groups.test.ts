@@ -128,4 +128,12 @@ describe("CollisionGroups", () => {
 	it("DEFAULT static is 'default'", () => {
 		expect(CollisionGroups.DEFAULT).toBe("default");
 	});
+
+	it("shouldCollide returns false for unknown group names (fallback to 0)", () => {
+		const groups = new CollisionGroups(config);
+		// Unknown groupA → maskA = 0, so (0 & layerB) = 0 → false
+		expect(groups.shouldCollide("nonexistent", "player")).toBe(false);
+		// Unknown groupB → layerB = 0, so (maskA & 0) = 0 → false
+		expect(groups.shouldCollide("player", "nonexistent")).toBe(false);
+	});
 });

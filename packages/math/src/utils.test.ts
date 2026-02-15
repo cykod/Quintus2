@@ -96,6 +96,11 @@ describe("Math Utilities", () => {
 		expect(wrap(10, 0, 10)).toBeCloseTo(0);
 	});
 
+	it("wrap with zero range (min === max) returns min", () => {
+		expect(wrap(5, 3, 3)).toBe(3);
+		expect(wrap(0, 7, 7)).toBe(7);
+	});
+
 	// === approxEqual ===
 	it("approxEqual within epsilon", () => {
 		expect(approxEqual(1.0, 1.0000001)).toBe(true);

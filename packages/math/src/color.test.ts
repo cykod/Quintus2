@@ -94,6 +94,33 @@ describe("Color", () => {
 		expect(c.b).toBeCloseTo(0.5);
 	});
 
+	it("fromHSL with l < 0.5 (dark red)", () => {
+		const c = Color.fromHSL(0, 1, 0.3);
+		// l=0.3 < 0.5 → q = l * (1 + s) = 0.3 * 2 = 0.6
+		expect(c.r).toBeCloseTo(0.6);
+		expect(c.g).toBeCloseTo(0);
+		expect(c.b).toBeCloseTo(0);
+	});
+
+	it("fromHSL blue (h=2/3) covers tt > 1 wrap branch", () => {
+		const c = Color.fromHSL(2 / 3, 1, 0.5);
+		expect(c.r).toBeCloseTo(0);
+		expect(c.g).toBeCloseTo(0);
+		expect(c.b).toBeCloseTo(1);
+	});
+
+	it("fromHSL cyan (h=1/2) covers tt < 2/3 branch", () => {
+		const c = Color.fromHSL(0.5, 1, 0.5);
+		expect(c.r).toBeCloseTo(0);
+		expect(c.g).toBeCloseTo(1);
+		expect(c.b).toBeCloseTo(1);
+	});
+
+	it("fromHSL with alpha", () => {
+		const c = Color.fromHSL(0, 1, 0.5, 0.5);
+		expect(c.a).toBe(0.5);
+	});
+
 	// === fromBytes ===
 	it("fromBytes", () => {
 		const c = Color.fromBytes(255, 128, 0);

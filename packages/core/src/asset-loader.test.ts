@@ -165,4 +165,33 @@ describe("AssetLoader", () => {
 		expect(errorFn).toHaveBeenCalledTimes(1);
 		expect(loader.failedAssets).toContain("hero.png");
 	});
+
+	it("non-Error exception is wrapped in Error", async () => {
+		globalThis.fetch = vi.fn().mockRejectedValue("string error") as typeof fetch;
+		const loader = new AssetLoader();
+		const errorFn = vi.fn();
+		loader.error.connect(errorFn);
+		await loader.load({ images: ["hero.png"] });
+		expect(errorFn).toHaveBeenCalledTimes(1);
+		const emitted = errorFn.mock.calls[0]?.[0];
+		expect(emitted.error).toBeInstanceOf(Error);
+		expect(emitted.error.message).toBe("string error");
+	});
+
+	it("nameFromPath handles filename without extension", async () => {
+		const jsonData = { key: "value" };
+		globalThis.fetch = mockFetchSuccess(jsonData, "application/json") as typeof fetch;
+		const loader = new AssetLoader();
+		await loader.load({ json: ["assets/noextension"] });
+		// Name should be the full filename when no dot is found
+		expect(loader.getJSON("noextension")).toEqual(jsonData);
+	});
+
+	it("load with empty manifest is a no-op", async () => {
+		const loader = new AssetLoader();
+		const completeFn = vi.fn();
+		loader.complete.connect(completeFn);
+		await loader.load({});
+		expect(completeFn).toHaveBeenCalled();
+	});
 });
