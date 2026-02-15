@@ -1,3 +1,16 @@
+## Add move-to and nearby commands to debug-game skill
+*Sunday, February 15th at 1pm*
+Adds two new commands to the quintus-debug CLI based on lessons from a live 
+platformer debugging session. move-to holds input actions until a node crosses 
+an x/y threshold, replacing the repetitive press/step/release cycle (reducing 
+coin collection from ~15 commands to 4). nearby shows nodes within a radius 
+with distance, delta, shape, and group info for spatial awareness. Also 
+documents the ceiling collision trap (jumping under platforms), the 
+isJustPressed caveat with move-to, and updates all recipes to use the new 
+commands.
+
+---
+
 ## Add node IDs and shape info to debug tree output
 *Sunday, February 15th at 1pm*
 Enhance the debug tree formatter to include node IDs as [id] prefixes on every 

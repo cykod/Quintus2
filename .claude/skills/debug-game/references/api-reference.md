@@ -163,6 +163,60 @@ quintus-debug tap move_right 30 # hold right for 30 frames
 
 ---
 
+## Movement
+
+### `move-to <node> <actions> <x> <y> [--max=N]`
+Hold one or more input actions until the node crosses the specified x and/or y threshold, then release all held actions. Use `"-"` for x or y to ignore that axis. Multiple actions can be comma-separated.
+
+The threshold direction is inferred from the node's starting position: if the target x is greater than the current x, it waits for `position.x >= target`; if less, it waits for `position.x <= target`. Same logic for y.
+
+**Flags:**
+- `--max=<N>` — maximum frames before giving up (default: 600)
+
+```bash
+# Walk Player right to x=250
+quintus-debug move-to Player move_right 250 -
+
+# Walk Player left to x=50
+quintus-debug move-to Player move_left 50 -
+
+# Jump then drift right to x=100 (two-step — jump uses isJustPressed)
+quintus-debug tap jump 1
+quintus-debug move-to Player move_right 100 -
+
+# Limit to 120 frames max
+quintus-debug move-to Player move_right 300 - --max=120
+```
+
+**Note on `jump`:** Actions that use `isJustPressed` (like `jump`) only fire on the first frame. Since `move-to` holds actions continuously, the jump triggers once but then the button stays "already pressed" and won't re-trigger. For jump + drift, use `tap jump 1` first, then `move-to` with the movement action.
+
+Output includes final position, velocity, floor state, and frame number:
+```
+Reached (250.00, 258.00) in 40 frames. vel=(150.00, 0.00) [floor]  Frame: 85
+```
+
+If the threshold isn't reached within the max frames:
+```
+Stopped at (180.00, 258.00) after 600 frames (limit). vel=(150.00, 0.00) [floor]  Frame: 645
+```
+
+### `nearby <name> [radius]`
+Show all nodes within a given radius of the target node (default: 100px). Results sorted by distance, with delta vector, collision group, shape, and body type.
+
+```bash
+quintus-debug nearby Player
+quintus-debug nearby Player 200
+```
+
+Example output:
+```
+Nearby Player (100.0,202.0) within 100px:
+  Coin  pos=(100.0,200.0)  dist=2.0  delta=(0.0,-2.0)  group=coins  shape=circle r=8  tags=
+  DrawableStatic  pos=(100.0,220.0)  dist=18.0  delta=(0.0,18.0)  group=world  shape=rect 80x12  [static]
+```
+
+---
+
 ## Scripting
 
 ### `run '<json>'`

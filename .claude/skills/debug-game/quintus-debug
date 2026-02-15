@@ -399,6 +399,119 @@ cmd_jump_analysis() {
 	"
 }
 
+cmd_move_to() {
+	# Usage: quintus-debug move-to <node> <actions> <x> <y> [--max=frames]
+	# Actions is a comma-separated list of input actions to hold.
+	# Either x or y (or both) can be specified as "-" to ignore that axis.
+	# Steps frames while holding the given actions until the node crosses the threshold.
+	local target="${1:?Usage: quintus-debug move-to <node> <actions> <x> <y> [--max=N]}"
+	local actions="${2:?Usage: quintus-debug move-to <node> <actions> <x> <y> [--max=N]}"
+	local tx="${3:?Usage: quintus-debug move-to <node> <actions> <x> <y> [--max=N]}"
+	local ty="${4:?Usage: quintus-debug move-to <node> <actions> <x> <y> [--max=N]}"
+	shift 4 || true
+	local max_frames=600
+	for arg in "$@"; do
+		case "$arg" in
+			--max=*) max_frames="${arg#*=}" ;;
+		esac
+	done
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var snap = d.inspect('${target}');
+		if (!snap) return 'Node not found: ${target}';
+		if (!snap.position) return 'Node has no position: ${target}';
+
+		var actionList = '${actions}'.split(',');
+		var tx = '${tx}' === '-' ? null : Number('${tx}');
+		var ty = '${ty}' === '-' ? null : Number('${ty}');
+		if (tx === null && ty === null) return 'Error: both x and y are \"-\". Specify at least one threshold.';
+
+		var startX = snap.position.x;
+		var startY = snap.position.y;
+		var startFrame = d.frame;
+
+		for (var i = 0; i < actionList.length; i++) d.press(actionList[i].trim());
+
+		var reached = false;
+		var frames = 0;
+		for (frames = 0; frames < ${max_frames}; frames++) {
+			d.step(1);
+			snap = d.inspect('${target}');
+			if (!snap) { break; }
+			var px = snap.position.x;
+			var py = snap.position.y;
+			var xOk = tx === null || (tx >= startX ? px >= tx : px <= tx);
+			var yOk = ty === null || (ty >= startY ? py >= ty : py <= ty);
+			if (xOk && yOk) { reached = true; break; }
+		}
+
+		for (var i = 0; i < actionList.length; i++) d.release(actionList[i].trim());
+
+		var endSnap = d.inspect('${target}');
+		var ex = endSnap ? endSnap.position.x.toFixed(2) : '?';
+		var ey = endSnap ? endSnap.position.y.toFixed(2) : '?';
+		var vx = endSnap && endSnap.velocity ? endSnap.velocity.x.toFixed(2) : '?';
+		var vy = endSnap && endSnap.velocity ? endSnap.velocity.y.toFixed(2) : '?';
+		var floor = endSnap && endSnap.isOnFloor ? ' [floor]' : '';
+
+		if (reached) {
+			return 'Reached (' + ex + ', ' + ey + ') in ' + (frames + 1) + ' frames. vel=(' + vx + ', ' + vy + ')' + floor + '  Frame: ' + d.frame;
+		} else {
+			return 'Stopped at (' + ex + ', ' + ey + ') after ' + frames + ' frames (limit). vel=(' + vx + ', ' + vy + ')' + floor + '  Frame: ' + d.frame;
+		}
+	"
+}
+
+cmd_nearby() {
+	local target="${1:?Usage: quintus-debug nearby <name> [radius]}"
+	local radius="${2:-100}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var snap = d.inspect('${target}');
+		if (!snap) return 'Node not found: ${target}';
+		if (!snap.position) return 'Node has no position: ${target}';
+		var px = snap.position.x;
+		var py = snap.position.y;
+		var r = ${radius};
+
+		var tree = d.tree();
+		if (!tree) return '(no scene)';
+
+		var results = [];
+		function walk(n) {
+			if (!n.position) { (n.children || []).forEach(walk); return; }
+			if (n.id === snap.id) { (n.children || []).forEach(walk); return; }
+			var dx = n.position.x - px;
+			var dy = n.position.y - py;
+			var dist = Math.sqrt(dx * dx + dy * dy);
+			if (dist <= r) {
+				var line = n.type;
+				if (n.name !== n.type) line += ' \"' + n.name + '\"';
+				line += '  pos=(' + n.position.x.toFixed(1) + ',' + n.position.y.toFixed(1) + ')';
+				line += '  dist=' + dist.toFixed(1);
+				line += '  delta=(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ')';
+				if (n.collisionGroup) line += '  group=' + n.collisionGroup;
+				// Find collision shape in children
+				var shapes = (n.children || []).filter(function(c) { return c.shapeDesc; });
+				if (shapes.length > 0) line += '  shape=' + shapes[0].shapeDesc;
+				if (n.bodyType) line += '  [' + n.bodyType + ']';
+				if (n.tags && n.tags.length) line += '  tags=' + n.tags.join(',');
+				results.push({ dist: dist, line: line });
+			}
+			(n.children || []).forEach(walk);
+		}
+		walk(tree);
+
+		if (results.length === 0) return 'No nodes within ' + r + 'px of ${target} at (' + px.toFixed(1) + ',' + py.toFixed(1) + ')';
+
+		results.sort(function(a, b) { return a.dist - b.dist; });
+		var header = 'Nearby ${target} (' + px.toFixed(1) + ',' + py.toFixed(1) + ') within ' + r + 'px:';
+		return header + '\n' + results.map(function(r) { return '  ' + r.line; }).join('\n');
+	"
+}
+
 cmd_screenshot() {
 	local file="${1:-/tmp/quintus-screenshot.png}"
 	need_bridge
@@ -439,6 +552,8 @@ case "$cmd" in
 	clear-events) cmd_clear_events ;;
 	track)        cmd_track "$@" ;;
 	jump-analysis) cmd_jump_analysis "$@" ;;
+	move-to)      cmd_move_to "$@" ;;
+	nearby)       cmd_nearby "$@" ;;
 	screenshot)   cmd_screenshot "$@" ;;
 	help)
 		echo "quintus-debug — Quintus game engine debugger"
@@ -466,6 +581,13 @@ case "$cmd" in
 		echo "  release <action>      Release an action"
 		echo "  release-all           Release all held actions"
 		echo "  tap <action> [N]      Press, step N frames, release"
+		echo ""
+		echo "Movement:"
+		echo "  move-to <node> <actions> <x> <y> [--max=N]"
+		echo "                        Hold action(s) until node reaches x/y threshold"
+		echo "                        Use '-' for x or y to ignore that axis"
+		echo "                        Actions can be comma-separated: jump,move_right"
+		echo "  nearby <name> [radius] Show nodes near a target (default radius: 100)"
 		echo ""
 		echo "Scripting:"
 		echo "  run '<json>'          Execute a DebugAction[] script"

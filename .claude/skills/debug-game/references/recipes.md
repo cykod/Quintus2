@@ -40,8 +40,8 @@ quintus-debug events --category=physics
 **Goal:** Determine if a player can jump from one platform to reach another.
 
 ```bash
-# 1. Find the platforms
-quintus-debug layout
+# 1. Survey the area — find platforms and their shapes
+quintus-debug nearby Player 200
 
 # 2. Get player physics parameters
 quintus-debug physics Player
@@ -52,24 +52,22 @@ quintus-debug physics Player
 # air_time_frames = 2 × |jumpForce| / gravity × 60
 # horiz_reach = speed × air_time_frames / 60
 
-# 4. Or just test it empirically:
-# Move player to starting platform edge
-quintus-debug press move_right
-quintus-debug step 30
-quintus-debug release move_right
-quintus-debug physics Player
+# 4. Or test it empirically:
+# Position beside the target platform (NOT under it — ceiling collision!)
+# Platform edge = center_x ± width/2, then add player_half_width margin
+quintus-debug move-to Player move_right 145 -
 
-# 5. Jump and move toward target
-quintus-debug press jump
-quintus-debug step 1
-quintus-debug release jump
-quintus-debug press move_right
-quintus-debug step 40
-quintus-debug release move_right
+# 5. Jump and drift toward target
+quintus-debug tap jump 1
+quintus-debug step 10
+quintus-debug move-to Player move_left 100 -
+quintus-debug step 20
 
 # 6. Check if we made it
 quintus-debug physics Player
 ```
+
+**Important:** Always position beside a platform before jumping, never directly underneath — jumping from below hits the platform's underside (ceiling collision), canceling your upward velocity.
 
 ---
 
@@ -98,28 +96,28 @@ quintus-debug tree
 **Goal:** Navigate to a sensor (coin/pickup) and verify collection.
 
 ```bash
-# 1. Find all sensors
+# 1. Find all sensors and check surroundings
 quintus-debug query Sensor
+quintus-debug nearby Player 200
 
-# 2. Get positions of player and target
-quintus-debug physics Player
-quintus-debug inspect Coin1
+# 2. If coin is on the same level (same Y), just walk to it
+quintus-debug move-to Player move_right 250 -
 
-# 3. Calculate direction (compare X positions)
-# If coin is to the right, move right. Estimate frames:
-# frames = |distance_x| / speed × 60
+# 3. If coin is above (on a platform), use the platform-reaching workflow:
+#    a. Position beside the platform (clear of its X range)
+quintus-debug move-to Player move_left 45 -
+#    b. Jump and arc over the platform edge
+quintus-debug tap jump 1
+quintus-debug step 11
+quintus-debug move-to Player move_right 100 -
+quintus-debug step 20
 
-# 4. Move to the coin
-quintus-debug press move_right
-quintus-debug step 30
-quintus-debug release move_right
-
-# 5. Check if collected (sensor should be destroyed)
+# 4. Check if collected (sensor should be destroyed)
 quintus-debug query Sensor
-# Coin1 should be gone from the list
+# Coin should be gone from the list
 
-# 6. Check collection events
-quintus-debug events --search=collect
+# 5. Verify via events
+quintus-debug events --search=bodyEntered
 ```
 
 ---
@@ -131,20 +129,18 @@ quintus-debug events --search=collect
 ```bash
 # 1. Check sensor exists and has a shape
 quintus-debug inspect TriggerZone
-quintus-debug physics TriggerZone
+quintus-debug nearby Player 200
 
 # 2. Check collision groups — sensor must interact with actor
-# Review the group assignments
+# Review the group assignments in inspect output
 
-# 3. Move actor into sensor range and step
-quintus-debug press move_right
-quintus-debug step 10
-quintus-debug release move_right
+# 3. Move actor into sensor range
+quintus-debug move-to Player move_right 250 -
 
 # 4. Check events for sensor overlap
-quintus-debug events --category=physics --search=sensor
+quintus-debug events --category=physics --search=bodyEntered
 
-# 5. Verify positions actually overlap
+# 5. If no event, verify positions actually overlap
 quintus-debug physics Player
 quintus-debug physics TriggerZone
 # Compare positions + shape dimensions to confirm geometric overlap

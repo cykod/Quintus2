@@ -96,6 +96,12 @@ In the platformer demo:
 2. Check platform collision shape — misaligned shapes cause angled contacts
 3. Use `track` to watch the slide: `quintus-debug track Player 60`
 
+### Ceiling collision when jumping
+1. **Cause:** Jumping from directly under a platform hits its underside, zeroing upward velocity
+2. Check events: `quintus-debug events --category=physics --search=ceiling` — look for `ceiling_contact entered`
+3. **Fix:** Position the actor beside the platform edge (outside its x-range + actor half-width), jump straight up, then drift sideways over the platform edge once above it
+4. Use `quintus-debug nearby Player 150` to see what platforms are overhead before jumping
+
 ### Sensor not detecting overlap
 1. Sensors only detect, they don't block. Verify the sensor's collision group is set to interact with the target.
 2. Check position: `quintus-debug physics CoinSensor` vs `quintus-debug physics Player`

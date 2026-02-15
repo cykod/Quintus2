@@ -54,6 +54,12 @@ quintus-debug disconnect
 - Analyze a jump → `jump-analysis Player`
 - See collision events → `events --category=physics`
 
+**Want to move a node to a position?**
+- Walk right to x=250 → `move-to Player move_right 250 -`
+- Walk left to x=50 → `move-to Player move_left 50 -`
+- Jump then drift right → `tap jump 1` then `move-to Player move_right 100 -`
+- See what's around the player → `nearby Player 150`
+
 **Want to test input?**
 - What actions exist? → `actions`
 - Quick press-and-release → `tap jump 1`
@@ -73,6 +79,8 @@ quintus-debug disconnect
 4. **Sensors don't block.** Sensors detect overlap but don't participate in collision response. Only Actor↔StaticCollider and Actor↔Actor collide physically.
 5. **One-way platforms** use collision normals — actors only collide when approaching from the "up" side.
 6. **Input buffering.** After `press`, the action stays held until you explicitly `release` or `release-all`. Forgetting to release causes the input to persist across steps.
+7. **`jump` uses `isJustPressed`.** Do NOT use `move-to` with `jump` as a sustained action — it only fires on the first frame. Instead: `tap jump 1` to initiate the jump, then `move-to` with the movement action to drift.
+8. **Ceiling collision trap.** Jumping from directly under a platform will hit its underside and kill your upward velocity. Use `nearby` to check for platforms above, and position to the **side** of the platform before jumping so you can arc over its edge.
 
 ## Physics Quick Reference
 
@@ -91,11 +99,43 @@ Air time     = 2 × |jumpForce| / gravity × 60  (in frames)
 Horiz reach  = speed × air_time_seconds
 ```
 
+## Reaching a Platform (Tested Workflow)
+
+To land on a platform from below (e.g., reaching a platform at (100, 220) rect 80x12):
+
+```bash
+# 1. Check surroundings — understand what's above you
+quintus-debug nearby Player 150
+
+# 2. Position BESIDE the platform, not under it (platform x range = 60–140)
+#    Clear edge = platform_edge - player_half_width - margin
+quintus-debug move-to Player move_left 45 -
+
+# 3. Jump straight up from the clear position
+quintus-debug tap jump 1
+
+# 4. Wait a few frames to rise above the platform top (y < 202 for a 214-top platform)
+quintus-debug step 11
+
+# 5. Drift sideways over the platform
+quintus-debug move-to Player move_right 110 -
+
+# 6. Let gravity land you — step a few frames
+quintus-debug step 20
+
+# 7. Verify
+quintus-debug physics Player
+```
+
+**Key insight:** You must jump from beside the platform and arc over its edge. Jumping from directly underneath hits the platform's underside (ceiling collision), killing your vertical velocity.
+
 ## Common Pitfalls
 
 - **"Node not found"** — Node names are case-sensitive. Use `tree` to see exact names.
 - **Player falls through** — Check `physics Player` for velocity spikes. Large velocities can tunnel through thin platforms.
 - **Jump doesn't work** — Must be `isOnFloor: true`. Check with `physics Player` before tapping jump.
+- **Ceiling collision on jump** — Jumping from directly under a platform hits its underside. Use `nearby` to check for obstacles, then position beside the platform edge before jumping.
+- **`move-to` with jump does nothing** — `jump` uses `isJustPressed`, which only fires once. Use `tap jump 1` first, then `move-to` for the drift.
 - **Events empty** — Events drain on read. If you already called `events`, subsequent calls only show new events. Use `peek` to re-read, or `clear-events` then reproduce.
 - **Positions look wrong** — Remember positions are center-based. A platform at y=280 with height 20 has its top edge at y=270.
 
