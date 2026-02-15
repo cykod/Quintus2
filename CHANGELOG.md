@@ -1,3 +1,18 @@
+## Add tween, audio, and UI packages (Phase 5)
+*Sunday, February 15th at 6pm*
+Implement Phase 5 of the engine rewrite: three new packages (@quintus/tween, 
+@quintus/audio, @quintus/ui) plus core changes. Tween adds a builder-pattern 
+animation system with 16 easing functions, sequential/parallel groups, repeat, 
+and Node.tween() augmentation. Audio provides Web Audio API integration with 
+bus routing (music/sfx/ui), autoplay gate, and AudioPlayer node. UI adds 
+screen-fixed widgets (Label, Button, ProgressBar, Panel, Container, Layer) with 
+pointer dispatch for hit testing. Core gains postUpdate signal, 
+Node2D.alpha/renderFixed, and AssetLoader.registerLoader for custom asset 
+types. Includes a Phase 5 demo showcasing interactive tweened animations with 
+UI controls. All 1143 tests pass across 62 files.
+
+---
+
 ## Add tilemap and camera packages (Phase 4)
 *Sunday, February 15th at 3pm*
 Implement Phase 4 of the Quintus 2.0 engine rewrite: @quintus/tilemap for Tiled 

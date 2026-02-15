@@ -1,6 +1,6 @@
 // Signal system
 
-export type { AssetManifest } from "./asset-loader.js";
+export type { AssetManifest, LoaderFn } from "./asset-loader.js";
 // Assets
 export { AssetLoader } from "./asset-loader.js";
 export { Canvas2DRenderer } from "./canvas2d-renderer.js";

@@ -69,6 +69,7 @@ export class Game {
 	readonly onError: Signal<{ node: Node; lifecycle: string; error: unknown }> = signal();
 	readonly preFrame: Signal<void> = signal<void>();
 	readonly postFixedUpdate: Signal<number> = signal<number>();
+	readonly postUpdate: Signal<number> = signal<number>();
 
 	constructor(options: GameOptions) {
 		this.width = options.width;
@@ -302,6 +303,7 @@ export class Game {
 
 	private _update(dt: number): void {
 		this._currentScene?._walkUpdate(dt);
+		this.postUpdate.emit(dt);
 	}
 
 	private _render(): void {

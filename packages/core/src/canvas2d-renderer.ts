@@ -222,13 +222,15 @@ export class Canvas2DRenderer implements Renderer {
 		for (const node of this.renderList) {
 			ctx.save();
 
-			if (hasView) {
-				// Compose view × node global transform
-				const t = vt.multiply(node.globalTransform);
+			if (node.alpha < 1) {
+				ctx.globalAlpha = node.alpha;
+			}
+
+			if (node.renderFixed || !hasView) {
+				const t = node.globalTransform;
 				ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
 			} else {
-				// Fast path: no camera, same as before
-				const t = node.globalTransform;
+				const t = vt.multiply(node.globalTransform);
 				ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
 			}
 

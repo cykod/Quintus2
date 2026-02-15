@@ -97,14 +97,15 @@ export class Node2D extends Node {
 
 **Non-cascading for MVP.** A parent with `alpha = 0.5` does NOT make children render at half opacity. Each node's alpha is independent. Cascading alpha (computing `effectiveAlpha = parent.alpha × node.alpha`) can be added later via a `globalAlpha` computed property similar to `globalTransform`. For Phase 5, independent alpha covers the common cases (fading individual nodes, UI element transparency).
 
-**Serialization:** Add `alpha` to `Node2DSnapshot`:
+**Serialization:** Add `alpha` and `renderFixed` to `Node2DSnapshot`:
 
 ```typescript
 override serialize(): Node2DSnapshot {
     return {
         ...super.serialize(),
         // ... existing fields ...
-        alpha: this.alpha,  // ← new
+        alpha: this.alpha,        // ← new
+        renderFixed: this.renderFixed,  // ← new
     };
 }
 ```
@@ -129,19 +130,38 @@ export class Node2D extends Node {
 
 **Why on Node2D?** This is a generic rendering concern, not UI-specific. Any node might need screen-space rendering (HUD elements, screen-space effects, debug overlays). Keeping it on Node2D avoids the renderer needing to know about `UINode` or `Layer` types.
 
+**Serialization:** Add `renderFixed` to `Node2DSnapshot` alongside `alpha`:
+
+```typescript
+override serialize(): Node2DSnapshot {
+    return {
+        ...super.serialize(),
+        // ... existing fields ...
+        alpha: this.alpha,
+        renderFixed: this.renderFixed,  // ← new
+    };
+}
+```
+
+**Note on Layer-managed propagation:** When a node is a child of a `Layer`, the Layer controls its `renderFixed` value. If a child is reparented out of a Layer, the old `renderFixed` value persists — the child does not auto-reset. This is by design: the simpler model avoids "inherited vs explicit" tracking. Users should set `renderFixed` explicitly after reparenting if needed.
+
 ### 1.4 Canvas2DRenderer Updates
 
 **File:** `packages/core/src/canvas2d-renderer.ts`
 
-Update the render loop to apply `alpha` and check `renderFixed`:
+Update the render loop to apply `alpha` and check `renderFixed`. Also pre-allocate a scratch `Matrix2D` to avoid per-node allocations in the view-transform multiply path:
 
 ```typescript
+// Pre-allocated scratch matrix for view-transform multiplication (avoids GC pressure)
+private readonly _scratchMatrix = new Matrix2D();
+
+// In render():
 for (const node of this.renderList) {
     ctx.save();
 
     // Per-node opacity
     if (node.alpha < 1) {
-        this.ctx.globalAlpha = node.alpha;
+        ctx.globalAlpha = node.alpha;
     }
 
     // Transform: fixed nodes skip viewTransform
@@ -149,7 +169,7 @@ for (const node of this.renderList) {
         const t = node.globalTransform;
         ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
     } else {
-        const t = vt.multiply(node.globalTransform);
+        const t = vt.multiplyInto(node.globalTransform, this._scratchMatrix);
         ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
     }
 
@@ -165,7 +185,9 @@ for (const node of this.renderList) {
 
 **`ctx.save()` / `ctx.restore()`** already bracket each node, so `globalAlpha` is properly scoped — no alpha leak between nodes.
 
-**Performance:** One extra boolean check (`node.renderFixed`) and one conditional per node. Negligible overhead.
+**Performance:** One extra boolean check (`node.renderFixed`) and one conditional per node. Negligible overhead. The scratch matrix eliminates the Matrix2D allocation that previously occurred per non-fixed node per frame.
+
+**Note:** `Matrix2D.multiplyInto(other, out)` writes the result into `out` and returns it. If this method doesn't exist yet, add it to `@quintus/math` as part of the core changes step — it's a simple variant of `multiply()` that writes to a pre-existing matrix instead of allocating a new one.
 
 ### 1.5 AssetLoader.registerLoader
 
@@ -213,11 +235,25 @@ export class AssetLoader {
      * });
      * ```
      */
-    async load(manifest: Record<string, string[]>): Promise<void>;
+    async load(manifest: AssetManifest & Record<string, string[]>): Promise<void>;
 }
 ```
 
 **Design decision — generic extension over audio-specific:** Rather than adding `audio` knowledge to the core AssetLoader, we add a generic extension point. This keeps core audio-agnostic and allows any plugin to register new asset types (fonts, shaders, Tiled TMX files, etc.).
+
+**AssetManifest type change:** The current `AssetManifest` interface has typed fields (`images?`, `json?`). To support custom types, extend it with an index signature:
+
+```typescript
+export interface AssetManifest {
+    images?: string[];
+    json?: string[];
+    [key: string]: string[] | undefined;  // ← allows custom types like "audio"
+}
+```
+
+This preserves compile-time autocomplete for built-in types while allowing custom keys. The `load()` method processes `images` and `json` first (built-in handlers), then iterates remaining keys against `_customLoaders`. Unknown keys with no registered loader are silently skipped (with a console.warn in dev mode).
+
+**Path resolution:** Custom loaders receive the raw path string as provided in the manifest (e.g., `"jump.ogg"`). The asset name is derived via `nameFromPath()` (strips directory and extension: `"jump.ogg"` → `"jump"`). The loaded result is stored in the existing asset map keyed by name, accessible via `game.assets.get("jump")`. Base URL resolution follows the same rules as images — relative to the page, or prefixed by `AssetLoader.basePath` if set.
 
 ---
 
@@ -350,6 +386,10 @@ export interface Lerpable {
 
 - **Tweens don't start until the next frame.** The builder pattern means the tween is being configured during the current frame. Actual playback begins on the next `postUpdate` signal. This avoids partial-frame issues where a tween starts mid-configuration.
 
+- **Start values are captured lazily (when each step begins playing), not eagerly at `.to()` time.** This means if code modifies a property between calling `.to()` and the first `postUpdate`, the tween captures the modified value. For example: `node.alpha = 1; node.tween().to({ alpha: 0 }, 0.3); node.alpha = 0.5;` tweens from 0.5, not 1. This is intentional — it matches Godot 4's behavior and allows chained sequential steps to pick up where the previous left off. Users who need the start value captured immediately can use `.callback()` to snapshot it.
+
+- **Creating a new tween does NOT cancel existing tweens on the same properties.** If two tweens target the same property simultaneously, both run and "last-write-wins" each frame. Call `node.killTweens()` before creating a replacement tween to avoid conflicts. This is the recommended pattern (as shown in the Coin collect example: `this.killTweens()` before the collect tween).
+
 ### 2.2 Property Interpolation
 
 The tween system interpolates properties on the target node. Three modes based on the value type:
@@ -395,7 +435,7 @@ For each property in .to() target:
     → Mode 2: sub-property interpolation (recurse into sub-keys)
 ```
 
-**Start values are captured** when the tween step begins playing (not when `.to()` is called). This allows chained sequential tweens to pick up where the previous left off.
+**Start values are captured** when the tween step begins playing (not when `.to()` is called). This allows chained sequential tweens to pick up where the previous left off. See the design decision note in §2.1 for implications.
 
 ### 2.3 Easing Functions
 
@@ -868,6 +908,7 @@ Browsers block audio playback until the user interacts with the page. The AudioP
 ```typescript
 class AutoplayGate {
     private _ready = false;
+    private _resumed = false;
     private _queue: Array<() => void> = [];
     readonly onReady: Signal<void> = signal<void>();
 
@@ -876,6 +917,10 @@ class AutoplayGate {
             this._ready = true;
         } else {
             const resume = () => {
+                // Guard: only resume once, even if multiple events fire
+                if (this._resumed) return;
+                this._resumed = true;
+
                 context.resume().then(() => {
                     this._ready = true;
                     this.onReady.emit();
@@ -883,7 +928,8 @@ class AutoplayGate {
                     for (const fn of this._queue) fn();
                     this._queue.length = 0;
                 });
-                // Clean up listeners
+
+                // Clean up ALL listeners (canvas + document, all event types)
                 for (const event of events) {
                     canvas.removeEventListener(event, resume);
                     document.removeEventListener(event, resume);
@@ -892,8 +938,8 @@ class AutoplayGate {
 
             const events = ["pointerdown", "keydown", "touchstart"] as const;
             for (const event of events) {
-                canvas.addEventListener(event, resume, { once: true });
-                document.addEventListener(event, resume, { once: true });
+                canvas.addEventListener(event, resume);
+                document.addEventListener(event, resume);
             }
         }
     }
@@ -916,7 +962,7 @@ class AutoplayGate {
 
 - **Queue play commands.** If `game.audio.play("music")` is called before user interaction (e.g., in `onReady()`), the command is queued and executes automatically when the gate opens. This is transparent to game code — no special handling needed.
 
-- **`{ once: true }`** on event listeners ensures cleanup after the first interaction.
+- **Boolean guard instead of `{ once: true }`.** We register 6 listeners total (3 event types × 2 targets). Using a `_resumed` boolean guard ensures only the first event triggers `context.resume()`, and the `removeEventListener` calls in the callback cleanly remove all 6 listeners. This avoids the problem with `{ once: true }` where auto-removed listeners still fire independently on other targets.
 
 ### 3.5 AudioPlugin
 
@@ -1011,6 +1057,7 @@ packages/audio/
     ├── audio-plugin.ts      # AudioPlugin + WeakMap + getAudio
     ├── augment.ts           # Game.prototype.audio + module augmentation
     │
+    ├── __test-utils__.ts    # createMockAudioContext() shared mock helper
     ├── audio-system.test.ts # AudioSystem: play, stop, volume, bus routing
     ├── audio-player.test.ts # AudioPlayer: lifecycle, autoplay, stop on destroy
     └── audio-bus.test.ts    # AudioBus: volume routing, fallback
@@ -1018,7 +1065,7 @@ packages/audio/
 
 Size budget: **~3KB gzipped**. Dependencies: `@quintus/core`.
 
-**Note on testing:** Web Audio API is not available in jsdom. Tests will mock `AudioContext` and `AudioBuffer` to verify correct API calls, state management, and signal emission without actual audio playback.
+**Note on testing:** Web Audio API is not available in jsdom. Tests will mock `AudioContext` and `AudioBuffer` to verify correct API calls, state management, and signal emission without actual audio playback. A shared `createMockAudioContext()` test helper will be added to `packages/audio/src/__test-utils__.ts`. This helper returns a minimal mock implementing the subset of Web Audio API that AudioSystem actually uses (`createGain()` → mock `GainNode` with `.gain.value` and `.connect()`, `createBufferSource()` → mock `AudioBufferSourceNode` with `.start()`, `.stop()`, `.connect()`, `.onended`). This keeps individual tests clean and gives one place to update if the API surface changes.
 
 ---
 
@@ -1097,6 +1144,8 @@ export class UINode extends Node2D {
 
 - **`containsPoint` uses globalPosition.** For fixed UI, globalPosition is in screen space (since renderFixed skips viewTransform). The hit test is a simple AABB check: point inside `[globalPosition, globalPosition + size]`.
 
+- **Hit-testing assumes axis-aligned widgets.** `containsPoint` does not account for rotation or non-uniform scale on the UINode or its ancestors. If a UINode has non-identity rotation, the rendered bounds and hit area will not match. This is intentional for MVP — game UI rarely rotates, and the simpler AABB test is cheaper. If rotated hit-testing is needed later, transform the test point by the inverse of `globalTransform` before the AABB check.
+
 ### 4.2 Pointer Event Handling
 
 Centralized pointer dispatch for all UINodes. Uses a WeakMap keyed by Game to support multiple game instances.
@@ -1137,14 +1186,30 @@ class PointerDispatcher {
         };
 
         const findTarget = (x: number, y: number): UINode | null => {
-            // Walk in reverse z-order (highest zIndex first = topmost)
+            // Use the renderer's sorted draw order to determine topmost.
+            // The renderList is already sorted by tree depth + zIndex,
+            // so the last matching node in the list is visually on top.
+            // We filter to only interactive UINodes that contain the point.
             let best: UINode | null = null;
-            let bestZ = -Infinity;
-            for (const node of this.nodes) {
-                if (!node.interactive || !node.visible) continue;
-                if (node.zIndex >= bestZ && node.containsPoint(x, y)) {
-                    best = node;
-                    bestZ = node.zIndex;
+            const renderList = game.renderer?.renderList;
+            if (renderList) {
+                // Walk renderList forward; last match wins (topmost)
+                for (const node of renderList) {
+                    if (!(node instanceof UINode)) continue;
+                    if (!node.interactive || !node.visible) continue;
+                    if (node.containsPoint(x, y)) {
+                        best = node;
+                    }
+                }
+            } else {
+                // Fallback (headless/no renderer): use flat zIndex
+                let bestZ = -Infinity;
+                for (const node of this.nodes) {
+                    if (!node.interactive || !node.visible) continue;
+                    if (node.zIndex >= bestZ && node.containsPoint(x, y)) {
+                        best = node;
+                        bestZ = node.zIndex;
+                    }
                 }
             }
             return best;
@@ -1216,7 +1281,7 @@ onExitTree(): void {
 
 - **Coordinate conversion.** Screen coordinates are computed by mapping the pointer position from the canvas's CSS layout to the game's logical resolution. This handles CSS scaling (`scale: "fit"`) correctly.
 
-- **Topmost-first dispatch.** Only the highest-zIndex widget under the pointer receives the event. No event bubbling — if a button is on top of a panel, only the button fires.
+- **Topmost-first dispatch via render order.** The dispatcher uses the renderer's `renderList` (already sorted by tree depth + zIndex) to determine which widget is visually on top. The last matching UINode in the render list receives the event. This correctly handles nested z-ordering: a button with `zIndex: 0` inside a Layer with `zIndex: 100` is correctly treated as above a sibling with `zIndex: 50`. Falls back to flat zIndex comparison in headless mode (no renderer). No event bubbling — if a button is on top of a panel, only the button fires.
 
 - **No UIPlugin required.** The PointerDispatcher is lazily created when the first UINode enters the tree. No explicit `game.use()` call needed. This keeps UI simple — just add UINode children to your scene.
 
@@ -1834,9 +1899,11 @@ Size budget: **~5KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`.
 | **Signals** | completed | Fires when tween finishes (after all repeats) |
 | | looped | Fires at start of each repeat iteration |
 | | onComplete | Convenience method equivalent to completed.connect |
+| **Conflict** | Two tweens on same property | Last-write-wins behavior per frame |
+| | killTweens before new tween | Old tween killed, new tween runs cleanly |
+| **Start capture** | Lazy capture timing | Start value captured at step start, not at .to() call |
 | **Integration** | Tween + Game.step() | Tween advances correctly with manual stepping |
 | | Multiple tweens | Multiple active tweens on different nodes |
-| | Tween on same property | Second tween on same property overrides first |
 
 ### @quintus/audio Tests
 
@@ -1892,7 +1959,8 @@ Size budget: **~5KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`.
 | **Layer** | Fixed propagation | Children inherit renderFixed from Layer |
 | | Nested layers | Inner layer manages its own renderFixed |
 | | Dynamic children | Children added after fixed=true get renderFixed |
-| **Pointer dispatch** | Topmost target | Highest zIndex widget receives events |
+| **Pointer dispatch** | Topmost target (render order) | Widget visually on top receives events (uses render list) |
+| | Nested z-order | Button in high-zIndex Layer beats sibling at lower zIndex |
 | | Coordinate mapping | Correct screen→game coordinate conversion |
 | | Enter/exit | Hover tracking fires enter/exit correctly |
 | | Cleanup | Listeners removed when all UINodes removed |
@@ -2119,9 +2187,13 @@ All of these must be true before Phase 5 is complete:
 - [ ] `Game.postUpdate` signal added, fires after `_walkUpdate` before render
 - [ ] `Node2D.alpha` property added, default 1
 - [ ] `Node2D.renderFixed` property added, default false
+- [ ] Both `alpha` and `renderFixed` added to `Node2DSnapshot` and serialized
 - [ ] Canvas2DRenderer applies `alpha` via `globalAlpha`
 - [ ] Canvas2DRenderer skips `viewTransform` when `renderFixed` is true
+- [ ] Canvas2DRenderer uses scratch `Matrix2D` for view-transform multiply (zero alloc)
+- [ ] `Matrix2D.multiplyInto(other, out)` added to `@quintus/math`
 - [ ] `AssetLoader.registerLoader()` method added for custom asset types
+- [ ] `AssetManifest` extended with index signature for custom types
 - [ ] Existing Phase 1–4 tests still pass (backward compatible)
 
 ### @quintus/tween
@@ -2179,7 +2251,8 @@ All of these must be true before Phase 5 is complete:
 - [ ] Container: alignment (start, center, end)
 - [ ] Layer: `fixed = true` propagates `renderFixed` to children
 - [ ] Layer: nested layers manage their own renderFixed
-- [ ] Pointer dispatch: topmost widget receives events
+- [ ] Pointer dispatch: topmost widget receives events (via render list order)
+- [ ] Pointer dispatch: nested z-order works (button in high-z Layer beats lower sibling)
 - [ ] Pointer dispatch: correct coordinate mapping from CSS to game resolution
 - [ ] All UI tests pass
 
@@ -2207,9 +2280,10 @@ Days 1–3: Core changes + Tween
 ───────────────────────────────────────
 Step 1: Core changes                                          (0.5 day)
         → Game.postUpdate signal
-        → Node2D.alpha + Node2D.renderFixed
-        → Canvas2DRenderer updates
-        → AssetLoader.registerLoader
+        → Node2D.alpha + Node2D.renderFixed (+ Node2DSnapshot)
+        → Matrix2D.multiplyInto() for zero-alloc render path
+        → Canvas2DRenderer updates (alpha, renderFixed, scratch matrix)
+        → AssetLoader.registerLoader + AssetManifest index signature
         → Existing tests still pass
 
 Step 2: Easing functions                                      (0.5 day)

@@ -1,15 +1,21 @@
 import { type Signal, signal } from "./signal.js";
 
+export type LoaderFn = (name: string, path: string) => Promise<unknown>;
+
 export interface AssetManifest {
 	/** Image paths to load. */
 	images?: string[];
 	/** JSON paths to load. */
 	json?: string[];
+	/** Custom asset types registered via registerLoader(). */
+	[key: string]: string[] | undefined;
 }
 
 export class AssetLoader {
 	private images = new Map<string, ImageBitmap>();
 	private jsonData = new Map<string, unknown>();
+	private _customAssets = new Map<string, unknown>();
+	private _customLoaders = new Map<string, LoaderFn>();
 	private failed = new Set<string>();
 
 	/** Fires during loading with progress info. */
@@ -19,9 +25,14 @@ export class AssetLoader {
 	/** Fires when an individual asset fails to load. */
 	readonly error: Signal<{ asset: string; error: Error }> = signal();
 
+	/** Register a custom loader for a new asset type (e.g. "audio"). */
+	registerLoader(type: string, loader: LoaderFn): void {
+		this._customLoaders.set(type, loader);
+	}
+
 	/** Load all assets in a manifest. */
 	async load(manifest: AssetManifest): Promise<void> {
-		const entries: Array<{ type: "image" | "json"; path: string }> = [];
+		const entries: Array<{ type: string; path: string }> = [];
 
 		for (const path of manifest.images ?? []) {
 			entries.push({ type: "image", path });
@@ -30,24 +41,47 @@ export class AssetLoader {
 			entries.push({ type: "json", path });
 		}
 
+		// Custom types
+		for (const [key, paths] of Object.entries(manifest)) {
+			if (key === "images" || key === "json") continue;
+			if (!Array.isArray(paths)) continue;
+			if (!this._customLoaders.has(key)) {
+				console.warn(`No loader registered for asset type "${key}". Skipping.`);
+				continue;
+			}
+			for (const path of paths) {
+				entries.push({ type: key, path });
+			}
+		}
+
 		const total = entries.length;
 		let loaded = 0;
 
 		await Promise.allSettled(
 			entries.map(async (entry) => {
 				try {
-					const response = await fetch(entry.path);
-					if (!response.ok) {
-						throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-					}
-
 					if (entry.type === "image") {
+						const response = await fetch(entry.path);
+						if (!response.ok) {
+							throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+						}
 						const blob = await response.blob();
 						const bitmap = await createImageBitmap(blob);
 						this.images.set(this.nameFromPath(entry.path), bitmap);
-					} else {
+					} else if (entry.type === "json") {
+						const response = await fetch(entry.path);
+						if (!response.ok) {
+							throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+						}
 						const data = await response.json();
 						this.jsonData.set(this.nameFromPath(entry.path), data);
+					} else {
+						const loader = this._customLoaders.get(entry.type);
+						if (loader) {
+							const name = this.nameFromPath(entry.path);
+							const result = await loader(name, entry.path);
+							this._customAssets.set(name, result);
+						}
 					}
 
 					loaded++;
@@ -83,9 +117,14 @@ export class AssetLoader {
 		return (this.jsonData.get(name) as T) ?? null;
 	}
 
+	/** Get a custom-loaded asset by name. */
+	get<T = unknown>(name: string): T | null {
+		return (this._customAssets.get(name) as T) ?? null;
+	}
+
 	/** Check if a specific asset is loaded. */
 	isLoaded(name: string): boolean {
-		return this.images.has(name) || this.jsonData.has(name);
+		return this.images.has(name) || this.jsonData.has(name) || this._customAssets.has(name);
 	}
 
 	/** Check if all assets are loaded. */
@@ -106,6 +145,11 @@ export class AssetLoader {
 	/** @internal Store JSON data directly (for testing). */
 	_storeJSON(name: string, data: unknown): void {
 		this.jsonData.set(name, data);
+	}
+
+	/** @internal Store a custom asset directly (for testing). */
+	_storeCustom(name: string, data: unknown): void {
+		this._customAssets.set(name, data);
 	}
 
 	private nameFromPath(path: string): string {

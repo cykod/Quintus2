@@ -13,6 +13,8 @@ export interface Node2DSnapshot extends NodeSnapshot {
 	globalPosition: { x: number; y: number };
 	visible: boolean;
 	zIndex: number;
+	alpha: number;
+	renderFixed: boolean;
 }
 
 export interface CameraSnapshot extends NodeSnapshot {

@@ -38,6 +38,9 @@ importers:
 
   examples:
     dependencies:
+      '@quintus/audio':
+        specifier: workspace:*
+        version: link:../packages/audio
       '@quintus/core':
         specifier: workspace:*
         version: link:../packages/core
@@ -53,6 +56,12 @@ importers:
       '@quintus/sprites':
         specifier: workspace:*
         version: link:../packages/sprites
+      '@quintus/tween':
+        specifier: workspace:*
+        version: link:../packages/tween
+      '@quintus/ui':
+        specifier: workspace:*
+        version: link:../packages/ui
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -63,7 +72,11 @@ importers:
 
   packages/ai-prefabs: {}
 
-  packages/audio: {}
+  packages/audio:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/camera:
     dependencies:
@@ -137,9 +150,23 @@ importers:
         specifier: workspace:*
         version: link:../physics
 
-  packages/tween: {}
+  packages/tween:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
-  packages/ui: {}
+  packages/ui:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
 packages:
 

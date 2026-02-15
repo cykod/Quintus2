@@ -6,11 +6,14 @@
 		"dev": "vite"
 	},
 	"dependencies": {
+		"@quintus/audio": "workspace:*",
 		"@quintus/core": "workspace:*",
 		"@quintus/input": "workspace:*",
 		"@quintus/math": "workspace:*",
 		"@quintus/physics": "workspace:*",
-		"@quintus/sprites": "workspace:*"
+		"@quintus/sprites": "workspace:*",
+		"@quintus/tween": "workspace:*",
+		"@quintus/ui": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",

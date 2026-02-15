@@ -24,6 +24,8 @@ export class Node2D extends Node {
 	// === Rendering ===
 	zIndex = 0;
 	visible = true;
+	alpha = 1;
+	renderFixed = false;
 
 	constructor() {
 		super();
@@ -112,6 +114,8 @@ export class Node2D extends Node {
 			globalPosition: { x: gp.x, y: gp.y },
 			visible: this.visible,
 			zIndex: this.zIndex,
+			alpha: this.alpha,
+			renderFixed: this.renderFixed,
 		};
 	}
 
