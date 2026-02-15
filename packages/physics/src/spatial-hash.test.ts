@@ -180,6 +180,28 @@ describe("SpatialHash", () => {
 		expect(hash.count).toBe(0);
 	});
 
+	it("queryPairs covers reverse ID ordering when items re-enter cells", () => {
+		const hash = new SpatialHash<{ label: string }>(64);
+		const a = { label: "a" }; // gets id 0
+		const b = { label: "b" }; // gets id 1
+		// Both in cell (0,0)
+		hash.insert(a, aabb(10, 10, 5, 5));
+		hash.insert(b, aabb(20, 20, 5, 5));
+
+		// Move A away (to cell (3,3)), then back
+		hash.update(a, aabb(200, 200, 5, 5));
+		hash.update(a, aabb(10, 10, 5, 5));
+
+		// Now cell iteration order is [B, A] (B has id=1 first, A has id=0 second)
+		// This exercises the idA > idB branch: lo=idB=0, hi=idA=1
+		const pairs = hash.queryPairs();
+		expect(pairs.length).toBe(1);
+		// Pair should still contain both items regardless of ordering
+		const pair = pairs[0]!;
+		const labels = [pair[0].label, pair[1].label].sort();
+		expect(labels).toEqual(["a", "b"]);
+	});
+
 	it("1000 items insert + query performs within budget", () => {
 		const hash = new SpatialHash<{ id: number }>(64);
 		const items: Array<{ id: number }> = [];

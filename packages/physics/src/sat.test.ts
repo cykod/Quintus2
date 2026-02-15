@@ -198,6 +198,19 @@ describe("SAT: Rect vs Circle", () => {
 		expect(result!.depth).toBeGreaterThan(0);
 	});
 
+	it("circle at center of wide rect → Y-axis normal (overlapX > overlapY)", () => {
+		// Wide rect: 32×8. Circle radius 3 at rect center.
+		// overlapX = 16 + 3 = 19, overlapY = 4 + 3 = 7 → Y-axis minimum
+		const wideRect = Shape.rect(32, 8);
+		const c3 = Shape.circle(3);
+		const result = testOverlap(wideRect, tx(0, 0), c3, tx(0, 0));
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeCloseTo(7); // halfH + radius = 4 + 3
+		// Normal should be along Y axis (arbitrary direction for centered circle)
+		expect(Math.abs(result!.normal.y)).toBeCloseTo(1);
+		expect(result!.normal.x).toBeCloseTo(0);
+	});
+
 	it("circle outside rect → null", () => {
 		const result = testOverlap(r32, tx(0, 0), c10, tx(30, 0));
 		expect(result).toBeNull();
@@ -607,6 +620,119 @@ describe("Swept: sweptAABB", () => {
 		);
 		// Vertical separation: |-7| = 7 < 16 = combinedHalfH, so they do overlap vertically
 		expect(result).not.toBeNull();
+	});
+});
+
+// ── Swept: sweptAABB (already overlapping — Y-normal branch) ─────
+
+describe("Swept: sweptAABB (already-overlapping edge cases)", () => {
+	const r16 = Shape.rect(16, 16);
+
+	it("returns Y-axis normal when overlapX >= overlapY (B below)", () => {
+		// A at (0,0), B at (0,5). Both 16x16.
+		// overlapX = 16 - |0| = 16, overlapY = 16 - |5| = 11
+		// overlapX > overlapY → Y-axis normal
+		// dy = 5 >= 0 → normal = (0, 1)
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(100, 0), r16, tx(0, 5));
+		expect(result).not.toBeNull();
+		expect(result!.toi).toBe(0);
+		expect(result!.normal.x).toBeCloseTo(0);
+		expect(result!.normal.y).toBeCloseTo(1);
+	});
+
+	it("returns Y-axis normal with negative dy (B above)", () => {
+		// A at (0,0), B at (0,-5).
+		// overlapX = 16, overlapY = 11
+		// overlapX > overlapY → Y-axis normal
+		// dy = -5 < 0 → normal = (0, -1)
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(100, 0), r16, tx(0, -5));
+		expect(result).not.toBeNull();
+		expect(result!.toi).toBe(0);
+		expect(result!.normal.x).toBeCloseTo(0);
+		expect(result!.normal.y).toBeCloseTo(-1);
+	});
+
+	it("returns X-axis normal when overlapX < overlapY (B to the right)", () => {
+		// A at (0,0), B at (5,0). Both 16x16.
+		// overlapX = 16 - 5 = 11, overlapY = 16 - 0 = 16
+		// overlapX < overlapY → X-axis normal
+		// dx = 5 >= 0 → normal = (1, 0)
+		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 100), r16, tx(5, 0));
+		expect(result).not.toBeNull();
+		expect(result!.toi).toBe(0);
+		expect(result!.normal.x).toBeCloseTo(1);
+		expect(result!.normal.y).toBeCloseTo(0);
+	});
+});
+
+// ── Capsule-vs-Capsule: closestPointsSegments edge cases ────────
+
+describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
+	it("capsules positioned so t < 0 in closestPointsSegments", () => {
+		// A vertical at (8,0): segment from (8,-5) to (8,5)
+		// B horizontal (90° rotated) at origin: segment from (5,0) to (-5,0)
+		// d2=(-10,0), p0=(8,-5), q0=(5,0) → rx=3, ff=d2·r=(-10)*3=-30
+		// s=0.5, t=(0*0.5+(-30))/100=-0.3 < 0 → clamped to 0
+		const cap = Shape.capsule(5, 20);
+		const result = testOverlap(
+			cap,
+			tx(8, 0),
+			cap,
+			txr(0, 0, Math.PI / 2),
+		);
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeGreaterThan(0);
+	});
+
+	it("capsules positioned so t > 1 in closestPointsSegments", () => {
+		// A vertical at (-8,0): segment from (-8,-5) to (-8,5)
+		// B horizontal (90° rotated) at origin: segment from (5,0) to (-5,0)
+		// d2=(-10,0), p0=(-8,-5), q0=(5,0) → rx=-13, ff=(-10)*(-13)=130
+		// s near 0, t=(0+130)/100=1.3 > 1 → clamped to 1
+		const cap = Shape.capsule(5, 20);
+		const result = testOverlap(
+			cap,
+			tx(-8, 0),
+			cap,
+			txr(0, 0, Math.PI / 2),
+		);
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeGreaterThan(0);
+	});
+
+	it("degenerate capsule A (aa <= EPSILON) triggers first-segment-point branch", () => {
+		// Capsule A degenerate (halfSeg=0), capsule B normal
+		const degenerateCap = Shape.capsule(5, 10); // halfSeg = 10/2 - 5 = 0
+		const normalCap = Shape.capsule(5, 20);
+		const result = testOverlap(degenerateCap, tx(0, 0), normalCap, tx(8, 0));
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+	});
+
+	it("degenerate capsule B (ee <= EPSILON) triggers second-segment-point branch", () => {
+		// Capsule A normal, capsule B degenerate → ee ≈ 0
+		const degenerateCap = Shape.capsule(5, 10);
+		const normalCap = Shape.capsule(5, 20);
+		const result = testOverlap(normalCap, tx(0, 0), degenerateCap, tx(8, 0));
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+	});
+
+	it("both capsules degenerate triggers point-vs-point branch", () => {
+		// Both capsules have zero-length segments → aa ≈ 0 and ee ≈ 0
+		const degenerateCap = Shape.capsule(5, 10);
+		const result = testOverlap(degenerateCap, tx(0, 0), degenerateCap, tx(8, 0));
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+	});
+
+	it("parallel capsules trigger denom <= EPSILON fallback", () => {
+		// Two vertical capsules side by side — segments are parallel
+		// denom = aa*ee - bb*bb ≈ 0 for parallel segments → s = 0 fallback
+		const cap = Shape.capsule(5, 20);
+		const result = testOverlap(cap, tx(0, 0), cap, tx(8, 0));
+		expect(result).not.toBeNull();
+		expect(result!.depth).toBeCloseTo(2); // 5+5-8
 	});
 });
 

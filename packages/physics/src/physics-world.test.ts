@@ -396,6 +396,64 @@ describe("PhysicsWorld", () => {
 		});
 	});
 
+	describe("castMotion (general TOI path)", () => {
+		it("returns collision for circle shapes via binary-search TOI", () => {
+			const world = new PhysicsWorld({ groups: defaultGroups() });
+			const body = createBody("actor", Shape.circle(8), new Vec2(0, 0));
+			const wall = createBody("static", Shape.circle(8), new Vec2(50, 0));
+			world.register(body);
+			world.register(wall);
+
+			// Motion must end overlapping the wall for findTOI to detect
+			// At t=1: body at (55,0), distance to wall = 5 < 16 (both radii)
+			const result = world.castMotion(body, new Vec2(55, 0));
+			expect(result).not.toBeNull();
+			expect(result!.collider).toBe(wall);
+			expect(result!.travel.x).toBeLessThan(55);
+			expect(result!.travel.x).toBeGreaterThan(0);
+			// Normal should point away from wall into mover (-x direction)
+			expect(result!.normal.x).toBeLessThan(0);
+		});
+
+		it("returns collision for polygon shapes via binary-search TOI", () => {
+			const world = new PhysicsWorld({ groups: defaultGroups() });
+			const poly = Shape.polygon([
+				new Vec2(-8, -8),
+				new Vec2(8, -8),
+				new Vec2(8, 8),
+				new Vec2(-8, 8),
+			]);
+			const body = createBody("actor", poly, new Vec2(0, 0));
+			const wall = createBody("static", poly, new Vec2(50, 0));
+			world.register(body);
+			world.register(wall);
+
+			// At t=1: body center at (45,0), poly edge at 53, wall edge at 42.
+			// Overlap at endpoint ensures findTOI converges.
+			const result = world.castMotion(body, new Vec2(45, 0));
+			expect(result).not.toBeNull();
+			expect(result!.collider).toBe(wall);
+			expect(result!.travel.x).toBeLessThan(45);
+			expect(result!.travel.x).toBeGreaterThan(0);
+			// Normal negated from SAT → points away from collider into mover
+			expect(result!.normal.x).toBeLessThan(0);
+		});
+
+		it("general TOI provides correct depth from SAT result", () => {
+			const world = new PhysicsWorld({ groups: defaultGroups() });
+			const body = createBody("actor", Shape.circle(10), new Vec2(0, 0));
+			const wall = createBody("static", Shape.circle(10), new Vec2(30, 0));
+			world.register(body);
+			world.register(wall);
+
+			// At t=1: body at (25,0), distance to wall = 5 < 20. findTOI detects.
+			const result = world.castMotion(body, new Vec2(25, 0));
+			expect(result).not.toBeNull();
+			// travel + remainder = original motion
+			expect(result!.travel.x + result!.remainder.x).toBeCloseTo(25, 0);
+		});
+	});
+
 	describe("construction defaults", () => {
 		it("creates with default gravity", () => {
 			const world = new PhysicsWorld();

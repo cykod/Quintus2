@@ -1,3 +1,16 @@
+## Add physics world & SAT micro-gap tests (T6)
+*Saturday, February 14th at 8pm*
+Added 11 tests covering uncovered edge-case paths in physics-world.ts, sat.ts, 
+and spatial-hash.ts as part of Phase 2 test gap subphase T6. Tests exercise the 
+general binary-search TOI path for non-rect shapes (circles, polygons), 
+closestPointsSegments endpoint clamping for capsule-vs-capsule collisions (t<0, 
+t>1, degenerate segments), sweptAABB Y-axis normal selection for 
+already-overlapping rects, rectVsCircle Y-axis fallback, and queryPairs reverse 
+ID ordering in the spatial hash. All three files now have 100% line coverage, 
+bringing the total to 665 passing tests.
+
+---
+
 ## Add math micro-gap tests for Vec2, Color, Matrix2D (T5)
 *Saturday, February 14th at 4pm*
 Implements Phase 2 test gap subphase T5 with 7 new tests covering math package 
