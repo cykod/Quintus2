@@ -105,3 +105,17 @@
 [IMPL] sun 2/15 6am - Debug platformer demo where player falls through ground, coins mispositioned, and collision objects not visible
 
 [IMPL] sun 2/15 6am - Debug platformer demo where player falls through ground, coins render at wrong position, and collision objects appear missing
+
+[MILE] sun 2/15 7am - Fixed physics spatial hash registration, jump velocity clobbering, render list staleness, and added working platformer demo
+
+[ASKS] sun 2/15 8am - Design Phase 4 (Tilemap & Camera) detailed design document for the Quintus 2.0 game engine rewrite
+
+[MILE] sun 2/15 8am - Closed test coverage gaps across core, math, and physics packages with 120 new tests
+
+[ASKS] sun 2/15 9am - Design AI debug protocol with event log system, align with CLI/skills approach (not MCP), and note Phase 3 input dependency
+
+[ASKS] sun 2/15 9am - Design and write the Phase 3 (Sprites & Input) detailed design document for the Quintus 2.0 game engine rewrite
+
+[DEVL] sun 2/15 9am - Review Phase 3 input subsystem design for AI debug compatibility issues
+
+[IMPL] sun 2/15 10am - Implement Phase 3 (Sprites & Input) — SpriteSheet, Sprite, AnimatedSprite, Input system with action maps, gamepad, mouse, injection, and InputEvent propagation

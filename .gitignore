@@ -30,3 +30,4 @@ docs/api/
 *.log
 
 old/
+.playwright-cli/

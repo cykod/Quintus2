@@ -1,3 +1,18 @@
+## Add sprites and input packages (Phase 3)
+*Sunday, February 15th at 11am*
+Implement Phase 3 of the Quintus 2.0 rewrite: @quintus/sprites (SpriteSheet, 
+Sprite, AnimatedSprite with frame-based animation) and @quintus/input 
+(action-map input system with keyboard bindings, 
+isPressed/isJustPressed/isJustReleased queries, InputEvent propagation through 
+the scene tree, InputReceiver interface, and deterministic input injection via 
+inject()/injectAnalog()). Adds preFrame signal to core Game for input polling 
+before fixedUpdate. Updates the platformer demo to use the new input system 
+instead of raw keyboard listeners. Also adds Phase 3, Phase 4, and AI Debug 
+design documents, and updates the implementation plan to replace the MCP server 
+approach with a lighter Playwright-based debug CLI.
+
+---
+
 ## Close test coverage gaps across core, math, and physics
 *Sunday, February 15th at 8am*
 Added 120 new tests across 13 test files to close branch coverage gaps 

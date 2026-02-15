@@ -20,6 +20,7 @@ export class GameLoop {
 	constructor(
 		private readonly config: GameLoopConfig,
 		private readonly callbacks: {
+			beginFrame?: () => void;
 			fixedUpdate: (dt: number) => void;
 			update: (dt: number) => void;
 			render: () => void;
@@ -49,6 +50,7 @@ export class GameLoop {
 	 */
 	step(variableDt?: number): void {
 		const fixedDt = this.config.fixedDeltaTime;
+		this.callbacks.beginFrame?.();
 		this.callbacks.fixedUpdate(fixedDt);
 		this.fixedFrame++;
 		this.elapsed += fixedDt;
@@ -66,6 +68,8 @@ export class GameLoop {
 		const frameDt = Math.min(rawDt, this.config.maxAccumulator);
 		this.accumulator += frameDt;
 		this.elapsed += frameDt;
+
+		this.callbacks.beginFrame?.();
 
 		const fixedDt = this.config.fixedDeltaTime;
 		while (this.accumulator >= fixedDt) {

@@ -98,6 +98,16 @@ export class AssetLoader {
 		return [...this.failed];
 	}
 
+	/** @internal Store an image directly (for testing). */
+	_storeImage(name: string, image: ImageBitmap): void {
+		this.images.set(name, image);
+	}
+
+	/** @internal Store JSON data directly (for testing). */
+	_storeJSON(name: string, data: unknown): void {
+		this.jsonData.set(name, data);
+	}
+
 	private nameFromPath(path: string): string {
 		// Extract filename without extension
 		const parts = path.split("/");

@@ -4,7 +4,7 @@
 > This plan synthesizes the design from three architecture documents:
 > - [MODERNIZATION_RESEARCH.md](./MODERNIZATION_RESEARCH.md) — landscape analysis, gap identification, initial proposal
 > - [GODOT_INSPIRED_ARCHITECTURE.md](./GODOT_INSPIRED_ARCHITECTURE.md) — Node/Scene Tree architecture, physics bodies, signals
-> - [AI_INTEGRATION_ARCHITECTURE.md](./AI_INTEGRATION_ARCHITECTURE.md) — deterministic simulation, MCP server, headless runtime, AI testing
+> - [AI_INTEGRATION_ARCHITECTURE.md](./AI_INTEGRATION_ARCHITECTURE.md) — deterministic simulation, debug CLI, skills, headless runtime, AI testing
 
 ---
 
@@ -72,7 +72,6 @@ packages/
   headless/      @quintus/headless    ~5KB  — Node.js runtime, no browser
   test/          @quintus/test        ~8KB  — TestRunner, InputScript, assertions, scenarios
   snapshot/      @quintus/snapshot    ~4KB  — State serialization, filmstrip, visual diff
-  mcp/           @quintus/mcp         ~6KB  — MCP server for AI tool integration
   ai-prefabs/    @quintus/ai-prefabs  ~15KB — 30+ pre-built game components
   quintus/       quintus              ~40KB — Meta-package (core + physics + sprites + tilemap + input + audio + ui + tween + camera)
 ```
@@ -761,71 +760,100 @@ The entire engine must be deterministic when given the same seed:
 
 ---
 
-## Phase 8: MCP Server
+## Phase 8: Debug CLI & AI Skills
 
-**Goal:** Expose the running game as an AI-controllable tool via the Model Context Protocol. An LLM can inspect, modify, and test games through MCP.
+**Goal:** Give AI coding tools (Claude Code, Cursor, etc.) the ability to inspect, control, and debug a running Quintus game — without maintaining a separate protocol server. A lightweight debug bridge in `@quintus/core` + Claude Code skills that connect via Playwright CLI.
 
-**Duration:** ~2 weeks
+**Duration:** ~1.5 weeks
 
-### Package: `@quintus/mcp`
+### Debug Bridge (`window.__quintusDebug`)
 
-**MCP Tools to implement:**
+Installed automatically when the game URL contains `?debug`. Exposes a global API that any tool (browser console, Playwright, DevTools extension) can call:
 
-| Category | Tools |
-|----------|-------|
-| **Scene Inspection** | `quintus.getSceneTree`, `quintus.getNode`, `quintus.queryNodes` |
-| **Scene Modification** | `quintus.addNode`, `quintus.updateNode`, `quintus.removeNode` |
-| **Simulation Control** | `quintus.step`, `quintus.pause`, `quintus.resume`, `quintus.reset` |
-| **Input Injection** | `quintus.pressAction`, `quintus.releaseAction`, `quintus.runInputScript` |
-| **Visual Capture** | `quintus.screenshot`, `quintus.filmstrip` |
-| **Code Hot-Reload** | `quintus.hotReload`, `quintus.eval` |
-| **Signals/Events** | `quintus.watchSignals`, `quintus.getSignalLog` |
-| **Discovery** | `quintus.listAssets`, `quintus.listNodeTypes`, `quintus.listScenes` |
-| **Diagnostics** | `quintus.getPerformance`, `quintus.getPhysicsDebug` |
+| Method | Returns | Purpose |
+|--------|---------|---------|
+| `pause()` | `void` | Pause the game loop |
+| `resume()` | `void` | Resume the game loop |
+| `step(n?)` | `NodeSnapshot[]` | Advance `n` frames (default 1), return scene tree |
+| `tree()` | `NodeSnapshot[]` | Return current scene tree |
+| `inspect(query)` | `NodeSnapshot` | Find node by name/tag/type and return its full state |
+| `screenshot()` | `string` | Return canvas as base64 PNG data URL |
+| `press(key)` | `void` | Simulate key press |
+| `release(key)` | `void` | Simulate key release |
+| `pressAndStep(key, n?)` | `NodeSnapshot[]` | Press key, advance `n` frames, release, return tree |
+| `run(script)` | `NodeSnapshot[]` | Run an input script (array of `{action, frames}` steps) |
 
-**Two operating modes:**
+### Node Serialization
 
-1. **Headless mode** — MCP server wraps a `HeadlessGame` instance. For CI, AI agents, batch testing.
-   ```bash
-   npx quintus-mcp --headless --project ./my-game --scene Level1 --seed 42
-   ```
+Every `Node` gets a `serialize(): NodeSnapshot` method that returns a plain JSON object:
 
-2. **Browser bridge mode** — MCP server connects to a running Vite dev server via WebSocket. AI sees the game AND controls it.
-   ```bash
-   npx quintus dev --mcp
-   ```
-
-**MCP server architecture:**
+```typescript
+interface NodeSnapshot {
+  name: string;
+  type: string;           // Constructor name: "Actor", "Sprite", etc.
+  tags: string[];
+  children: NodeSnapshot[];
+  // Node2D properties (when applicable):
+  position?: { x: number; y: number };
+  rotation?: number;
+  scale?: { x: number; y: number };
+  velocity?: { x: number; y: number };
+  // Custom properties from subclass:
+  props: Record<string, unknown>;
+}
 ```
-AI Client (Claude Code, Cursor, etc.)
-    │ MCP Protocol (stdio)
-    ▼
-@quintus/mcp server
-    │
-    ├── Headless: @quintus/headless game instance
-    │   └── @quintus/test for input scripting
-    │   └── @quintus/snapshot for state capture
-    │
-    └── Browser: WebSocket bridge to Vite dev server
-        └── Injects commands into running browser game
+
+### Game Debug Mode
+
+Query parameters control debug behavior:
+
+| URL | Behavior |
+|-----|----------|
+| `?debug` | Install bridge, auto-pause at frame 0 |
+| `?debug&seed=42` | Deterministic mode with specific seed |
+| `?debug&step=60` | Auto-advance 60 frames then pause |
+| `?debug&seed=42&step=60` | Deterministic + auto-advance |
+
+### Claude Code Skill: `/debug-game`
+
+A Claude Code skill (`.claude/skills/debug-game.md`) that uses Playwright CLI to interact with a running game:
+
 ```
+Workflow:
+1. Launch game with `?debug` via Playwright CLI
+2. Take screenshot → understand current state
+3. Get scene tree → inspect node hierarchy
+4. Step through frames → observe behavior
+5. Inject inputs → test player actions
+6. Run scripted sequences → reproduce bugs
+```
+
+The skill wraps Playwright `page.evaluate()` calls to the debug bridge, so the AI can:
+- See the game visually (screenshots)
+- Inspect all game state (scene tree, node properties)
+- Control time (pause, step, resume)
+- Simulate player input (press keys, run scripts)
+- Reproduce issues deterministically (seed + input script)
+
+### No Separate Package
+
+The debug bridge is ~200 lines in `@quintus/core` (conditionally loaded behind `?debug`). The Claude Code skill is a `.claude/skills/` markdown file. No new npm package, no protocol server, no transport layer.
 
 ### Tests Required
-- Each MCP tool: Correct response format, error handling
-- Scene tree inspection: Accurate node tree, props, tags
-- Input injection: Actions applied correctly, timing preserved
-- Screenshot: Valid PNG output, correct dimensions
-- State serialization: Full round-trip fidelity
-- Hot-reload: Code changes take effect without restart
+- Debug bridge: `pause`/`resume`/`step` correctly control game loop
+- `tree()` and `inspect()`: Accurate node serialization
+- `press`/`release`/`pressAndStep`: Input injection works correctly
+- `run(script)`: Multi-step scripts execute deterministically
+- `screenshot()`: Returns valid base64 PNG
+- Debug mode: `?debug` query param auto-pauses, `?debug&seed=42` sets seed
 
 ### Definition of Done
-- MCP server starts and registers all tools
-- Claude Code can connect and inspect a running game
-- AI can add/remove/modify entities
-- AI can step simulation and capture screenshots
-- AI can run input scripts and get state snapshots
-- Hot-reload works (modify a file → changes visible in game)
-- Works in both headless and browser bridge modes
+- `?debug` in URL installs `window.__quintusDebug` and pauses the game
+- Claude Code `/debug-game` skill can launch, inspect, and control a game
+- AI can step through frames and take screenshots
+- AI can inject inputs and run scripted sequences
+- Deterministic replay works: same seed + same script = same result
+- Debug bridge adds zero overhead when `?debug` is not present
 
 ---
 
@@ -1049,7 +1077,7 @@ Phase 6:           └──► quintus (meta-package, depends on all above)
     │
 Phase 7: headless ──► test ──► snapshot
     │
-Phase 8: mcp (depends on: headless, test, snapshot)
+Phase 8: debug-cli (depends on: core, uses Playwright externally)
     │
 Phase 9: ai-prefabs (depends on: quintus meta-package)
     │
@@ -1071,7 +1099,7 @@ Phase 12: create-quintus, vite-plugin, docs, WebGL2 renderer
 | Canvas2D performance ceiling | Medium — limits entity count | WebGL2 renderer as Phase 12 escape valve, spatial culling in Phase 1 |
 | Headless canvas fidelity | Medium — visual tests may differ | Use `node-canvas` with same font/rendering, tolerance thresholds |
 | Three.js API churn | Low — Three.js is stable | Pin peer dep version range, minimal surface area in bridge |
-| MCP protocol changes | Low — MCP is maturing | Abstract tool definitions, versioned protocol support |
+| Playwright CLI availability | Low — Playwright is stable | Skill degrades gracefully, debug bridge works from browser console too |
 | Scope creep in AI prefabs | Medium — 30+ components is a lot | Strict scope per prefab, ship MVP then iterate, accept community PRs |
 
 ---
@@ -1081,7 +1109,7 @@ Phase 12: create-quintus, vite-plugin, docs, WebGL2 renderer
 The engine is "done" when:
 
 1. **A developer can `npm create quintus my-game`** and have a running game in <2 minutes
-2. **An LLM can build a complete platformer** from a natural language prompt using the MCP server
+2. **An LLM can build a complete platformer** from a natural language prompt using the debug CLI / skills
 3. **The full meta-package is under 40KB gzipped** with tree-shaking working
 4. **All example games have automated tests** that run headlessly in CI
 5. **The API is predictable enough** that an LLM can guess the right method 90% of the time
@@ -1102,12 +1130,12 @@ The engine is "done" when:
 | 5: Audio, Tween, UI | 2 weeks | 10 weeks | Full-featured engine |
 | 6: Meta-package & Platformer | 1.5 weeks | 11.5 weeks | Complete example game |
 | 7: Deterministic Testing | 2 weeks | 13.5 weeks | Headless game tests in CI |
-| 8: MCP Server | 2 weeks | 15.5 weeks | AI can control the game |
-| 9: AI Prefabs & Examples | 3 weeks | 18.5 weeks | 30+ prefabs, 5+ games |
-| 10: Three.js Integration | 2 weeks | 20.5 weeks | 3D rendering works (Renderer interface already extracted in Phase 1) |
-| 11: Particles & Debug | 1.5 weeks | 22 weeks | Visual effects & dev tools |
-| 12: DX & Polish | 2 weeks | 24 weeks | `npm create quintus` works |
+| 8: Debug CLI & AI Skills | 1.5 weeks | 15 weeks | AI can debug & control games via Playwright |
+| 9: AI Prefabs & Examples | 3 weeks | 18 weeks | 30+ prefabs, 5+ games |
+| 10: Three.js Integration | 2 weeks | 20 weeks | 3D rendering works (Renderer interface already extracted in Phase 1) |
+| 11: Particles & Debug | 1.5 weeks | 21.5 weeks | Visual effects & dev tools |
+| 12: DX & Polish | 2 weeks | 23.5 weeks | `npm create quintus` works |
 
-**Total estimated duration: ~24 weeks (6 months)**
+**Total estimated duration: ~23.5 weeks (~6 months)**
 
 Note: Phases 10-11 can run in parallel with Phase 9. Phase 12 items can be started earlier as the API stabilizes. A solo developer working full-time might complete the core (Phases 0-6) in ~3 months, with the AI infrastructure (Phases 7-8) adding another month.

@@ -58,7 +58,14 @@ importers:
 
   packages/headless: {}
 
-  packages/input: {}
+  packages/input:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/math: {}
 
@@ -79,7 +86,14 @@ importers:
 
   packages/snapshot: {}
 
-  packages/sprites: {}
+  packages/sprites:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/test: {}
 

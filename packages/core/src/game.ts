@@ -59,6 +59,7 @@ export class Game {
 	readonly stopped: Signal<void> = signal<void>();
 	readonly sceneSwitched: Signal<{ from: string | null; to: string }> = signal();
 	readonly onError: Signal<{ node: Node; lifecycle: string; error: unknown }> = signal();
+	readonly preFrame: Signal<void> = signal<void>();
 	readonly postFixedUpdate: Signal<number> = signal<number>();
 
 	constructor(options: GameOptions) {
@@ -118,6 +119,7 @@ export class Game {
 				maxAccumulator: 0.25,
 			},
 			{
+				beginFrame: () => this.preFrame.emit(),
 				fixedUpdate: (dt) => this._fixedUpdate(dt),
 				update: (dt) => this._update(dt),
 				render: () => this._render(),

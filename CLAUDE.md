@@ -23,7 +23,7 @@ Node → Node2D → Actor / StaticCollider / Sensor
 
 ## Monorepo Layout
 
-pnpm workspace. 19 packages under `packages/`:
+pnpm workspace. 18 packages under `packages/`:
 
 | Package | npm Name | Purpose |
 |---------|----------|---------|
@@ -43,7 +43,6 @@ pnpm workspace. 19 packages under `packages/`:
 | `headless` | `@quintus/headless` | Node.js runtime, no browser |
 | `test` | `@quintus/test` | TestRunner, InputScript, assertions |
 | `snapshot` | `@quintus/snapshot` | State serialization, filmstrip, visual diff |
-| `mcp` | `@quintus/mcp` | MCP server for AI tool integration |
 | `ai-prefabs` | `@quintus/ai-prefabs` | 30+ pre-built game components |
 | `quintus` | `quintus` | Meta-package (~40KB gzipped) |
 
@@ -82,8 +81,8 @@ Read these to understand architectural decisions:
 |----------|----------|
 | `MODERNIZATION_RESEARCH.md` | Landscape analysis, gap identification, initial proposal |
 | `GODOT_INSPIRED_ARCHITECTURE.md` | Node/Scene Tree, physics bodies, signals, API design |
-| `AI_INTEGRATION_ARCHITECTURE.md` | Deterministic sim, MCP server, headless runtime, AI testing |
-| `IMPLEMENTATION_PLAN.md` | 12 phases, ~24 weeks, full dependency graph |
+| `AI_INTEGRATION_ARCHITECTURE.md` | Deterministic sim, debug CLI, skills, headless runtime, AI testing |
+| `IMPLEMENTATION_PLAN.md` | 12 phases, ~23.5 weeks, full dependency graph |
 | `PHASE_0_DESIGN.md` | Detailed steps for project bootstrap |
 
 ## Guiding Principles
@@ -161,13 +160,13 @@ game.start(Level1);
 |-------|------|--------|
 | 0 | Project bootstrap (monorepo, tooling) | Done |
 | 1 | Core engine (Node, Node2D, math, signals, game loop) | Done |
-| 2 | Physics (Actor, StaticCollider, Sensor, SAT, move) | — |
-| 3 | Sprites & Input (AnimatedSprite, action map, gamepad) | — |
+| 2 | Physics (Actor, StaticCollider, Sensor, SAT, move) | Done |
+| 3 | Sprites & Input (AnimatedSprite, action map, gamepad) | Done |
 | 4 | Tilemap & Camera (Tiled import, follow, shake, zoom) | — |
 | 5 | Audio, Tween, UI (sounds, animations, HUD widgets) | — |
 | 6 | Meta-package & first complete platformer game | — |
 | 7 | Deterministic testing (headless, input scripts, snapshots) | — |
-| 8 | MCP server (AI tool integration) | — |
+| 8 | Debug CLI & AI Skills (Playwright-based debugging) | — |
 | 9 | AI prefabs & example games | — |
 | 10 | Three.js integration | — |
 | 11 | Particles & debug tools | — |

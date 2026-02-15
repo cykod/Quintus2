@@ -1,5 +1,6 @@
 import type { DrawContext } from "@quintus/core";
 import { Game, Scene, type Signal, signal } from "@quintus/core";
+import { InputPlugin } from "@quintus/input";
 import { Color, Vec2 } from "@quintus/math";
 import {
 	Actor,
@@ -27,6 +28,15 @@ game.use(
 		},
 	}),
 );
+game.use(
+	InputPlugin({
+		actions: {
+			move_left: ["ArrowLeft", "KeyA"],
+			move_right: ["ArrowRight", "KeyD"],
+			jump: ["ArrowUp", "Space", "KeyW"],
+		},
+	}),
+);
 
 // === Player ===
 class Player extends Actor {
@@ -41,10 +51,11 @@ class Player extends Actor {
 	}
 
 	onFixedUpdate(dt: number) {
+		const input = this.game.input;
 		this.velocity.x = 0;
-		if (this._leftPressed) this.velocity.x = -this.speed;
-		if (this._rightPressed) this.velocity.x = this.speed;
-		if (this._jumpPressed && this.isOnFloor()) {
+		if (input.isPressed("move_left")) this.velocity.x = -this.speed;
+		if (input.isPressed("move_right")) this.velocity.x = this.speed;
+		if (input.isJustPressed("jump") && this.isOnFloor()) {
 			this.velocity.y = this.jumpForce;
 		}
 		this.move(dt);
@@ -55,11 +66,6 @@ class Player extends Actor {
 			fill: Color.fromHex("#4fc3f7"),
 		});
 	}
-
-	// Temporary raw input (replaced by @quintus/input in Phase 3)
-	_leftPressed = false;
-	_rightPressed = false;
-	_jumpPressed = false;
 }
 
 // === Coin ===
@@ -159,25 +165,6 @@ class DemoScene extends Scene {
 		// Player
 		const player = this.add(Player);
 		player.position = new Vec2(200, 100);
-
-		// Temporary keyboard input (replaced by @quintus/input in Phase 3)
-		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "ArrowLeft") player._leftPressed = true;
-			if (e.key === "ArrowRight") player._rightPressed = true;
-			if (e.key === "ArrowUp" || e.key === " ") player._jumpPressed = true;
-		};
-		const onKeyUp = (e: KeyboardEvent) => {
-			if (e.key === "ArrowLeft") player._leftPressed = false;
-			if (e.key === "ArrowRight") player._rightPressed = false;
-			if (e.key === "ArrowUp" || e.key === " ") player._jumpPressed = false;
-		};
-		document.addEventListener("keydown", onKeyDown);
-		document.addEventListener("keyup", onKeyUp);
-
-		this.sceneDestroyed.connect(() => {
-			document.removeEventListener("keydown", onKeyDown);
-			document.removeEventListener("keyup", onKeyUp);
-		});
 	}
 }
 
