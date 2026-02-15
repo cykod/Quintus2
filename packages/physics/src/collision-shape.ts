@@ -2,6 +2,7 @@ import { Node2D, type Node2DProps } from "@quintus/core";
 import type { AABB, Matrix2D } from "@quintus/math";
 import type { Shape2D } from "./shapes.js";
 import { shapeAABB } from "./shapes.js";
+import type { CollisionShapeSnapshot } from "./snapshot-types.js";
 
 export interface CollisionShapeProps extends Node2DProps {
 	shape?: Shape2D;
@@ -41,6 +42,15 @@ export class CollisionShape extends Node2D {
 		return this.globalTransform;
 	}
 
+	override serialize(): CollisionShapeSnapshot {
+		return {
+			...super.serialize(),
+			shapeType: this._shape ? this._shape.type : null,
+			shapeDesc: this._shape ? describeShape(this._shape) : "none",
+			disabled: this.disabled,
+		};
+	}
+
 	/** Compute the world-space AABB for this shape. */
 	getWorldAABB(): AABB | null {
 		if (!this._shape || this.disabled) return null;
@@ -57,5 +67,18 @@ export class CollisionShape extends Node2D {
 		if (parent && typeof parent._onShapeChanged === "function") {
 			parent._onShapeChanged();
 		}
+	}
+}
+
+function describeShape(shape: Shape2D): string {
+	switch (shape.type) {
+		case "rect":
+			return `rect ${shape.width}x${shape.height}`;
+		case "circle":
+			return `circle r=${shape.radius}`;
+		case "capsule":
+			return `capsule r=${shape.radius} h=${shape.height}`;
+		case "polygon":
+			return `polygon ${shape.points.length}pts`;
 	}
 }

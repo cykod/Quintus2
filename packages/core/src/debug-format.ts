@@ -41,7 +41,7 @@ export function formatTree(snapshot: NodeSnapshot, indent = ""): string {
 
 /** Format a single node as a compact one-liner. */
 function formatNodeLine(snap: NodeSnapshot): string {
-	const parts: string[] = [snap.type];
+	const parts: string[] = [`[${snap.id}]`, snap.type];
 
 	// Show name if different from type
 	if (snap.name !== snap.type) {
@@ -53,6 +53,14 @@ function formatNodeLine(snap: NodeSnapshot): string {
 	if (s.position && typeof s.position === "object") {
 		const pos = s.position as { x: number; y: number };
 		parts.push(`(${pos.x.toFixed(0)}, ${pos.y.toFixed(0)})`);
+	}
+
+	// Show shape description if present (CollisionShape)
+	if (typeof s.shapeDesc === "string" && s.shapeDesc !== "none") {
+		parts.push(`<${s.shapeDesc}>`);
+	}
+	if (typeof s.disabled === "boolean" && s.disabled) {
+		parts.push("DISABLED");
 	}
 
 	// Show velocity if present (Actor)

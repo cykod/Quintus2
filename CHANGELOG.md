@@ -1,3 +1,14 @@
+## Add node IDs and shape info to debug tree output
+*Sunday, February 15th at 1pm*
+Enhance the debug tree formatter to include node IDs as [id] prefixes on every 
+line and collision shape details (type, dimensions) in angle brackets. 
+CollisionShape now serializes its shape data via a new CollisionShapeSnapshot 
+type with shapeType, shapeDesc, and disabled fields. The tree output changes 
+from CollisionShape (0, 0) to [3] CollisionShape (0, 0) <rect 16x32>, making 
+the debug view immediately useful for understanding scene geometry.
+
+---
+
 ## Add /debug-game skill with quintus-debug CLI wrapper
 *Sunday, February 15th at 1pm*
 Add the /debug-game Claude Code skill for ergonomic runtime debugging of 

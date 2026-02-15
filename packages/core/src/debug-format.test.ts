@@ -13,7 +13,7 @@ describe("formatTree", () => {
 			children: [],
 		};
 		const result = formatTree(snap);
-		expect(result).toBe("Scene");
+		expect(result).toBe("[0] Scene");
 	});
 
 	it("formats tree with connectors", () => {
@@ -28,9 +28,9 @@ describe("formatTree", () => {
 			],
 		};
 		const result = formatTree(snap);
-		expect(result).toContain('├── Node2D "Player"');
+		expect(result).toContain('├── [1] Node2D "Player"');
 		expect(result).toContain("[player]");
-		expect(result).toContain('└── Node2D "Enemy"');
+		expect(result).toContain('└── [2] Node2D "Enemy"');
 	});
 
 	it("shows position for Node2DSnapshot-like data", () => {

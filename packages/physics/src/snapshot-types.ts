@@ -1,5 +1,11 @@
 import type { Node2DSnapshot } from "@quintus/core";
 
+export interface CollisionShapeSnapshot extends Node2DSnapshot {
+	shapeType: "rect" | "circle" | "capsule" | "polygon" | null;
+	shapeDesc: string;
+	disabled: boolean;
+}
+
 export interface ActorSnapshot extends Node2DSnapshot {
 	velocity: { x: number; y: number };
 	gravity: number;
