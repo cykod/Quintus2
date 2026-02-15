@@ -3,22 +3,8 @@ import type { NodeConstructor } from "./node.js";
 import { Node } from "./node.js";
 import { type Signal, signal } from "./signal.js";
 
-/** Function that builds a scene's node tree. */
-export type SceneSetupFn = (scene: Scene) => void;
-
-/**
- * A scene definition — a name + setup function.
- * Registered with the Game via game.scene() or defineScene().
- */
-export interface SceneDefinition {
-	readonly name: string;
-	readonly setup: SceneSetupFn;
-}
-
-/** Define a reusable scene. Returns a SceneDefinition. */
-export function defineScene(name: string, setup: SceneSetupFn): SceneDefinition {
-	return { name, setup };
-}
+/** Constructor type for class-based scenes. */
+export type SceneConstructor = new (game: Game) => Scene;
 
 export class Scene extends Node {
 	/** @internal Marker for scene identification */
@@ -34,9 +20,8 @@ export class Scene extends Node {
 	readonly sceneReady: Signal<void> = signal<void>();
 	readonly sceneDestroyed: Signal<void> = signal<void>();
 
-	constructor(name: string, game: Game) {
+	constructor(game: Game) {
 		super();
-		this.name = name;
 		this._game = game;
 		// Scene root is always inside the tree
 		this._setInsideTree(true);
@@ -77,12 +62,8 @@ export class Scene extends Node {
 	}
 
 	// === Scene Transitions ===
-	switchTo(sceneNameOrDef: string | SceneDefinition): void {
-		if (typeof sceneNameOrDef === "string") {
-			this._game._switchScene(sceneNameOrDef);
-		} else {
-			this._game._switchScene(sceneNameOrDef.name, sceneNameOrDef.setup);
-		}
+	switchTo(SceneClass: SceneConstructor): void {
+		this._game._switchScene(SceneClass);
 	}
 
 	// === Internal: Update Traversal ===

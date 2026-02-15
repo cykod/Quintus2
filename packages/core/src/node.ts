@@ -141,6 +141,11 @@ export class Node {
 		this._isInsideTree = value;
 	}
 
+	/** @internal Called by Game to mark the scene root as ready (bypasses _enterTreeRecursive). */
+	_markReady(): void {
+		this._isReady = true;
+	}
+
 	private _enterTreeRecursive(node: Node): void {
 		node._isInsideTree = true;
 		node.onEnterTree();

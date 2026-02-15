@@ -1,5 +1,5 @@
 import type { DrawContext } from "@quintus/core";
-import { Game, Node2D } from "@quintus/core";
+import { Game, Node2D, Scene } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 
 class Ball extends Node2D {
@@ -69,20 +69,22 @@ const game = new Game({
 });
 
 // Define scene
-game.scene("main", (scene) => {
-	// Spawn multiple balls with random velocities
-	for (let i = 0; i < 20; i++) {
-		const ball = scene.add(Ball);
-		ball.position = new Vec2(game.random.float(50, 750), game.random.float(50, 550));
-		ball.velocity = game.random.direction().scale(game.random.float(100, 300));
-		ball.radius = game.random.float(5, 15);
-		ball.color = game.random.color();
-	}
+class MainScene extends Scene {
+	onReady() {
+		// Spawn multiple balls with random velocities
+		for (let i = 0; i < 20; i++) {
+			const ball = this.add(Ball);
+			ball.position = new Vec2(this.game.random.float(50, 750), this.game.random.float(50, 550));
+			ball.velocity = this.game.random.direction().scale(this.game.random.float(100, 300));
+			ball.radius = this.game.random.float(5, 15);
+			ball.color = this.game.random.color();
+		}
 
-	// FPS counter in corner
-	const fps = scene.add(FPSDisplay);
-	fps.position = new Vec2(10, 10);
-});
+		// FPS counter in corner
+		const fps = this.add(FPSDisplay);
+		fps.position = new Vec2(10, 10);
+	}
+}
 
 // Start
-game.start("main");
+game.start(MainScene);

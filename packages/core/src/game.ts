@@ -5,8 +5,7 @@ import { GameLoop } from "./game-loop.js";
 import type { Node } from "./node.js";
 import type { Plugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";
-import type { SceneDefinition, SceneSetupFn } from "./scene.js";
-import { Scene } from "./scene.js";
+import type { Scene, SceneConstructor } from "./scene.js";
 import { type Signal, signal } from "./signal.js";
 
 export interface GameOptions {
@@ -40,7 +39,6 @@ export class Game {
 
 	// === State ===
 	private _currentScene: Scene | null = null;
-	private _scenes = new Map<string, SceneSetupFn>();
 	private _plugins = new Map<string, Plugin>();
 
 	/** Deterministic random number generator. */
@@ -145,20 +143,9 @@ export class Game {
 		return this.loop.fixedFrame;
 	}
 
-	/** Register a named scene setup function. */
-	scene(name: string, setup: SceneSetupFn): this {
-		this._scenes.set(name, setup);
-		return this;
-	}
-
-	/** Start the game loop with the given scene. */
-	start(sceneNameOrDef: string | SceneDefinition): void {
-		if (typeof sceneNameOrDef === "string") {
-			this._loadScene(sceneNameOrDef);
-		} else {
-			this._scenes.set(sceneNameOrDef.name, sceneNameOrDef.setup);
-			this._loadScene(sceneNameOrDef.name);
-		}
+	/** Start the game loop with the given scene class. */
+	start(SceneClass: SceneConstructor): void {
+		this._loadScene(SceneClass);
 		this.loop.start();
 		this.started.emit();
 	}
@@ -209,10 +196,7 @@ export class Game {
 
 	// === Internal: Scene Loading ===
 	/** @internal */
-	_switchScene(name: string, setup?: SceneSetupFn): void {
-		if (setup) {
-			this._scenes.set(name, setup);
-		}
+	_switchScene(SceneClass: SceneConstructor): void {
 		const fromName = this._currentScene?.name ?? null;
 
 		// Destroy old scene
@@ -220,22 +204,19 @@ export class Game {
 			this._currentScene._destroyAll();
 		}
 
-		this._loadScene(name);
-		this.sceneSwitched.emit({ from: fromName, to: name });
+		this._loadScene(SceneClass);
+		this.sceneSwitched.emit({ from: fromName, to: this._currentScene?.name ?? "" });
 
 		// Mark render list dirty for new scene
 		this.renderer?.markRenderDirty();
 	}
 
-	private _loadScene(name: string): void {
-		const setup = this._scenes.get(name);
-		if (!setup) {
-			throw new Error(`Scene "${name}" is not registered. Call game.scene("${name}", fn) first.`);
-		}
-
-		const scene = new Scene(name, this);
+	private _loadScene(SceneClass: SceneConstructor): void {
+		const scene = new SceneClass(this);
 		this._currentScene = scene;
-		setup(scene);
+		scene.onReady();
+		scene._markReady();
+		scene.sceneReady.emit();
 
 		// Mark render list dirty
 		this.renderer?.markRenderDirty();

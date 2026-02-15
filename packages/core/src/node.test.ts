@@ -11,7 +11,7 @@ function createTestGame(): Game {
 }
 
 function createTestScene(game: Game): Scene {
-	const scene = new Scene("test", game);
+	const scene = new Scene(game);
 	return scene;
 }
 
@@ -416,14 +416,16 @@ describe("Node", () => {
 
 	it("destroy() queues for deferred processing via game.step()", () => {
 		const game = createTestGame();
-		game.scene("test", (scene) => {
-			const node = new TestNode();
-			scene.addChild(node);
-			node.destroy();
-			// Node is still in tree before cleanup
-			expect(scene.children).toContain(node);
-		});
-		game.start("test");
+		class TestSceneDeferred extends Scene {
+			onReady() {
+				const node = new TestNode();
+				this.addChild(node);
+				node.destroy();
+				// Node is still in tree before cleanup
+				expect(this.children).toContain(node);
+			}
+		}
+		game.start(TestSceneDeferred);
 		// After step, the destroy queue should be processed
 		game.step();
 		const scene = game.currentScene;

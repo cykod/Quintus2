@@ -4,6 +4,7 @@ import { Game } from "./game.js";
 import { Node } from "./node.js";
 import { definePlugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";
+import { Scene } from "./scene.js";
 
 function createGame(opts?: Partial<Parameters<typeof Game.prototype.constructor>[0]>): Game {
 	const canvas = document.createElement("canvas");
@@ -17,35 +18,27 @@ describe("Game", () => {
 		expect(game.canvas.height).toBe(600);
 	});
 
-	it("scene() registers named scenes", () => {
-		const game = createGame();
-		const setup = vi.fn();
-		game.scene("main", setup);
-		game.start("main");
-		expect(setup).toHaveBeenCalled();
-	});
-
 	it("start() loads and runs a scene", () => {
 		const game = createGame();
-		const setup = vi.fn();
-		game.scene("main", setup);
-		game.start("main");
+		game.start(Scene);
 		expect(game.currentScene).not.toBeNull();
-		expect(game.currentScene?.name).toBe("main");
+		expect(game.currentScene?.name).toBe("Scene");
 	});
 
 	it("step() advances one fixed timestep", () => {
 		const game = createGame();
 		const updateFn = vi.fn();
-		class TestNode extends Node {
-			override onFixedUpdate(_dt: number): void {
-				updateFn();
+		class TestScene extends Scene {
+			onReady() {
+				class TestNode extends Node {
+					override onFixedUpdate(_dt: number): void {
+						updateFn();
+					}
+				}
+				this.addChild(new TestNode());
 			}
 		}
-		game.scene("main", (scene) => {
-			scene.addChild(new TestNode());
-		});
-		game.start("main");
+		game.start(TestScene);
 		game.step();
 		expect(updateFn).toHaveBeenCalled();
 	});
@@ -54,18 +47,20 @@ describe("Game", () => {
 		const game = createGame();
 		const fixedDts: number[] = [];
 		const updateDts: number[] = [];
-		class TestNode extends Node {
-			override onFixedUpdate(dt: number): void {
-				fixedDts.push(dt);
-			}
-			override onUpdate(dt: number): void {
-				updateDts.push(dt);
+		class TestScene extends Scene {
+			onReady() {
+				class TestNode extends Node {
+					override onFixedUpdate(dt: number): void {
+						fixedDts.push(dt);
+					}
+					override onUpdate(dt: number): void {
+						updateDts.push(dt);
+					}
+				}
+				this.addChild(new TestNode());
 			}
 		}
-		game.scene("main", (scene) => {
-			scene.addChild(new TestNode());
-		});
-		game.start("main");
+		game.start(TestScene);
 		game.step(1 / 30);
 		expect(fixedDts[0]).toBeCloseTo(1 / 60);
 		expect(updateDts[0]).toBeCloseTo(1 / 30);
@@ -109,8 +104,7 @@ describe("Game", () => {
 		const game = createGame();
 		const handler = vi.fn();
 		game.started.connect(handler);
-		game.scene("main", () => {});
-		game.start("main");
+		game.start(Scene);
 		expect(handler).toHaveBeenCalled();
 	});
 
@@ -118,8 +112,7 @@ describe("Game", () => {
 		const game = createGame();
 		const handler = vi.fn();
 		game.stopped.connect(handler);
-		game.scene("main", () => {});
-		game.start("main");
+		game.start(Scene);
 		game.stop();
 		expect(handler).toHaveBeenCalled();
 	});
@@ -128,26 +121,28 @@ describe("Game", () => {
 		const game = createGame();
 		const handler = vi.fn();
 		game.sceneSwitched.connect(handler);
-		game.scene("a", () => {});
-		game.scene("b", () => {});
-		game.start("a");
-		game.currentScene?.switchTo("b");
-		expect(handler).toHaveBeenCalledWith({ from: "a", to: "b" });
+		class SceneA extends Scene {}
+		class SceneB extends Scene {}
+		game.start(SceneA);
+		game.currentScene?.switchTo(SceneB);
+		expect(handler).toHaveBeenCalledWith({ from: "SceneA", to: "SceneB" });
 	});
 
 	it("onError signal fires when user lifecycle method throws", () => {
 		const game = createGame();
 		const errorHandler = vi.fn();
 		game.onError.connect(errorHandler);
-		class BuggyNode extends Node {
-			override onUpdate(_dt: number): void {
-				throw new Error("oops");
+		class TestScene extends Scene {
+			onReady() {
+				class BuggyNode extends Node {
+					override onUpdate(_dt: number): void {
+						throw new Error("oops");
+					}
+				}
+				this.addChild(new BuggyNode());
 			}
 		}
-		game.scene("main", (scene) => {
-			scene.addChild(new BuggyNode());
-		});
-		game.start("main");
+		game.start(TestScene);
 		game.step();
 		expect(errorHandler).toHaveBeenCalled();
 		expect(errorHandler.mock.calls[0]?.[0].lifecycle).toBe("onUpdate");
@@ -156,15 +151,17 @@ describe("Game", () => {
 	it("onError not connected: errors logged to console.error", () => {
 		const game = createGame();
 		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-		class BuggyNode extends Node {
-			override onUpdate(_dt: number): void {
-				throw new Error("oops");
+		class TestScene extends Scene {
+			onReady() {
+				class BuggyNode extends Node {
+					override onUpdate(_dt: number): void {
+						throw new Error("oops");
+					}
+				}
+				this.addChild(new BuggyNode());
 			}
 		}
-		game.scene("main", (scene) => {
-			scene.addChild(new BuggyNode());
-		});
-		game.start("main");
+		game.start(TestScene);
 		game.step();
 		expect(errorSpy).toHaveBeenCalled();
 		errorSpy.mockRestore();
@@ -177,8 +174,7 @@ describe("Game", () => {
 
 	it("elapsed time", () => {
 		const game = createGame();
-		game.scene("main", () => {});
-		game.start("main");
+		game.start(Scene);
 		expect(game.elapsed).toBe(0);
 		game.step();
 		expect(game.elapsed).toBeGreaterThan(0);
@@ -186,23 +182,16 @@ describe("Game", () => {
 
 	it("fixedFrame count", () => {
 		const game = createGame();
-		game.scene("main", () => {});
-		game.start("main");
+		game.start(Scene);
 		expect(game.fixedFrame).toBe(0);
 		game.step();
 		expect(game.fixedFrame).toBe(1);
 	});
 
-	it("throws on unregistered scene", () => {
-		const game = createGame();
-		expect(() => game.start("nonexistent")).toThrow("not registered");
-	});
-
 	// === T4a: Edge Cases ===
 	it("pause() and resume() control the loop", () => {
 		const game = createGame();
-		game.scene("main", () => {});
-		game.start("main");
+		game.start(Scene);
 		expect(game.running).toBe(true);
 		game.pause();
 		expect(game.running).toBe(false);
@@ -210,38 +199,22 @@ describe("Game", () => {
 		expect(game.running).toBe(true);
 	});
 
-	it("start() with SceneDefinition object registers and loads", () => {
-		const game = createGame();
-		const setup = vi.fn();
-		game.start({ name: "inline", setup });
-		expect(setup).toHaveBeenCalled();
-		expect(game.currentScene?.name).toBe("inline");
-	});
-
-	it("_switchScene() with setup function registers the scene", () => {
-		const game = createGame();
-		game.scene("a", () => {});
-		game.start("a");
-		const setupB = vi.fn();
-		game._switchScene("b", setupB);
-		expect(setupB).toHaveBeenCalled();
-		expect(game.currentScene?.name).toBe("b");
-	});
-
 	it("_switchScene() destroys old scene", () => {
 		const game = createGame();
 		const destroySpy = vi.fn();
-		class TrackedNode extends Node {
-			override onDestroy(): void {
-				destroySpy();
+		class SceneA extends Scene {
+			onReady() {
+				class TrackedNode extends Node {
+					override onDestroy(): void {
+						destroySpy();
+					}
+				}
+				this.addChild(new TrackedNode());
 			}
 		}
-		game.scene("a", (scene) => {
-			scene.addChild(new TrackedNode());
-		});
-		game.scene("b", () => {});
-		game.start("a");
-		game._switchScene("b");
+		class SceneB extends Scene {}
+		game.start(SceneA);
+		game._switchScene(SceneB);
 		expect(destroySpy).toHaveBeenCalled();
 	});
 
@@ -287,8 +260,7 @@ describe("Game", () => {
 
 		it("renderer: null creates headless game (no rendering)", () => {
 			const game = createGame({ renderer: null });
-			game.scene("main", () => {});
-			game.start("main");
+			game.start(Scene);
 			game.step();
 			// Should not throw — rendering is simply skipped
 			expect(game.currentScene).not.toBeNull();
@@ -297,8 +269,7 @@ describe("Game", () => {
 		it("renderer: custom uses provided renderer", () => {
 			const renderer = mockRenderer();
 			const game = createGame({ renderer });
-			game.scene("main", () => {});
-			game.start("main");
+			game.start(Scene);
 			game.step();
 			expect(renderer.render).toHaveBeenCalled();
 		});
@@ -307,8 +278,7 @@ describe("Game", () => {
 			const renderer1 = mockRenderer();
 			const renderer2 = mockRenderer();
 			const game = createGame({ renderer: renderer1 });
-			game.scene("main", () => {});
-			game.start("main");
+			game.start(Scene);
 			game._setRenderer(renderer2);
 			game.step();
 			expect(renderer2.render).toHaveBeenCalled();
@@ -317,8 +287,7 @@ describe("Game", () => {
 		it("_setRenderer(null) disables rendering", () => {
 			const renderer = mockRenderer();
 			const game = createGame({ renderer });
-			game.scene("main", () => {});
-			game.start("main");
+			game.start(Scene);
 			game._setRenderer(null);
 			game.step();
 			// render called during start's markRenderDirty, but not after setRenderer(null)
@@ -328,8 +297,7 @@ describe("Game", () => {
 		it("_setRenderer disposes old renderer", () => {
 			const renderer = mockRenderer();
 			const game = createGame({ renderer });
-			game.scene("main", () => {});
-			game.start("main");
+			game.start(Scene);
 			game._setRenderer(null);
 			expect(renderer.dispose).toHaveBeenCalled();
 		});
@@ -337,8 +305,7 @@ describe("Game", () => {
 		it("stop() calls renderer.dispose()", () => {
 			const renderer = mockRenderer();
 			const game = createGame({ renderer });
-			game.scene("main", () => {});
-			game.start("main");
+			game.start(Scene);
 			game.stop();
 			expect(renderer.dispose).toHaveBeenCalled();
 		});

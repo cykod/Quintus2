@@ -1,4 +1,4 @@
-import { Game } from "@quintus/core";
+import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";
 import { Actor } from "./actor.js";
@@ -16,12 +16,12 @@ function setupScene(
 	const canvas = document.createElement("canvas");
 	const game = new Game({ width: 800, height: 600, canvas, renderer: null });
 	game.use(PhysicsPlugin({ gravity }));
-	game.scene("main", (scene) => {
-		for (const body of bodies) {
-			scene.addChild(body);
+	class TestScene extends Scene {
+		onReady() {
+			for (const body of bodies) this.addChild(body);
 		}
-	});
-	game.start("main");
+	}
+	game.start(TestScene);
 	return { game, world: getPhysicsWorld(game) };
 }
 

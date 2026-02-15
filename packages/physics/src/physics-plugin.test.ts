@@ -1,4 +1,4 @@
-import { Game } from "@quintus/core";
+import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
 import { CollisionObject, type BodyType } from "./collision-object.js";
@@ -151,11 +151,13 @@ describe("PhysicsPlugin", () => {
 			const acs = actor.addChild(CollisionShape);
 			acs.shape = Shape.rect(10, 10);
 
-			game.scene("main", (scene) => {
-				scene.addChild(sensor);
-				scene.addChild(actor);
-			});
-			game.start("main");
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(sensor);
+					this.addChild(actor);
+				}
+			}
+			game.start(TestScene);
 
 			// After a step, postFixedUpdate fires → stepSensors → sensor entered
 			game.step();

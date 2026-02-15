@@ -27,8 +27,8 @@ export type { Plugin } from "./plugin.js";
 export { definePlugin } from "./plugin.js";
 // Renderer
 export type { Renderer } from "./renderer.js";
-export type { SceneDefinition, SceneSetupFn } from "./scene.js";
+export type { SceneConstructor } from "./scene.js";
 // Scene
-export { defineScene, Scene } from "./scene.js";
+export { Scene } from "./scene.js";
 export type { SignalConnection, SignalHandler } from "./signal.js";
 export { Signal, signal } from "./signal.js";

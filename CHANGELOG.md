@@ -1,3 +1,15 @@
+## Refactor scenes from callbacks to class-based API
+*Saturday, February 14th at 9pm*
+Replaced the callback-based scene registration pattern (game.scene("name", fn) 
+/ game.start("name")) with a class-based approach (class Level extends Scene { 
+onReady() {} } / game.start(Level)). This eliminates the _scenes map, 
+SceneSetupFn, SceneDefinition, and defineScene() in favor of a single 
+SceneConstructor type, making scenes consistent with the rest of the engine's 
+inheritance model. All 713 tests across 14 modified files pass, including 
+converted helpers in core and physics packages.
+
+---
+
 ## Add Actor, StaticCollider, and Sensor physics bodies (Phase 2.4)
 *Saturday, February 14th at 9pm*
 Implement Phase 2 Subphase 4: the three concrete physics body types. Actor 

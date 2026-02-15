@@ -1,4 +1,4 @@
-import { Game } from "@quintus/core";
+import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -206,10 +206,12 @@ describe("CollisionObject", () => {
 			// Build body with children FIRST, then add to scene
 			// (onReady fires immediately on addChild if parent is in tree)
 			const body = makeBody("actor", new Vec2(50, 50));
-			game.scene("main", (scene) => {
-				scene.addChild(body);
-			});
-			game.start("main");
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			game.start(TestScene);
 
 			const world = getPhysicsWorld(game)!;
 
@@ -228,10 +230,12 @@ describe("CollisionObject", () => {
 			game.use(PhysicsPlugin());
 
 			const body = makeBody("actor", new Vec2(50, 50));
-			game.scene("main", (scene) => {
-				scene.addChild(body);
-			});
-			game.start("main");
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			game.start(TestScene);
 
 			const world = getPhysicsWorld(game)!;
 
@@ -257,10 +261,12 @@ describe("CollisionObject", () => {
 
 			// Don't install PhysicsPlugin — let the body auto-install it
 			const body = makeBody("actor", new Vec2(50, 50));
-			game.scene("main", (scene) => {
-				scene.addChild(body);
-			});
-			game.start("main");
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			game.start(TestScene);
 
 			// PhysicsPlugin should have been auto-installed
 			expect(game.hasPlugin("physics")).toBe(true);
@@ -279,10 +285,12 @@ describe("CollisionObject", () => {
 			game.use(PhysicsPlugin());
 
 			const body = makeBody("actor", new Vec2(0, 0));
-			game.scene("main", (scene) => {
-				scene.addChild(body);
-			});
-			game.start("main");
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			game.start(TestScene);
 
 			// If _registerPhysicsAccessors didn't work, body wouldn't be in the world
 			const world = getPhysicsWorld(game)!;
@@ -314,13 +322,13 @@ describe("CollisionObject", () => {
 			game.use(PhysicsPlugin());
 
 			const body = makeBody("actor", new Vec2(0, 0));
-			game.scene("a", (scene) => {
-				scene.addChild(body);
-			});
-			game.scene("b", () => {
-				// Empty scene
-			});
-			game.start("a");
+			class SceneA extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			class SceneB extends Scene {}
+			game.start(SceneA);
 
 			const world = getPhysicsWorld(game)!;
 
@@ -330,7 +338,7 @@ describe("CollisionObject", () => {
 			expect(world.testOverlap(probe)).toContain(body);
 
 			// Switch scene — old body should be unregistered (destroy → onExitTree)
-			game.currentScene!.switchTo("b");
+			game.currentScene!.switchTo(SceneB);
 			expect(world.testOverlap(probe)).not.toContain(body);
 		});
 
@@ -340,11 +348,13 @@ describe("CollisionObject", () => {
 
 			const sensor = makeBody("sensor", new Vec2(0, 0), Shape.rect(40, 40)) as TestSensor;
 			const actor = makeBody("actor", new Vec2(5, 0));
-			game.scene("main", (scene) => {
-				scene.addChild(sensor);
-				scene.addChild(actor);
-			});
-			game.start("main");
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(sensor);
+					this.addChild(actor);
+				}
+			}
+			game.start(TestScene);
 
 			// Step to trigger postFixedUpdate → stepSensors
 			game.step();

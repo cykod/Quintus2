@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Game } from "./game.js";
 import { Node } from "./node.js";
 import { Node2D } from "./node2d.js";
-import { defineScene, Scene } from "./scene.js";
+import { Scene } from "./scene.js";
 
 function createTestGame(): Game {
 	const canvas = document.createElement("canvas");
@@ -13,7 +13,7 @@ function createTestGame(): Game {
 describe("Scene", () => {
 	it("add(NodeClass) creates and adds node to tree", () => {
 		const game = createTestGame();
-		const scene = new Scene("test", game);
+		const scene = new Scene(game);
 		const node = scene.add(Node2D);
 		node.position = new Vec2(10, 20);
 		node.name = "myNode";
@@ -24,7 +24,7 @@ describe("Scene", () => {
 
 	it("add(existing node) adds it", () => {
 		const game = createTestGame();
-		const scene = new Scene("test", game);
+		const scene = new Scene(game);
 		const node = new Node();
 		scene.add(node);
 		expect(scene.children).toContain(node);
@@ -32,7 +32,7 @@ describe("Scene", () => {
 
 	it("findAll(tag) searches entire tree", () => {
 		const game = createTestGame();
-		const scene = new Scene("test", game);
+		const scene = new Scene(game);
 		const a = new Node();
 		a.tag("enemy");
 		const parent = new Node();
@@ -46,7 +46,7 @@ describe("Scene", () => {
 
 	it("findAllByType(Type) searches entire tree", () => {
 		const game = createTestGame();
-		const scene = new Scene("test", game);
+		const scene = new Scene(game);
 		class SpecialNode extends Node {}
 		const parent = new Node();
 		parent.addChild(new SpecialNode());
@@ -57,7 +57,7 @@ describe("Scene", () => {
 
 	it("count(tag) returns correct count", () => {
 		const game = createTestGame();
-		const scene = new Scene("test", game);
+		const scene = new Scene(game);
 		const n1 = new Node();
 		n1.tag("a");
 		const n2 = new Node();
@@ -72,40 +72,28 @@ describe("Scene", () => {
 
 	it("paused flag", () => {
 		const game = createTestGame();
-		const scene = new Scene("test", game);
+		const scene = new Scene(game);
 		expect(scene.paused).toBe(false);
 		scene.paused = true;
 		expect(scene.paused).toBe(true);
 	});
 
-	it("defineScene() returns correct SceneDefinition", () => {
-		const setup = vi.fn();
-		const def = defineScene("myScene", setup);
-		expect(def.name).toBe("myScene");
-		expect(def.setup).toBe(setup);
-	});
-
-	it("scene setup function receives scene reference", () => {
-		const game = createTestGame();
-		const setup = vi.fn();
-		game.scene("test", setup);
-		game.start("test");
-		expect(setup).toHaveBeenCalledTimes(1);
-		expect(setup.mock.calls[0]?.[0]).toBeInstanceOf(Scene);
-	});
-
 	it("switchTo destroys current scene and loads new one", () => {
 		const game = createTestGame();
 		const destroyed = vi.fn();
-		game.scene("a", (scene) => {
-			const node = new Node();
-			node.onDestroy = destroyed;
-			scene.addChild(node);
-		});
-		game.scene("b", (_scene) => {});
-		game.start("a");
-		game.currentScene?.switchTo("b");
+
+		class SceneA extends Scene {
+			onReady() {
+				const node = new Node();
+				node.onDestroy = destroyed;
+				this.addChild(node);
+			}
+		}
+		class SceneB extends Scene {}
+
+		game.start(SceneA);
+		game.currentScene?.switchTo(SceneB);
 		expect(destroyed).toHaveBeenCalled();
-		expect(game.currentScene?.name).toBe("b");
+		expect(game.currentScene?.name).toBe("SceneB");
 	});
 });
