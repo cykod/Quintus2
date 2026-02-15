@@ -1,5 +1,5 @@
 {
 	"extends": "./tsconfig.base.json",
 	"include": ["vitest.config.ts", "examples/**/*.ts"],
-	"exclude": ["node_modules", "dist", "old"]
+	"exclude": ["node_modules", "dist", "old", "examples/vite.config.ts"]
 }

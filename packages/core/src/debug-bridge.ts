@@ -1,3 +1,4 @@
+import { formatEvents, formatTree } from "./debug-format.js";
 import type { DebugEvent, EventFilter } from "./debug-log.js";
 import type { Game } from "./game.js";
 import type { Node } from "./node.js";
@@ -32,9 +33,15 @@ export interface DebugBridge {
 	log(category: string, message: string, data?: Record<string, unknown>): void;
 }
 
+export interface DebugFormatters {
+	formatTree: typeof formatTree;
+	formatEvents: typeof formatEvents;
+}
+
 declare global {
 	interface Window {
 		__quintusDebug?: DebugBridge;
+		__quintusFormatters?: DebugFormatters;
 	}
 }
 
@@ -170,6 +177,7 @@ export function installDebugBridge(game: Game): DebugBridge {
 
 	if (typeof window !== "undefined") {
 		window.__quintusDebug = bridge;
+		window.__quintusFormatters = { formatTree, formatEvents };
 	}
 
 	return bridge;

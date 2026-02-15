@@ -1,6 +1,6 @@
 import { SeededRandom } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
-import { type GameOptions, Game } from "./game.js";
+import { Game, type GameOptions } from "./game.js";
 import { Node } from "./node.js";
 import { definePlugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";

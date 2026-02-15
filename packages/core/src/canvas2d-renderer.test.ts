@@ -1,5 +1,5 @@
 import { Color, Rect, Vec2 } from "@quintus/math";
-import { type MockInstance, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AssetLoader } from "./asset-loader.js";
 import { Canvas2DRenderer } from "./canvas2d-renderer.js";
 import type { DrawContext } from "./draw-context.js";

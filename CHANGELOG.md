@@ -1,3 +1,18 @@
+## Add /debug-game skill with quintus-debug CLI wrapper
+*Sunday, February 15th at 1pm*
+Add the /debug-game Claude Code skill for ergonomic runtime debugging of 
+Quintus games. The core engine change exposes formatTree and formatEvents on 
+window.__quintusFormatters so the CLI can use the engine's own pretty-printers 
+from the browser context. The quintus-debug bash wrapper provides 24 commands 
+(connect, tree, layout, physics, step, tap, track, jump-analysis, events, etc.) 
+that wrap playwright-cli session calls into one-liners. Includes SKILL.md with 
+methodology and decision tree, plus reference docs for the full API, physics 
+debugging formulas, and step-by-step recipes. Also fixes a null-safety issue in 
+the platformer demo's input access and applies biome formatting cleanups to 
+tests.
+
+---
+
 ## Add AI debug protocol with serialization and instrumentation
 *Sunday, February 15th at 12pm*
 Implement the AI Debug Protocol infrastructure: node serialization (Node, 

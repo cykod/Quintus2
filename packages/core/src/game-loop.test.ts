@@ -116,10 +116,7 @@ describe("GameLoop start/stop/tick", () => {
 				return ++latestRafId;
 			}),
 		);
-		vi.stubGlobal(
-			"cancelAnimationFrame",
-			vi.fn(),
-		);
+		vi.stubGlobal("cancelAnimationFrame", vi.fn());
 	});
 
 	afterEach(() => {
@@ -142,39 +139,27 @@ describe("GameLoop start/stop/tick", () => {
 	}
 
 	it("start() sets running to true", () => {
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			makeCallbacks(),
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, makeCallbacks());
 		loop.start();
 		expect(loop.running).toBe(true);
 	});
 
 	it("start() while already running does not schedule another RAF", () => {
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			makeCallbacks(),
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, makeCallbacks());
 		loop.start();
 		loop.start();
 		expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
 	});
 
 	it("stop() sets running to false", () => {
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			makeCallbacks(),
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, makeCallbacks());
 		loop.start();
 		loop.stop();
 		expect(loop.running).toBe(false);
 	});
 
 	it("stop() cancels the pending RAF", () => {
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			makeCallbacks(),
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, makeCallbacks());
 		loop.start();
 		loop.stop();
 		expect(cancelAnimationFrame).toHaveBeenCalled();
@@ -183,10 +168,7 @@ describe("GameLoop start/stop/tick", () => {
 	it("tick() calls fixedUpdate the correct number of times for elapsed time", () => {
 		const cbs = makeCallbacks();
 		const fixedDt = 1 / 60;
-		const loop = new GameLoop(
-			{ fixedDeltaTime: fixedDt, maxAccumulator: 0.25 },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: fixedDt, maxAccumulator: 0.25 }, cbs);
 
 		loop.start(); // lastTimestamp = performance.now() = 0
 		// Simulate 2 fixedDt elapsed (in ms)
@@ -200,10 +182,7 @@ describe("GameLoop start/stop/tick", () => {
 	it("tick() calls update/render/cleanup exactly once per frame even with multiple fixedUpdates", () => {
 		const cbs = makeCallbacks();
 		const fixedDt = 1 / 60;
-		const loop = new GameLoop(
-			{ fixedDeltaTime: fixedDt, maxAccumulator: 0.25 },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: fixedDt, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
 		// Simulate 3 fixedDt elapsed — fixedUpdate 3x, but update/render/cleanup only 1x
@@ -219,10 +198,7 @@ describe("GameLoop start/stop/tick", () => {
 		const cbs = makeCallbacks();
 		const fixedDt = 1 / 60;
 		const maxAcc = 0.25;
-		const loop = new GameLoop(
-			{ fixedDeltaTime: fixedDt, maxAccumulator: maxAcc },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: fixedDt, maxAccumulator: maxAcc }, cbs);
 
 		loop.start();
 		// Simulate 2 seconds elapsed — way beyond maxAccumulator
@@ -235,10 +211,7 @@ describe("GameLoop start/stop/tick", () => {
 
 	it("tick() passes clamped frameDt to update, not raw dt", () => {
 		const cbs = makeCallbacks();
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
 		// 500ms = 0.5s, exceeds maxAccumulator of 0.25s
@@ -249,10 +222,7 @@ describe("GameLoop start/stop/tick", () => {
 
 	it("tick() updates elapsed time", () => {
 		const cbs = makeCallbacks();
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
 		fireRaf(16); // 16ms ≈ 0.016s
@@ -261,10 +231,7 @@ describe("GameLoop start/stop/tick", () => {
 
 	it("tick() schedules next RAF after processing", () => {
 		const cbs = makeCallbacks();
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
 		expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
@@ -275,10 +242,7 @@ describe("GameLoop start/stop/tick", () => {
 
 	it("tick() early-returns if stopped before RAF fires", () => {
 		const cbs = makeCallbacks();
-		const loop = new GameLoop(
-			{ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 },
-			cbs,
-		);
+		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
 		const savedCallback = rafCallback!;
@@ -301,10 +265,7 @@ describe("GameLoop start/stop/tick", () => {
 			loop.stop();
 		});
 
-		loop = new GameLoop(
-			{ fixedDeltaTime: fixedDt, maxAccumulator: 0.25 },
-			cbs,
-		);
+		loop = new GameLoop({ fixedDeltaTime: fixedDt, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
 		fireRaf(fixedDt * 1000); // Triggers 1 fixedUpdate which calls stop()

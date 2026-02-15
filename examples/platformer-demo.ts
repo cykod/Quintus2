@@ -51,7 +51,8 @@ class Player extends Actor {
 	}
 
 	onFixedUpdate(dt: number) {
-		const input = this.game.input;
+		const input = this.game?.input;
+		if (!input) return;
 		this.velocity.x = 0;
 		if (input.isPressed("move_left")) this.velocity.x = -this.speed;
 		if (input.isPressed("move_right")) this.velocity.x = this.speed;
