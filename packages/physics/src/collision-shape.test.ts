@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { AABB, Matrix2D, Vec2 } from "@quintus/math";
 import { Node2D } from "@quintus/core";
 import { CollisionShape } from "./collision-shape.js";
-import { Shape } from "./shapes.js";
+import { type Shape2D, Shape } from "./shapes.js";
 
 /** Helper: create a standalone CollisionShape (not in a tree, uses identity global transform). */
-function createShape(shape: ReturnType<typeof Shape.rect>, position?: Vec2): CollisionShape {
+function createShape(shape: Shape2D, position?: Vec2): CollisionShape {
 	const cs = new CollisionShape();
 	cs.shape = shape;
 	if (position) {

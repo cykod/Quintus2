@@ -8,7 +8,7 @@ import { Scene } from "./scene.js";
 function createTestScene(): Scene {
 	const canvas = document.createElement("canvas");
 	const game = new Game({ width: 100, height: 100, canvas });
-	return new Scene("test", game);
+	return new Scene(game);
 }
 
 describe("Node2D", () => {

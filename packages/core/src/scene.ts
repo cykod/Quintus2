@@ -104,6 +104,19 @@ export class Scene extends Node {
 	}
 
 	private _handleLifecycleError(node: Node, lifecycle: string, err: unknown): void {
+		// Debug instrumentation: log error
+		if (this._game.debug) {
+			const msg = err instanceof Error ? err.message : String(err);
+			this._game.debugLog.write(
+				{
+					category: "error",
+					message: `Error in ${node.constructor.name}#${node.id} ${lifecycle}: ${msg}`,
+				},
+				this._game.fixedFrame,
+				this._game.elapsed,
+			);
+		}
+
 		if (this._game.onError.hasListeners) {
 			this._game.onError.emit({ node, lifecycle, error: err });
 		} else {

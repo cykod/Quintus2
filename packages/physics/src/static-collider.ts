@@ -1,5 +1,6 @@
 import { Vec2 } from "@quintus/math";
 import { type BodyType, CollisionObject } from "./collision-object.js";
+import type { StaticColliderSnapshot } from "./snapshot-types.js";
 
 export class StaticCollider extends CollisionObject {
 	readonly bodyType: BodyType = "static";
@@ -25,6 +26,18 @@ export class StaticCollider extends CollisionObject {
 	 * Default: Vec2.UP (0, -1) — collisions from above only.
 	 */
 	oneWayDirection: Vec2 = new Vec2(0, -1);
+
+	// === Serialization ===
+
+	override serialize(): StaticColliderSnapshot {
+		return {
+			...super.serialize(),
+			oneWay: this.oneWay,
+			constantVelocity: { x: this.constantVelocity.x, y: this.constantVelocity.y },
+			collisionGroup: this.collisionGroup,
+			bodyType: "static" as const,
+		};
+	}
 
 	/** @internal One-way collision filtering for castMotion. */
 	override _shouldSkipCollision(normal: Vec2): boolean {

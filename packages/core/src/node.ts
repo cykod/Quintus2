@@ -1,4 +1,5 @@
 import { type Signal, signal } from "./signal.js";
+import type { NodeSnapshot } from "./snapshot-types.js";
 
 export type PauseMode = "inherit" | "independent";
 
@@ -161,6 +162,20 @@ export class Node {
 			node._isReady = true;
 			node.onReady();
 			node.readySignal.emit();
+
+			// Debug instrumentation: log onReady
+			const game = node.game;
+			if (game?.debug) {
+				const tags = node._tags.size > 0 ? ` tags=[${[...node._tags].join(",")}]` : "";
+				game.debugLog.write(
+					{
+						category: "lifecycle",
+						message: `${node.constructor.name}#${node.id}.onReady${tags}`,
+					},
+					game.fixedFrame,
+					game.elapsed,
+				);
+			}
 		}
 	}
 
@@ -267,6 +282,17 @@ export class Node {
 		return s ? s.game : null;
 	}
 
+	// === Serialization ===
+	serialize(): NodeSnapshot {
+		return {
+			id: this.id,
+			type: this.constructor.name,
+			name: this.name,
+			tags: [...this._tags],
+			children: this._children.map((c) => c.serialize()),
+		};
+	}
+
 	// === Lifecycle Methods (override in subclasses) ===
 	onReady(): void {}
 	onEnterTree(): void {}
@@ -287,6 +313,19 @@ export class Node {
 	_processDestroy(): void {
 		if (!this._pendingDestroy) return;
 		this._pendingDestroy = false;
+
+		// Debug instrumentation: log onDestroy
+		const game = this.game;
+		if (game?.debug) {
+			game.debugLog.write(
+				{
+					category: "lifecycle",
+					message: `${this.constructor.name}#${this.id}.onDestroy`,
+				},
+				game.fixedFrame,
+				game.elapsed,
+			);
+		}
 
 		this.destroying.emit();
 

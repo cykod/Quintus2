@@ -1,6 +1,8 @@
 import { SeededRandom } from "@quintus/math";
 import { AssetLoader } from "./asset-loader.js";
 import { Canvas2DRenderer } from "./canvas2d-renderer.js";
+import { installDebugBridge } from "./debug-bridge.js";
+import { DebugLog } from "./debug-log.js";
 import { GameLoop } from "./game-loop.js";
 import type { Node } from "./node.js";
 import type { Plugin } from "./plugin.js";
@@ -27,6 +29,8 @@ export interface GameOptions {
 	fixedDeltaTime?: number;
 	/** Custom renderer. Pass `null` for headless (no rendering). Default: Canvas2DRenderer. */
 	renderer?: Renderer | null;
+	/** Start in debug mode (paused, bridge exposed). Default: auto-detect from ?debug URL param. */
+	debug?: boolean;
 }
 
 export class Game {
@@ -36,6 +40,10 @@ export class Game {
 	readonly canvas: HTMLCanvasElement;
 	readonly pixelArt: boolean;
 	readonly backgroundColor: string;
+
+	// === Debug ===
+	readonly debug: boolean;
+	readonly debugLog: DebugLog;
 
 	// === State ===
 	private _currentScene: Scene | null = null;
@@ -69,6 +77,19 @@ export class Game {
 		this.backgroundColor = options.backgroundColor ?? "#000000";
 		this.fixedDeltaTime = options.fixedDeltaTime ?? 1 / 60;
 
+		// Debug mode
+		this.debug = options.debug ?? _detectDebugMode();
+		this.debugLog = new DebugLog();
+
+		// Seed override from URL in debug mode
+		let seed = options.seed ?? Date.now();
+		if (this.debug) {
+			const urlSeed = _getURLParam("seed");
+			if (urlSeed !== null) {
+				seed = Number(urlSeed);
+			}
+		}
+
 		// Resolve or create canvas
 		if (typeof options.canvas === "string") {
 			const el = document.getElementById(options.canvas);
@@ -92,7 +113,7 @@ export class Game {
 		}
 
 		// RNG
-		this.random = new SeededRandom(options.seed ?? Date.now());
+		this.random = new SeededRandom(seed);
 
 		// Asset loader
 		this.assets = new AssetLoader();
@@ -148,7 +169,26 @@ export class Game {
 	/** Start the game loop with the given scene class. */
 	start(SceneClass: SceneConstructor): void {
 		this._loadScene(SceneClass);
-		this.loop.start();
+
+		if (this.debug) {
+			// Render one frame so the initial state is visible, but don't start the loop
+			this._render();
+			installDebugBridge(this);
+
+			// Auto-step if ?step=N is present
+			const stepParam = _getURLParam("step");
+			if (stepParam !== null) {
+				const n = Number(stepParam);
+				if (n > 0) {
+					for (let i = 0; i < n; i++) this.step();
+				}
+			}
+
+			this._renderDebugOverlay();
+		} else {
+			this.loop.start();
+		}
+
 		this.started.emit();
 	}
 
@@ -173,6 +213,19 @@ export class Game {
 		this.loop.stop();
 		this.renderer?.dispose?.();
 		this.stopped.emit();
+	}
+
+	// === Debug ===
+
+	/** Capture the current canvas as a PNG data URL. */
+	screenshot(): string {
+		return this.canvas.toDataURL("image/png");
+	}
+
+	/** Log a custom debug event. No-op when debug mode is off. */
+	log(message: string, data?: Record<string, unknown>): void {
+		if (!this.debug) return;
+		this.debugLog.write({ category: "game", message, data }, this.fixedFrame, this.elapsed);
 	}
 
 	// === Plugins ===
@@ -207,6 +260,18 @@ export class Game {
 		}
 
 		this._loadScene(SceneClass);
+
+		if (this.debug) {
+			this.debugLog.write(
+				{
+					category: "scene",
+					message: `scene switch ${fromName ?? "null"} → ${this._currentScene?.name ?? ""}`,
+				},
+				this.fixedFrame,
+				this.elapsed,
+			);
+		}
+
 		this.sceneSwitched.emit({ from: fromName, to: this._currentScene?.name ?? "" });
 
 		// Mark render list dirty for new scene
@@ -238,11 +303,47 @@ export class Game {
 		if (this._currentScene && this.renderer) {
 			this.renderer.render(this._currentScene);
 		}
+		if (this.debug && !this.running) {
+			this._renderDebugOverlay();
+		}
 	}
 
 	private _cleanup(): void {
 		if (this._currentScene?._processDestroyQueue()) {
 			this.renderer?.markRenderDirty();
 		}
+	}
+
+	/** Draw "PAUSED [frame N]" overlay on canvas when paused in debug mode. */
+	private _renderDebugOverlay(): void {
+		const ctx = this.canvas.getContext("2d");
+		if (!ctx) return;
+		const text = `PAUSED [frame ${this.fixedFrame}]`;
+		ctx.save();
+		ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+		ctx.fillRect(0, 0, this.width, 24);
+		ctx.fillStyle = "#0f0";
+		ctx.font = "12px monospace";
+		ctx.textBaseline = "middle";
+		ctx.fillText(text, 8, 12);
+		ctx.restore();
+	}
+}
+
+/** Detect debug mode from URL query parameter. */
+function _detectDebugMode(): boolean {
+	try {
+		return new URL(window.location.href).searchParams.has("debug");
+	} catch {
+		return false;
+	}
+}
+
+/** Read a URL query parameter. Returns null if not present or not in browser. */
+function _getURLParam(name: string): string | null {
+	try {
+		return new URL(window.location.href).searchParams.get(name);
+	} catch {
+		return null;
 	}
 }

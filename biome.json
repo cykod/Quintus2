@@ -39,7 +39,8 @@
 			"!**/node_modules",
 			"!**/old",
 			"!**/old/**/*.json",
-			"!**/.claude"
+			"!**/.claude",
+			"!**/coverage"
 		]
 	}
 }

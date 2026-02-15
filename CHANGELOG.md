@@ -1,3 +1,19 @@
+## Add AI debug protocol with serialization and instrumentation
+*Sunday, February 15th at 12pm*
+Implement the AI Debug Protocol infrastructure: node serialization (Node, 
+Node2D, Actor, StaticCollider, Sensor snapshots), a ring-buffer DebugLog for 
+structured events, a window.__quintusDebug bridge for 
+pause/resume/step/inspect/inject/screenshot, and auto-instrumentation hooks 
+throughout the engine (lifecycle events, collisions, contact flag changes, 
+sensor overlaps, scene transitions, errors). Game gains a debug option with URL 
+param detection (?debug, ?seed=N, ?step=N) for deterministic AI-driven testing. 
+Also refines the Phase 4 design doc with markRenderDirty fix for dynamic scene 
+changes, physics as optional peer dependency for tilemap, Camera inverse 
+transform caching, destroyed-target polling, and InputPlugin integration in the 
+demo.
+
+---
+
 ## Add sprites and input packages (Phase 3)
 *Sunday, February 15th at 11am*
 Implement Phase 3 of the Quintus 2.0 rewrite: @quintus/sprites (SpriteSheet, 

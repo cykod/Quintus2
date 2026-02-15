@@ -119,3 +119,13 @@
 [DEVL] sun 2/15 9am - Review Phase 3 input subsystem design for AI debug compatibility issues
 
 [IMPL] sun 2/15 10am - Implement Phase 3 (Sprites & Input) — SpriteSheet, Sprite, AnimatedSprite, Input system with action maps, gamepad, mouse, injection, and InputEvent propagation
+
+[MILE] sun 2/15 11am - Added sprites and input packages completing Phase 3 with SpriteSheet, AnimatedSprite, action-map input system, and design docs
+
+[IMPL] sun 2/15 11am - Implement the AI Debug Protocol (Phase 8): node serialization, debug log, debug bridge, and auto-instrumentation
+
+[DEVL] sun 2/15 11am - Review Phase 4 tilemap & camera design for potential issues and risks
+
+[IMPL] sun 2/15 12pm - Implement Phase 8 AI Debug Protocol: node serialization, DebugLog, debug bridge, auto-instrumentation hooks, and formatters
+
+[IMPL] sun 2/15 12pm - Review and fix TypeScript strictness across the monorepo, ensuring no anys and no warnings in the core engine

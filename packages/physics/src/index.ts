@@ -31,6 +31,8 @@ export type {
 	Shape2D,
 } from "./shapes.js";
 export { Shape, shapeAABB } from "./shapes.js";
+// Snapshot types
+export type { ActorSnapshot, SensorSnapshot, StaticColliderSnapshot } from "./snapshot-types.js";
 // Spatial hash (broad phase)
 export { SpatialHash } from "./spatial-hash.js";
 export { StaticCollider } from "./static-collider.js";

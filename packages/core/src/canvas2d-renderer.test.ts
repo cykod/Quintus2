@@ -12,7 +12,7 @@ function createTestSetup() {
 	canvas.width = 200;
 	canvas.height = 200;
 	const game = new Game({ width: 200, height: 200, canvas });
-	const scene = new Scene("test", game);
+	const scene = new Scene(game);
 	const assets = new AssetLoader();
 	const renderer = new Canvas2DRenderer(canvas, 200, 200, "#000000", assets);
 	const ctx = canvas.getContext("2d")!;

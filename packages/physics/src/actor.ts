@@ -2,6 +2,7 @@ import { type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import type { CollisionInfo } from "./collision-info.js";
 import { type BodyType, CollisionObject } from "./collision-object.js";
+import type { ActorSnapshot } from "./snapshot-types.js";
 import { StaticCollider } from "./static-collider.js";
 
 /** Stop slightly before contact to prevent float-precision embedding. */
@@ -102,6 +103,21 @@ export class Actor extends CollisionObject {
 		return this._slideCollisions;
 	}
 
+	// === Serialization ===
+
+	override serialize(): ActorSnapshot {
+		return {
+			...super.serialize(),
+			velocity: { x: this.velocity.x, y: this.velocity.y },
+			gravity: this.gravity,
+			isOnFloor: this._onFloor,
+			isOnWall: this._onWall,
+			isOnCeiling: this._onCeiling,
+			collisionGroup: this.collisionGroup,
+			bodyType: "actor" as const,
+		};
+	}
+
 	// === Lifecycle ===
 
 	override onReady(): void {
@@ -189,6 +205,20 @@ export class Actor extends CollisionObject {
 			this._slideCollisions.push(collision);
 			this.collided.emit(collision);
 
+			// Debug instrumentation: log collision
+			const game = this.game;
+			if (game?.debug) {
+				game.debugLog.write(
+					{
+						category: "physics",
+						message: `${this.constructor.name}#${this.id} collision normal=(${nx.toFixed(2)},${ny.toFixed(2)}) with=${collision.collider.constructor.name}#${collision.collider.id}`,
+						data: { normal: { x: nx, y: ny }, depth: collision.depth },
+					},
+					game.fixedFrame,
+					game.elapsed,
+				);
+			}
+
 			// Slide: project remainder onto surface
 			// Subtract the margin from remainder to preserve total motion.
 			const remX = collision.remainder.x - nx * SAFE_MARGIN;
@@ -209,6 +239,10 @@ export class Actor extends CollisionObject {
 		this.position._set(this.position.x + totalDx, this.position.y + totalDy);
 
 		// 5. Update contact flags
+		const wasOnFloor = this._onFloor;
+		const wasOnWall = this._onWall;
+		const wasOnCeiling = this._onCeiling;
+
 		this._onFloor = false;
 		this._onWall = false;
 		this._onCeiling = false;
@@ -231,6 +265,43 @@ export class Actor extends CollisionObject {
 				} else {
 					this._onWall = true;
 					this._wallNormal = col.normal;
+				}
+			}
+		}
+
+		// Debug instrumentation: log contact flag changes
+		{
+			const game = this.game;
+			if (game?.debug) {
+				if (wasOnFloor !== this._onFloor) {
+					game.debugLog.write(
+						{
+							category: "physics",
+							message: `${this.constructor.name}#${this.id} floor_contact ${this._onFloor ? "entered" : "exited"}`,
+						},
+						game.fixedFrame,
+						game.elapsed,
+					);
+				}
+				if (wasOnWall !== this._onWall) {
+					game.debugLog.write(
+						{
+							category: "physics",
+							message: `${this.constructor.name}#${this.id} wall_contact ${this._onWall ? "entered" : "exited"}`,
+						},
+						game.fixedFrame,
+						game.elapsed,
+					);
+				}
+				if (wasOnCeiling !== this._onCeiling) {
+					game.debugLog.write(
+						{
+							category: "physics",
+							message: `${this.constructor.name}#${this.id} ceiling_contact ${this._onCeiling ? "entered" : "exited"}`,
+						},
+						game.fixedFrame,
+						game.elapsed,
+					);
 				}
 			}
 		}

@@ -4,7 +4,7 @@ import { CollisionGroups } from "./collision-groups.js";
 import { CollisionShape } from "./collision-shape.js";
 import { type BodyType, CollisionObject } from "./collision-object.js";
 import { PhysicsWorld } from "./physics-world.js";
-import { Shape } from "./shapes.js";
+import { type Shape2D, Shape } from "./shapes.js";
 
 // === Test helpers ===
 
@@ -47,7 +47,7 @@ class TestSensor extends CollisionObject {
  */
 function createBody(
 	type: BodyType,
-	shape: ReturnType<typeof Shape.rect>,
+	shape: Shape2D,
 	pos: Vec2,
 	group = "default",
 ): TestBody | TestSensor {

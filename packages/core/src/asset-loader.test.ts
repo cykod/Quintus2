@@ -6,7 +6,6 @@ const mockImageBitmap = { width: 32, height: 32, close: () => {} };
 
 beforeEach(() => {
 	vi.restoreAllMocks();
-	// @ts-expect-error - mocking global
 	globalThis.createImageBitmap = vi.fn().mockResolvedValue(mockImageBitmap);
 });
 

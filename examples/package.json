@@ -5,7 +5,15 @@
 	"scripts": {
 		"dev": "vite"
 	},
+	"dependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/input": "workspace:*",
+		"@quintus/math": "workspace:*",
+		"@quintus/physics": "workspace:*",
+		"@quintus/sprites": "workspace:*"
+	},
 	"devDependencies": {
+		"@types/node": "^22.0.0",
 		"vite": "^6.0.0"
 	}
 }

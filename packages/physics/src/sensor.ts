@@ -1,5 +1,6 @@
 import { type Signal, signal } from "@quintus/core";
 import { type BodyType, CollisionObject } from "./collision-object.js";
+import type { SensorSnapshot } from "./snapshot-types.js";
 
 export class Sensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
@@ -21,6 +22,19 @@ export class Sensor extends CollisionObject {
 
 	/** Emitted when another Sensor exits this sensor's area. */
 	readonly sensorExited: Signal<Sensor> = signal<Sensor>();
+
+	// === Serialization ===
+
+	override serialize(): SensorSnapshot {
+		return {
+			...super.serialize(),
+			monitoring: this.monitoring,
+			overlappingBodyCount: this.getOverlappingBodies().length,
+			overlappingSensorCount: this.getOverlappingSensors().length,
+			collisionGroup: this.collisionGroup,
+			bodyType: "sensor" as const,
+		};
+	}
 
 	override get _monitoring(): boolean {
 		return this.monitoring;

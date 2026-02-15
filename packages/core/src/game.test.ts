@@ -1,12 +1,12 @@
 import { SeededRandom } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
-import { Game } from "./game.js";
+import { type GameOptions, Game } from "./game.js";
 import { Node } from "./node.js";
 import { definePlugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";
 import { Scene } from "./scene.js";
 
-function createGame(opts?: Partial<Parameters<typeof Game.prototype.constructor>[0]>): Game {
+function createGame(opts: Partial<GameOptions> = {}): Game {
 	const canvas = document.createElement("canvas");
 	return new Game({ width: 800, height: 600, canvas, ...opts });
 }

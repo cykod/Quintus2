@@ -286,6 +286,19 @@ export class PhysicsWorld {
 			for (const body of currentOverlaps) {
 				if (!prevOverlaps.has(body)) {
 					sensor._onBodyEntered(body);
+
+					// Debug instrumentation
+					const game = sensor.game;
+					if (game?.debug) {
+						game.debugLog.write(
+							{
+								category: "physics",
+								message: `${sensor.constructor.name}#${sensor.id} bodyEntered ${body.constructor.name}#${body.id}`,
+							},
+							game.fixedFrame,
+							game.elapsed,
+						);
+					}
 				}
 			}
 
@@ -293,6 +306,19 @@ export class PhysicsWorld {
 			for (const body of prevOverlaps) {
 				if (!currentOverlaps.has(body)) {
 					sensor._onBodyExited(body);
+
+					// Debug instrumentation
+					const game = sensor.game;
+					if (game?.debug) {
+						game.debugLog.write(
+							{
+								category: "physics",
+								message: `${sensor.constructor.name}#${sensor.id} bodyExited ${body.constructor.name}#${body.id}`,
+							},
+							game.fixedFrame,
+							game.elapsed,
+						);
+					}
 				}
 			}
 

@@ -10,7 +10,8 @@
 
 1. [Core Changes](#1-core-changes)
    - [Scene.viewTransform](#11-sceneviewtransform)
-   - [Canvas2DRenderer Update](#12-canvas2drenderer-update)
+   - [Mark Render List Dirty on Tree Changes](#12-mark-render-list-dirty-on-tree-changes)
+   - [Canvas2DRenderer Update](#13-canvas2drenderer-update)
 2. [Package: @quintus/tilemap](#2-package-quintustilemap)
    - [Tiled JSON Types](#21-tiled-json-types)
    - [Tiled Parser](#22-tiled-parser)
@@ -36,7 +37,7 @@
 
 ## 1. Core Changes
 
-Phase 4 requires two small changes to `@quintus/core`. Both are additive and backward-compatible.
+Phase 4 requires three small changes to `@quintus/core`. All are additive and backward-compatible.
 
 ### 1.1 Scene.viewTransform
 
@@ -66,7 +67,25 @@ export class Scene extends Node {
 - Custom code can set it without using Camera at all (cutscenes, screen transitions, etc.).
 - When scenes switch, each scene's viewTransform resets to identity automatically.
 
-### 1.2 Canvas2DRenderer Update
+### 1.2 Mark Render List Dirty on Tree Changes
+
+**File:** `packages/core/src/node.ts`
+
+Currently, `addChild()` and `removeChild()` do not call `markRenderDirty()` on the renderer. The render list is only rebuilt on scene load and node destruction. This means visual nodes added after the first frame (e.g. dynamically spawned entities, `spawnObjects()` called after load) could be invisible until the next dirty trigger.
+
+**Fix:** In `addChild()` and `removeChild()`, call `this.game?.renderer?.markRenderDirty()` when the node is in an active scene tree. This is a one-liner per method and ensures the render list stays in sync with the scene tree at all times.
+
+```typescript
+// In Node.addChild(), after adding the child:
+this.game?.renderer?.markRenderDirty();
+
+// In Node.removeChild(), after removing the child:
+this.game?.renderer?.markRenderDirty();
+```
+
+This is essential for `TileMap.spawnObjects()`, `TileMap.setTileAt()`, and any runtime scene tree modifications to work correctly.
+
+### 1.3 Canvas2DRenderer Update
 
 **File:** `packages/core/src/canvas2d-renderer.ts`
 
@@ -94,7 +113,9 @@ render(scene: Scene): void {
 
 	// 3. Get the view transform (set by Camera or custom code)
 	const vt = scene.viewTransform;
-	const hasView = vt !== Matrix2D.IDENTITY;
+	// Value-based identity check: avoids false negatives when a fresh
+	// identity matrix is assigned instead of the static Matrix2D.IDENTITY.
+	const hasView = !(vt.a === 1 && vt.b === 0 && vt.c === 0 && vt.d === 1 && vt.e === 0 && vt.f === 0);
 
 	// 4. Draw each node
 	for (const node of this.renderList) {
@@ -121,7 +142,7 @@ render(scene: Scene): void {
 }
 ```
 
-**Performance note:** When no Camera is used, `scene.viewTransform` is `Matrix2D.IDENTITY` and the reference-equality check (`vt !== Matrix2D.IDENTITY`) avoids the per-node matrix multiply entirely. Zero overhead for games that don't use camera.
+**Performance note:** When no Camera is used, `scene.viewTransform` is `Matrix2D.IDENTITY` and the value-based identity check (6 comparisons) avoids the per-node matrix multiply entirely. Zero overhead for games that don't use camera. The value-based check is more robust than reference equality — it correctly detects identity regardless of whether the static `Matrix2D.IDENTITY` instance or a fresh `new Matrix2D(1,0,0,1,0,0)` was assigned.
 
 When a Camera is active, one `Matrix2D.multiply()` per visible node is ~6 multiply + 6 add operations. For 500 visible nodes, that's ~6000 FLOPs — negligible.
 
@@ -131,7 +152,9 @@ When a Camera is active, one `Matrix2D.multiply()` per visible node is ~6 multip
 
 Size budget: **~5KB gzipped**
 
-Dependencies: `@quintus/core`, `@quintus/math`, `@quintus/physics` (workspace deps)
+Dependencies: `@quintus/core`, `@quintus/math` (workspace deps)
+
+Peer dependencies (optional): `@quintus/physics` — required only for `generateCollision()`. Tree-shaking eliminates physics code for ESM consumers; making it a peer dependency also avoids bundling physics for CJS consumers who don't use tile collision.
 
 ### 2.1 Tiled JSON Types
 
@@ -567,7 +590,7 @@ export class TileMap extends Node2D {
 
 - **Asset-based loading.** The Tiled JSON must be pre-loaded via `game.assets.load({ json: ["level1.json"] })`. TileMap reads it from the asset loader in `onReady()`. This matches the engine's asset loading pattern.
 
-- **Collision is opt-in.** `generateCollision()` must be called explicitly. This avoids forcing a `@quintus/physics` dependency at runtime for games that use tilemaps without collision (e.g. visual-only background maps). The import is present in the package but tree-shaking eliminates unused code.
+- **Collision is opt-in.** `generateCollision()` must be called explicitly. `@quintus/physics` is a peer dependency — not bundled at all for games that don't use tile collision. The method checks for `PhysicsPlugin` at runtime via `getPhysicsWorld()` and throws a clear error if physics isn't installed.
 
 - **spawnObjects uses direct property assignment.** Instead of passing Tiled properties through constructors, we set them as properties on the created node. This works because our nodes use property initialization (`speed = 200`), and Tiled properties can override those defaults. Unknown properties are silently ignored.
 
@@ -700,7 +723,7 @@ packages/tilemap/
     └── integration.test.ts    # Full map load → collision → camera → render
 ```
 
-Size budget: **~5KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`, `@quintus/physics`.
+Size budget: **~5KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`. Peer dependency: `@quintus/physics` (optional).
 
 ---
 
@@ -868,6 +891,10 @@ export class Camera extends Node {
 
 - **Only one camera per scene.** The last Camera to call `scene.viewTransform = ...` wins. No multi-camera system — that's an advanced feature for a future phase.
 
+- **Destroyed target handling via polling.** Camera checks `this.follow?.isDestroyed` at the top of `onUpdate()` and sets `follow = null` if true. This is simpler than subscribing to the target's `destroying` signal (which would require connection lifecycle management when `follow` changes). One boolean check per frame, zero allocation.
+
+- **Update ordering.** Camera reads the follow target's `globalPosition` in `onUpdate()`. Since movement typically happens in `onFixedUpdate()` (which runs before `onUpdate` in the game loop), the target's position is always up-to-date by the time Camera reads it. If a target moves in `onUpdate()` instead, add Camera *after* the target in the scene tree so it updates later in the depth-first walk.
+
 ### 3.2 View Transform Computation
 
 The view transform converts world coordinates to screen coordinates. It's composed of three operations applied in order:
@@ -911,6 +938,8 @@ get viewTransform(): Matrix2D {
 			-px * z + hw,  // e: translateX
 			-py * z + hh,  // f: translateY
 		);
+		// Cache inverse alongside forward transform (used by TileMap culling)
+		this._cachedInverseViewTransform = this._cachedViewTransform.inverse();
 		this._viewTransformDirty = false;
 	}
 	return this._cachedViewTransform;
@@ -958,8 +987,7 @@ private _clampToBounds(): void {
 ```typescript
 screenToWorld(screenPos: Vec2): Vec2 {
 	// Invert the view transform: screen → world
-	const inv = this.viewTransform.invert();
-	return inv.transformPoint(screenPos);
+	return this.inverseViewTransform.transformPoint(screenPos);
 }
 
 worldToScreen(worldPos: Vec2): Vec2 {
@@ -967,7 +995,23 @@ worldToScreen(worldPos: Vec2): Vec2 {
 }
 ```
 
-**Optimization note:** `screenToWorld` is called infrequently (mouse clicks, touch events), so the matrix inversion is acceptable. If profiling shows this is hot, we can cache the inverse alongside the view transform.
+The inverse view transform is cached alongside the forward transform to avoid per-call allocation. Both are invalidated together via the same dirty flag:
+
+```typescript
+private _cachedInverseViewTransform = Matrix2D.IDENTITY;
+
+get inverseViewTransform(): Matrix2D {
+	if (this._viewTransformDirty) {
+		// Force recompute of both forward and inverse
+		const _ = this.viewTransform;
+	}
+	return this._cachedInverseViewTransform;
+}
+```
+
+The inverse is computed eagerly when the forward transform is recomputed (in the `viewTransform` getter), since both are needed by TileMap for viewport culling. This keeps `TileMap.onDraw()` allocation-free — it reads the cached inverse via `camera.inverseViewTransform` instead of calling `Matrix2D.inverse()` every frame.
+
+**Note:** `Matrix2D.inverse()` is the correct method name (not `invert()`).
 
 ### 3.4 File Structure
 
@@ -998,13 +1042,13 @@ Size budget: **~3KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`.
 @quintus/core       (depends on math)
      ↑
 @quintus/physics    (depends on core, math)
-     ↑
-@quintus/tilemap    (depends on core, math, physics)
+
+@quintus/tilemap    (depends on core, math — physics is an OPTIONAL PEER dep)
 
 @quintus/camera     (depends on core, math — NO physics dependency)
 ```
 
-- `@quintus/tilemap` → `@quintus/physics`: Required for `generateCollision()` which creates StaticCollider + CollisionShape nodes. Games that use tilemaps without collision still import the package, but tree-shaking eliminates unused physics code paths.
+- `@quintus/tilemap` → `@quintus/physics`: **Optional peer dependency.** Required only for `generateCollision()` which creates StaticCollider + CollisionShape nodes. Games that use tilemaps without collision don't need physics installed at all. The `generateCollision()` method checks for the physics world at runtime via `getPhysicsWorld()` and throws a descriptive error if physics isn't available.
 
 - `@quintus/camera` has **no physics dependency**. Camera is a pure view-transform node.
 
@@ -1034,8 +1078,8 @@ Size budget: **~3KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`.
    - Linear scan of objects, hash lookup for type mapping. Negligible.
 
 **Allocation targets:**
-- TileMap.onDraw: Zero per-frame allocations after the first frame (visible rect cached, tile source rects pre-computed).
-- Camera.onUpdate: Zero per-frame allocations (Vec2 position is mutated in-place, view transform matrix cached).
+- TileMap.onDraw: Zero per-frame allocations after the first frame (visible rect cached, tile source rects pre-computed). Viewport culling uses Camera's cached `inverseViewTransform` — no per-frame `Matrix2D.inverse()` call.
+- Camera.onUpdate: Zero per-frame allocations (Vec2 position is mutated in-place, view transform matrix cached, inverse view transform cached alongside it).
 
 ### 4.3 Determinism
 
@@ -1048,12 +1092,12 @@ Size budget: **~3KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`.
 
 - **Missing asset:** If `TileMap.asset` references a JSON file not loaded via `game.assets`, throw: `"TileMap: Asset 'level1' not found. Load it via game.assets.load({ json: ['level1.json'] }) before starting the scene."`
 - **Invalid Tiled JSON:** `parseTiledMap()` throws on missing required fields with descriptive messages: `"Invalid Tiled map: missing 'width' property."`
-- **Missing tileset image:** If the tileset image isn't loaded, tiles render as empty (no error). A warning is logged: `"TileMap: Tileset image 'tiles' not found. Tiles will not render."`
+- **Missing tileset image:** If the tileset image isn't loaded, tiles render as empty (no error). A warning is logged: `"TileMap: Tileset image 'tiles' not found. Tiles will not render."` Tileset image lookup uses `AssetLoader.nameFromPath()` to strip the directory and extension from the Tiled JSON's `image` field (e.g. `"../tilesets/tiles.png"` → `"tiles"`). This means tileset images must have unique filenames — two tilesets with the same filename in different directories would collide. Use `tilesetImage` override to resolve ambiguity.
 - **Missing spawn point:** `getSpawnPoint(name)` throws if the named point object doesn't exist: `"TileMap: Spawn point 'player_start' not found in any object layer."`
 - **Unmatched object types:** `spawnObjects()` silently skips objects whose type has no entry in the mapping. This is intentional — not every Tiled object type needs a game entity.
 - **Physics not installed:** `generateCollision()` throws if PhysicsPlugin isn't installed: `"TileMap.generateCollision() requires PhysicsPlugin. Call game.use(PhysicsPlugin()) first."`
 - **Camera without game:** `camera.viewTransform` returns `Matrix2D.IDENTITY` if the camera isn't in a scene tree yet. No error.
-- **Camera follow destroyed node:** If the follow target is destroyed, `follow` is automatically set to `null`. Camera holds position at the last followed location.
+- **Camera follow destroyed node:** Camera polls `this.follow?.isDestroyed` at the top of `onUpdate()`. If true, `follow` is set to `null` and the camera holds position at the last followed location.
 
 ---
 
@@ -1130,7 +1174,7 @@ Size budget: **~3KB gzipped**. Dependencies: `@quintus/core`, `@quintus/math`.
 
 ## 6. Demo: Scrolling Platformer
 
-The Phase 4 demo extends the Phase 2 platformer demo into a scrolling level with Tiled-designed maps. This assumes Phase 3 (sprites & input) is complete — if Phase 3 isn't finished, the demo falls back to raw keyboard input and rectangle rendering.
+The Phase 4 demo extends the Phase 2 platformer demo into a scrolling level with Tiled-designed maps. Phase 3 (sprites & input) is complete, so the demo uses `@quintus/input` for all input handling.
 
 ### Map Design
 
@@ -1151,14 +1195,12 @@ A minimal tileset image (`tiles.png`) with:
 ### Demo Code
 
 ```typescript
-import { Game, Scene } from "@quintus/core";
-import { Vec2 } from "@quintus/math";
+import { Game, Scene, type DrawContext } from "@quintus/core";
+import { Color, Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, PhysicsPlugin, Sensor, Shape } from "@quintus/physics";
+import { InputPlugin } from "@quintus/input";
 import { Camera } from "@quintus/camera";
 import { TileMap } from "@quintus/tilemap";
-// Phase 3 imports (if available):
-// import { InputPlugin } from "@quintus/input";
-// import { AnimatedSprite } from "@quintus/sprites";
 
 const game = new Game({
 	width: 320,
@@ -1176,6 +1218,14 @@ game.use(PhysicsPlugin({
 	},
 }));
 
+game.use(InputPlugin({
+	bindings: {
+		left: ["ArrowLeft", "KeyA"],
+		right: ["ArrowRight", "KeyD"],
+		jump: ["ArrowUp", "Space", "KeyW"],
+	},
+}));
+
 // === Player ===
 class Player extends Actor {
 	speed = 120;
@@ -1189,11 +1239,11 @@ class Player extends Actor {
 	}
 
 	onFixedUpdate(dt: number) {
+		const input = this.game!.input;
 		this.velocity.x = 0;
-		// Raw input (Phase 3 replaces with game.input)
-		if (this._leftPressed) this.velocity.x = -this.speed;
-		if (this._rightPressed) this.velocity.x = this.speed;
-		if (this._jumpPressed && this.isOnFloor()) {
+		if (input.isPressed("left")) this.velocity.x = -this.speed;
+		if (input.isPressed("right")) this.velocity.x = this.speed;
+		if (input.isJustPressed("jump") && this.isOnFloor()) {
 			this.velocity.y = this.jumpForce;
 		}
 		this.move(dt);
@@ -1204,10 +1254,6 @@ class Player extends Actor {
 			fill: Color.fromHex("#4fc3f7"),
 		});
 	}
-
-	_leftPressed = false;
-	_rightPressed = false;
-	_jumpPressed = false;
 }
 
 // === Coin ===
@@ -1250,30 +1296,12 @@ class Level1 extends Scene {
 		const player = this.add(Player);
 		player.position = map.getSpawnPoint("player_start");
 
-		// Camera follows player
+		// Camera follows player (add AFTER player for correct update order)
 		const camera = this.add(Camera);
 		camera.follow = player;
 		camera.smoothing = 0.1;
 		camera.zoom = 2;
 		camera.bounds = map.bounds;
-
-		// Keyboard input (temporary, replaced by @quintus/input)
-		const kd = (e: KeyboardEvent) => {
-			if (e.key === "ArrowLeft") player._leftPressed = true;
-			if (e.key === "ArrowRight") player._rightPressed = true;
-			if (e.key === "ArrowUp" || e.key === " ") player._jumpPressed = true;
-		};
-		const ku = (e: KeyboardEvent) => {
-			if (e.key === "ArrowLeft") player._leftPressed = false;
-			if (e.key === "ArrowRight") player._rightPressed = false;
-			if (e.key === "ArrowUp" || e.key === " ") player._jumpPressed = false;
-		};
-		document.addEventListener("keydown", kd);
-		document.addEventListener("keyup", ku);
-		this.sceneDestroyed.connect(() => {
-			document.removeEventListener("keydown", kd);
-			document.removeEventListener("keyup", ku);
-		});
 	}
 }
 
@@ -1299,6 +1327,7 @@ game.assets.load({
 | **Pixel-art zoom** | 2× zoom with `pixelArt: true` for crisp scaling |
 | **Viewport culling** | Only visible tiles are drawn (scrolling level) |
 | **Physics integration** | Player collides with merged tile colliders |
+| **Input (Phase 3)** | `@quintus/input` action bindings for movement and jump |
 
 ---
 
@@ -1308,8 +1337,9 @@ All of these must be true before Phase 4 is complete:
 
 ### Core Changes
 - [ ] `Scene.viewTransform` property added to `@quintus/core`
+- [ ] `Node.addChild()` / `removeChild()` call `markRenderDirty()` for dynamic scene changes
 - [ ] `Canvas2DRenderer` applies `scene.viewTransform` when rendering
-- [ ] No-camera fast path verified: identity check skips matrix multiply
+- [ ] No-camera fast path verified: value-based identity check skips matrix multiply
 - [ ] Existing Phase 1–3 tests still pass (backward compatible)
 
 ### @quintus/tilemap
@@ -1366,7 +1396,8 @@ Build bottom-up. Each step produces testable output.
 ```
 Days 1–2: Core changes + Tiled parser
 ───────────────────────────────────────
-Step 1: Scene.viewTransform + Canvas2DRenderer update        (0.5 day)
+Step 1: Scene.viewTransform + markRenderDirty in addChild/   (0.5 day)
+        removeChild + Canvas2DRenderer update
         → Core tests pass, existing demos still work
 Step 2: Tiled JSON types + parser                            (1 day)
         → parseTiledMap() works with sample Tiled JSON

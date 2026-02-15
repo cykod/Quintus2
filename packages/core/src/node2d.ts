@@ -1,6 +1,7 @@
 import { Matrix2D, Vec2 } from "@quintus/math";
 import type { DrawContext } from "./draw-context.js";
 import { Node } from "./node.js";
+import type { Node2DSnapshot } from "./snapshot-types.js";
 
 export interface Node2DProps {
 	position?: Vec2;
@@ -98,6 +99,20 @@ export class Node2D extends Node {
 			this._localTransformDirty = false;
 		}
 		return this._cachedLocalTransform;
+	}
+
+	// === Serialization ===
+	override serialize(): Node2DSnapshot {
+		const gp = this.globalPosition;
+		return {
+			...super.serialize(),
+			position: { x: this.position.x, y: this.position.y },
+			rotation: this._rotation,
+			scale: { x: this.scale.x, y: this.scale.y },
+			globalPosition: { x: gp.x, y: gp.y },
+			visible: this.visible,
+			zIndex: this.zIndex,
+		};
 	}
 
 	// === Custom Drawing ===

@@ -4,6 +4,12 @@ export type { AssetManifest } from "./asset-loader.js";
 // Assets
 export { AssetLoader } from "./asset-loader.js";
 export { Canvas2DRenderer } from "./canvas2d-renderer.js";
+// Debug
+export type { DebugAction, DebugBridge } from "./debug-bridge.js";
+export { installDebugBridge } from "./debug-bridge.js";
+export { formatEvents, formatTree } from "./debug-format.js";
+export type { DebugEvent, EventFilter } from "./debug-log.js";
+export { DebugLog } from "./debug-log.js";
 // Rendering
 export type {
 	DrawContext,
@@ -32,3 +38,5 @@ export type { SceneConstructor } from "./scene.js";
 export { Scene } from "./scene.js";
 export type { SignalConnection, SignalHandler } from "./signal.js";
 export { Signal, signal } from "./signal.js";
+// Snapshot types
+export type { Node2DSnapshot, NodeSnapshot } from "./snapshot-types.js";
