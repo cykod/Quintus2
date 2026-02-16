@@ -1,3 +1,13 @@
+## Refactor examples into subdirectories with landing page
+*Monday, February 16th at 10am*
+Moved each demo (bouncing-balls, platformer, tilemap, tween-ui) into its own 
+subdirectory with a dedicated index.html and main.ts. The root index.html is 
+now a styled landing page with cards linking to each demo. Assets moved into 
+the tilemap subdirectory. Old flat HTML files removed. All routes verified 
+serving 200.
+
+---
+
 ## Add tween, audio, and UI packages (Phase 5)
 *Sunday, February 15th at 6pm*
 Implement Phase 5 of the engine rewrite: three new packages (@quintus/tween, 

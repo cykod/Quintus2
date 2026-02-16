@@ -3,21 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quintus 2.0 Examples</title>
+  <title>Quintus 2.0 — Examples</title>
   <style>
-    body { margin: 0; background: #1a1a2e; color: #e0e0e0; font-family: system-ui; }
-    canvas { display: block; margin: 2rem auto; border: 1px solid #333; }
-    h1 { text-align: center; margin-top: 2rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; color: #e0e0e0; font-family: system-ui; min-height: 100vh; }
+    header { text-align: center; padding: 3rem 1rem 1rem; }
+    header h1 { font-size: 2rem; letter-spacing: 0.05em; }
+    header p { color: #888; margin-top: 0.5rem; }
+    .demos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #16213e; border: 1px solid #333; border-radius: 8px; padding: 1.5rem; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s; }
+    .card:hover { border-color: #4fc3f7; transform: translateY(-2px); }
+    .card h2 { font-size: 1.1rem; color: #4fc3f7; margin-bottom: 0.5rem; }
+    .card .phase { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+    .card p { font-size: 0.9rem; color: #aaa; line-height: 1.4; }
   </style>
 </head>
 <body>
-  <h1>Quintus 2.0</h1>
-  <canvas id="game" width="800" height="600"></canvas>
-  <p style="text-align:center">
-    <a href="/platformer-demo.html" style="color:#4fc3f7">Platformer Demo (Phase 2) &rarr;</a> |
-    <a href="/tilemap-demo.html" style="color:#4fc3f7">Tilemap + Camera Demo (Phase 4) &rarr;</a> |
-    <a href="/phase5-demo.html" style="color:#4fc3f7">Tween, Audio &amp; UI Demo (Phase 5) &rarr;</a>
-  </p>
-  <script type="module" src="./main.ts"></script>
+  <header>
+    <h1>Quintus 2.0</h1>
+    <p>Example demos for the Quintus HTML5 game engine</p>
+  </header>
+  <div class="demos">
+    <a class="card" href="/bouncing-balls/">
+      <div class="phase">Phase 1 — Core</div>
+      <h2>Bouncing Balls</h2>
+      <p>20 balls with seeded random colors and velocities bouncing inside a canvas. Tests the game loop, Node2D, and rendering.</p>
+    </a>
+    <a class="card" href="/platformer/">
+      <div class="phase">Phase 2 — Physics</div>
+      <h2>Platformer</h2>
+      <p>Player character with gravity, jumping, and coin collection. Demonstrates Actor, StaticCollider, Sensor, and input.</p>
+    </a>
+    <a class="card" href="/tilemap/">
+      <div class="phase">Phase 4 — Tilemap &amp; Camera</div>
+      <h2>Tilemap + Camera</h2>
+      <p>Tiled-based level with camera follow, zoom, and smoothing. Collect all 5 coins to win.</p>
+    </a>
+    <a class="card" href="/tween-ui/">
+      <div class="phase">Phase 5 — Tween, Audio &amp; UI</div>
+      <h2>Tween &amp; UI Showcase</h2>
+      <p>Interactive buttons, progress bar, and tween animations (bounce, fade, spin, path). HUD layer with UI widgets.</p>
+    </a>
+  </div>
 </body>
 </html>
