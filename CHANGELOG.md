@@ -1,3 +1,13 @@
+## Copy platformer to basic_platformer before Phase 6 rewrite
+*Monday, February 16th at 1pm*
+Copied the existing Phase 2 platformer example to examples/basic_platformer/ to 
+preserve it as a simple reference demo before it gets replaced with a 
+full-featured Phase 6 platformer. Updated the examples index page to link to 
+the new basic_platformer path with an updated title. Also includes minor 
+updates to PHASE_6_DESIGN.md steering doc and ASKS.md log entries.
+
+---
+
 ## Add actor-to-actor collision, onOverlap/onContact APIs
 *Monday, February 16th at 12pm*
 Implement FIX_COLLISION_DESIGN.md for @quintus/physics: add solid property to 

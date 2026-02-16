@@ -167,3 +167,7 @@
 [MILE] mon 2/16 10am - Refactored examples into subdirectories with styled landing page linking to all demos
 
 [IMPL] mon 2/16 11am - Implement FIX_COLLISION_DESIGN.md: collision events, actor-to-actor collisions, onContact/onOverlap APIs, and game.physics accessor
+
+[MILE] mon 2/16 12pm - Implemented actor-to-actor collision, onOverlap/onContact APIs, and fixed Sensor signal emission in @quintus/physics
+
+[IMPL] mon 2/16 12pm - Implement Phase 6: quintus meta-package and complete platformer example game per PHASE_6_DESIGN.md

@@ -59,10 +59,12 @@ import { Camera } from "@quintus/camera";
 
 ### 1.1 Package Configuration
 
-**Directory:** `packages/quintus-core/` (unchanged)
+**Directory:** `packages/quintus/` (NEW package — do NOT modify `packages/quintus-core/`)
 **Published name:** `quintus` (not scoped)
 
-Update `packages/quintus-core/package.json`:
+> **Important:** The meta-package is a NEW directory. `packages/quintus-core/` remains `@quintus/core` — renaming it would break every other package's `workspace:*` dependency on `@quintus/core`.
+
+Create `packages/quintus/package.json`:
 
 ```json
 {
@@ -80,6 +82,7 @@ Update `packages/quintus-core/package.json`:
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": true,
   "files": ["dist"],
   "scripts": {
     "build": "tsup",
@@ -105,7 +108,7 @@ Update `packages/quintus-core/package.json`:
   "repository": {
     "type": "git",
     "url": "https://github.com/cykod/Quintus",
-    "directory": "packages/quintus-core"
+    "directory": "packages/quintus"
   }
 }
 ```
@@ -117,7 +120,7 @@ Update `packages/quintus-core/package.json`:
 All named exports from all 10 packages are re-exported via `export *`:
 
 ```typescript
-// packages/quintus-core/src/index.ts
+// packages/quintus/src/index.ts
 
 // === Foundation ===
 export * from "@quintus/math";
@@ -161,10 +164,11 @@ export * from "@quintus/ui";
 
 ### 1.3 Side-Effect Imports
 
-Three packages use side-effect imports for module augmentation:
+Four packages use side-effect imports for module augmentation:
 
 | Package | Side-Effect | What It Does |
 |---------|-------------|--------------|
+| `@quintus/physics` | `import "./augment.js"` | Adds `game.physics` accessor to Game prototype |
 | `@quintus/input` | `import "./augment.js"` | Adds `game.input` accessor to Game prototype |
 | `@quintus/tween` | `import "./augment.js"` | Adds `node.tween()` and `node.killTweens()` to Node prototype |
 | `@quintus/audio` | `import "./augment.js"` | Adds `game.audio` accessor to Game prototype |
@@ -173,15 +177,7 @@ When the meta-package does `export * from "@quintus/tween"`, the ES module syste
 
 **However**, bundlers with aggressive tree-shaking may drop re-exports that aren't consumed by the downstream app. If only `Ease` is imported from `quintus`, a bundler might optimize away the `@quintus/tween` module execution.
 
-**Mitigation:** Mark the meta-package as having side effects in `package.json`:
-
-```json
-{
-  "sideEffects": true
-}
-```
-
-This tells bundlers not to tree-shake away module executions. This is correct for the meta-package — users who import `quintus` want all augmentations active. Users who want tree-shaking import individual `@quintus/*` packages directly.
+**Mitigation:** The meta-package's `package.json` includes `"sideEffects": true`. This tells bundlers not to tree-shake away module executions. This is correct for the meta-package — users who import `quintus` want all augmentations active. Users who want tree-shaking import individual `@quintus/*` packages directly.
 
 ### 1.4 Size Budget & Verification
 
@@ -214,7 +210,7 @@ The meta-package will be smaller than the raw sum because:
 ```bash
 # Build the meta-package, then measure
 pnpm --filter quintus build
-gzip -c packages/quintus-core/dist/index.js | wc -c
+gzip -c packages/quintus/dist/index.js | wc -c
 ```
 
 **CI check:** Add a size assertion to the CI pipeline that fails if the gzipped output exceeds 45KB (with 5KB headroom for edge cases).
@@ -247,14 +243,17 @@ The platformer serves four purposes:
 | Property | Value |
 |----------|-------|
 | Resolution | 320 × 240 pixels |
-| Tile size | 16 × 16 pixels |
+| Tile size | 8 × 8 pixels (Kenney Pico-8 tileset) |
+| Tileset | 150 tiles, 15 columns × 10 rows, packed (no spacing) |
 | Canvas zoom | 2× (renders at 640 × 480 CSS pixels) |
 | Physics gravity | (0, 800) |
 | Fixed timestep | 1/60s |
 | Pixel art mode | Enabled (nearest-neighbor scaling) |
 | RNG seed | 42 (deterministic) |
 
-**Why 320×240?** Classic NES/SNES-era resolution that looks crisp at 2× zoom, keeps levels small, and is the standard pixel-art game resolution. Matches the Phase 4/5 demos.
+**Tileset:** Kenney Pico-8 Platformer (CC0 license, https://kenney.nl/assets/pico-8-platformer). 8×8 pixel tiles with an orange terrain theme, pink terrain variant, characters, enemies, items, and number tiles.
+
+**Why 320×240?** Classic pixel-art resolution that looks crisp at 2× zoom. With 8×8 tiles, the viewable area is 40×30 tiles — large enough for detailed levels in the PICO-8 aesthetic.
 
 ### 2.2 Scene Flow
 
@@ -399,11 +398,11 @@ class Player extends Actor {
     this._invincible = true;
     this._invincibleTimer = this.invincibilityDuration;
 
-    // Flash effect via tween
+    // Flash effect via tween (repeat(3) = 4 total cycles: 1 initial + 3 repeats)
     this.tween()
       .to({ alpha: 0.2 }, 0.1)
       .to({ alpha: 1 }, 0.1)
-      .repeat(4);
+      .repeat(3);
 
     this.game!.audio.play("hit", { bus: "sfx" });
     this.damaged.emit(gameState.health);
@@ -451,6 +450,7 @@ Walks back and forth along a platform. Reverses direction at edges or walls.
 class PatrolEnemy extends Actor {
   speed = 40;
   direction = 1; // 1 = right, -1 = left
+  solid = true; // Player's move() will detect this as a physical obstacle
   collisionGroup = "enemies";
 
   readonly died: Signal<void> = signal<void>();
@@ -511,6 +511,7 @@ class FlyingEnemy extends Actor {
   amplitude = 30;     // Vertical oscillation amplitude
   frequency = 2;      // Oscillations per second
   direction = -1;     // -1 = left, 1 = right
+  solid = true; // Player's move() will detect this as a physical obstacle
   collisionGroup = "enemies";
 
   private _time = 0;
@@ -523,13 +524,16 @@ class FlyingEnemy extends Actor {
     this.addChild(CollisionShape).shape = Shape.rect(16, 10);
     this.tag("enemy");
     this._baseY = this.position.y;
-    this.gravityScale = 0; // Immune to gravity
+    this.applyGravity = false; // Immune to gravity (no gravityScale property; use applyGravity toggle)
   }
 
   onFixedUpdate(dt: number) {
     this._time += dt;
     this.velocity.x = this.speed * this.direction;
-    this.position.y = this._baseY + Math.sin(this._time * this.frequency * Math.PI * 2) * this.amplitude;
+    // Drive vertical motion via velocity (derivative of sine), not direct position set,
+    // so move() integrates position consistently and collision detection works.
+    this.velocity.y = this.amplitude * this.frequency * Math.PI * 2
+      * Math.cos(this._time * this.frequency * Math.PI * 2);
 
     // Reverse at horizontal boundaries (driven by level bounds or wall collision)
     if (this.isOnWall()) {
@@ -570,26 +574,28 @@ class FlyingEnemy extends Actor {
 
 #### Enemy-Player Collision Handling
 
-Enemy collision is handled in the level scene setup, not inside individual enemy classes. This keeps the collision logic centralized and easy to modify:
+Enemy collision is handled in the level scene setup, not inside individual enemy classes. This keeps the collision logic centralized and easy to modify.
+
+Enemies are marked `solid = true`, so the player's `move()` physically collides with them. The `onContact()` API (from FIX_COLLISION_DESIGN.md, now implemented) fires callbacks with `CollisionInfo` including the contact normal:
 
 ```typescript
 // In the Level scene's onReady(), after spawning enemies:
-this.game!.physics.onCollision("player", "enemies", (player, enemy) => {
+this.game!.physics.onContact("player", "enemies", (player, enemy, info) => {
   const p = player as Player;
   const e = enemy as PatrolEnemy | FlyingEnemy;
 
-  // Player falling onto enemy = stomp
-  if (p.velocity.y > 0 && p.position.y < e.position.y - 4) {
+  // Normal points into the player. y < 0 means player landed on enemy from above.
+  if (info.normal.y < 0) {
     e.stomp();
     p.velocity.y = -200; // Bounce up after stomp
   } else {
-    // Enemy damages player
+    // Side or bottom contact — enemy damages player
     p.takeDamage();
   }
 });
 ```
 
-**Note:** If `PhysicsWorld.onCollision()` doesn't exist yet, this can be handled via Sensor overlaps or by checking `Actor.getSlideCollisions()` in the player's `onFixedUpdate`. The design doc specifies the ideal API; implementation may use the available API.
+**How it works:** Enemies set `solid = true`, so `castMotion()` treats them as physical obstacles. When the player's `move()` slides against a solid enemy, the `collided` signal fires with a `CollisionInfo` containing the contact normal. `onContact()` matches by collision group and invokes the callback. See `FIX_COLLISION_DESIGN.md` §2.3–2.4 for the full design.
 
 ### 2.6 Collectibles & Triggers
 
@@ -706,17 +712,33 @@ Levels use TileMap with Tiled JSON files. Each level is a small, horizontally-sc
 
 #### Tileset
 
-A minimal 16×16 pixel tileset with 5 tile types:
+Uses the **Kenney Pico-8 Platformer** tileset (CC0 license, https://kenney.nl/assets/pico-8-platformer).
 
-| Tile ID | Name | Color | Purpose |
-|---------|------|-------|---------|
-| 0 | Empty | Transparent | Air / no tile |
-| 1 | Ground | `#5d4037` (brown) | Solid ground block |
-| 2 | Ground Top | `#4caf50` over `#5d4037` | Surface tile (green top) |
-| 3 | Platform | `#9e9e9e` (gray) | Floating platform |
-| 4 | Brick | `#d84315` (orange-red) | Wall/obstacle block |
+| Property | Value |
+|----------|-------|
+| File | `tileset.png` (transparent packed, no spacing) |
+| Tile size | 8 × 8 pixels |
+| Sheet size | 120 × 80 pixels (15 columns × 10 rows) |
+| Total tiles | 150 |
+| Theme | Orange terrain, pink variant, characters, items, numbers |
 
-The tileset image (`tileset.png`) is a 80×16 pixel PNG (5 tiles × 16px wide × 16px tall). It can be created programmatically or in any pixel editor.
+Key tile IDs (GID = index + 1, since firstgid=1):
+
+| GID | Index | Purpose |
+|-----|-------|---------|
+| 1 | 0 | Interior fill (light tan solid) |
+| 3 | 2 | Dark background fill (sky/cave) |
+| 5 | 4 | Top surface edge (orange) |
+| 7 | 6 | Left surface edge |
+| 8 | 7 | Outer corner top-left |
+| 9 | 8 | Outer corner top-right |
+| 17 | 16 | Bottom surface edge |
+| 20 | 19 | Right surface edge |
+| 25 | 24 | Outer corner bottom-left |
+
+Edge tiles support Tiled flip flags (H, V, D) for all orientations — a single edge tile serves all 4 directions.
+
+A level generator script (`examples/platformer/tools/generate-levels.mjs`) converts text-art level descriptions to Tiled JSON with autotiled edges.
 
 #### Map Format
 
@@ -730,80 +752,62 @@ Each level is a Tiled JSON file with these layers:
 
 #### Level 1: "Green Hills" (Tutorial)
 
-- Size: 50 × 15 tiles (800 × 240 world pixels)
-- ~2.5 screens of horizontal scrolling
+- Size: 107 × 30 tiles (856 × 240 world pixels)
+- ~2.7 screens of horizontal scrolling
 - Features:
-  - Flat ground with gentle gaps
-  - 2-3 raised platforms with coins on top
-  - 1 patrol enemy (easy to avoid)
-  - 5-8 coins
+  - Ground with two gaps to jump across
+  - Several raised platforms with coins on top
+  - 2 patrol enemies
+  - ~15 coins spread across platforms
   - Level exit on the right edge
   - Player start on the left
 
-**Level 1 sketch (text-art):**
-```
-                                                 [EXIT]
-    ···[C]···               ···[C]···        ···[C]···
-    ▓▓▓▓▓▓▓▓     [C]       ▓▓▓▓▓▓▓▓     [C] ▓▓▓▓▓▓▓▓▓▓
-                [SLIME]                              ▓▓
-[P]                                                  ▓▓
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-
-P = Player start, C = Coin, ▓ = Ground, EXIT = Level exit
-```
-
 #### Level 2: "Cave Depths" (Challenge)
 
-- Size: 70 × 15 tiles (1120 × 240 world pixels)
+- Size: 140 × 30 tiles (1120 × 240 world pixels)
 - ~3.5 screens of horizontal scrolling
 - Features:
   - More complex terrain with vertical sections
-  - 2 patrol enemies, 1 flying enemy
-  - 10-12 coins, 1-2 health pickups
-  - Tighter platforming challenges
+  - 2 patrol enemies, 2 flying enemies
+  - ~20 coins, 1 health pickup
+  - Tighter platforming, wider gaps
   - Level exit leads to VictoryScene
 
-**Level 2 sketch (text-art):**
-```
-                  [BAT]         [C][C]              [EXIT]
-    [C]···               ···   ▓▓▓▓▓▓▓▓     [H] ···
-    ▓▓▓▓▓▓     [C]       ▓▓▓        ▓▓▓     ▓▓▓▓▓▓▓▓
-          ▓▓   ▓▓▓▓    ▓▓          ▓▓    [C]       ▓▓
-[P]     ▓▓   [SLIME]  ▓▓        ▓▓      ▓▓▓▓      ▓▓
-▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓  [SLIME]    ▓▓▓▓▓▓▓
+#### Level Generation
 
-H = Health pickup, BAT = Flying enemy
+Levels are defined as text-art in `examples/platformer/tools/generate-levels.mjs` and converted to Tiled JSON with autotiled edges:
+
 ```
+Legend:  # = solid  . = air  P = player  C = coin  S = slime  B = bat  H = health  E = exit
+```
+
+Run `node examples/platformer/tools/generate-levels.mjs` to regenerate `level1.json` and `level2.json`. Edit the text-art grids in the script to modify level layout.
 
 #### Tiled JSON Structure
 
-Each level JSON file follows the Tiled JSON export format. Minimal example structure:
+Each level JSON uses the standard Tiled format with the Kenney Pico-8 tileset:
 
 ```json
 {
-  "width": 50, "height": 15,
-  "tilewidth": 16, "tileheight": 16,
+  "width": 107, "height": 30,
+  "tilewidth": 8, "tileheight": 8,
   "tilesets": [{
     "firstgid": 1,
     "image": "tileset.png",
-    "imagewidth": 80, "imageheight": 16,
-    "tilewidth": 16, "tileheight": 16,
-    "tilecount": 5, "columns": 5
+    "imagewidth": 120, "imageheight": 80,
+    "tilewidth": 8, "tileheight": 8,
+    "tilecount": 150, "columns": 15
   }],
   "layers": [
+    { "name": "background", "type": "tilelayer", "data": [ /* dark fill tiles */ ] },
+    { "name": "ground", "type": "tilelayer", "data": [ /* autotiled terrain */ ] },
     {
-      "name": "ground",
-      "type": "tilelayer",
-      "data": [ /* 50×15 = 750 tile IDs */ ]
-    },
-    {
-      "name": "entities",
-      "type": "objectgroup",
+      "name": "entities", "type": "objectgroup",
       "objects": [
-        { "name": "player_start", "type": "spawn", "x": 32, "y": 192 },
-        { "name": "coin", "type": "Coin", "x": 128, "y": 128 },
-        { "name": "patrol", "type": "PatrolEnemy", "x": 256, "y": 208 },
-        { "name": "exit", "type": "LevelExit", "x": 768, "y": 160 }
+        { "name": "player_start", "type": "Player", "x": 44, "y": 140, "point": true },
+        { "name": "coin", "type": "Coin", "x": 116, "y": 100, "point": true },
+        { "name": "patrol_enemy", "type": "PatrolEnemy", "x": 284, "y": 116, "point": true },
+        { "name": "exit", "type": "LevelExit", "x": 772, "y": 140, "point": true }
       ]
     }
   ]
@@ -815,14 +819,17 @@ Each level JSON file follows the Tiled JSON export format. Minimal example struc
 Collision is generated from the "ground" tile layer using TileMap's existing `generateCollision()`:
 
 ```typescript
+// In onReady() — asset must be set AFTER the node enters the tree
 const map = this.add(TileMap);
-map.asset = "level1";
+map.asset = "level1"; // Triggers _loadMap() since node is already in tree
 map.generateCollision({
   layer: "ground",
   allSolid: true,
   collisionGroup: "world",
 });
 ```
+
+> **Timing:** `TileMap.asset` must be set after the node is in the tree (i.e., in `onReady()` or after `add()`). Setting it in the constructor will silently fail because `_loadMap()` requires `isInsideTree`.
 
 This uses the greedy rectangle merging algorithm from Phase 4 to create efficient `StaticCollider` shapes from the tile grid.
 
@@ -911,14 +918,22 @@ The game uses both the simple `game.audio.play()` API for sound effects and `Aud
 
 Music is played via `AudioPlayer` nodes with `loop = true` and `autoplay = true`.
 
-#### Audio Asset Strategy
+#### Audio Assets
 
-For the initial implementation, audio files are optional. The `AudioSystem` handles missing assets gracefully (warns once, returns no-op handle). The game is fully playable without audio.
+Sound effects use the **Kenney Sci-Fi Sounds** pack (CC0, https://kenney.nl/assets/sci-fi-sounds):
 
-Audio assets can be added incrementally:
-1. First pass: game works silently (all `play()` calls are no-ops)
-2. Second pass: add minimal WAV/OGG files to `examples/platformer/assets/`
-3. Optional: generate sounds programmatically via Web Audio API oscillators
+| Game Sound | Source File | Size |
+|------------|-------------|------|
+| `jump.ogg` | `laserRetro_004.ogg` | 12KB |
+| `coin.ogg` | `laserSmall_000.ogg` | 7KB |
+| `hit.ogg` | `impactMetal_000.ogg` | 15KB |
+| `stomp.ogg` | `slime_000.ogg` | 20KB |
+| `heal.ogg` | `forceField_003.ogg` | 23KB |
+| `victory.ogg` | `doorOpen_000.ogg` | 19KB |
+
+Total audio: ~96KB (all OGG format). Already copied to `examples/platformer/assets/`.
+
+Music tracks are deferred — the `AudioSystem` handles missing assets gracefully (warns once, returns no-op handle). The game is fully playable without music.
 
 ### 2.10 Death & Respawn
 
@@ -928,6 +943,8 @@ When the player dies (health reaches 0 or falls off the map):
 2. The level scene connects to `died` and switches to `GameOverScene`
 3. `GameOverScene` shows final score and a "Retry" button
 4. "Retry" calls `resetState()` then `switchTo(Level1)` (or the level where death occurred)
+
+> **Scene transition safety:** Entity callbacks (tween `onComplete`, signal handlers) may fire after `switchTo()` destroys the scene. Guard `gameState` mutations in entity callbacks with `if (!this.isInsideTree) return;` to prevent stale writes. Verify that `killTweens()` is called on `destroy()`.
 
 ```typescript
 // In Level scene's onReady():
@@ -996,10 +1013,19 @@ examples/platformer/
 │   └── level-exit.ts       # Level completion trigger (Sensor)
 ├── hud/
 │   └── hud.ts              # HUD layer with health bar, score, coin counter
+├── tools/
+│   └── generate-levels.mjs  # Text-art → Tiled JSON level generator
 └── assets/
-    ├── tileset.png          # 80×16 pixel tileset (5 tiles)
-    ├── level1.json          # Tiled JSON for Level 1
-    └── level2.json          # Tiled JSON for Level 2
+    ├── ATTRIBUTION.md       # Kenney CC0 license attribution
+    ├── tileset.png          # 120×80 Kenney Pico-8 tileset (150 tiles, 8×8 packed)
+    ├── level1.json          # Tiled JSON for Level 1 (107×30 tiles)
+    ├── level2.json          # Tiled JSON for Level 2 (140×30 tiles)
+    ├── jump.ogg             # Jump SFX (Kenney Sci-Fi Sounds, CC0)
+    ├── coin.ogg             # Coin collect SFX
+    ├── hit.ogg              # Player damage SFX
+    ├── stomp.ogg            # Enemy stomp SFX
+    ├── heal.ogg             # Health pickup SFX
+    └── victory.ogg          # Level complete SFX
 ```
 
 **Total: ~15 source files.** Each file is focused on one concern and under 100 lines.
@@ -1037,10 +1063,13 @@ game.use(TweenPlugin());
 game.use(AudioPlugin());
 
 // === Load & Start ===
+// NOTE: Verify AssetLoader.load() supports this batch interface.
+// Fallback: use Vite ES module imports (import level1 from "./assets/level1.json")
+// and pass data to TileMap directly.
 game.assets.load({
   images: ["tileset.png"],
   json: ["level1.json", "level2.json"],
-  // audio: ["jump.ogg", "coin.ogg", ...], // Added when audio assets are ready
+  audio: ["jump.ogg", "coin.ogg", "hit.ogg", "stomp.ogg", "heal.ogg", "victory.ogg"],
 }).then(() => {
   game.start(TitleScene);
 });
@@ -1056,16 +1085,16 @@ import type { CollisionGroupsConfig } from "@quintus/physics";
 export const COLLISION_GROUPS: CollisionGroupsConfig = {
   player:  { collidesWith: ["world", "enemies", "items"] },
   world:   { collidesWith: ["player", "enemies"] },
-  enemies: { collidesWith: ["world", "player"] },
+  enemies: { collidesWith: ["world"] },  // One-sided: player detects enemies, NOT vice versa
   items:   { collidesWith: ["player"] },
 };
 
-export const INPUT_BINDINGS = {
+export const INPUT_BINDINGS: Record<string, string[]> = {
   left:  ["ArrowLeft", "KeyA"],
   right: ["ArrowRight", "KeyD"],
   jump:  ["ArrowUp", "Space", "KeyW"],
   pause: ["Escape", "KeyP"],
-} as const;
+};
 ```
 
 ### Vite Configuration
@@ -1103,11 +1132,20 @@ The platformer is the primary API validation tool. If writing the game feels awk
 |-------|-----------|
 | Too many imports | Meta-package re-exports are incomplete |
 | Boilerplate in entity setup | `onReady` + `addChild(CollisionShape)` pattern might need a shorthand |
-| Unclear collision wiring | `onCollision` callback API might need to be added |
 | Messy state management | Scene transition API might need a state-passing mechanism |
 | Verbose HUD updates | UI data binding might be worth adding in a future phase |
 
 **If API issues are discovered during implementation**, file them as follow-up tasks for Phase 7+ rather than blocking Phase 6. The game should work with the existing API even if it's slightly verbose.
+
+### 4.5 Asset Loading
+
+The entry point uses `game.assets.load()` to preload tilesets and level JSON. **Before writing game code**, verify that `AssetLoader` supports the `{ images: [...], json: [...] }` batch loading interface and that `game.assets.getJSON(name)` returns cached results for `TileMap`. If the asset pipeline is incomplete, use Vite's ES module imports as a fallback (`import level1Data from "./assets/level1.json"`).
+
+**TileMap timing:** `TileMap.asset` must be set in `onReady()` (after the node enters the tree), not in the constructor. `_loadMap()` only runs when `isInsideTree && asset` are both true.
+
+### 4.6 Scene Transition Safety
+
+Entity callbacks (tween `onComplete`, signal handlers) may fire after `switchTo()` destroys the scene. Guard state mutations with `this.isInsideTree` checks in entity callbacks before mutating `gameState`. The tween system should call `killTweens()` on `destroy()` — verify this during implementation.
 
 ### 4.2 LLM Readability
 
@@ -1262,8 +1300,8 @@ Every Phase 1-5 system is used in the platformer:
 |---------|---------------|
 | **@quintus/core** | `Game`, `Scene`, `Node`, `Node2D`, `Signal`, `signal()`, `AssetLoader`, `Canvas2DRenderer`, scene transitions (`switchTo`), lifecycle hooks (`onReady`, `onUpdate`, `onFixedUpdate`, `onDraw`) |
 | **@quintus/math** | `Vec2` (positions, velocities), `Color` (entity colors), `Rect` (bounds), math utils (`clamp`) |
-| **@quintus/physics** | `Actor` (Player, enemies), `StaticCollider` (tile collision), `Sensor` (coins, exits), `CollisionShape`, `Shape`, `PhysicsPlugin`, collision groups, `move()`, `isOnFloor()`, `isOnWall()`, `getSlideCollisions()` |
-| **@quintus/sprites** | (Optionally: AnimatedSprite for player/enemy animations if sprite sheets are provided) |
+| **@quintus/physics** | `Actor` (Player, enemies with `solid = true`), `StaticCollider` (tile collision), `Sensor` (coins, exits), `CollisionShape`, `Shape`, `PhysicsPlugin`, collision groups, `move()`, `isOnFloor()`, `isOnWall()`, `onContact()`, `onOverlap()`, `game.physics` accessor |
+| **@quintus/sprites** | `Sprite` used for at least one element (e.g., level exit door or background decoration) to validate the sprites pipeline end-to-end. Full AnimatedSprite usage deferred to when sprite art is available. |
 | **@quintus/input** | `InputPlugin`, action bindings, `isPressed()`, `isJustPressed()`, `inject()` for tests |
 | **@quintus/tilemap** | `TileMap`, Tiled JSON parsing, `generateCollision()`, `getSpawnPoint()`, `spawnObjects()` |
 | **@quintus/camera** | `Camera`, `follow`, `smoothing`, `zoom`, `bounds` |
@@ -1275,7 +1313,7 @@ Every Phase 1-5 system is used in the platformer:
 
 | System | Why Not | When |
 |--------|---------|------|
-| `@quintus/sprites` AnimatedSprite | No sprite art assets in Phase 6; shapes used instead | Phase 9 (AI Prefabs) or when art is added |
+| `@quintus/sprites` AnimatedSprite | No sprite art assets for animation; basic `Sprite` used for tileset rendering | Phase 9 (AI Prefabs) or when art is added |
 | `@quintus/debug` | Debug tools not yet built | Phase 11 |
 | `@quintus/headless` | Headless runtime not yet built | Phase 7 |
 | `@quintus/test` | Test framework not yet built | Phase 7 |
@@ -1291,12 +1329,11 @@ All of these must be true before Phase 6 is complete:
 
 ### Meta-Package
 
-- [ ] `packages/quintus-core/package.json` name updated to `quintus`
-- [ ] `packages/quintus-core/package.json` lists all 10 packages as dependencies
-- [ ] `packages/quintus-core/src/index.ts` re-exports all 10 packages via `export *`
-- [ ] `sideEffects: true` set in `package.json`
+- [ ] `packages/quintus/` created as new meta-package (`@quintus/core` untouched)
+- [ ] `packages/quintus/package.json` lists all 10 packages as dependencies with `sideEffects: true`
+- [ ] `packages/quintus/src/index.ts` re-exports all 10 packages via `export *`
 - [ ] `import { Game, Actor, Vec2, Camera, TileMap, Label, Ease } from "quintus"` works in TypeScript
-- [ ] Module augmentations active: `game.input`, `game.audio`, `node.tween()` all work
+- [ ] Module augmentations active: `game.physics`, `game.input`, `game.audio`, `node.tween()` all work
 - [ ] `pnpm build` builds the meta-package without errors
 - [ ] Gzipped bundle size under 40KB
 - [ ] Import from individual `@quintus/*` packages still works (no regression)
@@ -1329,10 +1366,12 @@ All of these must be true before Phase 6 is complete:
 
 ### Assets
 
-- [ ] `tileset.png` exists (minimal 5-tile tileset)
-- [ ] `level1.json` exists (valid Tiled JSON, ~50×15 tiles)
-- [ ] `level2.json` exists (valid Tiled JSON, ~70×15 tiles)
-- [ ] All assets load without errors
+- [x] `tileset.png` exists (Kenney Pico-8 tileset, 120×80px, 150 tiles at 8×8, CC0)
+- [x] `level1.json` exists (valid Tiled JSON, 107×30 tiles, 23 entities)
+- [x] `level2.json` exists (valid Tiled JSON, 140×30 tiles, 30 entities)
+- [x] `ATTRIBUTION.md` credits Kenney (kenney.nl) with CC0 license
+- [x] 6 sound effects exist: jump, coin, hit, stomp, heal, victory (Kenney Sci-Fi Sounds, CC0)
+- [ ] All assets load without errors via AssetLoader or Vite imports
 
 ### Tests
 
@@ -1363,10 +1402,12 @@ Build the meta-package first (quick win), then build the game bottom-up from ent
 Day 1: Meta-Package
 ───────────────────────────────────────
 Step 1: Meta-package setup                                    (0.5 day)
-        → Update package.json (name, dependencies, sideEffects)
+        → Create new packages/quintus/ directory (do NOT modify quintus-core)
+        → Write package.json (name: "quintus", deps on all 10 packages, sideEffects: true)
         → Write src/index.ts with all re-exports
+        → Add tsup.config.ts
         → Build and verify: pnpm build succeeds
-        → Write meta-package tests (exports, augmentations, types)
+        → Write meta-package tests (exports, augmentations including game.physics, types)
         → Measure bundle size, verify < 40KB
 
 Step 2: Update CLAUDE.md and project docs                     (0.25 day)
@@ -1376,11 +1417,12 @@ Step 2: Update CLAUDE.md and project docs                     (0.25 day)
 
 Day 2: Assets & Level Data
 ───────────────────────────────────────
-Step 3: Create tileset and level data                         (0.5 day)
-        → Create minimal tileset.png (5 tiles, 80×16 pixels)
-        → Create level1.json (50×15 tiles, entities layer)
-        → Create level2.json (70×15 tiles, entities layer)
-        → Verify TileMap loads and renders both levels
+Step 3: Verify tileset and level data                          (0.25 day)
+        → Assets already created: tileset.png (Kenney Pico-8, CC0), level1.json, level2.json
+        → Level generator: examples/platformer/tools/generate-levels.mjs
+        → Verify AssetLoader.load({ images, json }) works; fallback to ES module imports if not
+        → Verify TileMap loads and renders both levels (set asset in onReady, not constructor)
+        → Tweak level layouts in generate-levels.mjs as needed during playtesting
 
 Day 3-4: Game Entities
 ───────────────────────────────────────
@@ -1464,3 +1506,11 @@ Creating Tiled JSON by hand is tedious. If this blocks progress:
 - **Fallback:** Build levels programmatically (like the existing `platformer-demo.ts`) and defer TileMap integration to a polish step.
 - **Alternative:** Write a small TypeScript helper that generates valid Tiled JSON from a text-art level description.
 - The level JSON files are small enough (~750-1050 tile IDs) that manual creation is feasible but time-consuming.
+
+### ~~Risk: Tileset PNG Creation~~ — RESOLVED
+
+Tileset sourced from Kenney Pico-8 Platformer (CC0). Already copied to `examples/platformer/assets/tileset.png`.
+
+### Risk: Asset Loading Pipeline
+
+`game.assets.load({ images, json })` may not support the batch loading interface shown in the entry point. Verify early in Step 3. Fallback: use Vite ES module imports (`import level1 from "./assets/level1.json"`) and pass data directly to TileMap.
