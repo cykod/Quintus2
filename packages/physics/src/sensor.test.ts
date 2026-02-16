@@ -347,7 +347,64 @@ describe("Sensor", () => {
 		it("defaults to monitoring = true", () => {
 			const sensor = new Sensor();
 			expect(sensor.monitoring).toBe(true);
-			expect(sensor._monitoring).toBe(true);
+		});
+	});
+
+	describe("onBodyEntered always emits bodyEntered", () => {
+		it("sensor-to-sensor overlap emits BOTH bodyEntered AND sensorEntered", () => {
+			const sensorA = makeSensor(new Vec2(0, 0));
+			const sensorB = makeSensor(new Vec2(10, 0));
+			const { game } = setupScene([sensorA, sensorB]);
+
+			const bodyEnteredA: CollisionObject[] = [];
+			const sensorEnteredA: Sensor[] = [];
+			sensorA.bodyEntered.connect((b) => bodyEnteredA.push(b));
+			sensorA.sensorEntered.connect((s) => sensorEnteredA.push(s));
+
+			game.step();
+
+			expect(bodyEnteredA).toContain(sensorB);
+			expect(sensorEnteredA).toContain(sensorB);
+		});
+
+		it("sensor-to-actor overlap emits only bodyEntered (not sensorEntered)", () => {
+			const sensor = makeSensor(new Vec2(0, 0));
+			const actor = makeActor(new Vec2(5, 0));
+			const { game } = setupScene([sensor, actor]);
+
+			const sensorEnteredEvents: Sensor[] = [];
+			sensor.sensorEntered.connect((s) => sensorEnteredEvents.push(s));
+
+			const bodyEnteredEvents: CollisionObject[] = [];
+			sensor.bodyEntered.connect((b) => bodyEnteredEvents.push(b));
+
+			game.step();
+
+			expect(bodyEnteredEvents).toHaveLength(1);
+			expect(bodyEnteredEvents[0]).toBe(actor);
+			expect(sensorEnteredEvents).toHaveLength(0);
+		});
+
+		it("onSensorEntered virtual method works for self-handling", () => {
+			class CustomSensor extends Sensor {
+				customSensors: Sensor[] = [];
+				override onSensorEntered(sensor: Sensor): void {
+					this.customSensors.push(sensor);
+					super.onSensorEntered(sensor);
+				}
+			}
+			const custom = new CustomSensor();
+			custom.position = new Vec2(0, 0);
+			const cs = custom.addChild(CollisionShape);
+			cs.shape = Shape.rect(40, 40);
+
+			const other = makeSensor(new Vec2(10, 0));
+			const { game } = setupScene([custom, other]);
+
+			game.step();
+
+			expect(custom.customSensors).toContain(other);
+			// sensorEntered signal should also fire via super
 		});
 	});
 

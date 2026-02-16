@@ -20,23 +20,15 @@ class TestBody extends CollisionObject {
 /** Concrete sensor subclass for testing. */
 class TestSensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
-	private _mon = true;
+	override monitoring = true;
 	readonly enteredBodies: CollisionObject[] = [];
 	readonly exitedBodies: CollisionObject[] = [];
 
-	override get _monitoring(): boolean {
-		return this._mon;
-	}
-
-	set monitoring(v: boolean) {
-		this._mon = v;
-	}
-
-	override _onBodyEntered(body: CollisionObject): void {
+	override onBodyEntered(body: CollisionObject): void {
 		this.enteredBodies.push(body);
 	}
 
-	override _onBodyExited(body: CollisionObject): void {
+	override onBodyExited(body: CollisionObject): void {
 		this.exitedBodies.push(body);
 	}
 }

@@ -2,9 +2,11 @@ import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
 import { Actor } from "./actor.js";
+import "./augment.js";
+import type { CollisionInfo } from "./collision-info.js";
 import type { CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";
-import { PhysicsPlugin } from "./physics-plugin.js";
+import { getPhysicsWorld, PhysicsPlugin } from "./physics-plugin.js";
 import { Sensor } from "./sensor.js";
 import { Shape } from "./shapes.js";
 import { StaticCollider } from "./static-collider.js";
@@ -606,6 +608,548 @@ describe("Integration: physics full-loop", () => {
 			expect(actor.position.y).toBeGreaterThan(100);
 
 			warnSpy.mockRestore();
+		});
+	});
+
+	describe("onOverlap() API", () => {
+		it("fires callback when bodies in specified groups overlap", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["enemies"] },
+					enemies: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(200, 0);
+
+			const enemy = makeActor(VelocityActor, new Vec2(50, 0)) as VelocityActor;
+			enemy.applyGravity = false;
+			enemy.collisionGroup = "enemies";
+			enemy.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, enemy]);
+
+			const overlaps: Array<{ a: CollisionObject; b: CollisionObject }> = [];
+			game.physics.onOverlap("player", "enemies", (a, b) => {
+				overlaps.push({ a, b });
+			});
+
+			// Step until overlap
+			for (let i = 0; i < 30; i++) {
+				game.step();
+				if (overlaps.length > 0) break;
+			}
+
+			expect(overlaps).toHaveLength(1);
+			expect(overlaps[0]?.a).toBe(player);
+			expect(overlaps[0]?.b).toBe(enemy);
+		});
+
+		it("fires only once per overlap (no duplicates on sustained overlap)", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["enemies"] },
+					enemies: { collidesWith: ["player"] },
+				},
+			});
+
+			// Place them already overlapping
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(0, 0);
+
+			const enemy = makeActor(VelocityActor, new Vec2(5, 0)) as VelocityActor;
+			enemy.applyGravity = false;
+			enemy.collisionGroup = "enemies";
+			enemy.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, enemy]);
+
+			let count = 0;
+			game.physics.onOverlap("player", "enemies", () => {
+				count++;
+			});
+
+			game.step();
+			game.step();
+			game.step();
+
+			expect(count).toBe(1);
+		});
+
+		it("exit callback fires when overlap ends", () => {
+			const game = createGame({
+				collisionGroups: {
+					a: { collidesWith: ["b"] },
+					b: { collidesWith: ["a"] },
+				},
+			});
+
+			const bodyA = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			bodyA.applyGravity = false;
+			bodyA.collisionGroup = "a";
+			bodyA.targetVelocity = new Vec2(0, 0);
+
+			const bodyB = makeActor(VelocityActor, new Vec2(5, 0)) as VelocityActor;
+			bodyB.applyGravity = false;
+			bodyB.collisionGroup = "b";
+			bodyB.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [bodyA, bodyB]);
+
+			let enterCount = 0;
+			let exitCount = 0;
+			game.physics.onOverlap(
+				"a",
+				"b",
+				() => { enterCount++; },
+				() => { exitCount++; },
+			);
+
+			game.step(); // Overlap starts
+			expect(enterCount).toBe(1);
+			expect(exitCount).toBe(0);
+
+			// Separate
+			bodyB.position = new Vec2(500, 0);
+			game.physics.updatePosition(bodyB);
+			game.step(); // Overlap ends
+
+			expect(exitCount).toBe(1);
+		});
+
+		it("auto-enables monitoring on target bodies", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["coins"] },
+					coins: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(0, 0);
+
+			const coin = makeActor(VelocityActor, new Vec2(500, 0)) as VelocityActor;
+			coin.applyGravity = false;
+			coin.collisionGroup = "coins";
+			coin.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, coin]);
+
+			expect(player.monitoring).toBe(false);
+			expect(coin.monitoring).toBe(false);
+
+			game.physics.onOverlap("player", "coins", () => {});
+
+			expect(player.monitoring).toBe(true);
+			expect(coin.monitoring).toBe(true);
+		});
+
+		it("dispose function stops further callbacks", () => {
+			const game = createGame({
+				collisionGroups: {
+					a: { collidesWith: ["b"] },
+					b: { collidesWith: ["a"] },
+				},
+			});
+
+			const bodyA = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			bodyA.applyGravity = false;
+			bodyA.collisionGroup = "a";
+			bodyA.targetVelocity = new Vec2(0, 0);
+
+			const bodyB = makeActor(VelocityActor, new Vec2(5, 0)) as VelocityActor;
+			bodyB.applyGravity = false;
+			bodyB.collisionGroup = "b";
+			bodyB.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [bodyA, bodyB]);
+
+			let count = 0;
+			const dispose = game.physics.onOverlap("a", "b", () => {
+				count++;
+			});
+
+			game.step();
+			expect(count).toBe(1);
+
+			// Dispose and separate, then bring back
+			dispose();
+			bodyB.position = new Vec2(500, 0);
+			game.physics.updatePosition(bodyB);
+			game.step(); // Exit
+
+			bodyB.position = new Vec2(5, 0);
+			game.physics.updatePosition(bodyB);
+			game.step(); // Re-overlap, but callback is disposed
+
+			expect(count).toBe(1); // No new callback
+		});
+
+		it("re-fires callback after bodies separate and overlap again", () => {
+			const game = createGame({
+				collisionGroups: {
+					a: { collidesWith: ["b"] },
+					b: { collidesWith: ["a"] },
+				},
+			});
+
+			const bodyA = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			bodyA.applyGravity = false;
+			bodyA.collisionGroup = "a";
+			bodyA.targetVelocity = new Vec2(0, 0);
+
+			const bodyB = makeActor(VelocityActor, new Vec2(5, 0)) as VelocityActor;
+			bodyB.applyGravity = false;
+			bodyB.collisionGroup = "b";
+			bodyB.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [bodyA, bodyB]);
+
+			let count = 0;
+			game.physics.onOverlap("a", "b", () => {
+				count++;
+			});
+
+			game.step(); // First overlap
+			expect(count).toBe(1);
+
+			// Separate
+			bodyB.position = new Vec2(500, 0);
+			game.physics.updatePosition(bodyB);
+			game.step(); // No overlap
+
+			// Re-overlap
+			bodyB.position = new Vec2(5, 0);
+			game.physics.updatePosition(bodyB);
+			game.step(); // Second overlap
+
+			expect(count).toBe(2);
+		});
+	});
+
+	describe("onContact() API", () => {
+		it("fires callback when player hits solid enemy during move()", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["enemies"] },
+					enemies: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(200, 0);
+
+			const enemy = makeActor(VelocityActor, new Vec2(50, 0)) as VelocityActor;
+			enemy.applyGravity = false;
+			enemy.collisionGroup = "enemies";
+			enemy.solid = true;
+			enemy.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, enemy]);
+
+			const contacts: Array<{ a: CollisionObject; b: CollisionObject; info: CollisionInfo }> = [];
+			game.physics.onContact("player", "enemies", (a, b, info) => {
+				contacts.push({ a, b, info });
+			});
+
+			// Step until collision
+			for (let i = 0; i < 30; i++) {
+				game.step();
+				if (contacts.length > 0) break;
+			}
+
+			expect(contacts.length).toBeGreaterThanOrEqual(1);
+			expect(contacts[0]!.a).toBe(player);
+			expect(contacts[0]!.b).toBe(enemy);
+		});
+
+		it("provides correct normal for stomp-vs-side detection", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["enemies", "world"] },
+					enemies: { collidesWith: ["player", "world"] },
+					world: { collidesWith: ["player", "enemies"] },
+				},
+			});
+
+			// Player above enemy, falling down
+			const player = makeActor(VelocityActor, new Vec2(100, 50)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(0, 300);
+
+			const enemy = makeActor(VelocityActor, new Vec2(100, 100)) as VelocityActor;
+			enemy.applyGravity = false;
+			enemy.collisionGroup = "enemies";
+			enemy.solid = true;
+			enemy.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, enemy]);
+
+			const normals: Vec2[] = [];
+			game.physics.onContact("player", "enemies", (_a, _b, info) => {
+				normals.push(info.normal);
+			});
+
+			for (let i = 0; i < 30; i++) {
+				game.step();
+				if (normals.length > 0) break;
+			}
+
+			expect(normals.length).toBeGreaterThanOrEqual(1);
+			// Normal should point up (stomp from above)
+			expect(normals[0]!.y).toBeLessThan(0);
+		});
+
+		it("fires for actor-to-static contacts", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["world"] },
+					world: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(200, 0);
+
+			const wall = makeStatic(new Vec2(50, 0), 20, 100);
+			wall.collisionGroup = "world";
+
+			startScene(game, [player, wall]);
+
+			const contacts: CollisionInfo[] = [];
+			game.physics.onContact("player", "world", (_a, _b, info) => {
+				contacts.push(info);
+			});
+
+			for (let i = 0; i < 30; i++) {
+				game.step();
+				if (contacts.length > 0) break;
+			}
+
+			expect(contacts.length).toBeGreaterThanOrEqual(1);
+			expect(contacts[0]!.collider).toBe(wall);
+		});
+
+		it("dispose function stops callbacks", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["world"] },
+					world: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(200, 0);
+
+			const wall = makeStatic(new Vec2(50, 0), 20, 100);
+			wall.collisionGroup = "world";
+
+			startScene(game, [player, wall]);
+
+			let count = 0;
+			const dispose = game.physics.onContact("player", "world", () => {
+				count++;
+			});
+
+			// Step until collision
+			for (let i = 0; i < 60; i++) {
+				game.step();
+				if (count > 0) break;
+			}
+			const countAfterFirst = count;
+			expect(countAfterFirst).toBeGreaterThanOrEqual(1);
+
+			dispose();
+
+			// Continue stepping — no more callbacks
+			game.step();
+			game.step();
+			expect(count).toBe(countAfterFirst);
+		});
+	});
+
+	describe("game.physics accessor", () => {
+		it("game.physics returns PhysicsWorld after plugin installed", () => {
+			const game = createGame();
+			const world = getPhysicsWorld(game);
+			expect(game.physics).toBe(world);
+		});
+
+		it("game.physics throws before PhysicsPlugin installed", () => {
+			const canvas = document.createElement("canvas");
+			const game = new Game({ width: 400, height: 300, canvas, renderer: null });
+			expect(() => game.physics).toThrow("PhysicsPlugin not installed");
+		});
+	});
+
+	describe("monitoring toggle stale overlap fix", () => {
+		it("toggling monitoring off clears overlaps and fires exit events", () => {
+			const game = createGame();
+			const actor1 = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			actor1.applyGravity = false;
+			actor1.monitoring = true;
+			actor1.targetVelocity = new Vec2(0, 0);
+
+			const actor2 = makeActor(VelocityActor, new Vec2(5, 0)) as VelocityActor;
+			actor2.applyGravity = false;
+			actor2.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [actor1, actor2]);
+
+			const entered: CollisionObject[] = [];
+			const exited: CollisionObject[] = [];
+			actor1.bodyEntered.connect((b) => entered.push(b));
+			actor1.bodyExited.connect((b) => exited.push(b));
+
+			game.step(); // Overlap detected
+			expect(entered).toHaveLength(1);
+			expect(exited).toHaveLength(0);
+
+			// Turn off monitoring
+			actor1.monitoring = false;
+			game.step(); // Should fire exit events and clear overlaps
+
+			expect(exited).toHaveLength(1);
+			expect(exited[0]).toBe(actor2);
+
+			// Turn monitoring back on
+			actor1.monitoring = true;
+			game.step(); // Should re-detect the overlap
+
+			expect(entered).toHaveLength(2); // Second enter event
+		});
+	});
+
+	describe("body destruction during callback", () => {
+		it("destroying a body in onOverlap callback doesn't crash", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["coins"] },
+					coins: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(200, 0);
+
+			const coin = makeActor(VelocityActor, new Vec2(30, 0)) as VelocityActor;
+			coin.applyGravity = false;
+			coin.collisionGroup = "coins";
+			coin.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, coin]);
+
+			game.physics.onOverlap("player", "coins", (_p, c) => {
+				c.destroy();
+			});
+
+			// Should not crash
+			expect(() => {
+				for (let i = 0; i < 30; i++) game.step();
+			}).not.toThrow();
+
+			expect(coin.isDestroyed).toBe(true);
+		});
+
+		it("destroying a body in onContact callback doesn't crash", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["enemies"] },
+					enemies: { collidesWith: ["player"] },
+				},
+			});
+
+			const player = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.targetVelocity = new Vec2(200, 0);
+
+			const enemy = makeActor(VelocityActor, new Vec2(50, 0)) as VelocityActor;
+			enemy.applyGravity = false;
+			enemy.collisionGroup = "enemies";
+			enemy.solid = true;
+			enemy.targetVelocity = new Vec2(0, 0);
+
+			startScene(game, [player, enemy]);
+
+			game.physics.onContact("player", "enemies", (_p, e) => {
+				e.destroy();
+			});
+
+			// Should not crash
+			expect(() => {
+				for (let i = 0; i < 30; i++) game.step();
+			}).not.toThrow();
+
+			expect(enemy.isDestroyed).toBe(true);
+		});
+	});
+
+	describe("actor monitoring determinism", () => {
+		it("monitored actor overlaps produce identical event sequence across runs", () => {
+			function runScenario(): { frame: number; type: string }[] {
+				const game = createGame({
+					collisionGroups: {
+						player: { collidesWith: ["enemies"] },
+						enemies: { collidesWith: ["player", "world"] },
+						world: { collidesWith: ["player", "enemies"] },
+					},
+				});
+
+				const floor = makeStatic(new Vec2(200, 300), 400, 20);
+				floor.collisionGroup = "world";
+
+				const player = new VelocityActor();
+				player.position = new Vec2(100, 200);
+				player.collisionGroup = "player";
+				player.monitoring = true;
+				player.targetVelocity = new Vec2(50, 0);
+				const pcs = player.addChild(CollisionShape);
+				pcs.shape = Shape.rect(14, 24);
+
+				const enemy = new VelocityActor();
+				enemy.position = new Vec2(200, 200);
+				enemy.collisionGroup = "enemies";
+				enemy.targetVelocity = new Vec2(-30, 0);
+				const ecs = enemy.addChild(CollisionShape);
+				ecs.shape = Shape.rect(14, 14);
+
+				startScene(game, [floor, player, enemy]);
+
+				let frame = 0;
+				const events: { frame: number; type: string }[] = [];
+				player.bodyEntered.connect(() => events.push({ frame, type: "entered" }));
+				player.bodyExited.connect(() => events.push({ frame, type: "exited" }));
+
+				for (let i = 0; i < 200; i++) {
+					frame = i;
+					game.step();
+				}
+				return events;
+			}
+
+			const run1 = runScenario();
+			const run2 = runScenario();
+
+			expect(run1).toEqual(run2);
+			// Ensure events actually fired
+			expect(run1.length).toBeGreaterThan(0);
 		});
 	});
 });

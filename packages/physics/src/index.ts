@@ -1,3 +1,6 @@
+// Side-effect: install game.physics accessor
+import "./augment.js";
+
 // Physics bodies
 export { Actor } from "./actor.js";
 // Collision groups

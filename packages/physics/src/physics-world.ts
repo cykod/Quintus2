@@ -1,4 +1,5 @@
 import { AABB, Matrix2D, Vec2 } from "@quintus/math";
+import type { Actor } from "./actor.js";
 import { CollisionGroups } from "./collision-groups.js";
 import type { CollisionInfo } from "./collision-info.js";
 import type { CollisionObject } from "./collision-object.js";
@@ -13,6 +14,23 @@ export interface PhysicsWorldConfig {
 	groups?: CollisionGroups;
 }
 
+/** Internal type for onOverlap() registered callbacks. */
+interface OverlapRegistration {
+	groupA: string;
+	groupB: string;
+	onEnter: (bodyA: CollisionObject, bodyB: CollisionObject) => void;
+	onExit?: (bodyA: CollisionObject, bodyB: CollisionObject) => void;
+	/** Tracks active overlaps. Key: "idA:idB", Value: [bodyA, bodyB]. */
+	overlaps: Map<string, [CollisionObject, CollisionObject]>;
+}
+
+/** Internal type for onContact() registered callbacks. */
+interface ContactRegistration {
+	groupA: string;
+	groupB: string;
+	callback: (bodyA: CollisionObject, bodyB: CollisionObject, info: CollisionInfo) => void;
+}
+
 export class PhysicsWorld {
 	/** World gravity vector. Default: (0, 800). */
 	readonly gravity: Vec2;
@@ -23,8 +41,20 @@ export class PhysicsWorld {
 	/** Spatial hash for broad-phase queries. */
 	private readonly hash: SpatialHash<CollisionObject>;
 
-	/** Current sensor overlaps for enter/exit tracking. */
-	private readonly sensorOverlaps = new Map<CollisionObject, Set<CollisionObject>>();
+	/** Current overlaps for bodies with monitoring = true (enter/exit tracking). */
+	private readonly monitoredOverlaps = new Map<CollisionObject, Set<CollisionObject>>();
+
+	/** Group-to-bodies index for efficient queries. */
+	private readonly groupIndex = new Map<string, Set<CollisionObject>>();
+
+	/** Registered onOverlap() callbacks. */
+	private readonly overlapRegistrations: OverlapRegistration[] = [];
+
+	/** Registered onContact() callbacks. */
+	private readonly contactRegistrations: ContactRegistration[] = [];
+
+	/** Signal connections for actor collided signals (for onContact dispatching). */
+	private readonly contactConnections = new Map<CollisionObject, { disconnect(): void }>();
 
 	constructor(config?: PhysicsWorldConfig) {
 		this.gravity = config?.gravity ?? new Vec2(0, 800);
@@ -45,22 +75,89 @@ export class PhysicsWorld {
 		if (aabb) {
 			this.hash.insert(body, aabb);
 		}
-		// Initialize sensor overlap tracking
-		if (body.bodyType === "sensor") {
-			this.sensorOverlaps.set(body, new Set());
+
+		// Auto-enable monitoring if needed by onOverlap registrations
+		for (const reg of this.overlapRegistrations) {
+			if (body.collisionGroup === reg.groupA || body.collisionGroup === reg.groupB) {
+				body.monitoring = true;
+				break;
+			}
+		}
+
+		// Initialize overlap tracking for any monitoring body
+		if (body.monitoring) {
+			this.monitoredOverlaps.set(body, new Set());
+		}
+
+		// Add to group index
+		let group = this.groupIndex.get(body.collisionGroup);
+		if (!group) {
+			group = new Set();
+			this.groupIndex.set(body.collisionGroup, group);
+		}
+		group.add(body);
+
+		// Connect actor's collided signal for onContact() dispatching
+		if (body.bodyType === "actor") {
+			const collided = (body as Actor).collided;
+			if (collided) {
+				const conn = collided.connect((info: CollisionInfo) => {
+					for (const reg of this.contactRegistrations) {
+						if (body.collisionGroup === reg.groupA && info.collider.collisionGroup === reg.groupB) {
+							reg.callback(body, info.collider, info);
+						}
+					}
+				});
+				this.contactConnections.set(body, conn);
+			}
 		}
 	}
 
-	/** Remove a body from the spatial hash. Cleans up sensor overlaps. */
+	/** Remove a body from the spatial hash. Cleans up overlaps and group index. */
 	unregister(body: CollisionObject): void {
 		this.hash.remove(body);
-		// Clean up sensor overlap tracking for this body (if it was a sensor)
-		this.sensorOverlaps.delete(body);
-		// Fire exit events and remove from other sensors' overlap sets
-		for (const [sensor, overlaps] of this.sensorOverlaps) {
+
+		// Clean up overlap tracking for this body (if it was monitored)
+		this.monitoredOverlaps.delete(body);
+
+		// Fire exit events and remove from other monitored bodies' overlap sets
+		for (const [monitor, overlaps] of this.monitoredOverlaps) {
 			if (overlaps.delete(body)) {
-				sensor._onBodyExited(body);
+				monitor.onBodyExited(body);
 			}
+		}
+
+		// Remove from group index
+		const group = this.groupIndex.get(body.collisionGroup);
+		if (group) {
+			group.delete(body);
+			if (group.size === 0) {
+				this.groupIndex.delete(body.collisionGroup);
+			}
+		}
+
+		// Clean up onOverlap() overlap tracking and fire exit callbacks for this body
+		for (const reg of this.overlapRegistrations) {
+			const toDelete: string[] = [];
+			for (const [key, [a, b]] of reg.overlaps) {
+				if (a === body || b === body) {
+					toDelete.push(key);
+				}
+			}
+			for (const key of toDelete) {
+				const pair = reg.overlaps.get(key);
+				reg.overlaps.delete(key);
+				if (reg.onExit && pair) {
+					reg.onExit(pair[0], pair[1]);
+				}
+			}
+		}
+
+		// Clean up contact signal connection
+		const conn = this.contactConnections.get(body);
+		if (conn) {
+			conn.disconnect();
+			this.contactConnections.delete(body);
 		}
 	}
 
@@ -134,8 +231,8 @@ export class PhysicsWorld {
 			}
 			// Don't collide actor with sensors (sensors handle their own overlap)
 			if (candidate.bodyType === "sensor") continue;
-			// Don't collide actor with other actors
-			if (candidate.bodyType === "actor") continue;
+			// Skip non-solid actors (solid actors are treated as obstacles)
+			if (candidate.bodyType === "actor" && !(candidate as Actor).solid) continue;
 
 			const candidateShapes = candidate.getShapeTransforms();
 
@@ -239,35 +336,74 @@ export class PhysicsWorld {
 		return overlapping;
 	}
 
-	// === Sensor Overlap Detection ===
+	// === Overlap Detection (Monitoring) ===
 
 	/**
-	 * Run the global sensor overlap pass. Called by PhysicsPlugin
-	 * after each fixedUpdate via the postFixedUpdate hook.
+	 * Run the global overlap detection pass for all monitored bodies.
+	 * Called by PhysicsPlugin after each fixedUpdate via the postFixedUpdate hook.
 	 */
-	stepSensors(): void {
-		for (const [sensor, prevOverlaps] of this.sensorOverlaps) {
-			if (!sensor._monitoring) continue;
+	stepMonitoring(): void {
+		this._stepBodyMonitoring();
+		this._stepOverlapCallbacks();
+	}
 
-			const bodyAABB = sensor.getWorldAABB();
+	/** @deprecated Use stepMonitoring() instead. Kept for backward compatibility. */
+	stepSensors(): void {
+		this.stepMonitoring();
+	}
+
+	/**
+	 * Per-body monitoring: fire bodyEntered/bodyExited for bodies with monitoring = true.
+	 */
+	private _stepBodyMonitoring(): void {
+		// Handle monitoring toggle-off: clear overlaps and fire exit events
+		const toClean: CollisionObject[] = [];
+		for (const [monitor] of this.monitoredOverlaps) {
+			if (!monitor.monitoring) {
+				toClean.push(monitor);
+			}
+		}
+		for (const monitor of toClean) {
+			const overlaps = this.monitoredOverlaps.get(monitor);
+			if (overlaps) {
+				for (const body of overlaps) {
+					monitor.onBodyExited(body);
+				}
+			}
+			this.monitoredOverlaps.delete(monitor);
+		}
+
+		// Ensure any body whose monitoring was toggled on is tracked
+		for (const bodies of this.groupIndex.values()) {
+			for (const body of bodies) {
+				if (body.monitoring && !this.monitoredOverlaps.has(body)) {
+					this.monitoredOverlaps.set(body, new Set());
+				}
+			}
+		}
+
+		for (const [monitor, prevOverlaps] of this.monitoredOverlaps) {
+			if (!monitor.monitoring) continue;
+
+			const bodyAABB = monitor.getWorldAABB();
 			if (!bodyAABB) continue;
 
 			// Compute current overlaps
 			const candidates = this.hash.query(bodyAABB);
-			candidates.delete(sensor);
+			candidates.delete(monitor);
 
 			const currentOverlaps = new Set<CollisionObject>();
-			const sensorShapes = sensor.getShapeTransforms();
+			const monitorShapes = monitor.getShapeTransforms();
 
 			for (const candidate of candidates) {
-				if (!this.groups.shouldCollide(sensor.collisionGroup, candidate.collisionGroup)) {
+				if (!this.groups.shouldCollide(monitor.collisionGroup, candidate.collisionGroup)) {
 					continue;
 				}
 
 				const candidateShapes = candidate.getShapeTransforms();
 				let overlaps = false;
 
-				for (const ss of sensorShapes) {
+				for (const ss of monitorShapes) {
 					if (overlaps) break;
 					for (const cs of candidateShapes) {
 						if (testOverlap(ss.shape, ss.transform, cs.shape, cs.transform)) {
@@ -285,15 +421,15 @@ export class PhysicsWorld {
 			// Diff: fire entered for new overlaps
 			for (const body of currentOverlaps) {
 				if (!prevOverlaps.has(body)) {
-					sensor._onBodyEntered(body);
+					monitor.onBodyEntered(body);
 
 					// Debug instrumentation
-					const game = sensor.game;
+					const game = monitor.game;
 					if (game?.debug) {
 						game.debugLog.write(
 							{
 								category: "physics",
-								message: `${sensor.constructor.name}#${sensor.id} bodyEntered ${body.constructor.name}#${body.id}`,
+								message: `${monitor.constructor.name}#${monitor.id} bodyEntered ${body.constructor.name}#${body.id}`,
 							},
 							game.fixedFrame,
 							game.elapsed,
@@ -305,15 +441,15 @@ export class PhysicsWorld {
 			// Diff: fire exited for removed overlaps
 			for (const body of prevOverlaps) {
 				if (!currentOverlaps.has(body)) {
-					sensor._onBodyExited(body);
+					monitor.onBodyExited(body);
 
 					// Debug instrumentation
-					const game = sensor.game;
+					const game = monitor.game;
 					if (game?.debug) {
 						game.debugLog.write(
 							{
 								category: "physics",
-								message: `${sensor.constructor.name}#${sensor.id} bodyExited ${body.constructor.name}#${body.id}`,
+								message: `${monitor.constructor.name}#${monitor.id} bodyExited ${body.constructor.name}#${body.id}`,
 							},
 							game.fixedFrame,
 							game.elapsed,
@@ -323,24 +459,172 @@ export class PhysicsWorld {
 			}
 
 			// Update stored overlaps
-			this.sensorOverlaps.set(sensor, currentOverlaps);
+			this.monitoredOverlaps.set(monitor, currentOverlaps);
 		}
 	}
 
-	// === Sensor Queries ===
+	/**
+	 * Process onOverlap() callbacks.
+	 */
+	private _stepOverlapCallbacks(): void {
+		for (const reg of this.overlapRegistrations) {
+			const bodiesA = this.groupIndex.get(reg.groupA);
+			const bodiesB = this.groupIndex.get(reg.groupB);
+			if (!bodiesA || !bodiesB) continue;
 
-	/** Get bodies currently overlapping a sensor. */
-	getOverlappingBodies(sensor: CollisionObject): CollisionObject[] {
-		const overlaps = this.sensorOverlaps.get(sensor);
+			// Track current overlaps this frame
+			const currentOverlaps = new Map<string, [CollisionObject, CollisionObject]>();
+
+			for (const a of bodiesA) {
+				const aAABB = a.getWorldAABB();
+				if (!aAABB) continue;
+				const aShapes = a.getShapeTransforms();
+				if (aShapes.length === 0) continue;
+
+				for (const b of bodiesB) {
+					if (a === b) continue;
+
+					const bAABB = b.getWorldAABB();
+					if (!bAABB) continue;
+
+					// Quick AABB rejection
+					if (!aAABB.overlaps(bAABB)) continue;
+
+					const bShapes = b.getShapeTransforms();
+					if (bShapes.length === 0) continue;
+
+					// Narrow-phase overlap test
+					let overlaps = false;
+					for (const as of aShapes) {
+						if (overlaps) break;
+						for (const bs of bShapes) {
+							if (testOverlap(as.shape, as.transform, bs.shape, bs.transform)) {
+								overlaps = true;
+								break;
+							}
+						}
+					}
+
+					if (overlaps) {
+						const key = `${a.id}:${b.id}`;
+						currentOverlaps.set(key, [a, b]);
+
+						// Fire callback on first frame of overlap
+						if (!reg.overlaps.has(key)) {
+							reg.onEnter(a, b);
+						}
+					}
+				}
+			}
+
+			// Fire exit callbacks for pairs that are no longer overlapping
+			if (reg.onExit) {
+				for (const [key, [a, b]] of reg.overlaps) {
+					if (!currentOverlaps.has(key)) {
+						reg.onExit(a, b);
+					}
+				}
+			}
+
+			// Replace overlap map with current frame's overlaps
+			reg.overlaps = currentOverlaps;
+		}
+	}
+
+	// === onOverlap API ===
+
+	/**
+	 * Register a callback that fires when bodies in groupA first overlap bodies in groupB.
+	 * Built on top of the monitoring system — automatically enables monitoring on target bodies.
+	 * Returns a dispose function.
+	 */
+	onOverlap(
+		groupA: string,
+		groupB: string,
+		onEnter: (bodyA: CollisionObject, bodyB: CollisionObject) => void,
+		onExit?: (bodyA: CollisionObject, bodyB: CollisionObject) => void,
+	): () => void {
+		const entry: OverlapRegistration = {
+			groupA,
+			groupB,
+			onEnter,
+			onExit,
+			overlaps: new Map(),
+		};
+		this.overlapRegistrations.push(entry);
+
+		// Auto-enable monitoring on current bodies in target groups
+		for (const groupName of [groupA, groupB]) {
+			const bodies = this.groupIndex.get(groupName);
+			if (bodies) {
+				for (const body of bodies) {
+					if (!body.monitoring) {
+						body.monitoring = true;
+					}
+					if (!this.monitoredOverlaps.has(body)) {
+						this.monitoredOverlaps.set(body, new Set());
+					}
+				}
+			}
+		}
+
+		return () => {
+			const idx = this.overlapRegistrations.indexOf(entry);
+			if (idx !== -1) {
+				this.overlapRegistrations.splice(idx, 1);
+			}
+		};
+	}
+
+	// === onContact API ===
+
+	/**
+	 * Register a callback that fires when bodies in groupA physically collide
+	 * with bodies in groupB during move(). Provides collision info (normal, etc).
+	 * Returns a dispose function.
+	 */
+	onContact(
+		groupA: string,
+		groupB: string,
+		callback: (bodyA: CollisionObject, bodyB: CollisionObject, info: CollisionInfo) => void,
+	): () => void {
+		const entry: ContactRegistration = { groupA, groupB, callback };
+		this.contactRegistrations.push(entry);
+
+		return () => {
+			const idx = this.contactRegistrations.indexOf(entry);
+			if (idx !== -1) {
+				this.contactRegistrations.splice(idx, 1);
+			}
+		};
+	}
+
+	// === Overlap Queries ===
+
+	/** Get bodies currently overlapping a monitored body (excludes sensors). */
+	getOverlappingBodies(body: CollisionObject): CollisionObject[] {
+		const overlaps = this.monitoredOverlaps.get(body);
 		if (!overlaps) return [];
 		return Array.from(overlaps).filter((b) => b.bodyType !== "sensor");
 	}
 
-	/** Get sensors currently overlapping a sensor. */
-	getOverlappingSensors(sensor: CollisionObject): CollisionObject[] {
-		const overlaps = this.sensorOverlaps.get(sensor);
+	/** Get sensors currently overlapping a monitored body. */
+	getOverlappingSensors(body: CollisionObject): CollisionObject[] {
+		const overlaps = this.monitoredOverlaps.get(body);
 		if (!overlaps) return [];
 		return Array.from(overlaps).filter((b) => b.bodyType === "sensor");
+	}
+
+	// === Internal: Dynamic Monitoring Toggle ===
+
+	/**
+	 * @internal Called when a body's monitoring state might have changed.
+	 * Ensures the body is tracked/untracked in monitoredOverlaps accordingly.
+	 */
+	ensureMonitoringState(body: CollisionObject): void {
+		if (body.monitoring && !this.monitoredOverlaps.has(body)) {
+			this.monitoredOverlaps.set(body, new Set());
+		}
 	}
 
 	// === Private Helpers ===

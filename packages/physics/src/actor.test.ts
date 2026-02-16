@@ -3,6 +3,7 @@ import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
 import { Actor } from "./actor.js";
 import type { CollisionInfo } from "./collision-info.js";
+import type { CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";
 import { getPhysicsWorld, PhysicsPlugin } from "./physics-plugin.js";
 import { Shape } from "./shapes.js";
@@ -292,7 +293,7 @@ describe("Actor", () => {
 	});
 
 	describe("actor vs actor", () => {
-		it("actors do not collide with other actors", () => {
+		it("non-solid actors pass through each other (default)", () => {
 			const actor1 = makeActor(new Vec2(0, 0));
 			const actor2 = makeActor(new Vec2(30, 0));
 			setupScene([actor1, actor2]);
@@ -304,6 +305,188 @@ describe("Actor", () => {
 			// actor1 should pass through actor2
 			expect(actor1.position.x).toBeCloseTo(100, 0);
 			expect(actor1.getSlideCollisions().length).toBe(0);
+		});
+
+		it("solid = false is the default", () => {
+			const actor = new Actor();
+			expect(actor.solid).toBe(false);
+		});
+
+		it("solid actor: another actor's move() collides with it", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			const actor2 = makeActor(new Vec2(50, 0));
+			actor2.solid = true;
+			setupScene([actor1, actor2]);
+
+			actor1.applyGravity = false;
+			actor1.velocity = new Vec2(200, 0);
+			actor1.move(0.5);
+
+			// actor1 should stop at actor2's surface
+			expect(actor1.position.x).toBeLessThan(50);
+			expect(actor1.position.x).toBeGreaterThan(0);
+			expect(actor1.getSlideCollisions().length).toBeGreaterThanOrEqual(1);
+			expect(actor1.getSlideCollisions()[0]!.collider).toBe(actor2);
+		});
+
+		it("solid actor: onCollided fires with correct normal for stomp (top)", () => {
+			const player = makeActor(new Vec2(100, 50));
+			const enemy = makeActor(new Vec2(100, 100));
+			enemy.solid = true;
+			setupScene([player, enemy]);
+
+			const collisions: CollisionInfo[] = [];
+			player.collided.connect((info) => collisions.push(info));
+
+			player.applyGravity = false;
+			player.velocity = new Vec2(0, 300);
+			player.move(0.5);
+
+			expect(collisions.length).toBeGreaterThanOrEqual(1);
+			expect(collisions[0]!.collider).toBe(enemy);
+			// Normal should point up (away from enemy into player)
+			expect(collisions[0]!.normal.y).toBeLessThan(0);
+		});
+
+		it("solid actor: onCollided fires with correct normal for side collision", () => {
+			const player = makeActor(new Vec2(0, 0));
+			const enemy = makeActor(new Vec2(50, 0));
+			enemy.solid = true;
+			setupScene([player, enemy]);
+
+			const collisions: CollisionInfo[] = [];
+			player.collided.connect((info) => collisions.push(info));
+
+			player.applyGravity = false;
+			player.velocity = new Vec2(200, 0);
+			player.move(0.5);
+
+			expect(collisions.length).toBeGreaterThanOrEqual(1);
+			// Normal should point left (away from enemy into player)
+			expect(collisions[0]!.normal.x).toBeLessThan(0);
+		});
+
+		it("solid actor: collision groups control directionality", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			actor1.collisionGroup = "player";
+			const actor2 = makeActor(new Vec2(50, 0));
+			actor2.solid = true;
+			actor2.collisionGroup = "enemies";
+
+			const game = createGame();
+			game.use(PhysicsPlugin({
+				collisionGroups: {
+					player: { collidesWith: ["enemies"] },
+					enemies: { collidesWith: [] as string[] },
+				},
+			}));
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(actor1);
+					this.addChild(actor2);
+				}
+			}
+			game.start(TestScene);
+
+			// Player detects enemy
+			actor1.applyGravity = false;
+			actor1.velocity = new Vec2(200, 0);
+			actor1.move(0.5);
+			expect(actor1.position.x).toBeLessThan(50);
+			const playerX = actor1.position.x;
+
+			// Enemy does NOT detect player (collidesWith is empty)
+			actor2.applyGravity = false;
+			actor2.velocity = new Vec2(-200, 0);
+			actor2.move(0.5);
+			// Enemy should pass through player
+			expect(actor2.position.x).toBeLessThan(playerX);
+		});
+
+		it("solid actor: enemy destroyed in onCollided callback", () => {
+			const player = makeActor(new Vec2(0, 0));
+			const enemy = makeActor(new Vec2(50, 0));
+			enemy.solid = true;
+			const { game } = setupScene([player, enemy]);
+
+			player.collided.connect((info) => {
+				info.collider.destroy();
+			});
+
+			player.applyGravity = false;
+			player.velocity = new Vec2(200, 0);
+			player.move(0.5);
+
+			// Player should have stopped at enemy, enemy marked for destroy
+			expect(player.position.x).toBeLessThan(50);
+			game.step(); // process destroy queue
+			expect(enemy.isDestroyed).toBe(true);
+		});
+	});
+
+	describe("onCollided virtual method", () => {
+		it("onCollided fires and emits collided signal during move()", () => {
+			const actor = makeActor(new Vec2(100, 50));
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			const collisions: CollisionInfo[] = [];
+			actor.collided.connect((info) => collisions.push(info));
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			expect(collisions.length).toBeGreaterThanOrEqual(1);
+			expect(collisions[0]!.collider).toBe(floor);
+		});
+
+		it("overriding onCollided allows self-handling", () => {
+			class CustomActor extends Actor {
+				customCollisions: CollisionInfo[] = [];
+				override onCollided(info: CollisionInfo): void {
+					this.customCollisions.push(info);
+					super.onCollided(info); // still emits signal
+				}
+			}
+			const actor = new CustomActor();
+			actor.position = new Vec2(100, 50);
+			const cs = actor.addChild(CollisionShape);
+			cs.shape = Shape.rect(10, 10);
+
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			const signalCollisions: CollisionInfo[] = [];
+			actor.collided.connect((info) => signalCollisions.push(info));
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			expect(actor.customCollisions.length).toBeGreaterThanOrEqual(1);
+			expect(signalCollisions.length).toBeGreaterThanOrEqual(1);
+		});
+
+		it("overriding onCollided without super suppresses signal", () => {
+			class SilentActor extends Actor {
+				override onCollided(_info: CollisionInfo): void {
+					// Don't call super
+				}
+			}
+			const actor = new SilentActor();
+			actor.position = new Vec2(100, 50);
+			const cs = actor.addChild(CollisionShape);
+			cs.shape = Shape.rect(10, 10);
+
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			const signalCollisions: CollisionInfo[] = [];
+			actor.collided.connect((info) => signalCollisions.push(info));
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			expect(signalCollisions).toHaveLength(0);
 		});
 	});
 
@@ -434,6 +617,115 @@ describe("Actor", () => {
 			actor.move(1 / 60);
 			// Should not snap to floor — velocity.y should stay negative
 			expect(actor.velocity.y).toBeLessThan(0);
+		});
+	});
+
+	describe("monitoring (overlap detection)", () => {
+		it("defaults to monitoring = false", () => {
+			const actor = new Actor();
+			expect(actor.monitoring).toBe(false);
+		});
+
+		it("actor with monitoring = true receives bodyEntered when overlapping another actor", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			actor1.monitoring = true;
+			const actor2 = makeActor(new Vec2(5, 0));
+			const { game } = setupScene([actor1, actor2]);
+
+			const entered: CollisionObject[] = [];
+			actor1.bodyEntered.connect((b) => entered.push(b));
+
+			game.step();
+
+			expect(entered).toHaveLength(1);
+			expect(entered[0]).toBe(actor2);
+		});
+
+		it("actor with monitoring = true receives bodyExited when overlap ends", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			actor1.monitoring = true;
+			const actor2 = makeActor(new Vec2(5, 0));
+			const { game, world } = setupScene([actor1, actor2]);
+
+			const exited: CollisionObject[] = [];
+			actor1.bodyExited.connect((b) => exited.push(b));
+
+			game.step(); // Enter
+
+			// Move actor2 far away
+			actor2.position = new Vec2(500, 0);
+			world?.updatePosition(actor2);
+			game.step(); // Exit
+
+			expect(exited).toHaveLength(1);
+			expect(exited[0]).toBe(actor2);
+		});
+
+		it("actor with monitoring = false does NOT receive overlap events", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			// monitoring defaults to false
+			const actor2 = makeActor(new Vec2(5, 0));
+			const { game } = setupScene([actor1, actor2]);
+
+			const entered: CollisionObject[] = [];
+			actor1.bodyEntered.connect((b) => entered.push(b));
+
+			game.step();
+
+			expect(entered).toHaveLength(0);
+		});
+
+		it("getOverlappingBodies() returns current overlaps for monitored actor", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			actor1.monitoring = true;
+			const actor2 = makeActor(new Vec2(5, 0));
+			const { game } = setupScene([actor1, actor2]);
+
+			game.step();
+
+			const bodies = actor1.getOverlappingBodies();
+			expect(bodies).toContain(actor2);
+		});
+
+		it("getOverlappingBodies() returns empty for non-monitored actor", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			const actor2 = makeActor(new Vec2(5, 0));
+			setupScene([actor1, actor2]);
+
+			expect(actor1.getOverlappingBodies()).toHaveLength(0);
+		});
+
+		it("no duplicate bodyEntered on sustained overlap", () => {
+			const actor1 = makeActor(new Vec2(0, 0));
+			actor1.monitoring = true;
+			const actor2 = makeActor(new Vec2(5, 0));
+			const { game } = setupScene([actor1, actor2]);
+
+			const entered: CollisionObject[] = [];
+			actor1.bodyEntered.connect((b) => entered.push(b));
+
+			game.step();
+			game.step();
+			game.step();
+
+			expect(entered).toHaveLength(1);
+		});
+
+		it("bodyEntered/bodyExited signals cleaned up on destroy", () => {
+			const actor = makeActor(new Vec2(0, 0));
+			const { game } = setupScene([actor]);
+
+			actor.bodyEntered.connect(() => {});
+			actor.bodyExited.connect(() => {});
+
+			expect(actor.bodyEntered.hasListeners).toBe(true);
+			expect(actor.bodyExited.hasListeners).toBe(true);
+
+			actor.destroy();
+			game.step();
+
+			expect(actor.bodyEntered.hasListeners).toBe(false);
+			expect(actor.bodyExited.hasListeners).toBe(false);
 		});
 	});
 });

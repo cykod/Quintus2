@@ -1,3 +1,17 @@
+## Add actor-to-actor collision, onOverlap/onContact APIs
+*Monday, February 16th at 12pm*
+Implement FIX_COLLISION_DESIGN.md for @quintus/physics: add solid property to 
+Actor for actor-to-actor physical collision in castMotion(), replace 
+onCollision() with onOverlap() (enter/exit callbacks, auto-monitoring) and add 
+onContact() API for physics contact detection via collided signal. Rename 
+internal _onBodyEntered/_onBodyExited to public virtual methods, fix Sensor 
+signal bug where sensor-to-sensor overlaps swallowed bodyEntered, and fix 
+monitoring toggle stale overlap cleanup. All 382 tests pass across 14 test 
+files with comprehensive new coverage for solid actors, virtual methods, 
+overlap/contact APIs, and edge cases.
+
+---
+
 ## Refactor examples into subdirectories with landing page
 *Monday, February 16th at 10am*
 Moved each demo (bouncing-balls, platformer, tilemap, tween-ui) into its own 

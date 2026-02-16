@@ -151,3 +151,19 @@
 [IMPL] sun 2/15 4pm - Implement Phase 5 (Audio, Tween, UI) packages following the detailed design in PHASE_5_DESIGN.md
 
 [IMPL] sun 2/15 4pm - Implement Phase 5 (Audio, Tween, UI packages) with core changes, 3 new packages, and all tests passing
+
+[MILE] sun 2/15 6pm - Added tween, audio, and UI packages with core changes, demo, and 1143 passing tests (Phase 5)
+
+[IMPL] sun 2/15 6pm - Refactor examples so each demo lives in its own subdirectory with index linking to all demos
+
+[ASKS] sun 2/15 6pm - Design Phase 6 (meta-package and first complete platformer game) by reviewing the implementation plan and creating PHASE_6_DESIGN.md
+
+[DEVL] sun 2/15 6pm - Review Phase 6 meta-package and platformer design for potential issues and risks
+
+[ASKS] sun 2/15 9pm - Design a plan to add collision events and actor-to-actor collisions to the physics system, writing to steering/FIX_COLLISION_DESIGN.md
+
+[DEVL] mon 2/16 7am - Review FIX_COLLISION_DESIGN.md for potential issues and risks
+
+[MILE] mon 2/16 10am - Refactored examples into subdirectories with styled landing page linking to all demos
+
+[IMPL] mon 2/16 11am - Implement FIX_COLLISION_DESIGN.md: collision events, actor-to-actor collisions, onContact/onOverlap APIs, and game.physics accessor

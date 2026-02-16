@@ -17,6 +17,13 @@ const EPSILON_SQ = 0.0001;
 export class Actor extends CollisionObject {
 	readonly bodyType: BodyType = "actor";
 
+	/**
+	 * When true, other actors' move() treats this actor as a physical obstacle.
+	 * Their castMotion() will detect this actor, slide against it, and fire onCollided.
+	 * Default: false (actors pass through each other).
+	 */
+	solid = false;
+
 	/** Current velocity in pixels/second. Modified by move(). */
 	velocity: Vec2 = new Vec2(0, 0);
 
@@ -134,6 +141,11 @@ export class Actor extends CollisionObject {
 		super.onDestroy();
 	}
 
+	/** Override for self-handling of physics contacts. Default emits collided signal. */
+	onCollided(info: CollisionInfo): void {
+		this.collided.emit(info);
+	}
+
 	// === Movement API ===
 
 	/**
@@ -203,7 +215,7 @@ export class Actor extends CollisionObject {
 			totalDy += safeTravelY;
 
 			this._slideCollisions.push(collision);
-			this.collided.emit(collision);
+			this.onCollided(collision);
 
 			// Debug instrumentation: log collision
 			const game = this.game;

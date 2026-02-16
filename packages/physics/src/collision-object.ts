@@ -1,4 +1,4 @@
-import { Node2D } from "@quintus/core";
+import { Node2D, type Signal, signal } from "@quintus/core";
 import type { AABB, Matrix2D, Vec2 } from "@quintus/math";
 import { CollisionShape } from "./collision-shape.js";
 import type { PhysicsWorld } from "./physics-world.js";
@@ -32,6 +32,19 @@ export abstract class CollisionObject extends Node2D {
 
 	/** Collision group name. Must match a group in PhysicsPlugin config. Default: "default". */
 	collisionGroup = "default";
+
+	/**
+	 * Whether this body detects overlaps with other bodies.
+	 * When true, bodyEntered/bodyExited signals fire via the overlap detection system.
+	 * Default: false for Actor/StaticCollider, true for Sensor.
+	 */
+	monitoring = false;
+
+	/** Emitted when another body enters this body's area (requires monitoring = true). */
+	readonly bodyEntered: Signal<CollisionObject> = signal<CollisionObject>();
+
+	/** Emitted when another body exits this body's area (requires monitoring = true). */
+	readonly bodyExited: Signal<CollisionObject> = signal<CollisionObject>();
 
 	/** Whether this body is currently registered in the PhysicsWorld. */
 	private _registered = false;
@@ -105,15 +118,26 @@ export abstract class CollisionObject extends Node2D {
 		return _getPhysicsWorldFn(game);
 	}
 
-	/** @internal Called by PhysicsWorld.stepSensors() for entered events. Override in Sensor. */
-	_onBodyEntered(_body: CollisionObject): void {}
+	/** Called by PhysicsWorld.stepMonitoring() for overlap enter events. Override for self-handling. Default emits bodyEntered signal. */
+	onBodyEntered(body: CollisionObject): void {
+		this.bodyEntered.emit(body);
+	}
 
-	/** @internal Called by PhysicsWorld.stepSensors() for exited events. Override in Sensor. */
-	_onBodyExited(_body: CollisionObject): void {}
+	/** Called by PhysicsWorld.stepMonitoring() for overlap exit events. Override for self-handling. Default emits bodyExited signal. */
+	onBodyExited(body: CollisionObject): void {
+		this.bodyExited.emit(body);
+	}
 
-	/** @internal Whether this sensor should be monitored. Override in Sensor. */
-	get _monitoring(): boolean {
-		return false;
+	/** Get all bodies currently overlapping this body (requires monitoring = true). */
+	getOverlappingBodies(): CollisionObject[] {
+		const world = this._getWorld();
+		return world ? world.getOverlappingBodies(this) : [];
+	}
+
+	override onDestroy(): void {
+		this.bodyEntered.disconnectAll();
+		this.bodyExited.disconnectAll();
+		super.onDestroy();
 	}
 
 	/** @internal Filter collision by normal direction. Override in StaticCollider for one-way. */

@@ -25,18 +25,15 @@ class TestBody extends CollisionObject {
 /** Concrete sensor subclass for testing. */
 class TestSensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
+	override monitoring = true;
 	readonly enteredBodies: CollisionObject[] = [];
 	readonly exitedBodies: CollisionObject[] = [];
 
-	override get _monitoring(): boolean {
-		return true;
-	}
-
-	override _onBodyEntered(body: CollisionObject): void {
+	override onBodyEntered(body: CollisionObject): void {
 		this.enteredBodies.push(body);
 	}
 
-	override _onBodyExited(body: CollisionObject): void {
+	override onBodyExited(body: CollisionObject): void {
 		this.exitedBodies.push(body);
 	}
 }
@@ -178,19 +175,65 @@ describe("CollisionObject", () => {
 		});
 	});
 
-	describe("_monitoring default", () => {
+	describe("monitoring default", () => {
 		it("returns false on base CollisionObject", () => {
 			const body = new TestBody("actor");
-			expect(body._monitoring).toBe(false);
+			expect(body.monitoring).toBe(false);
 		});
 	});
 
-	describe("_onBodyEntered / _onBodyExited", () => {
-		it("no-op on base class (does not throw)", () => {
+	describe("onBodyEntered / onBodyExited (virtual methods)", () => {
+		it("emits bodyEntered signal on base class", () => {
 			const body = new TestBody("actor");
 			const other = new TestBody("actor");
-			expect(() => body._onBodyEntered(other)).not.toThrow();
-			expect(() => body._onBodyExited(other)).not.toThrow();
+			const entered: CollisionObject[] = [];
+			body.bodyEntered.connect((b) => entered.push(b));
+			body.onBodyEntered(other);
+			expect(entered).toHaveLength(1);
+			expect(entered[0]).toBe(other);
+		});
+
+		it("emits bodyExited signal on base class", () => {
+			const body = new TestBody("actor");
+			const other = new TestBody("actor");
+			const exited: CollisionObject[] = [];
+			body.bodyExited.connect((b) => exited.push(b));
+			body.onBodyExited(other);
+			expect(exited).toHaveLength(1);
+			expect(exited[0]).toBe(other);
+		});
+
+		it("overriding without super suppresses signal", () => {
+			class SilentBody extends CollisionObject {
+				readonly bodyType: BodyType = "actor";
+				override onBodyEntered(_body: CollisionObject): void {
+					// Don't call super — signal should not fire
+				}
+			}
+			const body = new SilentBody();
+			const other = new TestBody("actor");
+			const entered: CollisionObject[] = [];
+			body.bodyEntered.connect((b) => entered.push(b));
+			body.onBodyEntered(other);
+			expect(entered).toHaveLength(0);
+		});
+
+		it("overriding with super fires both override and signal", () => {
+			class CustomBody extends CollisionObject {
+				readonly bodyType: BodyType = "actor";
+				customCalled = false;
+				override onBodyEntered(body: CollisionObject): void {
+					this.customCalled = true;
+					super.onBodyEntered(body);
+				}
+			}
+			const body = new CustomBody();
+			const other = new TestBody("actor");
+			const entered: CollisionObject[] = [];
+			body.bodyEntered.connect((b) => entered.push(b));
+			body.onBodyEntered(other);
+			expect(body.customCalled).toBe(true);
+			expect(entered).toHaveLength(1);
 		});
 	});
 

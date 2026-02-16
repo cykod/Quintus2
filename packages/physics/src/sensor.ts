@@ -6,16 +6,10 @@ export class Sensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
 
 	/**
-	 * Whether this sensor detects other bodies overlapping it.
+	 * Sensors default to monitoring = true (override base class default of false).
 	 * When false, entered/exited signals don't fire.
 	 */
-	monitoring = true;
-
-	/** Emitted when an Actor or StaticCollider enters this sensor's area. */
-	readonly bodyEntered: Signal<CollisionObject> = signal<CollisionObject>();
-
-	/** Emitted when an Actor or StaticCollider exits this sensor's area. */
-	readonly bodyExited: Signal<CollisionObject> = signal<CollisionObject>();
+	override monitoring = true;
 
 	/** Emitted when another Sensor enters this sensor's area. */
 	readonly sensorEntered: Signal<Sensor> = signal<Sensor>();
@@ -36,30 +30,28 @@ export class Sensor extends CollisionObject {
 		};
 	}
 
-	override get _monitoring(): boolean {
-		return this.monitoring;
-	}
-
-	override _onBodyEntered(body: CollisionObject): void {
+	override onBodyEntered(body: CollisionObject): void {
+		super.onBodyEntered(body); // always emit bodyEntered
 		if (body.bodyType === "sensor") {
-			this.sensorEntered.emit(body as Sensor);
-		} else {
-			this.bodyEntered.emit(body);
+			this.onSensorEntered(body as Sensor);
 		}
 	}
 
-	override _onBodyExited(body: CollisionObject): void {
+	override onBodyExited(body: CollisionObject): void {
+		super.onBodyExited(body); // always emit bodyExited
 		if (body.bodyType === "sensor") {
-			this.sensorExited.emit(body as Sensor);
-		} else {
-			this.bodyExited.emit(body);
+			this.onSensorExited(body as Sensor);
 		}
 	}
 
-	/** Get all Actors and StaticColliders currently overlapping this sensor. */
-	getOverlappingBodies(): CollisionObject[] {
-		const world = this._getWorld();
-		return world ? world.getOverlappingBodies(this) : [];
+	/** Override for sensor-specific self-handling. Default emits sensorEntered signal. */
+	onSensorEntered(sensor: Sensor): void {
+		this.sensorEntered.emit(sensor);
+	}
+
+	/** Override for sensor-specific self-handling. Default emits sensorExited signal. */
+	onSensorExited(sensor: Sensor): void {
+		this.sensorExited.emit(sensor);
 	}
 
 	/** Get all other Sensors currently overlapping this sensor. */
@@ -69,8 +61,6 @@ export class Sensor extends CollisionObject {
 	}
 
 	override onDestroy(): void {
-		this.bodyEntered.disconnectAll();
-		this.bodyExited.disconnectAll();
 		this.sensorEntered.disconnectAll();
 		this.sensorExited.disconnectAll();
 		super.onDestroy();

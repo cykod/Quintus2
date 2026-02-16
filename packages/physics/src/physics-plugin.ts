@@ -40,9 +40,9 @@ export function PhysicsPlugin(config: PhysicsPluginConfig = {}): Plugin {
 			const world = new PhysicsWorld({ gravity, groups, cellSize: config.cellSize });
 			worldMap.set(game, world);
 
-			// Hook into postFixedUpdate for sensor detection
+			// Hook into postFixedUpdate for overlap monitoring (sensors + monitored bodies + onCollision callbacks)
 			game.postFixedUpdate.connect(() => {
-				world.stepSensors();
+				world.stepMonitoring();
 			});
 		},
 	});
