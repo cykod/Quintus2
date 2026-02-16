@@ -1,3 +1,13 @@
+## Fix stderr warnings in game error-handling tests
+*Monday, February 16th at 2pm*
+Added game.stop() calls to two error-handling tests in game.test.ts that were 
+leaving the rAF loop running after assertions. The pending 
+requestAnimationFrame callbacks would fire after the test completed (and after 
+console.error spy was restored), producing spurious stderr output in the test 
+runner. All 1196 tests continue to pass, now with zero warnings.
+
+---
+
 ## Add quintus meta-package bundling all 10 engine packages
 *Monday, February 16th at 1pm*
 Create the quintus npm meta-package (Phase 6, Step 1) that re-exports all 10 

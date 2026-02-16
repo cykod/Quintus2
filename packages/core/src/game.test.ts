@@ -144,6 +144,7 @@ describe("Game", () => {
 		}
 		game.start(TestScene);
 		game.step();
+		game.stop();
 		expect(errorHandler).toHaveBeenCalled();
 		expect(errorHandler.mock.calls[0]?.[0].lifecycle).toBe("onUpdate");
 	});
@@ -163,6 +164,7 @@ describe("Game", () => {
 		}
 		game.start(TestScene);
 		game.step();
+		game.stop();
 		expect(errorSpy).toHaveBeenCalled();
 		errorSpy.mockRestore();
 	});
