@@ -31,6 +31,10 @@ export interface DebugBridge {
 	peekEvents(filter?: EventFilter): DebugEvent[];
 	clearEvents(): void;
 	log(category: string, message: string, data?: Record<string, unknown>): void;
+	/** Dispatch a pointer click at game-space coordinates. */
+	click(x: number, y: number): boolean;
+	/** Find and click a UI button by node name or text label. */
+	clickButton(nameOrText: string): boolean;
 }
 
 export interface DebugFormatters {
@@ -173,14 +177,95 @@ export function installDebugBridge(game: Game): DebugBridge {
 		log(category: string, message: string, data?: Record<string, unknown>) {
 			game.debugLog.write({ category, message, data }, game.fixedFrame, game.elapsed);
 		},
+
+		click(x: number, y: number): boolean {
+			const scene = game.currentScene;
+			if (!scene) return false;
+			const nodes = collectClickableNodes(scene);
+
+			// Find topmost interactive node at (x, y)
+			let target: ClickableNode | null = null;
+			let bestZ = -Infinity;
+			for (const node of nodes) {
+				if (node.containsPoint(x, y) && node.zIndex >= bestZ) {
+					target = node;
+					bestZ = node.zIndex;
+				}
+			}
+
+			if (target) {
+				target._onPointerDown(x, y);
+				target._onPointerUp(x, y);
+				return true;
+			}
+			return false;
+		},
+
+		clickButton(nameOrText: string): boolean {
+			const scene = game.currentScene;
+			if (!scene) return false;
+			const nodes = collectClickableNodes(scene);
+
+			for (const node of nodes) {
+				const textProp = (node as unknown as { text?: string }).text;
+				if (node.name === nameOrText || textProp === nameOrText) {
+					const gp = node.globalPosition;
+					const cx = gp.x + node.width / 2;
+					const cy = gp.y + node.height / 2;
+					node._onPointerDown(cx, cy);
+					node._onPointerUp(cx, cy);
+					return true;
+				}
+			}
+			return false;
+		},
 	};
 
 	if (typeof window !== "undefined") {
 		window.__quintusDebug = bridge;
 		window.__quintusFormatters = { formatTree, formatEvents };
+		// Expose game for debugging (debug mode only)
+		(window as unknown as Record<string, unknown>).__quintusGame = game;
 	}
 
 	return bridge;
+}
+
+/** Duck-typed interface for UINode-like nodes that support pointer dispatch. */
+interface ClickableNode extends Node {
+	interactive: boolean;
+	visible: boolean;
+	width: number;
+	height: number;
+	zIndex: number;
+	globalPosition: { x: number; y: number };
+	containsPoint(x: number, y: number): boolean;
+	_onPointerDown(x: number, y: number): void;
+	_onPointerUp(x: number, y: number): void;
+}
+
+function isClickable(node: Node): node is ClickableNode {
+	const n = node as unknown as Record<string, unknown>;
+	return (
+		typeof n.interactive === "boolean" &&
+		n.interactive === true &&
+		typeof n.visible === "boolean" &&
+		n.visible === true &&
+		typeof n.containsPoint === "function" &&
+		typeof n._onPointerDown === "function" &&
+		typeof n._onPointerUp === "function"
+	);
+}
+
+function collectClickableNodes(root: Node): ClickableNode[] {
+	const nodes: ClickableNode[] = [];
+	walkClickable(root, nodes);
+	return nodes;
+}
+
+function walkClickable(node: Node, out: ClickableNode[]): void {
+	if (isClickable(node)) out.push(node);
+	for (const child of node.children) walkClickable(child, out);
 }
 
 /** Walk the tree to find a node by numeric id. */

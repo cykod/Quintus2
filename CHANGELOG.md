@@ -1,3 +1,15 @@
+## Add complete platformer game and fix bidirectional onContact dispatch
+*Monday, February 16th at 4pm*
+Implements the Phase 6 complete platformer with title screen, two levels, 
+enemies, coins, HUD, and game-over/victory scenes. Fixes three engine bugs 
+discovered during gameplay testing: onContact callbacks now fire 
+bidirectionally (when either body is the mover), the depenetration path in 
+Actor.move() now emits onCollided signals for overlapping bodies, and patrol 
+enemies use edge detection to stay on one-way platforms. Also adds 
+click/clickButton commands to the debug bridge for UI testing.
+
+---
+
 ## Fix stderr warnings in game error-handling tests
 *Monday, February 16th at 2pm*
 Added game.stop() calls to two error-handling tests in game.test.ts that were 

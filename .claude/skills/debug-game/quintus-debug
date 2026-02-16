@@ -34,24 +34,44 @@ need_bridge() {
 # ── Commands ─────────────────────────────────────────────────────────────────
 
 cmd_connect() {
-	local demo="${1:-platformer-demo}"
-	local port=3050
-	local url="http://localhost:${port}/${demo}.html?debug"
+	local demo="${1:-platformer}"
+	local url=""
 
-	echo "Starting dev server if needed..."
-	if ! curl -s "http://localhost:${port}" >/dev/null 2>&1; then
-		echo "Dev server not running. Starting pnpm dev in background..."
-		(cd "$(git rev-parse --show-toplevel)" && pnpm dev &>/dev/null &)
-		for i in $(seq 1 30); do
-			if curl -s "http://localhost:${port}" >/dev/null 2>&1; then break; fi
-			sleep 0.5
-		done
-		if ! curl -s "http://localhost:${port}" >/dev/null 2>&1; then
-			die "Dev server failed to start after 15 seconds"
+	# If the argument looks like a URL, use it directly
+	if [[ "$demo" == http* ]]; then
+		url="$demo"
+		# Append ?debug if not already present
+		if [[ "$url" != *"debug"* ]]; then
+			if [[ "$url" == *"?"* ]]; then url="${url}&debug"; else url="${url}?debug"; fi
 		fi
-		echo "Dev server ready."
 	else
-		echo "Dev server already running."
+		# Auto-detect Vite dev server port (try 3050-3055)
+		local port=""
+		for p in 3050 3051 3052 3053 3054 3055; do
+			if curl -s "http://localhost:${p}" >/dev/null 2>&1; then
+				port=$p
+				break
+			fi
+		done
+
+		echo "Starting dev server if needed..."
+		if [ -z "$port" ]; then
+			echo "Dev server not running. Starting pnpm dev in background..."
+			(cd "$(git rev-parse --show-toplevel)" && pnpm dev &>/dev/null &)
+			for i in $(seq 1 30); do
+				for p in 3050 3051 3052 3053 3054 3055; do
+					if curl -s "http://localhost:${p}" >/dev/null 2>&1; then port=$p; break 2; fi
+				done
+				sleep 0.5
+			done
+			if [ -z "$port" ]; then
+				die "Dev server failed to start after 15 seconds"
+			fi
+			echo "Dev server ready on port ${port}."
+		else
+			echo "Dev server already running on port ${port}."
+		fi
+		url="http://localhost:${port}/${demo}/?debug"
 	fi
 
 	echo "Opening browser at ${url}..."
@@ -227,6 +247,27 @@ cmd_tap() {
 		var d = window.__quintusDebug;
 		d.pressAndStep('${action}', ${frames});
 		return 'Tapped ${action} for ${frames} frame(s). Now at frame ' + d.frame;
+	"
+}
+
+cmd_click() {
+	local x="${1:?Usage: quintus-debug click <x> <y>}"
+	local y="${2:?Usage: quintus-debug click <x> <y>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var hit = d.click(${x}, ${y});
+		return hit ? 'Clicked at (${x}, ${y})' : 'No interactive node at (${x}, ${y})';
+	"
+}
+
+cmd_click_button() {
+	local name="${1:?Usage: quintus-debug click-button <name|text>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var found = d.clickButton('${name}');
+		return found ? 'Clicked button: ${name}' : 'Button not found: ${name}';
 	"
 }
 
@@ -546,6 +587,8 @@ case "$cmd" in
 	release)      cmd_release "$@" ;;
 	release-all)  cmd_release_all ;;
 	tap)          cmd_tap "$@" ;;
+	click)        cmd_click "$@" ;;
+	click-button) cmd_click_button "$@" ;;
 	run)          cmd_run "$@" ;;
 	events)       cmd_events "$@" ;;
 	peek)         cmd_peek "$@" ;;
@@ -581,6 +624,8 @@ case "$cmd" in
 		echo "  release <action>      Release an action"
 		echo "  release-all           Release all held actions"
 		echo "  tap <action> [N]      Press, step N frames, release"
+		echo "  click <x> <y>         Click at game-space coordinates"
+		echo "  click-button <text>   Click a UI button by name or text label"
 		echo ""
 		echo "Movement:"
 		echo "  move-to <node> <actions> <x> <y> [--max=N]"

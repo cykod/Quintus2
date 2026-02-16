@@ -161,6 +161,22 @@ quintus-debug tap jump 1       # single-frame jump input
 quintus-debug tap move_right 30 # hold right for 30 frames
 ```
 
+### `click <x> <y>`
+Dispatch a pointer click at game-space coordinates (x, y). Finds the topmost interactive UI node at that position and triggers its pointer down/up handlers.
+
+```bash
+quintus-debug click 160 186    # click at game coordinates (160, 186)
+```
+
+### `click-button <name|text>`
+Find a UI button by its node name or text label and click it programmatically. Much more reliable than coordinate-based clicking.
+
+```bash
+quintus-debug click-button Start     # click button with text "Start"
+quintus-debug click-button PlayBtn   # click button with name "PlayBtn"
+quintus-debug click-button "Retry"   # click button with text "Retry"
+```
+
 ---
 
 ## Movement

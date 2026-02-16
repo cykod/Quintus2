@@ -103,8 +103,23 @@ export class PhysicsWorld {
 			if (collided) {
 				const conn = collided.connect((info: CollisionInfo) => {
 					for (const reg of this.contactRegistrations) {
+						// Forward match: mover is groupA, collider is groupB
 						if (body.collisionGroup === reg.groupA && info.collider.collisionGroup === reg.groupB) {
 							reg.callback(body, info.collider, info);
+						}
+						// Reverse match: mover is groupB, collider is groupA
+						// This handles when B moves into A (e.g. enemy walks into stationary player)
+						else if (
+							body.collisionGroup === reg.groupB &&
+							info.collider.collisionGroup === reg.groupA
+						) {
+							// Flip normal so it points into groupA (the first callback arg) as expected
+							const flipped: CollisionInfo = {
+								...info,
+								normal: new Vec2(-info.normal.x, -info.normal.y),
+								collider: body,
+							};
+							reg.callback(info.collider, body, flipped);
 						}
 					}
 				});

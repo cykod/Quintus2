@@ -984,6 +984,48 @@ describe("Integration: physics full-loop", () => {
 			game.step();
 			expect(count).toBe(countAfterFirst);
 		});
+
+		it("fires callback when enemy (groupB) moves into stationary player (groupA)", () => {
+			const game = createGame({
+				collisionGroups: {
+					player: { collidesWith: ["enemies"] },
+					enemies: { collidesWith: ["player"] },
+				},
+			});
+
+			// Player is stationary but solid (so enemy's castMotion can detect it)
+			const player = makeActor(VelocityActor, new Vec2(50, 0)) as VelocityActor;
+			player.applyGravity = false;
+			player.collisionGroup = "player";
+			player.solid = true;
+			player.targetVelocity = new Vec2(0, 0);
+
+			// Enemy moves towards player
+			const enemy = makeActor(VelocityActor, new Vec2(0, 0)) as VelocityActor;
+			enemy.applyGravity = false;
+			enemy.collisionGroup = "enemies";
+			enemy.solid = true;
+			enemy.targetVelocity = new Vec2(200, 0);
+
+			startScene(game, [player, enemy]);
+
+			const contacts: Array<{ a: CollisionObject; b: CollisionObject; info: CollisionInfo }> = [];
+			game.physics.onContact("player", "enemies", (a, b, info) => {
+				contacts.push({ a, b, info });
+			});
+
+			for (let i = 0; i < 30; i++) {
+				game.step();
+				if (contacts.length > 0) break;
+			}
+
+			expect(contacts.length).toBeGreaterThanOrEqual(1);
+			// Callback args should be (player, enemy) even though enemy was the mover
+			expect(contacts[0]!.a).toBe(player);
+			expect(contacts[0]!.b).toBe(enemy);
+			// Normal should point into groupA (player), i.e. towards +x since enemy approaches from left
+			expect(contacts[0]!.info.normal.x).toBeGreaterThan(0);
+		});
 	});
 
 	describe("game.physics accessor", () => {

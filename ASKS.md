@@ -181,3 +181,11 @@
 [IMPL] mon 2/16 1pm - Implement Phase 6 Step 2: update CLAUDE.md to mark Phase 5 done, update Phase 6 status, and verify build/test/lint
 
 [MILE] mon 2/16 2pm - Fixed stderr warnings in game error-handling tests by stopping rAF loop after assertions
+
+[IMPL] mon 2/16 2pm - Implement the complete platformer game from Phase 6 design - entities, scenes, HUD, audio, and full game loop
+
+[DSGN] mon 2/16 3pm - Design scene query API for actors — raycasting, edge detection, overlap queries, pathfinding
+
+[DEVL] mon 2/16 3pm - Review QUERY_API.md for potential issues and risks
+
+[IMPL] mon 2/16 4pm - Implement scene query API — raycasting, point/area queries, shape cast, actor convenience methods, and tilemap DDA raycast

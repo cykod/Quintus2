@@ -199,8 +199,28 @@ export class Actor extends CollisionObject {
 
 			// Depenetration: toi=0 means shapes already overlap
 			if (collision.travel.lengthSquared() < EPSILON_SQ && collision.depth > 0) {
-				totalDx += collision.normal.x * collision.depth;
-				totalDy += collision.normal.y * collision.depth;
+				const dnx = collision.normal.x;
+				const dny = collision.normal.y;
+				totalDx += dnx * collision.depth;
+				totalDy += dny * collision.depth;
+
+				// Fire contact signal so onContact callbacks work for depenetration too
+				this._slideCollisions.push(collision);
+				this.onCollided(collision);
+
+				// Debug instrumentation
+				const dGame = this.game;
+				if (dGame?.debug) {
+					dGame.debugLog.write(
+						{
+							category: "physics",
+							message: `${this.constructor.name}#${this.id} collision normal=(${dnx.toFixed(2)},${dny.toFixed(2)}) with=${collision.collider.constructor.name}#${collision.collider.id}`,
+							data: { normal: { x: dnx, y: dny }, depth: collision.depth },
+						},
+						dGame.fixedFrame,
+						dGame.elapsed,
+					);
+				}
 				continue;
 			}
 
