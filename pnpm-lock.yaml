@@ -121,6 +121,39 @@ importers:
         specifier: workspace:*
         version: link:../math
 
+  packages/quintus:
+    dependencies:
+      '@quintus/audio':
+        specifier: workspace:*
+        version: link:../audio
+      '@quintus/camera':
+        specifier: workspace:*
+        version: link:../camera
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/input':
+        specifier: workspace:*
+        version: link:../input
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
+      '@quintus/physics':
+        specifier: workspace:*
+        version: link:../physics
+      '@quintus/sprites':
+        specifier: workspace:*
+        version: link:../sprites
+      '@quintus/tilemap':
+        specifier: workspace:*
+        version: link:../tilemap
+      '@quintus/tween':
+        specifier: workspace:*
+        version: link:../tween
+      '@quintus/ui':
+        specifier: workspace:*
+        version: link:../ui
+
   packages/quintus-core: {}
 
   packages/snapshot: {}

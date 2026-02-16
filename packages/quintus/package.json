@@ -1,0 +1,50 @@
+{
+	"name": "quintus",
+	"version": "2.0.0-alpha.1",
+	"description": "Quintus 2.0 — modern HTML5 game engine with Godot-inspired Node/Scene Tree",
+	"type": "module",
+	"sideEffects": true,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch"
+	},
+	"keywords": [
+		"game-engine",
+		"quintus",
+		"html5",
+		"2d",
+		"typescript",
+		"scene-tree"
+	],
+	"dependencies": {
+		"@quintus/math": "workspace:*",
+		"@quintus/core": "workspace:*",
+		"@quintus/physics": "workspace:*",
+		"@quintus/sprites": "workspace:*",
+		"@quintus/input": "workspace:*",
+		"@quintus/tilemap": "workspace:*",
+		"@quintus/camera": "workspace:*",
+		"@quintus/tween": "workspace:*",
+		"@quintus/audio": "workspace:*",
+		"@quintus/ui": "workspace:*"
+	},
+	"license": "SEE LICENSE IN LICENSE.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/cykod/Quintus",
+		"directory": "packages/quintus"
+	}
+}

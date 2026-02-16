@@ -1,3 +1,15 @@
+## Add quintus meta-package bundling all 10 engine packages
+*Monday, February 16th at 1pm*
+Create the quintus npm meta-package (Phase 6, Step 1) that re-exports all 10 
+@quintus/* packages via a single entry point. The package uses sideEffects: 
+true to ensure module augmentations (game.physics, game.input, game.audio, 
+node.tween()) aren't tree-shaken. Includes 14 tests verifying all major classes 
+are accessible and all augmentations work correctly. Zero export name conflicts 
+across all packages. Gzipped barrel is 153 bytes; actual code bundled at 
+consume-time from dependencies.
+
+---
+
 ## Copy platformer to basic_platformer before Phase 6 rewrite
 *Monday, February 16th at 1pm*
 Copied the existing Phase 2 platformer example to examples/basic_platformer/ to 
