@@ -163,8 +163,8 @@ game.start(Level1);
 | 2 | Physics (Actor, StaticCollider, Sensor, SAT, move) | Done |
 | 3 | Sprites & Input (AnimatedSprite, action map, gamepad) | Done |
 | 4 | Tilemap & Camera (Tiled import, follow, shake, zoom) | Done |
-| 5 | Audio, Tween, UI (sounds, animations, HUD widgets) | — |
-| 6 | Meta-package & first complete platformer game | — |
+| 5 | Audio, Tween, UI (sounds, animations, HUD widgets) | Done |
+| 6 | Meta-package & first complete platformer game | In Progress |
 | 7 | Deterministic testing (headless, input scripts, snapshots) | — |
 | 8 | Debug CLI & AI Skills (Playwright-based debugging) | — |
 | 9 | AI prefabs & example games | — |

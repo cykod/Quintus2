@@ -1,5 +1,5 @@
-import { Matrix2D, Vec2 } from "@quintus/math";
-import { describe, expect, it, vi } from "vitest";
+import { Vec2 } from "@quintus/math";
+import { describe, expect, it } from "vitest";
 import { CollisionGroups } from "./collision-groups.js";
 import { type BodyType, CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";

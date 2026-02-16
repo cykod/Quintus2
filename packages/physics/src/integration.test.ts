@@ -706,8 +706,12 @@ describe("Integration: physics full-loop", () => {
 			game.physics.onOverlap(
 				"a",
 				"b",
-				() => { enterCount++; },
-				() => { exitCount++; },
+				() => {
+					enterCount++;
+				},
+				() => {
+					exitCount++;
+				},
 			);
 
 			game.step(); // Overlap starts

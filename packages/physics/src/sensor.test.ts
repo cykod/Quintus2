@@ -1,6 +1,6 @@
 import { Game, Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Actor } from "./actor.js";
 import type { CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";

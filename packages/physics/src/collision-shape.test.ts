@@ -1,5 +1,5 @@
 import { Node2D } from "@quintus/core";
-import { AABB, Matrix2D, Vec2 } from "@quintus/math";
+import { Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";
 import { CollisionShape } from "./collision-shape.js";
 import { Shape, type Shape2D } from "./shapes.js";

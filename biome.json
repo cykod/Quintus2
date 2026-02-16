@@ -40,7 +40,10 @@
 			"!**/old",
 			"!**/old/**/*.json",
 			"!**/.claude",
-			"!**/coverage"
+			"!**/coverage",
+			"!docs/api",
+			"!examples/platformer/assets/*.json",
+			"!examples/platformer/tools"
 		]
 	}
 }

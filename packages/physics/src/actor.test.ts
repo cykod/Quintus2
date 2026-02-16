@@ -96,7 +96,7 @@ describe("Actor", () => {
 			expect(actor.isOnFloor()).toBe(true);
 
 			// Second move: on floor, gravity should snap to small constant
-			const velBefore = actor.velocity.y;
+			const _velBefore = actor.velocity.y;
 			actor.move(0.1);
 			// velocity.y should be small (floor snap gravity), not accumulating
 			expect(actor.velocity.y).toBeLessThan(10);
@@ -374,12 +374,14 @@ describe("Actor", () => {
 			actor2.collisionGroup = "enemies";
 
 			const game = createGame();
-			game.use(PhysicsPlugin({
-				collisionGroups: {
-					player: { collidesWith: ["enemies"] },
-					enemies: { collidesWith: [] as string[] },
-				},
-			}));
+			game.use(
+				PhysicsPlugin({
+					collisionGroups: {
+						player: { collidesWith: ["enemies"] },
+						enemies: { collidesWith: [] as string[] },
+					},
+				}),
+			);
 			class TestScene extends Scene {
 				onReady() {
 					this.addChild(actor1);
