@@ -21,7 +21,14 @@ export type { PhysicsPluginConfig } from "./physics-plugin.js";
 export { getPhysicsWorld, PhysicsPlugin } from "./physics-plugin.js";
 // Physics world
 export type { PhysicsWorldConfig } from "./physics-world.js";
-export { PhysicsWorld } from "./physics-world.js";
+export { findShapePairTOI, PhysicsWorld } from "./physics-world.js";
+// Query filter
+export { matchesQuery } from "./query-filter.js";
+// Query types
+export type { QueryOptions, RaycastHit, ShapeCastHit } from "./query-types.js";
+// Ray intersection
+export type { RayShapeHit } from "./ray.js";
+export { pointInShape, rayIntersectShape } from "./ray.js";
 // SAT collision detection
 export type { SATResult } from "./sat.js";
 export { findTOI, flip, sweptAABB, testOverlap } from "./sat.js";

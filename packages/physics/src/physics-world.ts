@@ -4,8 +4,12 @@ import { CollisionGroups } from "./collision-groups.js";
 import type { CollisionInfo } from "./collision-info.js";
 import type { CollisionObject } from "./collision-object.js";
 import { computeContactPoint } from "./contact-point.js";
+import { matchesQuery } from "./query-filter.js";
+import type { QueryOptions, RaycastHit, ShapeCastHit } from "./query-types.js";
+import { pointInShape, rayIntersectShape } from "./ray.js";
 import { findTOI, sweptAABB, testOverlap } from "./sat.js";
 import type { RectShape, Shape2D } from "./shapes.js";
+import { shapeAABB } from "./shapes.js";
 import { SpatialHash } from "./spatial-hash.js";
 
 export interface PhysicsWorldConfig {
@@ -29,6 +33,60 @@ interface ContactRegistration {
 	groupA: string;
 	groupB: string;
 	callback: (bodyA: CollisionObject, bodyB: CollisionObject, info: CollisionInfo) => void;
+}
+
+/**
+ * Find TOI for a single shape pair. Uses sweptAABB fast path for
+ * axis-aligned rect-vs-rect, binary search SAT otherwise.
+ * Normal convention: points away from the collider (obstacle) into the mover.
+ */
+export function findShapePairTOI(
+	bodyShape: Shape2D,
+	bodyTransform: Matrix2D,
+	motion: Vec2,
+	otherShape: Shape2D,
+	otherTransform: Matrix2D,
+): { toi: number; normal: Vec2; depth: number } | null {
+	// Fast path: axis-aligned rect vs rect
+	if (
+		bodyShape.type === "rect" &&
+		otherShape.type === "rect" &&
+		bodyTransform.isTranslationOnly() &&
+		otherTransform.isTranslationOnly()
+	) {
+		const result = sweptAABB(
+			bodyShape as RectShape,
+			bodyTransform,
+			motion,
+			otherShape as RectShape,
+			otherTransform,
+		);
+		if (!result) return null;
+		// sweptAABB normal points from mover toward obstacle — flip for our convention
+		// (normal should point away from collider into mover)
+		const normal = result.normal.negate();
+		// Estimate depth from SAT at collision point
+		const hitTransform = new Matrix2D(
+			bodyTransform.a,
+			bodyTransform.b,
+			bodyTransform.c,
+			bodyTransform.d,
+			bodyTransform.e + motion.x * result.toi,
+			bodyTransform.f + motion.y * result.toi,
+		);
+		const satResult = testOverlap(bodyShape, hitTransform, otherShape, otherTransform);
+		return { toi: result.toi, normal, depth: satResult?.depth ?? 0 };
+	}
+
+	// General case: binary search TOI with SAT
+	const result = findTOI(bodyShape, bodyTransform, motion, otherShape, otherTransform);
+	if (!result) return null;
+
+	// SAT normal points from A (body) toward B (other).
+	// Our convention: normal points away from collider (B) into mover (A).
+	// So we need to negate it.
+	const normal = result.result.normal.negate();
+	return { toi: result.toi, normal, depth: result.result.depth };
 }
 
 export class PhysicsWorld {
@@ -630,6 +688,295 @@ export class PhysicsWorld {
 		return Array.from(overlaps).filter((b) => b.bodyType === "sensor");
 	}
 
+	// === Scene Query API ===
+
+	/**
+	 * Cast a ray and return the first hit, or null.
+	 * Direction is automatically normalized.
+	 */
+	raycast(
+		origin: Vec2,
+		direction: Vec2,
+		maxDistance = 10000,
+		options?: QueryOptions,
+	): RaycastHit | null {
+		const hits = this._raycastInternal(origin, direction, maxDistance, options, true);
+		return hits[0] ?? null;
+	}
+
+	/**
+	 * Cast a ray and return ALL hits, sorted by distance (nearest first).
+	 * Direction is automatically normalized.
+	 */
+	raycastAll(
+		origin: Vec2,
+		direction: Vec2,
+		maxDistance = 10000,
+		options?: QueryOptions,
+	): RaycastHit[] {
+		return this._raycastInternal(origin, direction, maxDistance, options, false);
+	}
+
+	/**
+	 * Find all bodies containing a world-space point.
+	 */
+	queryPoint(point: Vec2, options?: QueryOptions): CollisionObject[] {
+		// Use a tiny AABB around the point for broad phase
+		const tiny = new AABB(
+			new Vec2(point.x - 0.5, point.y - 0.5),
+			new Vec2(point.x + 0.5, point.y + 0.5),
+		);
+		const candidates = this.hash.query(tiny);
+		const results: CollisionObject[] = [];
+
+		for (const body of candidates) {
+			if (!matchesQuery(body, options)) continue;
+			if (options?.maxResults && results.length >= options.maxResults) break;
+
+			const shapes = body.getShapeTransforms();
+			for (const { shape, transform } of shapes) {
+				if (pointInShape(point, shape, transform)) {
+					results.push(body);
+					break;
+				}
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Find all bodies overlapping an axis-aligned rectangle.
+	 */
+	queryRect(aabb: AABB, options?: QueryOptions): CollisionObject[] {
+		const candidates = this.hash.query(aabb);
+		const results: CollisionObject[] = [];
+		const queryShape: Shape2D = {
+			type: "rect",
+			width: aabb.max.x - aabb.min.x,
+			height: aabb.max.y - aabb.min.y,
+		};
+		const queryTransform = Matrix2D.translate(
+			(aabb.min.x + aabb.max.x) / 2,
+			(aabb.min.y + aabb.max.y) / 2,
+		);
+
+		for (const body of candidates) {
+			if (!matchesQuery(body, options)) continue;
+			if (options?.maxResults && results.length >= options.maxResults) break;
+
+			const shapes = body.getShapeTransforms();
+			for (const { shape, transform } of shapes) {
+				if (testOverlap(queryShape, queryTransform, shape, transform)) {
+					results.push(body);
+					break;
+				}
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Find all bodies overlapping a circle.
+	 */
+	queryCircle(center: Vec2, radius: number, options?: QueryOptions): CollisionObject[] {
+		const queryAABB = new AABB(
+			new Vec2(center.x - radius, center.y - radius),
+			new Vec2(center.x + radius, center.y + radius),
+		);
+		const candidates = this.hash.query(queryAABB);
+		const results: CollisionObject[] = [];
+		const queryShape: Shape2D = { type: "circle", radius };
+		const queryTransform = Matrix2D.translate(center.x, center.y);
+
+		for (const body of candidates) {
+			if (!matchesQuery(body, options)) continue;
+			if (options?.maxResults && results.length >= options.maxResults) break;
+
+			const shapes = body.getShapeTransforms();
+			for (const { shape, transform } of shapes) {
+				if (testOverlap(queryShape, queryTransform, shape, transform)) {
+					results.push(body);
+					break;
+				}
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Find all bodies overlapping an arbitrary shape at a given transform.
+	 */
+	queryShape(shape: Shape2D, transform: Matrix2D, options?: QueryOptions): CollisionObject[] {
+		const queryAABB = shapeAABB(shape, transform);
+		const candidates = this.hash.query(queryAABB);
+		const results: CollisionObject[] = [];
+
+		for (const body of candidates) {
+			if (!matchesQuery(body, options)) continue;
+			if (options?.maxResults && results.length >= options.maxResults) break;
+
+			const shapes = body.getShapeTransforms();
+			for (const { shape: bodyShape, transform: bodyTransform } of shapes) {
+				if (testOverlap(shape, transform, bodyShape, bodyTransform)) {
+					results.push(body);
+					break;
+				}
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Sweep a shape along a motion vector. Returns the first hit, or null.
+	 * Like castMotion() but doesn't require a registered body.
+	 */
+	shapeCast(
+		shape: Shape2D,
+		transform: Matrix2D,
+		motion: Vec2,
+		options?: QueryOptions,
+	): ShapeCastHit | null {
+		const queryAABB = shapeAABB(shape, transform);
+		const sweptMin = new Vec2(
+			Math.min(queryAABB.min.x, queryAABB.min.x + motion.x),
+			Math.min(queryAABB.min.y, queryAABB.min.y + motion.y),
+		);
+		const sweptMax = new Vec2(
+			Math.max(queryAABB.max.x, queryAABB.max.x + motion.x),
+			Math.max(queryAABB.max.y, queryAABB.max.y + motion.y),
+		);
+		const sweptRegion = new AABB(sweptMin, sweptMax);
+		const candidates = this.hash.query(sweptRegion);
+
+		let bestTOI = Infinity;
+		let bestNormal: Vec2 | null = null;
+		let bestDepth = 0;
+		let bestCollider: CollisionObject | null = null;
+		let bestColliderShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
+
+		for (const candidate of candidates) {
+			if (!matchesQuery(candidate, options)) continue;
+			const candidateShapes = candidate.getShapeTransforms();
+
+			for (const candidateShapeInfo of candidateShapes) {
+				const hit = findShapePairTOI(
+					shape,
+					transform,
+					motion,
+					candidateShapeInfo.shape,
+					candidateShapeInfo.transform,
+				);
+
+				if (hit && hit.toi < bestTOI) {
+					bestTOI = hit.toi;
+					bestNormal = hit.normal;
+					bestDepth = hit.depth;
+					bestCollider = candidate;
+					bestColliderShapeData = candidateShapeInfo;
+				}
+			}
+		}
+
+		if (!bestCollider || !bestNormal || !bestColliderShapeData) return null;
+
+		const travel = new Vec2(motion.x * bestTOI, motion.y * bestTOI);
+		const remainder = new Vec2(motion.x - travel.x, motion.y - travel.y);
+
+		// Find the CollisionShape node that matched
+		const colliderShapes = bestCollider.getShapes();
+		const matchedShape = bestColliderShapeData.shape;
+		const colliderShapeNode = colliderShapes.find((s) => s.shape === matchedShape);
+		if (!colliderShapeNode) return null;
+
+		const bodyTransformAtHit = this._translateTransform(transform, travel);
+		const point = computeContactPoint(
+			shape,
+			bodyTransformAtHit,
+			bestColliderShapeData.shape,
+			bestColliderShapeData.transform,
+			bestNormal,
+		);
+
+		return {
+			collider: bestCollider,
+			colliderShape: colliderShapeNode,
+			normal: bestNormal,
+			depth: bestDepth,
+			point,
+			travel,
+			remainder,
+		};
+	}
+
+	/** Internal raycast implementation shared by raycast() and raycastAll(). */
+	private _raycastInternal(
+		origin: Vec2,
+		direction: Vec2,
+		maxDistance: number,
+		options: QueryOptions | undefined,
+		firstOnly: boolean,
+	): RaycastHit[] {
+		// Normalize direction
+		const len = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
+		if (len < 1e-10) return [];
+		const dirX = direction.x / len;
+		const dirY = direction.y / len;
+		const normalizedDir = new Vec2(dirX, dirY);
+
+		// Compute AABB encompassing the full ray
+		const endX = origin.x + dirX * maxDistance;
+		const endY = origin.y + dirY * maxDistance;
+		const rayAABB = new AABB(
+			new Vec2(Math.min(origin.x, endX) - 1, Math.min(origin.y, endY) - 1),
+			new Vec2(Math.max(origin.x, endX) + 1, Math.max(origin.y, endY) + 1),
+		);
+
+		const candidates = this.hash.query(rayAABB);
+		const hits: RaycastHit[] = [];
+
+		for (const body of candidates) {
+			if (!matchesQuery(body, options)) continue;
+
+			const bodyAABB = body.getWorldAABB();
+			if (!bodyAABB) continue;
+
+			// Quick AABB rejection for the body
+			if (!rayAABB.overlaps(bodyAABB)) continue;
+
+			const shapes = body.getShapeTransforms();
+			const shapeNodes = body.getShapes();
+
+			for (let i = 0; i < shapes.length; i++) {
+				const { shape, transform } = shapes[i]!;
+				const result = rayIntersectShape(origin, normalizedDir, maxDistance, shape, transform);
+
+				if (result) {
+					const hitPoint = new Vec2(origin.x + dirX * result.t, origin.y + dirY * result.t);
+					hits.push({
+						collider: body,
+						colliderShape: shapeNodes[i]!,
+						point: hitPoint,
+						normal: result.normal,
+						distance: result.t,
+					});
+				}
+			}
+		}
+
+		// Sort by distance
+		hits.sort((a, b) => a.distance - b.distance);
+
+		if (firstOnly && hits.length > 1) {
+			return [hits[0]!];
+		}
+
+		return hits;
+	}
+
 	// === Internal: Dynamic Monitoring Toggle ===
 
 	/**
@@ -644,11 +991,7 @@ export class PhysicsWorld {
 
 	// === Private Helpers ===
 
-	/**
-	 * Find TOI for a single shape pair. Uses sweptAABB fast path for
-	 * axis-aligned rect-vs-rect, binary search SAT otherwise.
-	 * Normal convention: points away from the collider (obstacle) into the mover.
-	 */
+	/** Delegate to the standalone findShapePairTOI function. */
 	private _findShapePairTOI(
 		bodyShape: Shape2D,
 		bodyTransform: Matrix2D,
@@ -656,42 +999,7 @@ export class PhysicsWorld {
 		otherShape: Shape2D,
 		otherTransform: Matrix2D,
 	): { toi: number; normal: Vec2; depth: number } | null {
-		// Fast path: axis-aligned rect vs rect
-		if (
-			bodyShape.type === "rect" &&
-			otherShape.type === "rect" &&
-			bodyTransform.isTranslationOnly() &&
-			otherTransform.isTranslationOnly()
-		) {
-			const result = sweptAABB(
-				bodyShape as RectShape,
-				bodyTransform,
-				motion,
-				otherShape as RectShape,
-				otherTransform,
-			);
-			if (!result) return null;
-			// sweptAABB normal points from mover toward obstacle — flip for our convention
-			// (normal should point away from collider into mover)
-			const normal = result.normal.negate();
-			// Estimate depth from SAT at collision point
-			const hitTransform = this._translateTransform(
-				bodyTransform,
-				new Vec2(motion.x * result.toi, motion.y * result.toi),
-			);
-			const satResult = testOverlap(bodyShape, hitTransform, otherShape, otherTransform);
-			return { toi: result.toi, normal, depth: satResult?.depth ?? 0 };
-		}
-
-		// General case: binary search TOI with SAT
-		const result = findTOI(bodyShape, bodyTransform, motion, otherShape, otherTransform);
-		if (!result) return null;
-
-		// SAT normal points from A (body) toward B (other).
-		// Our convention: normal points away from collider (B) into mover (A).
-		// So we need to negate it.
-		const normal = result.result.normal.negate();
-		return { toi: result.toi, normal, depth: result.result.depth };
+		return findShapePairTOI(bodyShape, bodyTransform, motion, otherShape, otherTransform);
 	}
 
 	/** Create a new transform translated by a delta vector. */

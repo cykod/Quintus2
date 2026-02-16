@@ -1,3 +1,18 @@
+## Add scene query API: raycast, area queries, shape cast, DDA tilemap raycast
+*Monday, February 16th at 6pm*
+Implement the complete Scene Query API across 5 phases as specified in 
+QUERY_API.md. Adds raycast/raycastAll, 
+queryPoint/queryRect/queryCircle/queryShape, and shapeCast to PhysicsWorld with 
+composable QueryOptions filtering (tags, groups, sensors, exclude, custom 
+predicate). Extracts findShapePairTOI to a standalone function for reuse. Adds 
+Actor convenience methods (raycast, isEdgeAhead, hasLineOfSight, findNearest) 
+for common gameplay patterns like patrol AI edge detection and line-of-sight 
+checks. Implements DDA grid raycast on TileMap for fast tile-level 
+line-of-sight queries. Includes 47 new tests across 4 test files, all passing 
+with clean build and lint.
+
+---
+
 ## Add complete platformer game and fix bidirectional onContact dispatch
 *Monday, February 16th at 4pm*
 Implements the Phase 6 complete platformer with title screen, two levels, 

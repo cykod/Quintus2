@@ -1,7 +1,8 @@
-import { type Signal, signal } from "@quintus/core";
+import { type Node2D, type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import type { CollisionInfo } from "./collision-info.js";
 import { type BodyType, CollisionObject } from "./collision-object.js";
+import type { QueryOptions, RaycastHit } from "./query-types.js";
 import type { ActorSnapshot } from "./snapshot-types.js";
 import { StaticCollider } from "./static-collider.js";
 
@@ -144,6 +145,122 @@ export class Actor extends CollisionObject {
 	/** Override for self-handling of physics contacts. Default emits collided signal. */
 	onCollided(info: CollisionInfo): void {
 		this.collided.emit(info);
+	}
+
+	// === Query Convenience Methods ===
+
+	/**
+	 * Cast a ray from this actor's global position.
+	 * Automatically excludes self from results.
+	 */
+	raycast(direction: Vec2, maxDistance = 10000, options?: QueryOptions): RaycastHit | null {
+		const world = this._getWorld();
+		if (!world) return null;
+		const merged: QueryOptions = {
+			...options,
+			exclude: [this, ...(options?.exclude ?? [])],
+		};
+		return world.raycast(this.globalPosition, direction, maxDistance, merged);
+	}
+
+	/**
+	 * Check if there is a floor edge ahead in the given direction.
+	 * Used for patrol AI: walk until isEdgeAhead() returns true, then reverse.
+	 */
+	isEdgeAhead(direction: Vec2, probeDistance?: number, dropThreshold?: number): boolean {
+		const world = this._getWorld();
+		if (!world) return false;
+
+		const aabb = this.getWorldAABB();
+		if (!aabb) return false;
+
+		const actorWidth = aabb.max.x - aabb.min.x;
+		const actorHeight = aabb.max.y - aabb.min.y;
+		const probeDist = probeDistance ?? actorWidth / 2 + 4;
+		const dropThresh = dropThreshold ?? actorHeight;
+
+		// Normalize direction to horizontal
+		const dirX = direction.x > 0 ? 1 : direction.x < 0 ? -1 : 0;
+		if (dirX === 0) return false;
+
+		// Probe origin: bottom-front corner + probeDistance ahead
+		const probeX = (aabb.min.x + aabb.max.x) / 2 + (actorWidth / 2 + probeDist) * dirX;
+		const probeY = aabb.max.y;
+		const probeOrigin = new Vec2(probeX, probeY);
+
+		const hit = world.raycast(probeOrigin, new Vec2(0, 1), dropThresh, {
+			exclude: [this],
+		});
+
+		// If ray hits nothing, there's an edge
+		return hit === null;
+	}
+
+	/**
+	 * Check if this actor has an unobstructed line of sight to a target.
+	 * Returns true if nothing blocks the ray from self to target.
+	 */
+	hasLineOfSight(target: Vec2 | Node2D, options?: QueryOptions, originOffset?: Vec2): boolean {
+		const world = this._getWorld();
+		if (!world) return false;
+
+		const rayOrigin = originOffset
+			? new Vec2(this.globalPosition.x + originOffset.x, this.globalPosition.y + originOffset.y)
+			: this.globalPosition;
+
+		const isNode =
+			"globalPosition" in target && typeof (target as Node2D).globalPosition !== "undefined";
+		const targetPos = isNode ? (target as Node2D).globalPosition : (target as Vec2);
+
+		const dx = targetPos.x - rayOrigin.x;
+		const dy = targetPos.y - rayOrigin.y;
+		const maxDistance = Math.sqrt(dx * dx + dy * dy);
+		if (maxDistance < 1e-6) return true;
+
+		const dir = new Vec2(dx / maxDistance, dy / maxDistance);
+		// Exclude self and the target (if it's a CollisionObject) so the ray only detects blockers
+		const excludeList: CollisionObject[] = [this, ...(options?.exclude ?? [])];
+		if (isNode && target instanceof CollisionObject) {
+			excludeList.push(target);
+		}
+		const merged: QueryOptions = {
+			...options,
+			exclude: excludeList,
+		};
+		const hit = world.raycast(rayOrigin, dir, maxDistance, merged);
+		return hit === null;
+	}
+
+	/**
+	 * Find the nearest body within maxDistance.
+	 * Uses queryCircle + linear scan.
+	 */
+	findNearest(maxDistance = 10000, options?: QueryOptions): CollisionObject | null {
+		const world = this._getWorld();
+		if (!world) return null;
+
+		const merged: QueryOptions = {
+			...options,
+			exclude: [this, ...(options?.exclude ?? [])],
+		};
+		const candidates = world.queryCircle(this.globalPosition, maxDistance, merged);
+		if (candidates.length === 0) return null;
+
+		let bestDist = Infinity;
+		let best: CollisionObject | null = null;
+		const pos = this.globalPosition;
+
+		for (const body of candidates) {
+			const dx = body.globalPosition.x - pos.x;
+			const dy = body.globalPosition.y - pos.y;
+			const distSq = dx * dx + dy * dy;
+			if (distSq < bestDist) {
+				bestDist = distSq;
+				best = body;
+			}
+		}
+
+		return best;
 	}
 
 	// === Movement API ===

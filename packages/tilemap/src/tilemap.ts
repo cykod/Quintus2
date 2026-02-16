@@ -6,6 +6,22 @@ import type { ParsedMap, ParsedObject, ParsedTileLayer } from "./tiled-parser.js
 import { parseTiledMap } from "./tiled-parser.js";
 import type { TiledMap, TiledTileset } from "./tiled-types.js";
 
+/** Result of a tilemap grid raycast. */
+export interface TileRayHit {
+	/** Tile column index. */
+	col: number;
+	/** Tile row index. */
+	row: number;
+	/** Tile ID at the hit location. */
+	tileId: number;
+	/** World-space point where the ray enters the tile. */
+	point: Vec2;
+	/** Normal of the tile face that was hit (axis-aligned: left/right/top/bottom). */
+	normal: Vec2;
+	/** Distance from ray origin to the hit point. */
+	distance: number;
+}
+
 /** Module-level cache for physics factories (registered via TileMap.registerPhysics). */
 let _cachedPhysicsFactories: PhysicsFactories | null = null;
 
@@ -274,6 +290,152 @@ export class TileMap extends Node2D {
 	 */
 	static registerPhysics(factories: PhysicsFactories): void {
 		_cachedPhysicsFactories = factories;
+	}
+
+	// === Grid Raycast (DDA) ===
+
+	/**
+	 * Cast a ray through the tile grid using DDA traversal.
+	 * Returns the first solid tile hit, or null.
+	 *
+	 * Only works when the TileMap has a pure translation transform (no rotation/scale).
+	 */
+	raycast(
+		origin: Vec2,
+		direction: Vec2,
+		maxDistance = 10000,
+		solidCheck?: (tileId: number, col: number, row: number) => boolean,
+		layer?: string,
+	): TileRayHit | null {
+		if (!this._parsed) return null;
+
+		const gt = this.globalTransform;
+		if (!gt.isTranslationOnly()) {
+			console.warn(
+				"TileMap.raycast() only supports translation transforms. Rotation/scale detected.",
+			);
+			return null;
+		}
+
+		const tileLayer = this._getTileLayer(layer);
+		if (!tileLayer) return null;
+
+		const tw = this._parsed.tileWidth;
+		const th = this._parsed.tileHeight;
+		// Default: any non-empty tile is solid. Empty tiles have tileId = -1.
+		const check = solidCheck ?? ((tileId: number) => tileId >= 0);
+
+		// Normalize direction
+		const len = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
+		if (len < 1e-10) return null;
+		const dirX = direction.x / len;
+		const dirY = direction.y / len;
+
+		// Convert origin to local space (just translation)
+		const localX = origin.x - gt.e;
+		const localY = origin.y - gt.f;
+
+		// Starting tile coordinates
+		let col = Math.floor(localX / tw);
+		let row = Math.floor(localY / th);
+
+		// Check if starting tile is solid
+		if (col >= 0 && col < tileLayer.width && row >= 0 && row < tileLayer.height) {
+			const startTileId = this._getTileId(tileLayer, col, row);
+			if (check(startTileId, col, row)) {
+				return {
+					col,
+					row,
+					tileId: startTileId,
+					point: new Vec2(origin.x, origin.y),
+					normal: new Vec2(0, 0),
+					distance: 0,
+				};
+			}
+		}
+
+		// DDA setup
+		const stepX = dirX > 0 ? 1 : dirX < 0 ? -1 : 0;
+		const stepY = dirY > 0 ? 1 : dirY < 0 ? -1 : 0;
+
+		// tMax: parametric distance to next tile boundary on each axis
+		let tMaxX: number;
+		let tMaxY: number;
+		// tDelta: parametric distance between tile boundaries
+		let tDeltaX: number;
+		let tDeltaY: number;
+
+		if (stepX !== 0) {
+			const nextBoundaryX = stepX > 0 ? (col + 1) * tw : col * tw;
+			tMaxX = (nextBoundaryX - localX) / dirX;
+			tDeltaX = (tw * stepX) / dirX;
+		} else {
+			tMaxX = Infinity;
+			tDeltaX = Infinity;
+		}
+
+		if (stepY !== 0) {
+			const nextBoundaryY = stepY > 0 ? (row + 1) * th : row * th;
+			tMaxY = (nextBoundaryY - localY) / dirY;
+			tDeltaY = (th * stepY) / dirY;
+		} else {
+			tMaxY = Infinity;
+			tDeltaY = Infinity;
+		}
+
+		// Step through grid
+		let distance = 0;
+		while (distance < maxDistance) {
+			let normalX: number;
+			let normalY: number;
+
+			if (tMaxX < tMaxY) {
+				col += stepX;
+				distance = tMaxX;
+				tMaxX += tDeltaX;
+				normalX = -stepX;
+				normalY = 0;
+			} else {
+				row += stepY;
+				distance = tMaxY;
+				tMaxY += tDeltaY;
+				normalX = 0;
+				normalY = -stepY;
+			}
+
+			if (distance > maxDistance) break;
+
+			// Check bounds
+			if (col < 0 || col >= tileLayer.width || row < 0 || row >= tileLayer.height) {
+				// Out of map — could continue if ray re-enters, but for simplicity stop
+				if (stepX > 0 && col >= tileLayer.width) break;
+				if (stepX < 0 && col < 0) break;
+				if (stepY > 0 && row >= tileLayer.height) break;
+				if (stepY < 0 && row < 0) break;
+				continue;
+			}
+
+			const tileId = this._getTileId(tileLayer, col, row);
+			if (check(tileId, col, row)) {
+				const hitX = origin.x + dirX * distance;
+				const hitY = origin.y + dirY * distance;
+				return {
+					col,
+					row,
+					tileId,
+					point: new Vec2(hitX, hitY),
+					normal: new Vec2(normalX, normalY),
+					distance,
+				};
+			}
+		}
+
+		return null;
+	}
+
+	private _getTileId(layer: ParsedTileLayer, col: number, row: number): number {
+		const tile = layer.tiles[row * layer.width + col];
+		return tile ? tile.localId : -1;
 	}
 
 	// === Rendering ===

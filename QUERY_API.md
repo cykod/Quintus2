@@ -7,11 +7,11 @@
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Raycast primitives | Pending |
-| 2 | Point & area queries | Pending |
-| 3 | Shape cast | Pending |
-| 4 | Actor convenience methods | Pending |
-| 5 | TileMap grid raycast (DDA) | Pending |
+| 1 | Raycast primitives | Done |
+| 2 | Point & area queries | Done |
+| 3 | Shape cast | Done |
+| 4 | Actor convenience methods | Done |
+| 5 | TileMap grid raycast (DDA) | Done |
 
 ---
 

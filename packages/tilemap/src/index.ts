@@ -31,4 +31,5 @@ export {
 } from "./tiled-types.js";
 
 // TileMap node
+export type { TileRayHit } from "./tilemap.js";
 export { TileMap } from "./tilemap.js";
