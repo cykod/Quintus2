@@ -45,10 +45,11 @@ export class Scene extends Node {
 
 	// === Entity Spawning ===
 	add(node: Node): this;
-	add<T extends Node>(NodeClass: NodeConstructor<T>): T;
-	add(nodeOrClass: Node | NodeConstructor<Node>): Node | this {
+	add<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
+	add(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
 		if (typeof nodeOrClass === "function") {
 			const node = new nodeOrClass();
+			if (props) Object.assign(node, props);
 			this.addChild(node);
 			return node;
 		}

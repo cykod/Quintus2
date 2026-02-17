@@ -11,9 +11,17 @@ export class Layer extends Node2D {
 	}
 
 	override addChild(node: Node): this;
-	override addChild<T extends Node>(NodeClass: NodeConstructor<T>): T;
-	override addChild(nodeOrClass: Node | NodeConstructor<Node>): Node | this {
-		const result = super.addChild(nodeOrClass as Node);
+	override addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
+	override addChild(
+		nodeOrClass: Node | NodeConstructor<Node>,
+		props?: Partial<Node>,
+	): Node | this {
+		let result: Node | this;
+		if (typeof nodeOrClass === "function") {
+			result = super.addChild(nodeOrClass, props);
+		} else {
+			result = super.addChild(nodeOrClass);
+		}
 		const child = typeof nodeOrClass === "function" ? result : nodeOrClass;
 		if (child instanceof Node2D) {
 			child.renderFixed = this.renderFixed;

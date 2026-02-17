@@ -86,12 +86,23 @@ export class Node {
 		return this._tags;
 	}
 
+	// === Bulk Property Setter ===
+	/** Set multiple properties at once. Returns this for chaining. */
+	set(props: Partial<this>): this {
+		Object.assign(this, props);
+		return this;
+	}
+
 	// === Tree Manipulation ===
 	addChild(node: Node): this;
-	addChild<T extends Node>(NodeClass: NodeConstructor<T>): T;
-	addChild(nodeOrClass: Node | NodeConstructor<Node>): Node | this {
+	addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
+	addChild(
+		nodeOrClass: Node | NodeConstructor<Node>,
+		props?: Partial<Node>,
+	): Node | this {
 		if (typeof nodeOrClass === "function") {
 			const node = new nodeOrClass();
+			if (props) Object.assign(node, props);
 			this._addChildNode(node);
 			return node;
 		}

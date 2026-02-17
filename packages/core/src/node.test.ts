@@ -69,6 +69,38 @@ describe("Node", () => {
 		expect(child.pauseMode).toBe("independent");
 	});
 
+	it("addChild(Class, props) sets properties on the new node", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const child = scene.addChild(Node, {
+			name: "bulk",
+			pauseMode: "independent",
+		});
+		expect(child.name).toBe("bulk");
+		expect(child.pauseMode).toBe("independent");
+		expect(child.parent).toBe(scene);
+		expect(child.isReady).toBe(true);
+	});
+
+	it("set() assigns multiple properties and returns this", () => {
+		const node = new Node();
+		const result = node.set({ name: "test", pauseMode: "independent" });
+		expect(result).toBe(node);
+		expect(node.name).toBe("test");
+		expect(node.pauseMode).toBe("independent");
+	});
+
+	it("set() chains with addChild", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const child = scene.addChild(Node).set({
+			name: "chained",
+			pauseMode: "independent",
+		});
+		expect(child.name).toBe("chained");
+		expect(child.parent).toBe(scene);
+	});
+
 	it("removeChild removes from children and clears parent", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);

@@ -18,28 +18,29 @@ export class HUD extends Layer {
 
 		// Heart icons
 		for (let i = 0; i < gameState.maxHealth; i++) {
-			const heart = this.addChild(Sprite);
-			heart.texture = "tileset";
-			heart.sourceRect = i < gameState.health ? HEART_FULL : HEART_EMPTY;
-			heart.centered = false;
-			heart.position = new Vec2(4 + i * 10, 4);
+			const heart = this.addChild(Sprite, {
+				texture: "tileset",
+				sourceRect: i < gameState.health ? HEART_FULL : HEART_EMPTY,
+				centered: false,
+				position: new Vec2(4 + i * 10, 4),
+			});
 			this.hearts.push(heart);
 		}
 
-		// Coin counter
-		this.coinLabel = this.addChild(Label);
-		this.coinLabel.position = new Vec2(8, 16);
-		this.coinLabel.text = `Coins: ${gameState.coins}`;
-		this.coinLabel.fontSize = 8;
-		this.coinLabel.color = Color.fromHex("#ffd54f");
+		this.coinLabel = this.addChild(Label, {
+			position: new Vec2(8, 16),
+			text: `Coins: ${gameState.coins}`,
+			fontSize: 8,
+			color: Color.fromHex("#ffd54f"),
+		});
 
-		// Score
-		this.scoreLabel = this.addChild(Label);
-		this.scoreLabel.position = new Vec2(250, 4);
-		this.scoreLabel.text = `Score: ${gameState.score}`;
-		this.scoreLabel.fontSize = 8;
-		this.scoreLabel.color = Color.WHITE;
-		this.scoreLabel.align = "right";
+		this.scoreLabel = this.addChild(Label, {
+			position: new Vec2(250, 4),
+			text: `Score: ${gameState.score}`,
+			fontSize: 8,
+			color: Color.WHITE,
+			align: "right",
+		});
 	}
 
 	override onUpdate(_dt: number) {

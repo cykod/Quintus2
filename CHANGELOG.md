@@ -1,3 +1,15 @@
+## Add Node.set() and addChild props for bulk property assignment
+*Tuesday, February 17th at 10am*
+Added a set(props) method to the Node base class and an optional props second 
+argument to addChild(Class, props) and Scene.add(Class, props), enabling bulk 
+property assignment with full type safety via Partial<this> and Partial<T>. 
+Updated Layer.addChild to forward props correctly. Refactored all platformer 
+example UI scenes (title, game-over, victory, HUD) to use the new declarative 
+props pattern, eliminating verbose per-property setter lines. Added 3 new tests 
+covering addChild with props, set() standalone, and set() chaining.
+
+---
+
 ## Add pixel art sprites, spike hazard, and renderer pixelArt mode
 *Tuesday, February 17th at 8am*
 Replace all procedural onDraw rendering in the platformer with 
