@@ -1,3 +1,18 @@
+## Add TMX/TSX XML parser and convert platformer to native Tiled format
+*Tuesday, February 17th at 12pm*
+Add first-class Tiled TMX/TSX XML parsing to @quintus/tilemap with parseTmx() 
+and parseTsx() functions that produce the same TiledMap objects as the existing 
+JSON pipeline. The parser supports CSV tile data, inline and external tilesets, 
+all object shapes (point, ellipse, polygon, polyline), tile objects with GID, 
+per-tile collision and animation, custom properties of all types, and Tiled 
+1.9+ class-to-type fallback. TileMap._loadMap() now auto-detects format, trying 
+JSON first then falling back to TMX text. The platformer example is converted 
+to load .tmx levels instead of .json, reducing level file sizes from ~7000 
+lines to ~160 lines. Includes comprehensive test suites for both parsers (27 
+test cases) and prerequisite type additions to tiled-types.ts.
+
+---
+
 ## Add Node.set() and addChild props for bulk property assignment
 *Tuesday, February 17th at 10am*
 Added a set(props) method to the Node base class and an optional props second 

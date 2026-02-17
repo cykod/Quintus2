@@ -195,3 +195,11 @@
 [MILE] mon 2/16 6pm - Added complete scene query API with raycast, area queries, shape cast, actor convenience methods, and DDA tilemap raycast
 
 [DSGN] tue 2/17 8am - Design first-class Tiled .tmx/.tsx file support for level editing interoperability
+
+[MILE] tue 2/17 8am - Added pixel art sprites, spike hazard entity, heart HUD icons, and renderer pixelArt mode to the platformer
+
+[DEVL] tue 2/17 8am - Review TILED_SUPPORT.md Phase 1 for potential issues and risks
+
+[MILE] tue 2/17 10am - Added Node.set() and addChild props API for bulk property assignment with type safety
+
+[IMPL] tue 2/17 10am - Implement Phase 1 TMX/TSX XML parser for Tiled support

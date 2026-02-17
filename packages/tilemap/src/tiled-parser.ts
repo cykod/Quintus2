@@ -53,8 +53,11 @@ export interface ParsedObject {
 	rotation: number;
 	visible: boolean;
 	point: boolean;
+	ellipse: boolean;
 	properties: Map<string, boolean | number | string>;
 	polygon?: Array<{ x: number; y: number }>;
+	polyline?: Array<{ x: number; y: number }>;
+	gid?: number;
 }
 
 /** Parsed object layer. */
@@ -204,8 +207,11 @@ function parseObjectLayer(layer: TiledObjectGroup): ParsedObjectLayer {
 			rotation: obj.rotation ?? 0,
 			visible: obj.visible ?? true,
 			point: obj.point ?? false,
+			ellipse: obj.ellipse ?? false,
 			properties: parseProperties(obj.properties),
 			polygon: obj.polygon,
+			polyline: obj.polyline,
+			gid: obj.gid,
 		})),
 		properties: parseProperties(layer.properties),
 	};

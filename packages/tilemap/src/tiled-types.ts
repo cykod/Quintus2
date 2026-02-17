@@ -21,6 +21,8 @@ export type TiledLayer = TiledTileLayer | TiledObjectGroup;
 
 /** A grid of tile IDs. */
 export interface TiledTileLayer {
+	/** Tiled layer ID (for round-trip fidelity). */
+	id?: number;
 	name: string;
 	type: "tilelayer";
 	/** Layer width in tiles (usually equals map width). */
@@ -39,10 +41,16 @@ export interface TiledTileLayer {
 
 /** A collection of freeform objects (spawn points, triggers, etc). */
 export interface TiledObjectGroup {
+	/** Tiled layer ID (for round-trip fidelity). */
+	id?: number;
 	name: string;
 	type: "objectgroup";
 	objects: TiledObject[];
 	visible?: boolean;
+	/** Pixel offset for parallax/decoration layers. */
+	offsetx?: number;
+	offsety?: number;
+	opacity?: number;
 	properties?: TiledProperty[];
 }
 
@@ -68,6 +76,10 @@ export interface TiledObject {
 	ellipse?: boolean;
 	/** Polygon vertices (relative to x, y). */
 	polygon?: Array<{ x: number; y: number }>;
+	/** Polyline vertices (relative to x, y). */
+	polyline?: Array<{ x: number; y: number }>;
+	/** Global tile ID (for tile objects placed in object layers). */
+	gid?: number;
 }
 
 /** A tileset definition. */
@@ -91,15 +103,29 @@ export interface TiledTileset {
 	margin?: number;
 	/** Per-tile properties and collision shapes. */
 	tiles?: TiledTileDefinition[];
+	/** Path to external .tsx file (if loaded externally). */
+	source?: string;
+}
+
+/** Tile animation frame. */
+export interface TiledAnimationFrame {
+	/** Local tile ID to display. */
+	tileid: number;
+	/** Frame duration in milliseconds. */
+	duration: number;
 }
 
 /** Per-tile metadata (properties, collision shapes). */
 export interface TiledTileDefinition {
 	/** Local tile ID (0-based within the tileset). */
 	id: number;
+	/** Tile type/class string (e.g. "Water", "Solid"). */
+	type?: string;
 	properties?: TiledProperty[];
 	/** Per-tile collision shapes defined in Tiled's collision editor. */
 	objectgroup?: TiledObjectGroup;
+	/** Animation frames for animated tiles. */
+	animation?: TiledAnimationFrame[];
 }
 
 /** A custom property defined in Tiled. */

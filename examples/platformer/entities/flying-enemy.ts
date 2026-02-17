@@ -8,7 +8,7 @@ import { gameState } from "../state.js";
 export class FlyingEnemy extends Actor {
 	speed = 50;
 	amplitude = 30;
-	frequency = 2;
+	frequency = 0.7;
 	direction = -1;
 	override solid = true;
 	override collisionGroup = "enemies";

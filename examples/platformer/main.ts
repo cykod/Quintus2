@@ -27,11 +27,18 @@ game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 
+// === Register TMX loader (fetch XML as text) ===
+game.assets.registerLoader("tmx", async (_name: string, path: string) => {
+	const response = await fetch(path);
+	if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	return response.text();
+});
+
 // === Load Assets & Start ===
 game.assets
 	.load({
 		images: ["assets/tileset.png"],
-		json: ["assets/level1.json", "assets/level2.json"],
+		tmx: ["assets/level1.tmx", "assets/level2.tmx"],
 		audio: [
 			"assets/jump.ogg",
 			"assets/coin.ogg",

@@ -5,6 +5,7 @@ import { buildSolidGrid, createColliders, getSolidTileIds, mergeRects } from "./
 import type { ParsedMap, ParsedObject, ParsedTileLayer } from "./tiled-parser.js";
 import { parseTiledMap } from "./tiled-parser.js";
 import type { TiledMap, TiledTileset } from "./tiled-types.js";
+import { parseTmx } from "./tmx-parser.js";
 
 /** Result of a tilemap grid raycast. */
 export interface TileRayHit {
@@ -466,14 +467,24 @@ export class TileMap extends Node2D {
 			throw new Error("TileMap: Cannot load map — node is not in a scene tree.");
 		}
 
+		// Try JSON first (existing path)
 		const json = game.assets.getJSON<TiledMap>(this.asset);
-		if (!json) {
-			throw new Error(
-				`TileMap: Asset '${this.asset}' not found. Load it via game.assets.load({ json: ['${this.asset}.json'] }) before starting the scene.`,
-			);
+		if (json) {
+			this._parsed = parseTiledMap(json);
+			return;
 		}
 
-		this._parsed = parseTiledMap(json);
+		// Try TMX text (loaded via custom "tmx" loader or stored as custom asset)
+		const tmxText = game.assets.get<string>(this.asset);
+		if (tmxText && typeof tmxText === "string") {
+			const tiledMap = parseTmx(tmxText);
+			this._parsed = parseTiledMap(tiledMap);
+			return;
+		}
+
+		throw new Error(
+			`TileMap: Asset '${this.asset}' not found. Load it via game.assets.load({ json: ['${this.asset}.json'] }) or game.assets.load({ tmx: ['${this.asset}.tmx'] }) before starting the scene.`,
+		);
 	}
 
 	private _getTileLayer(name?: string): ParsedTileLayer | null {

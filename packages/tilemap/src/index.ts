@@ -14,6 +14,7 @@ export type {
 } from "./tiled-parser.js";
 export { parseProperties, parseTiledMap, resolveGlobalTileId } from "./tiled-parser.js";
 export type {
+	TiledAnimationFrame,
 	TiledLayer,
 	TiledMap,
 	TiledObject,
@@ -29,6 +30,10 @@ export {
 	FLIPPED_VERTICALLY_FLAG,
 	TILE_GID_MASK,
 } from "./tiled-types.js";
+
+// TMX/TSX XML parsers
+export { parseTmx } from "./tmx-parser.js";
+export { parseTsx } from "./tsx-parser.js";
 
 // TileMap node
 export type { TileRayHit } from "./tilemap.js";
