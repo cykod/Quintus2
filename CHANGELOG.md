@@ -1,3 +1,12 @@
+## Add platformer to examples index page
+*Tuesday, February 17th at 12pm*
+Added the full-featured platformer game as a new entry on the examples index 
+page. The card links to /platformer/ and is labeled as Phase 6, with a 
+description highlighting its key features: 2 levels, enemies, double jump, 
+health system, HUD, audio, camera follow, TMX maps, and pixel art sprites.
+
+---
+
 ## Add TMX/TSX XML parser and convert platformer to native Tiled format
 *Tuesday, February 17th at 12pm*
 Add first-class Tiled TMX/TSX XML parsing to @quintus/tilemap with parseTmx() 
