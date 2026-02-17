@@ -269,4 +269,195 @@ describe("Input", () => {
 			expect(input.actionNames).toEqual(["left", "right", "jump", "attack"]);
 		});
 	});
+
+	describe("gamepad polling", () => {
+		function mockGamepad(buttons: Array<{ pressed: boolean }>, axes: number[]): void {
+			const gp = {
+				buttons,
+				axes,
+				connected: true,
+				id: "Test Gamepad",
+				index: 0,
+				mapping: "standard",
+				timestamp: performance.now(),
+				hapticActuators: [],
+				vibrationActuator: null,
+			} as unknown as Gamepad;
+			vi.stubGlobal("navigator", {
+				getGamepads: () => [gp, null, null, null],
+			});
+		}
+
+		it("gamepad button press triggers action", () => {
+			const input = new Input({
+				actions: {
+					jump: ["gamepad:a"],
+				},
+			});
+
+			// No gamepad initially
+			input._beginFrame();
+			expect(input.isPressed("jump")).toBe(false);
+
+			// Gamepad button 0 (a) pressed
+			mockGamepad(
+				[{ pressed: true }],
+				[0, 0, 0, 0],
+			);
+
+			input._pollGamepad();
+			expect(input.isPressed("jump")).toBe(true);
+			expect(input.isJustPressed("jump")).toBe(true);
+		});
+
+		it("gamepad button release triggers justReleased", () => {
+			const input = new Input({
+				actions: {
+					jump: ["gamepad:a"],
+				},
+			});
+
+			// Press
+			mockGamepad([{ pressed: true }], [0, 0, 0, 0]);
+			input._pollGamepad();
+			expect(input.isPressed("jump")).toBe(true);
+
+			// Clear edge flags for next frame
+			input._beginFrame();
+
+			// Release
+			mockGamepad([{ pressed: false }], [0, 0, 0, 0]);
+			input._pollGamepad();
+			expect(input.isPressed("jump")).toBe(false);
+			expect(input.isJustReleased("jump")).toBe(true);
+		});
+
+		it("gamepad stick generates analog axis values", () => {
+			const input = new Input({
+				actions: {
+					left: ["gamepad:left-stick-left"],
+					right: ["gamepad:left-stick-right"],
+				},
+				deadZone: 0.15,
+			});
+
+			// Push left stick right (axis 0 = 0.75)
+			mockGamepad([], [0.75, 0, 0, 0]);
+			input._pollGamepad();
+
+			expect(input.getAxis("left", "right")).toBeCloseTo(0.75);
+			expect(input.isPressed("right")).toBe(true);
+			expect(input.isPressed("left")).toBe(false);
+		});
+
+		it("gamepad stick within dead zone is ignored", () => {
+			const input = new Input({
+				actions: {
+					left: ["gamepad:left-stick-left"],
+					right: ["gamepad:left-stick-right"],
+				},
+				deadZone: 0.15,
+			});
+
+			// Stick at 0.1 — within dead zone
+			mockGamepad([], [0.1, 0, 0, 0]);
+			input._pollGamepad();
+
+			expect(input.isPressed("right")).toBe(false);
+			expect(input.getAxis("left", "right")).toBe(0);
+		});
+
+		it("gamepad left stick negative axis", () => {
+			const input = new Input({
+				actions: {
+					left: ["gamepad:left-stick-left"],
+					right: ["gamepad:left-stick-right"],
+				},
+				deadZone: 0.15,
+			});
+
+			// Push left stick left (axis 0 = -0.8)
+			mockGamepad([], [-0.8, 0, 0, 0]);
+			input._pollGamepad();
+
+			expect(input.isPressed("left")).toBe(true);
+			expect(input.isPressed("right")).toBe(false);
+			expect(input.getAxis("left", "right")).toBeCloseTo(-0.8);
+		});
+
+		it("gamepad vertical axis (left stick up/down)", () => {
+			const input = new Input({
+				actions: {
+					up: ["gamepad:left-stick-up"],
+					down: ["gamepad:left-stick-down"],
+				},
+				deadZone: 0.15,
+			});
+
+			// Push left stick down (axis 1 = 0.6)
+			mockGamepad([], [0, 0.6, 0, 0]);
+			input._pollGamepad();
+
+			expect(input.isPressed("down")).toBe(true);
+			expect(input.isPressed("up")).toBe(false);
+		});
+
+		it("_pollGamepad is a no-op when navigator.getGamepads unavailable", () => {
+			const input = new Input({
+				actions: { jump: ["gamepad:a"] },
+			});
+
+			vi.stubGlobal("navigator", {});
+			// Should not throw
+			input._pollGamepad();
+			expect(input.isPressed("jump")).toBe(false);
+		});
+
+		it("_pollGamepad handles no connected gamepad", () => {
+			const input = new Input({
+				actions: { jump: ["gamepad:a"] },
+			});
+
+			vi.stubGlobal("navigator", {
+				getGamepads: () => [null, null, null, null],
+			});
+
+			// Should not throw
+			input._pollGamepad();
+			expect(input.isPressed("jump")).toBe(false);
+		});
+
+		it("gamepad dpad button press", () => {
+			const input = new Input({
+				actions: {
+					up: ["gamepad:dpad-up"],
+				},
+			});
+
+			// dpad-up is button index 12
+			const buttons = Array.from({ length: 16 }, () => ({ pressed: false }));
+			buttons[12] = { pressed: true };
+			mockGamepad(buttons, [0, 0, 0, 0]);
+			input._pollGamepad();
+
+			expect(input.isPressed("up")).toBe(true);
+		});
+
+		it("right stick axes", () => {
+			const input = new Input({
+				actions: {
+					lookLeft: ["gamepad:right-stick-left"],
+					lookRight: ["gamepad:right-stick-right"],
+				},
+				deadZone: 0.15,
+			});
+
+			// Right stick right (axis 2 = 0.9)
+			mockGamepad([], [0, 0, 0.9, 0]);
+			input._pollGamepad();
+
+			expect(input.isPressed("lookRight")).toBe(true);
+			expect(input.getAxis("lookLeft", "lookRight")).toBeCloseTo(0.9);
+		});
+	});
 });

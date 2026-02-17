@@ -229,4 +229,269 @@ describe("DebugBridge", () => {
 		expect(snapshots.length).toBe(3);
 		expect(bridge.frame).toBe(5 + 10 + 3);
 	});
+
+	it("run() handles release action in script", () => {
+		const game = createDebugGame();
+		const bridge = startWithBridge(game);
+
+		const startFrame = bridge.frame;
+		const snapshots = bridge.run([{ release: "jump" }]);
+
+		expect(snapshots.length).toBe(1);
+		expect(bridge.frame).toBe(startFrame + 1);
+	});
+
+	describe("click()", () => {
+		it("dispatches pointer events to clickable node at coordinates", () => {
+			const game = createDebugGame();
+			let clicked = false;
+
+			// Create a UINode-like clickable node
+			class ClickableNode extends Node2D {
+				interactive = true;
+				visible = true;
+				width = 100;
+				height = 50;
+				zIndex = 0;
+
+				containsPoint(x: number, y: number): boolean {
+					const gp = this.globalPosition;
+					return x >= gp.x && x <= gp.x + this.width && y >= gp.y && y <= gp.y + this.height;
+				}
+
+				_onPointerDown(_x: number, _y: number): void {
+					clicked = true;
+				}
+				_onPointerUp(_x: number, _y: number): void {}
+			}
+
+			class TestScene extends Scene {
+				onReady() {
+					const node = new ClickableNode();
+					node.position._set(10, 10);
+					this.addChild(node);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const result = bridge.click(50, 30);
+			expect(result).toBe(true);
+			expect(clicked).toBe(true);
+		});
+
+		it("returns false when no clickable node at coordinates", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+
+			const result = bridge.click(999, 999);
+			expect(result).toBe(false);
+		});
+
+		it("returns false when no scene", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+			// Don't add any scene content
+			expect(bridge.click(50, 50)).toBe(false);
+		});
+
+		it("selects topmost interactive node by zIndex", () => {
+			const game = createDebugGame();
+			const clickOrder: string[] = [];
+
+			class ClickableNode extends Node2D {
+				interactive = true;
+				visible = true;
+				width = 100;
+				height = 100;
+				zIndex = 0;
+				label = "";
+
+				containsPoint(x: number, y: number): boolean {
+					const gp = this.globalPosition;
+					return x >= gp.x && x <= gp.x + this.width && y >= gp.y && y <= gp.y + this.height;
+				}
+
+				_onPointerDown(_x: number, _y: number): void {
+					clickOrder.push(this.label);
+				}
+				_onPointerUp(_x: number, _y: number): void {}
+			}
+
+			class TestScene extends Scene {
+				onReady() {
+					const a = new ClickableNode();
+					a.label = "A";
+					a.zIndex = 0;
+					this.addChild(a);
+
+					const b = new ClickableNode();
+					b.label = "B";
+					b.zIndex = 10;
+					this.addChild(b);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			bridge.click(50, 50);
+			expect(clickOrder).toEqual(["B"]);
+		});
+	});
+
+	describe("clickButton()", () => {
+		it("clicks a clickable node by name", () => {
+			const game = createDebugGame();
+			let clicked = false;
+
+			class ClickableNode extends Node2D {
+				interactive = true;
+				visible = true;
+				width = 100;
+				height = 50;
+				zIndex = 0;
+
+				containsPoint(_x: number, _y: number): boolean {
+					return true;
+				}
+
+				_onPointerDown(_x: number, _y: number): void {
+					clicked = true;
+				}
+				_onPointerUp(_x: number, _y: number): void {}
+			}
+
+			class TestScene extends Scene {
+				onReady() {
+					const node = new ClickableNode();
+					node.name = "startButton";
+					this.addChild(node);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const result = bridge.clickButton("startButton");
+			expect(result).toBe(true);
+			expect(clicked).toBe(true);
+		});
+
+		it("clicks a clickable node by text property", () => {
+			const game = createDebugGame();
+			let clicked = false;
+
+			class TextButton extends Node2D {
+				interactive = true;
+				visible = true;
+				width = 100;
+				height = 50;
+				zIndex = 0;
+				text = "Play";
+
+				containsPoint(_x: number, _y: number): boolean {
+					return true;
+				}
+
+				_onPointerDown(_x: number, _y: number): void {
+					clicked = true;
+				}
+				_onPointerUp(_x: number, _y: number): void {}
+			}
+
+			class TestScene extends Scene {
+				onReady() {
+					const node = new TextButton();
+					this.addChild(node);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const result = bridge.clickButton("Play");
+			expect(result).toBe(true);
+			expect(clicked).toBe(true);
+		});
+
+		it("returns false when no matching button found", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+
+			expect(bridge.clickButton("nonexistent")).toBe(false);
+		});
+	});
+
+	describe("query edge cases", () => {
+		it("query returns empty array when no scene", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+			// Scene exists but has no matching nodes
+			expect(bridge.query("NonExistentType")).toEqual([]);
+		});
+
+		it("query returns multiple matches for same type", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					for (let i = 0; i < 5; i++) {
+						const n = new Node2D();
+						n.tag("enemy");
+						this.addChild(n);
+					}
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			expect(bridge.query("enemy").length).toBe(5);
+		});
+
+		it("inspect deeply nested node by name", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const parent = new Node2D();
+					parent.name = "parent";
+					this.addChild(parent);
+
+					const child = new Node2D();
+					child.name = "child";
+					parent.addChild(child);
+
+					const grandchild = new Node2D();
+					grandchild.name = "grandchild";
+					child.addChild(grandchild);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const snap = bridge.inspect("grandchild");
+			expect(snap).not.toBeNull();
+			expect(snap?.name).toBe("grandchild");
+		});
+	});
+
+	describe("events with filter", () => {
+		it("events() supports category filter", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+
+			bridge.log("physics", "collision");
+			bridge.log("input", "key pressed");
+			bridge.log("physics", "overlap");
+
+			const physics = bridge.events({ category: "physics" });
+			expect(physics.length).toBe(2);
+			expect(physics.every((e) => e.category === "physics")).toBe(true);
+		});
+
+		it("peekEvents() with filter does not drain matching events", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+
+			bridge.log("test", "one");
+			bridge.log("test", "two");
+
+			const peeked = bridge.peekEvents({ category: "test" });
+			expect(peeked.length).toBe(2);
+
+			// Drain all
+			const all = bridge.events();
+			expect(all.length).toBeGreaterThanOrEqual(2);
+		});
+	});
 });

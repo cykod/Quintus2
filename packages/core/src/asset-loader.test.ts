@@ -193,4 +193,114 @@ describe("AssetLoader", () => {
 		await loader.load({});
 		expect(completeFn).toHaveBeenCalled();
 	});
+
+	// === Custom Loaders ===
+	describe("custom loaders", () => {
+		it("registerLoader + load custom asset type", async () => {
+			const loader = new AssetLoader();
+			loader.registerLoader("audio", async (_name, path) => {
+				return { mockBuffer: true, path };
+			});
+
+			await loader.load({ audio: ["music/bgm.ogg"] });
+
+			const result = loader.get<{ mockBuffer: boolean; path: string }>("bgm");
+			expect(result).not.toBeNull();
+			expect(result!.mockBuffer).toBe(true);
+			expect(result!.path).toBe("music/bgm.ogg");
+		});
+
+		it("custom loader receives correct name and path", async () => {
+			const loader = new AssetLoader();
+			const loaderFn = vi.fn().mockResolvedValue("loaded");
+			loader.registerLoader("shader", loaderFn);
+
+			await loader.load({ shader: ["assets/shaders/blur.glsl"] });
+
+			expect(loaderFn).toHaveBeenCalledWith("blur", "assets/shaders/blur.glsl");
+		});
+
+		it("warns and skips unregistered custom asset type", async () => {
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const loader = new AssetLoader();
+
+			await loader.load({ unknown: ["file.dat"] });
+
+			expect(warnSpy).toHaveBeenCalledWith(
+				expect.stringContaining('No loader registered for asset type "unknown"'),
+			);
+			warnSpy.mockRestore();
+		});
+
+		it("custom loader error is caught and emitted", async () => {
+			const loader = new AssetLoader();
+			loader.registerLoader("audio", async () => {
+				throw new Error("decode failed");
+			});
+
+			const errorFn = vi.fn();
+			loader.error.connect(errorFn);
+
+			await loader.load({ audio: ["bad.ogg"] });
+
+			expect(errorFn).toHaveBeenCalledTimes(1);
+			expect(errorFn.mock.calls[0][0].error.message).toBe("decode failed");
+			expect(loader.failedAssets).toContain("bad.ogg");
+		});
+
+		it("multiple custom types in one manifest", async () => {
+			const loader = new AssetLoader();
+			loader.registerLoader("audio", async () => ({ type: "audio" }));
+			loader.registerLoader("tmx", async () => "<map/>");
+
+			await loader.load({
+				audio: ["bgm.ogg"],
+				tmx: ["level1.tmx"],
+			});
+
+			expect(loader.get("bgm")).toEqual({ type: "audio" });
+			expect(loader.get("level1")).toBe("<map/>");
+		});
+	});
+
+	// === _storeJSON / _storeCustom ===
+	describe("test helpers", () => {
+		it("_storeJSON stores retrievable data", () => {
+			const loader = new AssetLoader();
+			const data = { tiles: [1, 2, 3] };
+			loader._storeJSON("map", data);
+			expect(loader.getJSON("map")).toEqual(data);
+			expect(loader.isLoaded("map")).toBe(true);
+		});
+
+		it("_storeCustom stores retrievable data", () => {
+			const loader = new AssetLoader();
+			const buf = new ArrayBuffer(16);
+			loader._storeCustom("sound", buf);
+			expect(loader.get("sound")).toBe(buf);
+			expect(loader.isLoaded("sound")).toBe(true);
+		});
+	});
+
+	// === Progress tracking ===
+	describe("progress tracking", () => {
+		it("progress reports correct loaded/total for mixed manifest", async () => {
+			const jsonData = { key: "value" };
+			globalThis.fetch = mockFetchSuccess(jsonData, "image/png") as typeof fetch;
+			const loader = new AssetLoader();
+			loader.registerLoader("audio", async () => "audio-data");
+
+			const progressCalls: Array<{ loaded: number; total: number }> = [];
+			loader.progress.connect((p) => progressCalls.push({ loaded: p.loaded, total: p.total }));
+
+			await loader.load({
+				images: ["a.png"],
+				json: ["b.json"],
+				audio: ["c.ogg"],
+			});
+
+			expect(progressCalls.length).toBe(3);
+			expect(progressCalls[progressCalls.length - 1]!.total).toBe(3);
+		});
+	});
 });

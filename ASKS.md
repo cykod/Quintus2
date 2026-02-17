@@ -211,3 +211,5 @@
 [ASKS] tue 2/17 12pm - Review test coverage gaps across all quintus packages and create a plan to address them
 
 [DSGN] tue 2/17 12pm - Design Phase 7 deterministic simulation and AI testing framework
+
+[MILE] tue 2/17 12pm - Added platformer game to examples index page as Phase 6 entry

@@ -348,4 +348,156 @@ describe("TileMap", () => {
 			expect(map.getProperty("nonexistent")).toBeUndefined();
 		});
 	});
+
+	describe("worldToTile edge cases", () => {
+		it("returns (0,0) when map not loaded", () => {
+			const map = new TileMap();
+			const result = map.worldToTile(new Vec2(100, 200));
+			expect(result.x).toBe(0);
+			expect(result.y).toBe(0);
+		});
+
+		it("accounts for TileMap position offset", () => {
+			const game = createTestGame();
+			const data = makeTiledJSON();
+			game.assets._storeJSON("level1", data);
+
+			let tileMap: TileMap | undefined;
+			class TestScene extends Scene {
+				onReady() {
+					const map = this.add(TileMap);
+					map.position._set(100, 100);
+					map.asset = "level1";
+					tileMap = map;
+				}
+			}
+			game.start(TestScene);
+			const map = tileMap!;
+
+			// World pos (116, 116) with map offset (100, 100) → local (16, 16) → tile (1, 1)
+			const tile = map.worldToTile(new Vec2(116, 116));
+			expect(tile.x).toBe(1);
+			expect(tile.y).toBe(1);
+		});
+	});
+
+	describe("tileToWorld edge cases", () => {
+		it("returns (0,0) when map not loaded", () => {
+			const map = new TileMap();
+			const result = map.tileToWorld(2, 3);
+			expect(result.x).toBe(0);
+			expect(result.y).toBe(0);
+		});
+	});
+
+	describe("setTileAt edge cases", () => {
+		it("ignores out-of-bounds set", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			// Should not throw
+			map.setTileAt(-1, 0, 5);
+			map.setTileAt(0, -1, 5);
+			map.setTileAt(999, 0, 5);
+			map.setTileAt(0, 999, 5);
+		});
+
+		it("ignores set on invalid layer", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			// Should not throw
+			map.setTileAt(0, 0, 5, "nonexistent_layer");
+		});
+	});
+
+	describe("getObjects edge cases", () => {
+		it("returns empty when map not loaded", () => {
+			const map = new TileMap();
+			expect(map.getObjects("entities")).toEqual([]);
+		});
+	});
+
+	describe("generateCollision edge cases", () => {
+		it("throws when map not loaded", () => {
+			const map = new TileMap();
+			expect(() => map.generateCollision()).toThrow("Map not loaded");
+		});
+
+		it("throws when physics plugin not installed", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			expect(() => map.generateCollision({ allSolid: true })).toThrow(
+				"PhysicsPlugin",
+			);
+		});
+
+		it("returns 0 for nonexistent layer", () => {
+			const game = createTestGame();
+			game.use(
+				PhysicsPlugin({
+					collisionGroups: {
+						default: { collidesWith: ["default"] },
+					},
+				}),
+			);
+			const map = setupTileMap(game);
+			const count = map.generateCollision({ layer: "nonexistent", allSolid: true });
+			expect(count).toBe(0);
+		});
+	});
+
+	describe("rendering", () => {
+		it("onDraw does nothing when map not loaded", () => {
+			const map = new TileMap();
+			const ctx = {
+				text: () => {},
+				rect: () => {},
+				circle: () => {},
+				polygon: () => {},
+				line: () => {},
+				image: () => {},
+				measureText: () => new Vec2(0, 0),
+				save: () => {},
+				restore: () => {},
+				setAlpha: () => {},
+				assets: {} as never,
+			};
+			// Should not throw
+			map.onDraw(ctx);
+		});
+	});
+
+	describe("TMX loading", () => {
+		it("loads TMX text from custom asset", () => {
+			const game = createTestGame();
+			const tmxText = `<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" orientation="orthogonal" renderorder="right-down"
+     width="3" height="2" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" name="terrain" tilewidth="16" tileheight="16"
+          tilecount="100" columns="10">
+  <image source="terrain.png" width="160" height="160"/>
+ </tileset>
+ <layer name="ground" width="3" height="2">
+  <data encoding="csv">
+1,1,1,
+1,0,1
+</data>
+ </layer>
+</map>`;
+			game.assets._storeCustom("level1", tmxText);
+
+			let tileMap: TileMap | undefined;
+			class TestScene extends Scene {
+				onReady() {
+					const map = this.add(TileMap);
+					map.asset = "level1";
+					tileMap = map;
+				}
+			}
+			game.start(TestScene);
+
+			expect(tileMap!.isLoaded).toBe(true);
+			expect(tileMap!.mapWidth).toBe(3);
+			expect(tileMap!.mapHeight).toBe(2);
+		});
+	});
 });

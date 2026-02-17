@@ -730,4 +730,165 @@ describe("Actor", () => {
 			expect(actor.bodyExited.hasListeners).toBe(false);
 		});
 	});
+
+	describe("moving platform carry", () => {
+		it("actor rides a moving platform", () => {
+			const actor = makeActor(new Vec2(100, 80));
+			const platform = makeStatic(new Vec2(100, 100));
+			platform.constantVelocity = new Vec2(200, 0);
+			setupScene([actor, platform]);
+
+			// Land on platform
+			actor.velocity = new Vec2(0, 200);
+			actor.move(0.1);
+			expect(actor.isOnFloor()).toBe(true);
+			expect(actor.getFloorCollider()).toBe(platform);
+
+			// Next move: platform should carry actor horizontally
+			const xBefore = actor.position.x;
+			actor.velocity = new Vec2(0, 0);
+			actor.move(0.1);
+			// actor should have moved right by platform velocity * dt = 200 * 0.1 = 20
+			expect(actor.position.x).toBeGreaterThan(xBefore);
+		});
+
+		it("stationary platform does not carry", () => {
+			const actor = makeActor(new Vec2(100, 80));
+			const platform = makeStatic(new Vec2(100, 100));
+			// constantVelocity defaults to (0, 0)
+			setupScene([actor, platform]);
+
+			actor.velocity = new Vec2(0, 200);
+			actor.move(0.1);
+			expect(actor.isOnFloor()).toBe(true);
+
+			const xBefore = actor.position.x;
+			actor.velocity = new Vec2(0, 0);
+			actor.move(0.1);
+			// Should not have moved horizontally
+			expect(actor.position.x).toBeCloseTo(xBefore, 0);
+		});
+	});
+
+	describe("corner slide (multi-collision)", () => {
+		it("slides into corner and handles two walls", () => {
+			const actor = makeActor(new Vec2(0, 0));
+			// Floor below, wall to the right
+			const floor = makeStatic(new Vec2(100, 100));
+			const wall = makeStatic(new Vec2(200, 50), 20, 200);
+			setupScene([actor, floor, wall]);
+
+			actor.applyGravity = false;
+			actor.velocity = new Vec2(300, 300);
+			actor.move(1);
+
+			// Should have been stopped by both floor and wall
+			const collisions = actor.getSlideCollisions();
+			expect(collisions.length).toBeGreaterThanOrEqual(1);
+		});
+	});
+
+	describe("contact flag transitions", () => {
+		it("floor → not on floor after moving up", () => {
+			const actor = makeActor(new Vec2(100, 80));
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			// Land on floor
+			actor.velocity = new Vec2(0, 200);
+			actor.move(0.1);
+			expect(actor.isOnFloor()).toBe(true);
+
+			// Jump upward - set negative velocity and prevent floor snap
+			actor.velocity.y = -500;
+			actor.move(1 / 60);
+			// After jumping, velocity should still be negative (preserved by floor snap logic)
+			// After enough upward motion, floor contact should be lost
+			actor.applyGravity = false;
+			actor.velocity = new Vec2(0, -500);
+			actor.move(0.1);
+			expect(actor.isOnFloor()).toBe(false);
+		});
+
+		it("wall contact resets when moving away", () => {
+			const actor = makeActor(new Vec2(0, 100));
+			const wall = makeStatic(new Vec2(50, 100), 20, 200);
+			setupScene([actor, wall]);
+
+			actor.applyGravity = false;
+			actor.velocity = new Vec2(200, 0);
+			actor.move(0.5);
+			expect(actor.isOnWall()).toBe(true);
+
+			// Move away from wall
+			actor.velocity = new Vec2(-200, 0);
+			actor.move(0.1);
+			expect(actor.isOnWall()).toBe(false);
+		});
+	});
+
+	describe("debug instrumentation", () => {
+		it("logs collision events in debug mode", () => {
+			const canvas = document.createElement("canvas");
+			const game = new Game({ width: 800, height: 600, canvas, renderer: null, debug: true });
+			const actor = makeActor(new Vec2(100, 50));
+			const floor = makeStatic(new Vec2(100, 100));
+			game.use(PhysicsPlugin());
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(actor);
+					this.addChild(floor);
+				}
+			}
+			game.start(TestScene);
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			const events = game.debugLog.peek({ category: "physics" });
+			const collisionEvents = events.filter((e) => e.message.includes("collision"));
+			expect(collisionEvents.length).toBeGreaterThanOrEqual(1);
+		});
+
+		it("logs floor contact transition in debug mode", () => {
+			const canvas = document.createElement("canvas");
+			const game = new Game({ width: 800, height: 600, canvas, renderer: null, debug: true });
+			const actor = makeActor(new Vec2(100, 50));
+			const floor = makeStatic(new Vec2(100, 100));
+			game.use(PhysicsPlugin());
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(actor);
+					this.addChild(floor);
+				}
+			}
+			game.start(TestScene);
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			const events = game.debugLog.peek({ category: "physics" });
+			const floorEvents = events.filter((e) => e.message.includes("floor_contact"));
+			expect(floorEvents.length).toBeGreaterThanOrEqual(1);
+			expect(floorEvents[0]!.message).toContain("entered");
+		});
+	});
+
+	describe("serialize", () => {
+		it("includes velocity, gravity, and contact flags", () => {
+			const actor = makeActor(new Vec2(100, 80));
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			actor.velocity = new Vec2(50, 200);
+			actor.move(0.1);
+
+			const snap = actor.serialize();
+			expect(snap.velocity).toBeDefined();
+			expect(snap.gravity).toBe(actor.gravity);
+			expect(snap.isOnFloor).toBe(true);
+			expect(snap.bodyType).toBe("actor");
+			expect(snap.collisionGroup).toBeDefined();
+		});
+	});
 });
