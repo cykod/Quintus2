@@ -1,3 +1,16 @@
+## Add pixel art sprites, spike hazard, and renderer pixelArt mode
+*Tuesday, February 17th at 8am*
+Replace all procedural onDraw rendering in the platformer with 
+AnimatedSprite-based pixel art using the Kenney Pico-8 tileset. Add a shared 
+SpriteSheet definition for all entities (player, enemies, coin, health, flag, 
+spike), a new Spike hazard entity, heart-icon HUD replacing the health bar, and 
+edge-detection patrol AI. On the engine side, add pixelArt mode to 
+Canvas2DRenderer (disables image smoothing), fix flip rendering to always zero 
+drawX/drawY after translate, and set camera zoom to 2x for the crispy pixel 
+look.
+
+---
+
 ## Add scene query API: raycast, area queries, shape cast, DDA tilemap raycast
 *Monday, February 16th at 6pm*
 Implement the complete Scene Query API across 5 phases as specified in 

@@ -131,6 +131,7 @@ export class Game {
 				this.height,
 				this.backgroundColor,
 				this.assets,
+				this.pixelArt,
 			);
 		}
 

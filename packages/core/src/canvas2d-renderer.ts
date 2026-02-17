@@ -115,12 +115,8 @@ class Canvas2DDrawContext implements DrawContext {
 		if (flipH || flipV) {
 			ctx.translate(flipH ? pos.x + dw : pos.x, flipV ? pos.y + dh : pos.y);
 			ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-			drawX = flipH ? 0 : pos.x;
-			drawY = flipV ? 0 : pos.y;
-			if (flipH && flipV) {
-				drawX = 0;
-				drawY = 0;
-			}
+			drawX = 0;
+			drawY = 0;
 		}
 
 		if (src) {
@@ -155,6 +151,7 @@ export class Canvas2DRenderer implements Renderer {
 	private readonly gameWidth: number;
 	private readonly gameHeight: number;
 	private readonly backgroundColor: string;
+	private readonly pixelArt: boolean;
 
 	// Pre-allocated render list — reused between frames
 	private renderList: Node2D[] = [];
@@ -166,6 +163,7 @@ export class Canvas2DRenderer implements Renderer {
 		height: number,
 		backgroundColor: string,
 		assets: AssetLoader,
+		pixelArt = false,
 	) {
 		const ctx = canvas.getContext("2d");
 		if (!ctx) throw new Error("Failed to get 2D rendering context");
@@ -174,6 +172,10 @@ export class Canvas2DRenderer implements Renderer {
 		this.gameWidth = width;
 		this.gameHeight = height;
 		this.backgroundColor = backgroundColor;
+		this.pixelArt = pixelArt;
+		if (pixelArt) {
+			ctx.imageSmoothingEnabled = false;
+		}
 	}
 
 	/** Mark render list as needing rebuild. */
@@ -191,6 +193,7 @@ export class Canvas2DRenderer implements Renderer {
 
 		// 1. Clear
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		if (this.pixelArt) ctx.imageSmoothingEnabled = false;
 		ctx.clearRect(0, 0, this.gameWidth, this.gameHeight);
 		if (this.backgroundColor) {
 			ctx.fillStyle = this.backgroundColor;

@@ -1,27 +1,23 @@
-import type { SceneConstructor } from "@quintus/core";
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
-import { gameState } from "../state.js";
+import type { Player } from "./player.js";
 
-export class LevelExit extends Sensor {
+export class Spike extends Sensor {
 	override collisionGroup = "items";
-	nextScene!: SceneConstructor;
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(8, 8);
-		this.tag("exit");
+		this.addChild(CollisionShape).shape = Shape.rect(6, 4);
+		this.tag("spike");
 
 		const sprite = this.addChild(AnimatedSprite);
 		sprite.spriteSheet = entitySheet;
-		sprite.play("flag");
+		sprite.play("spike");
 
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
-				gameState.currentLevel++;
-				this.game?.audio.play("victory", { bus: "sfx" });
-				this.scene?.switchTo(this.nextScene);
+				(body as Player).takeDamage();
 			}
 		});
 	}

@@ -542,8 +542,8 @@ describe("Canvas2DDrawContext", () => {
 
 			expect(translate).toHaveBeenCalledWith(10 + 32, 20);
 			expect(scale).toHaveBeenCalledWith(-1, 1);
-			// drawX should be 0 (flipped coordinate space), drawY stays 20
-			expect(drawImage).toHaveBeenCalledWith(img, 0, 20, 32, 32);
+			// Both drawX and drawY are 0 (translate already positions correctly)
+			expect(drawImage).toHaveBeenCalledWith(img, 0, 0, 32, 32);
 		});
 
 		it("with flipV applies negative y-scale transform", () => {
@@ -560,7 +560,8 @@ describe("Canvas2DDrawContext", () => {
 
 			expect(translate).toHaveBeenCalledWith(10, 20 + 32);
 			expect(scale).toHaveBeenCalledWith(1, -1);
-			expect(drawImage).toHaveBeenCalledWith(img, 10, 0, 32, 32);
+			// Both drawX and drawY are 0 (translate already positions correctly)
+			expect(drawImage).toHaveBeenCalledWith(img, 0, 0, 32, 32);
 		});
 
 		it("with flipH + flipV applies combined flip", () => {

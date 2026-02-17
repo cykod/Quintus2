@@ -189,3 +189,9 @@
 [DEVL] mon 2/16 3pm - Review QUERY_API.md for potential issues and risks
 
 [IMPL] mon 2/16 4pm - Implement scene query API — raycasting, point/area queries, shape cast, actor convenience methods, and tilemap DDA raycast
+
+[MILE] mon 2/16 4pm - Added complete platformer game with title screen, levels, enemies, HUD, and fixed bidirectional onContact dispatch and depenetration signals
+
+[MILE] mon 2/16 6pm - Added complete scene query API with raycast, area queries, shape cast, actor convenience methods, and DDA tilemap raycast
+
+[DSGN] tue 2/17 8am - Design first-class Tiled .tmx/.tsx file support for level editing interoperability

@@ -1,8 +1,8 @@
-import type { DrawContext } from "@quintus/core";
 import { type Signal, signal } from "@quintus/core";
-import { Color, Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { AnimatedSprite } from "@quintus/sprites";
 import { Ease } from "@quintus/tween";
+import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
 export class FlyingEnemy extends Actor {
@@ -14,14 +14,19 @@ export class FlyingEnemy extends Actor {
 	override collisionGroup = "enemies";
 
 	private _time = 0;
+	private _sprite!: AnimatedSprite;
 
 	readonly died: Signal<void> = signal<void>();
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(16, 10);
+		this.addChild(CollisionShape).shape = Shape.rect(7, 7);
 		this.tag("enemy");
 		this.applyGravity = false;
+
+		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite.spriteSheet = entitySheet;
+		this._sprite.play("enemy_fly");
 	}
 
 	override onFixedUpdate(dt: number) {
@@ -39,32 +44,24 @@ export class FlyingEnemy extends Actor {
 		}
 
 		this.move(dt);
+
+		this._sprite.flipH = this.direction < 0;
 	}
 
 	stomp(): void {
 		this.game?.audio.play("stomp", { bus: "sfx" });
 		gameState.score += 200;
 
+		// Squash death animation (scale cascades to sprite child)
 		this.killTweens();
 		this.tween()
-			.to({ scale: { y: 0 }, alpha: 0 }, 0.2, Ease.quadIn)
+			.to({ scale: { y: 0 } }, 0.2, Ease.quadIn)
 			.onComplete(() => this.destroy());
 
-		this.died.emit();
-	}
+		// Fade sprite
+		this._sprite.killTweens();
+		this._sprite.tween().to({ alpha: 0 }, 0.2, Ease.quadIn);
 
-	override onDraw(ctx: DrawContext) {
-		// Body
-		ctx.rect(new Vec2(-8, -5), new Vec2(16, 10), {
-			fill: Color.fromHex("#ab47bc"),
-		});
-		// Wings
-		const wingY = Math.sin(this._time * 10) * 2;
-		ctx.rect(new Vec2(-10, -7 + wingY), new Vec2(4, 4), {
-			fill: Color.fromHex("#ce93d8"),
-		});
-		ctx.rect(new Vec2(6, -7 + wingY), new Vec2(4, 4), {
-			fill: Color.fromHex("#ce93d8"),
-		});
+		this.died.emit();
 	}
 }

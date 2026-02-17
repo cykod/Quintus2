@@ -1,7 +1,7 @@
-import type { DrawContext } from "@quintus/core";
 import { type Signal, signal } from "@quintus/core";
-import { Color, Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { AnimatedSprite } from "@quintus/sprites";
+import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
 export class Player extends Actor {
@@ -16,14 +16,19 @@ export class Player extends Actor {
 	private _invincible = false;
 	private _invincibleTimer = 0;
 	private _facing: "left" | "right" = "right";
+	private _sprite!: AnimatedSprite;
 
 	readonly damaged: Signal<number> = signal<number>();
 	readonly died: Signal<void> = signal<void>();
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(12, 14);
+		this.addChild(CollisionShape).shape = Shape.rect(6, 7);
 		this.tag("player");
+
+		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite.spriteSheet = entitySheet;
+		this._sprite.play("player_idle");
 	}
 
 	override onFixedUpdate(dt: number) {
@@ -61,12 +66,23 @@ export class Player extends Actor {
 
 		this.move(dt);
 
-		// Invincibility timer
+		// Animation state
+		this._sprite.flipH = this._facing === "left";
+		if (!this.isOnFloor()) {
+			this._sprite.play("player_jump");
+		} else if (Math.abs(this.velocity.x) > 1) {
+			this._sprite.play("player_run");
+		} else {
+			this._sprite.play("player_idle");
+		}
+
+		// Invincibility timer + blink effect
 		if (this._invincible) {
 			this._invincibleTimer -= dt;
+			this._sprite.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
 			if (this._invincibleTimer <= 0) {
 				this._invincible = false;
-				this.alpha = 1;
+				this._sprite.alpha = 1;
 			}
 		}
 
@@ -84,26 +100,11 @@ export class Player extends Actor {
 		this._invincible = true;
 		this._invincibleTimer = this.invincibilityDuration;
 
-		// Flash effect via tween
-		this.tween().to({ alpha: 0.2 }, 0.1).to({ alpha: 1 }, 0.1).repeat(3);
-
 		this.game?.audio.play("hit", { bus: "sfx" });
 		this.damaged.emit(gameState.health);
 
 		if (gameState.health <= 0) {
 			this.died.emit();
 		}
-	}
-
-	override onDraw(ctx: DrawContext) {
-		const flipX = this._facing === "left" ? -1 : 1;
-		// Body
-		ctx.rect(new Vec2(-6, -8), new Vec2(12, 16), {
-			fill: Color.fromHex("#4fc3f7"),
-		});
-		// Eyes
-		ctx.rect(new Vec2(flipX > 0 ? 1 : -4, -5), new Vec2(3, 3), {
-			fill: Color.WHITE,
-		});
 	}
 }

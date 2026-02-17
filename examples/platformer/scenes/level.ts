@@ -9,6 +9,7 @@ import { HealthPickup } from "../entities/health-pickup.js";
 import { LevelExit } from "../entities/level-exit.js";
 import { PatrolEnemy } from "../entities/patrol-enemy.js";
 import { Player } from "../entities/player.js";
+import { Spike } from "../entities/spike.js";
 import { HUD } from "../hud/hud.js";
 
 /** Base Level scene with shared setup logic. Subclasses set asset + nextScene. */
@@ -60,6 +61,7 @@ export abstract class Level extends Scene {
 			FlyingEnemy: FlyingEnemy,
 			HealthPickup: HealthPickup,
 			LevelExit: LevelExit,
+			Spike: Spike,
 		});
 
 		// Set nextScene on all LevelExit instances
@@ -70,7 +72,7 @@ export abstract class Level extends Scene {
 		}
 
 		// Setup enemy-player collision (contact-based via physics)
-		this.game!.physics.onContact("player", "enemies", (player, enemy, info) => {
+		this.game?.physics.onContact("player", "enemies", (player, enemy, info) => {
 			const p = player as Player;
 			const e = enemy as PatrolEnemy | FlyingEnemy;
 
@@ -87,6 +89,7 @@ export abstract class Level extends Scene {
 		const camera = this.add(Camera);
 		camera.follow = this.player;
 		camera.smoothing = 0.1;
+		camera.zoom = 2;
 		camera.bounds = new Rect(0, 0, map.bounds.width, map.bounds.height);
 
 		// HUD (fixed layer, stays on screen)
