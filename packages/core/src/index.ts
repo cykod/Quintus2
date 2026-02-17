@@ -25,7 +25,7 @@ export { Game } from "./game.js";
 export { GameLoop } from "./game-loop.js";
 export type { NodeConstructor, NodeProps, PauseMode } from "./node.js";
 // Node tree
-export { Node } from "./node.js";
+export { _resetNodeIdCounter, Node } from "./node.js";
 export type { Node2DProps } from "./node2d.js";
 export { Node2D } from "./node2d.js";
 export type { Plugin } from "./plugin.js";
@@ -44,3 +44,5 @@ export type {
 	Node2DSnapshot,
 	NodeSnapshot,
 } from "./snapshot-types.js";
+// Snapshot utilities
+export { countInSnapshot, findAllInSnapshot, findInSnapshot } from "./snapshot-utils.js";

@@ -14,6 +14,11 @@ export type NodeProps = {
 
 let nextNodeId = 0;
 
+/** @internal Reset ID counter for deterministic testing. */
+export function _resetNodeIdCounter(): void {
+	nextNodeId = 0;
+}
+
 export class Node {
 	// === Identity ===
 	name: string;
@@ -96,10 +101,7 @@ export class Node {
 	// === Tree Manipulation ===
 	addChild(node: Node): this;
 	addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
-	addChild(
-		nodeOrClass: Node | NodeConstructor<Node>,
-		props?: Partial<Node>,
-	): Node | this {
+	addChild(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
 		if (typeof nodeOrClass === "function") {
 			const node = new nodeOrClass();
 			if (props) Object.assign(node, props);

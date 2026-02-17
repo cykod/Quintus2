@@ -41,9 +41,15 @@ importers:
       '@quintus/audio':
         specifier: workspace:*
         version: link:../packages/audio
+      '@quintus/camera':
+        specifier: workspace:*
+        version: link:../packages/camera
       '@quintus/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@quintus/headless':
+        specifier: workspace:*
+        version: link:../packages/headless
       '@quintus/input':
         specifier: workspace:*
         version: link:../packages/input
@@ -53,9 +59,18 @@ importers:
       '@quintus/physics':
         specifier: workspace:*
         version: link:../packages/physics
+      '@quintus/snapshot':
+        specifier: workspace:*
+        version: link:../packages/snapshot
       '@quintus/sprites':
         specifier: workspace:*
         version: link:../packages/sprites
+      '@quintus/test':
+        specifier: workspace:*
+        version: link:../packages/test
+      '@quintus/tilemap':
+        specifier: workspace:*
+        version: link:../packages/tilemap
       '@quintus/tween':
         specifier: workspace:*
         version: link:../packages/tween
@@ -95,7 +110,14 @@ importers:
 
   packages/debug: {}
 
-  packages/headless: {}
+  packages/headless:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/input:
     dependencies:
@@ -156,7 +178,11 @@ importers:
 
   packages/quintus-core: {}
 
-  packages/snapshot: {}
+  packages/snapshot:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/sprites:
     dependencies:
@@ -167,7 +193,20 @@ importers:
         specifier: workspace:*
         version: link:../math
 
-  packages/test: {}
+  packages/test:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/headless':
+        specifier: workspace:*
+        version: link:../headless
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
+      '@quintus/snapshot':
+        specifier: workspace:*
+        version: link:../snapshot
 
   packages/three: {}
 

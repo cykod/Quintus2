@@ -7,11 +7,16 @@
 	},
 	"dependencies": {
 		"@quintus/audio": "workspace:*",
+		"@quintus/camera": "workspace:*",
 		"@quintus/core": "workspace:*",
+		"@quintus/headless": "workspace:*",
 		"@quintus/input": "workspace:*",
 		"@quintus/math": "workspace:*",
 		"@quintus/physics": "workspace:*",
+		"@quintus/snapshot": "workspace:*",
 		"@quintus/sprites": "workspace:*",
+		"@quintus/test": "workspace:*",
+		"@quintus/tilemap": "workspace:*",
 		"@quintus/tween": "workspace:*",
 		"@quintus/ui": "workspace:*"
 	},

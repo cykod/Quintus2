@@ -26,6 +26,12 @@
 		"html5",
 		"2d"
 	],
+	"dependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/headless": "workspace:*",
+		"@quintus/math": "workspace:*",
+		"@quintus/snapshot": "workspace:*"
+	},
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",

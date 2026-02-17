@@ -1,3 +1,16 @@
+## Implement Phase 7: deterministic testing and AI infrastructure
+*Tuesday, February 17th at 2pm*
+Implement @quintus/headless (HeadlessGame with runFor/runUntil), @quintus/test 
+(InputScript DSL, InputScriptPlayer, async TestRunner, Timeline, assertions, 
+assertDeterministic), and @quintus/snapshot (StateSnapshot, captureState, 
+recursive diffSnapshots with tolerance). Add shared snapshot-utils and 
+_resetNodeIdCounter to @quintus/core. Include 97 new tests across all three 
+packages plus 7 platformer integration tests verifying player movement, 
+jumping, and 3-run determinism. AI agents and CI pipelines can now run, test, 
+and inspect Quintus games headlessly without a browser.
+
+---
+
 ## Add comprehensive test coverage across all engine packages
 *Tuesday, February 17th at 12pm*
 Add 107 new tests across 6 new test files and 5 expanded existing files, 

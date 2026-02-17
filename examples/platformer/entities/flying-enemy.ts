@@ -39,11 +39,11 @@ export class FlyingEnemy extends Actor {
 			2 *
 			Math.cos(this._time * this.frequency * Math.PI * 2);
 
+		this.move(dt);
+
 		if (this.isOnWall()) {
 			this.direction *= -1;
 		}
-
-		this.move(dt);
 
 		this._sprite.flipH = this.direction < 0;
 	}

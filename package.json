@@ -15,6 +15,7 @@
 		"lint:fix": "biome check . --write",
 		"dev": "vite examples",
 		"docs": "typedoc",
+		"test:platformer": "vitest run --config examples/platformer/vitest.config.ts",
 		"clean": "pnpm --recursive exec rm -rf dist",
 		"preinstall": "npx only-allow pnpm"
 	},
