@@ -1,3 +1,15 @@
+## Fix dungeon crawler sprites and add complete dungeon example
+*Wednesday, February 18th at 1pm*
+Corrected all 16 tile mappings in the dungeon crawler sprites.ts and state.ts 
+by visually cataloging every tile in the Kenney Tiny Dungeon tileset (132 
+tiles). Created tile_description.csv for future reference. Added the complete 
+dungeon crawler example game with player, enemies (skeleton, orc), items 
+(chests, keys, health pickups, equipment), doors, HUD, procedural level 
+generation, and multiple dungeon levels. Also updated debug-game skill 
+references to use pnpm-based commands.
+
+---
+
 ## Add Y-Sort rendering, Timer node, and fix all lint warnings
 *Tuesday, February 17th at 8pm*
 Implements Phase A engine enhancements for the dungeon crawler demo: 

@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-# DEPRECATED: use "qdbg" instead
-echo "Note: 'quintus-debug' has been renamed to 'qdbg'. Forwarding..." >&2
-exec "$(dirname "$0")/../../bin/qdbg" "$@"

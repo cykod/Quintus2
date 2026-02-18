@@ -1,0 +1,131 @@
+import { type Signal, signal } from "@quintus/core";
+import { Vec2 } from "@quintus/math";
+import { Actor, type CollisionObject, CollisionShape, Shape } from "@quintus/physics";
+import type { SpriteSheet } from "@quintus/sprites";
+import { AnimatedSprite } from "@quintus/sprites";
+import { Ease } from "@quintus/tween";
+import { gameState } from "../state.js";
+
+export type EnemyState = "patrol" | "chase" | "attack" | "hurt" | "guard";
+
+export abstract class BaseEnemy extends Actor {
+	health = 2;
+	maxHealth = 2;
+	damage = 1;
+	override collisionGroup = "enemies";
+	override solid = true;
+	override gravity = 0;
+	override applyGravity = false;
+	override upDirection = Vec2.ZERO;
+
+	enemySpeed = 40;
+	detectionRange = 80;
+	attackRange = 14;
+	attackCooldown = 1.0;
+	points = 50;
+
+	protected state: EnemyState = "patrol";
+	protected _sprite!: AnimatedSprite;
+	protected _attackTimer = 0;
+	protected _hurtTimer = 0;
+	protected _bobTimer = 0;
+
+	readonly died: Signal<void> = signal<void>();
+
+	protected abstract get idleAnimation(): string;
+	protected abstract get walkAnimation(): string;
+	protected abstract get spriteSheet(): SpriteSheet;
+
+	override onReady() {
+		super.onReady();
+		const shape = this.addChild(CollisionShape);
+		shape.shape = Shape.rect(10, 10);
+		this.tag("enemy");
+
+		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite.spriteSheet = this.spriteSheet;
+		this._sprite.play(this.idleAnimation);
+
+		// Create an attack sensor (eWeapon) that overlaps with player
+		// Enemies will spawn their own weapon hitbox during attack state
+	}
+
+	takeDamage(amount: number, fromDirection?: Vec2): void {
+		this.health -= amount;
+		this.state = "hurt";
+		this._hurtTimer = 0.3;
+
+		// Flash effect
+		this._sprite.alpha = 0.5;
+
+		// Knockback
+		if (fromDirection) {
+			const kb = fromDirection.normalize().scale(60);
+			this.velocity.x = kb.x;
+			this.velocity.y = kb.y;
+		}
+
+		if (this.health <= 0) {
+			this._die();
+		}
+	}
+
+	private _die(): void {
+		gameState.score += this.points;
+		this.died.emit();
+
+		// Death animation: shrink + fade
+		this.killTweens();
+		this.tween()
+			.to({ scale: { x: 0, y: 0 } }, 0.2, Ease.quadIn)
+			.onComplete(() => this.destroy());
+		this._sprite.killTweens();
+		this._sprite.tween().to({ alpha: 0 }, 0.2);
+	}
+
+	protected _findPlayer(): CollisionObject | null {
+		// Find the player by tag in the scene
+		const players = this.scene?.findAll("player");
+		if (players && players.length > 0) return players[0] as unknown as CollisionObject;
+		return null;
+	}
+
+	protected _distanceToPlayer(): number {
+		const player = this._findPlayer();
+		if (!player) return Number.POSITIVE_INFINITY;
+		const p = (player as unknown as { position: Vec2 }).position;
+		return this.position.distanceTo(p);
+	}
+
+	protected _directionToPlayer(): Vec2 {
+		const player = this._findPlayer();
+		if (!player) return Vec2.ZERO;
+		const p = (player as unknown as { position: Vec2 }).position;
+		return p.sub(this.position);
+	}
+
+	protected _moveToward(target: Vec2, speed: number, dt: number): void {
+		const dir = target.sub(this.position);
+		const dist = dir.length();
+		if (dist < 1) return;
+		const norm = dir.scale(1 / dist);
+		this.velocity.x = norm.x * speed;
+		this.velocity.y = norm.y * speed;
+		this.move(dt);
+
+		// Flip sprite based on horizontal direction
+		if (Math.abs(norm.x) > 0.1) {
+			this._sprite.flipH = norm.x < 0;
+		}
+	}
+
+	protected _updateBob(dt: number, isMoving: boolean): void {
+		if (isMoving) {
+			this._bobTimer += dt * 6;
+			this._sprite.position.y = Math.sin(this._bobTimer) > 0 ? -1 : 0;
+		} else {
+			this._bobTimer = 0;
+			this._sprite.position.y = 0;
+		}
+	}
+}

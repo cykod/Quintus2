@@ -229,3 +229,11 @@
 [DSGN] tue 2/17 3pm - Design top-down 2D dungeon crawler — engine gaps analysis and demo game plan
 
 [IMPL] tue 2/17 4pm - Implement Phase A engine enhancements (Y-sort rendering + Timer node) for dungeon crawler
+
+[MILE] tue 2/17 8pm - Added Y-Sort rendering mode, Timer node, and resolved all 377 Biome lint warnings across the codebase
+
+[IMPL] tue 2/17 8pm - Implement Phase B dungeon crawler demo game from RPG 2D design
+
+[IMPL] wed 2/18 11am - Fix dungeon crawler sprites to match tile descriptions and design
+
+[ASKS] wed 2/18 12pm - Propose a scene registry pattern so games can reference scenes by name instead of passing class references around
