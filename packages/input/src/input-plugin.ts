@@ -16,6 +16,7 @@ export function InputPlugin(config: InputConfig): Plugin {
 		name: "input",
 		install(game: Game) {
 			const input = new Input(config);
+			input._game = game;
 			inputMap.set(game, input);
 
 			// --- Game Loop Hook (works in all environments, including headless) ---

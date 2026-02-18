@@ -255,7 +255,18 @@ export class Canvas2DRenderer implements Renderer {
 				list.push(node);
 			}
 		}
-		for (const child of node.children) {
+		let children = node.children;
+		if (node instanceof Node2D && node.ySortChildren) {
+			children = [...children].sort((a, b) => {
+				if (a instanceof Node2D && b instanceof Node2D) {
+					const yDiff = a.globalPosition.y - b.globalPosition.y;
+					if (yDiff !== 0) return yDiff;
+					return a.zIndex - b.zIndex;
+				}
+				return 0;
+			});
+		}
+		for (const child of children) {
 			this.collectVisible(child, list);
 		}
 	}

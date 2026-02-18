@@ -197,7 +197,7 @@ describe("SpatialHash", () => {
 		const pairs = hash.queryPairs();
 		expect(pairs.length).toBe(1);
 		// Pair should still contain both items regardless of ordering
-		const pair = pairs[0]!;
+		const pair = pairs[0] as [{ label: string }, { label: string }];
 		const labels = [pair[0].label, pair[1].label].sort();
 		expect(labels).toEqual(["a", "b"]);
 	});

@@ -163,11 +163,11 @@ export class SpatialHash<T> {
 
 			const items = Array.from(cell);
 			for (let i = 0; i < items.length; i++) {
-				const a = items[i]!;
-				const idA = this.itemIds.get(a)!;
+				const a = items[i] as T;
+				const idA = this.itemIds.get(a) as number;
 				for (let j = i + 1; j < items.length; j++) {
-					const b = items[j]!;
-					const idB = this.itemIds.get(b)!;
+					const b = items[j] as T;
+					const idB = this.itemIds.get(b) as number;
 					const lo = idA < idB ? idA : idB;
 					const hi = idA < idB ? idB : idA;
 					const pairKey = lo * maxId + hi;

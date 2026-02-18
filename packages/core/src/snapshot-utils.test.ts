@@ -53,25 +53,25 @@ describe("findInSnapshot", () => {
 	test("finds by type", () => {
 		const result = findInSnapshot(makeTree(), "Player");
 		expect(result).not.toBeNull();
-		expect(result!.id).toBe(1);
+		expect(result?.id).toBe(1);
 	});
 
 	test("finds by name", () => {
 		const result = findInSnapshot(makeTree(), "Level1");
 		expect(result).not.toBeNull();
-		expect(result!.id).toBe(0);
+		expect(result?.id).toBe(0);
 	});
 
 	test("finds by tag", () => {
 		const result = findInSnapshot(makeTree(), "enemy");
 		expect(result).not.toBeNull();
-		expect(result!.id).toBe(4);
+		expect(result?.id).toBe(4);
 	});
 
 	test("finds nested children", () => {
 		const result = findInSnapshot(makeTree(), "CollisionShape");
 		expect(result).not.toBeNull();
-		expect(result!.id).toBe(5);
+		expect(result?.id).toBe(5);
 	});
 
 	test("returns null when not found", () => {
@@ -81,7 +81,7 @@ describe("findInSnapshot", () => {
 	test("returns first match", () => {
 		const result = findInSnapshot(makeTree(), "Coin");
 		expect(result).not.toBeNull();
-		expect(result!.id).toBe(2);
+		expect(result?.id).toBe(2);
 	});
 });
 

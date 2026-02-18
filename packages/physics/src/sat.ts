@@ -249,8 +249,8 @@ function getWorldVertices(shape: Shape2D, transform: Matrix2D): XY[] {
 /** Add normalized edge normals from world-space polygon vertices. */
 function addEdgeNormals(verts: XY[], axes: XY[]): void {
 	for (let i = 0; i < verts.length; i++) {
-		const va = verts[i]!;
-		const vb = verts[(i + 1) % verts.length]!;
+		const va = verts[i] as XY;
+		const vb = verts[(i + 1) % verts.length] as XY;
 		const edgeX = vb.x - va.x;
 		const edgeY = vb.y - va.y;
 		const len = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
@@ -431,7 +431,12 @@ function getSeparationAxes(
 
 	// Special case: capsule-vs-capsule needs segment-to-segment axis
 	if (shapeA.type === "capsule" && shapeB.type === "capsule") {
-		const closest = closestPointsSegments(vertsA[0]!, vertsA[1]!, vertsB[0]!, vertsB[1]!);
+		const closest = closestPointsSegments(
+			vertsA[0] as XY,
+			vertsA[1] as XY,
+			vertsB[0] as XY,
+			vertsB[1] as XY,
+		);
 		const dx = closest.b.x - closest.a.x;
 		const dy = closest.b.y - closest.a.y;
 		const len = Math.sqrt(dx * dx + dy * dy);

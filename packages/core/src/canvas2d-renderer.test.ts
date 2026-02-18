@@ -4,6 +4,7 @@ import { AssetLoader } from "./asset-loader.js";
 import { Canvas2DRenderer } from "./canvas2d-renderer.js";
 import type { DrawContext } from "./draw-context.js";
 import { Game } from "./game.js";
+import { Node } from "./node.js";
 import { Node2D } from "./node2d.js";
 import { Scene } from "./scene.js";
 
@@ -15,7 +16,7 @@ function createTestSetup() {
 	const scene = new Scene(game);
 	const assets = new AssetLoader();
 	const renderer = new Canvas2DRenderer(canvas, 200, 200, "#000000", assets);
-	const ctx = canvas.getContext("2d")!;
+	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 	return { canvas, ctx, game, scene, renderer, assets };
 }
 
@@ -28,12 +29,13 @@ function spyOnStyleSetters(ctx: CanvasRenderingContext2D) {
 	const setFillStyle = vi.fn<(v: string | CanvasGradient | CanvasPattern) => void>();
 	const setStrokeStyle = vi.fn<(v: string | CanvasGradient | CanvasPattern) => void>();
 
-	const origFillDesc =
-		Object.getOwnPropertyDescriptor(ctx, "fillStyle") ||
-		Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), "fillStyle")!;
-	const origStrokeDesc =
-		Object.getOwnPropertyDescriptor(ctx, "strokeStyle") ||
-		Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), "strokeStyle")!;
+	const origFillDesc = (Object.getOwnPropertyDescriptor(ctx, "fillStyle") ||
+		Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), "fillStyle")) as PropertyDescriptor;
+	const origStrokeDesc = (Object.getOwnPropertyDescriptor(ctx, "strokeStyle") ||
+		Object.getOwnPropertyDescriptor(
+			Object.getPrototypeOf(ctx),
+			"strokeStyle",
+		)) as PropertyDescriptor;
 
 	Object.defineProperty(ctx, "fillStyle", {
 		set(v) {
@@ -707,5 +709,203 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 
 		expect(clearRect).toHaveBeenCalledWith(0, 0, 200, 200);
 		expect(fillRect).toHaveBeenCalledWith(0, 0, 200, 200);
+	});
+});
+
+// ─── Y-Sort Rendering ────────────────────────────────────────────────────────
+
+describe("Canvas2DRenderer (Y-Sort)", () => {
+	it("y-sorted parent: children rendered in Y order, not tree order", () => {
+		const { scene, renderer } = createTestSetup();
+		const order: string[] = [];
+
+		class TrackedNode extends Node2D {
+			label: string;
+			constructor(label: string) {
+				super();
+				this.label = label;
+			}
+			override onDraw(_ctx: DrawContext): void {
+				order.push(this.label);
+			}
+		}
+
+		const parent = new Node2D();
+		parent.ySortChildren = true;
+		scene.addChild(parent);
+
+		// Add in tree order: A, B, C but Y positions reversed
+		const a = new TrackedNode("a");
+		a.position = new Vec2(0, 100); // bottom
+		const b = new TrackedNode("b");
+		b.position = new Vec2(0, 50); // middle
+		const c = new TrackedNode("c");
+		c.position = new Vec2(0, 10); // top
+
+		parent.addChild(a);
+		parent.addChild(b);
+		parent.addChild(c);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		// Should render in Y order: c (10), b (50), a (100)
+		expect(order).toEqual(["c", "b", "a"]);
+	});
+
+	it("y-sort tie-breaking: same Y falls back to zIndex", () => {
+		const { scene, renderer } = createTestSetup();
+		const order: string[] = [];
+
+		class TrackedNode extends Node2D {
+			label: string;
+			constructor(label: string) {
+				super();
+				this.label = label;
+			}
+			override onDraw(_ctx: DrawContext): void {
+				order.push(this.label);
+			}
+		}
+
+		const parent = new Node2D();
+		parent.ySortChildren = true;
+		scene.addChild(parent);
+
+		const a = new TrackedNode("a");
+		a.position = new Vec2(0, 50);
+		a.zIndex = 2;
+		const b = new TrackedNode("b");
+		b.position = new Vec2(0, 50);
+		b.zIndex = 1;
+
+		parent.addChild(a);
+		parent.addChild(b);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		// Same Y, so zIndex breaks tie: b (z=1) before a (z=2)
+		expect(order).toEqual(["b", "a"]);
+	});
+
+	it("y-sort disabled (default): children use tree order", () => {
+		const { scene, renderer } = createTestSetup();
+		const order: string[] = [];
+
+		class TrackedNode extends Node2D {
+			label: string;
+			constructor(label: string) {
+				super();
+				this.label = label;
+			}
+			override onDraw(_ctx: DrawContext): void {
+				order.push(this.label);
+			}
+		}
+
+		const parent = new Node2D();
+		// ySortChildren defaults to false
+		scene.addChild(parent);
+
+		const a = new TrackedNode("a");
+		a.position = new Vec2(0, 100);
+		const b = new TrackedNode("b");
+		b.position = new Vec2(0, 10);
+
+		parent.addChild(a);
+		parent.addChild(b);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		// Tree order preserved: a first, b second
+		expect(order).toEqual(["a", "b"]);
+	});
+
+	it("nested y-sort: y-sorted container inside another y-sorted container", () => {
+		const { scene, renderer } = createTestSetup();
+		const order: string[] = [];
+
+		class TrackedNode extends Node2D {
+			label: string;
+			constructor(label: string) {
+				super();
+				this.label = label;
+			}
+			override onDraw(_ctx: DrawContext): void {
+				order.push(this.label);
+			}
+		}
+
+		const outer = new Node2D();
+		outer.ySortChildren = true;
+		scene.addChild(outer);
+
+		// Inner container at Y=100, with its own y-sorted children
+		const inner = new Node2D();
+		inner.ySortChildren = true;
+		inner.position = new Vec2(0, 100);
+		outer.addChild(inner);
+
+		const c1 = new TrackedNode("inner-bottom");
+		c1.position = new Vec2(0, 50); // globalY = 150
+		const c2 = new TrackedNode("inner-top");
+		c2.position = new Vec2(0, 10); // globalY = 110
+
+		inner.addChild(c1);
+		inner.addChild(c2);
+
+		// Direct child of outer at Y=50 — should be visited before inner (Y=100)
+		const sibling = new TrackedNode("sibling");
+		sibling.position = new Vec2(0, 50);
+		outer.addChild(sibling);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		// Outer sorts: sibling (Y=50) before inner (Y=100)
+		// Inner sorts: inner-top (Y=10) before inner-bottom (Y=50)
+		expect(order).toEqual(["sibling", "inner-top", "inner-bottom"]);
+	});
+
+	it("non-Node2D children in y-sorted parent: skipped gracefully", () => {
+		const { scene, renderer } = createTestSetup();
+		const order: string[] = [];
+
+		class TrackedNode extends Node2D {
+			label: string;
+			constructor(label: string) {
+				super();
+				this.label = label;
+			}
+			override onDraw(_ctx: DrawContext): void {
+				order.push(this.label);
+			}
+		}
+
+		const parent = new Node2D();
+		parent.ySortChildren = true;
+		scene.addChild(parent);
+
+		const a = new TrackedNode("a");
+		a.position = new Vec2(0, 100);
+		parent.addChild(a);
+
+		// Plain Node (not Node2D) — should not cause errors
+		const logic = new Node();
+		parent.addChild(logic);
+
+		const b = new TrackedNode("b");
+		b.position = new Vec2(0, 10);
+		parent.addChild(b);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		// Both Node2D children render; plain Node causes no errors
+		expect(order).toContain("a");
+		expect(order).toContain("b");
+		expect(order).toHaveLength(2);
 	});
 });

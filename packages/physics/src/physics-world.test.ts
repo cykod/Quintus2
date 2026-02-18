@@ -120,12 +120,12 @@ describe("PhysicsWorld", () => {
 
 			const result = world.castMotion(body, new Vec2(100, 0));
 			expect(result).not.toBeNull();
-			expect(result!.collider).toBe(wall);
+			expect(result?.collider).toBe(wall);
 			// TOI should be < 1 (collision before full motion)
-			expect(result!.travel.x).toBeLessThan(100);
-			expect(result!.travel.x).toBeGreaterThan(0);
+			expect(result?.travel.x).toBeLessThan(100);
+			expect(result?.travel.x).toBeGreaterThan(0);
 			// Normal should point away from wall (into body, i.e., -x direction)
-			expect(result!.normal.x).toBeLessThan(0);
+			expect(result?.normal.x).toBeLessThan(0);
 		});
 
 		it("returns closest collision with multiple obstacles", () => {
@@ -139,7 +139,7 @@ describe("PhysicsWorld", () => {
 
 			const result = world.castMotion(body, new Vec2(100, 0));
 			expect(result).not.toBeNull();
-			expect(result!.collider).toBe(nearWall);
+			expect(result?.collider).toBe(nearWall);
 		});
 
 		it("respects collision groups", () => {
@@ -156,7 +156,7 @@ describe("PhysicsWorld", () => {
 			const result = world.castMotion(body, new Vec2(100, 0));
 			expect(result).not.toBeNull();
 			// Should skip ghost (player doesn't collide with ghost), hit wall
-			expect(result!.collider).toBe(wall);
+			expect(result?.collider).toBe(wall);
 		});
 
 		it("ignores sensor candidates", () => {
@@ -181,8 +181,8 @@ describe("PhysicsWorld", () => {
 			const result = world.castMotion(body, motion);
 			expect(result).not.toBeNull();
 			// travel + remainder should equal original motion
-			expect(result!.travel.x + result!.remainder.x).toBeCloseTo(motion.x, 0);
-			expect(result!.travel.y + result!.remainder.y).toBeCloseTo(motion.y, 0);
+			expect(result?.travel.x + result?.remainder.x).toBeCloseTo(motion.x, 0);
+			expect(result?.travel.y + result?.remainder.y).toBeCloseTo(motion.y, 0);
 		});
 
 		it("provides a contact point", () => {
@@ -194,9 +194,9 @@ describe("PhysicsWorld", () => {
 
 			const result = world.castMotion(body, new Vec2(100, 0));
 			expect(result).not.toBeNull();
-			expect(result!.point).toBeDefined();
-			expect(typeof result!.point.x).toBe("number");
-			expect(typeof result!.point.y).toBe("number");
+			expect(result?.point).toBeDefined();
+			expect(typeof result?.point.x).toBe("number");
+			expect(typeof result?.point.y).toBe("number");
 		});
 
 		it("returns null for no shapes on body", () => {
@@ -419,11 +419,11 @@ describe("PhysicsWorld", () => {
 			// At t=1: body at (55,0), distance to wall = 5 < 16 (both radii)
 			const result = world.castMotion(body, new Vec2(55, 0));
 			expect(result).not.toBeNull();
-			expect(result!.collider).toBe(wall);
-			expect(result!.travel.x).toBeLessThan(55);
-			expect(result!.travel.x).toBeGreaterThan(0);
+			expect(result?.collider).toBe(wall);
+			expect(result?.travel.x).toBeLessThan(55);
+			expect(result?.travel.x).toBeGreaterThan(0);
 			// Normal should point away from wall into mover (-x direction)
-			expect(result!.normal.x).toBeLessThan(0);
+			expect(result?.normal.x).toBeLessThan(0);
 		});
 
 		it("returns collision for polygon shapes via binary-search TOI", () => {
@@ -443,11 +443,11 @@ describe("PhysicsWorld", () => {
 			// Overlap at endpoint ensures findTOI converges.
 			const result = world.castMotion(body, new Vec2(45, 0));
 			expect(result).not.toBeNull();
-			expect(result!.collider).toBe(wall);
-			expect(result!.travel.x).toBeLessThan(45);
-			expect(result!.travel.x).toBeGreaterThan(0);
+			expect(result?.collider).toBe(wall);
+			expect(result?.travel.x).toBeLessThan(45);
+			expect(result?.travel.x).toBeGreaterThan(0);
 			// Normal negated from SAT → points away from collider into mover
-			expect(result!.normal.x).toBeLessThan(0);
+			expect(result?.normal.x).toBeLessThan(0);
 		});
 
 		it("general TOI provides correct depth from SAT result", () => {
@@ -461,7 +461,7 @@ describe("PhysicsWorld", () => {
 			const result = world.castMotion(body, new Vec2(25, 0));
 			expect(result).not.toBeNull();
 			// travel + remainder = original motion
-			expect(result!.travel.x + result!.remainder.x).toBeCloseTo(25, 0);
+			expect(result?.travel.x + result?.remainder.x).toBeCloseTo(25, 0);
 		});
 	});
 

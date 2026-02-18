@@ -372,7 +372,7 @@ describe("TileMap", () => {
 				}
 			}
 			game.start(TestScene);
-			const map = tileMap!;
+			const map = tileMap as TileMap;
 
 			// World pos (116, 116) with map offset (100, 100) → local (16, 16) → tile (1, 1)
 			const tile = map.worldToTile(new Vec2(116, 116));
@@ -425,9 +425,7 @@ describe("TileMap", () => {
 		it("throws when physics plugin not installed", () => {
 			const game = createTestGame();
 			const map = setupTileMap(game);
-			expect(() => map.generateCollision({ allSolid: true })).toThrow(
-				"PhysicsPlugin",
-			);
+			expect(() => map.generateCollision({ allSolid: true })).toThrow("PhysicsPlugin");
 		});
 
 		it("returns 0 for nonexistent layer", () => {
@@ -495,9 +493,9 @@ describe("TileMap", () => {
 			}
 			game.start(TestScene);
 
-			expect(tileMap!.isLoaded).toBe(true);
-			expect(tileMap!.mapWidth).toBe(3);
-			expect(tileMap!.mapHeight).toBe(2);
+			expect(tileMap?.isLoaded).toBe(true);
+			expect(tileMap?.mapWidth).toBe(3);
+			expect(tileMap?.mapHeight).toBe(2);
 		});
 	});
 });

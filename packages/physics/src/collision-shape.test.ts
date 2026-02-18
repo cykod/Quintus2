@@ -20,20 +20,20 @@ describe("CollisionShape", () => {
 			const cs = createShape(Shape.rect(20, 10));
 			const aabb = cs.getWorldAABB();
 			expect(aabb).not.toBeNull();
-			expect(aabb!.min.x).toBeCloseTo(-10);
-			expect(aabb!.min.y).toBeCloseTo(-5);
-			expect(aabb!.max.x).toBeCloseTo(10);
-			expect(aabb!.max.y).toBeCloseTo(5);
+			expect(aabb?.min.x).toBeCloseTo(-10);
+			expect(aabb?.min.y).toBeCloseTo(-5);
+			expect(aabb?.max.x).toBeCloseTo(10);
+			expect(aabb?.max.y).toBeCloseTo(5);
 		});
 
 		it("returns correct AABB with position offset", () => {
 			const cs = createShape(Shape.rect(20, 10), new Vec2(100, 50));
 			const aabb = cs.getWorldAABB();
 			expect(aabb).not.toBeNull();
-			expect(aabb!.min.x).toBeCloseTo(90);
-			expect(aabb!.min.y).toBeCloseTo(45);
-			expect(aabb!.max.x).toBeCloseTo(110);
-			expect(aabb!.max.y).toBeCloseTo(55);
+			expect(aabb?.min.x).toBeCloseTo(90);
+			expect(aabb?.min.y).toBeCloseTo(45);
+			expect(aabb?.max.x).toBeCloseTo(110);
+			expect(aabb?.max.y).toBeCloseTo(55);
 		});
 
 		it("returns null when disabled", () => {
@@ -51,10 +51,10 @@ describe("CollisionShape", () => {
 			const cs = createShape(Shape.circle(15));
 			const aabb = cs.getWorldAABB();
 			expect(aabb).not.toBeNull();
-			expect(aabb!.min.x).toBeCloseTo(-15);
-			expect(aabb!.min.y).toBeCloseTo(-15);
-			expect(aabb!.max.x).toBeCloseTo(15);
-			expect(aabb!.max.y).toBeCloseTo(15);
+			expect(aabb?.min.x).toBeCloseTo(-15);
+			expect(aabb?.min.y).toBeCloseTo(-15);
+			expect(aabb?.max.x).toBeCloseTo(15);
+			expect(aabb?.max.y).toBeCloseTo(15);
 		});
 	});
 
@@ -101,10 +101,10 @@ describe("CollisionShape", () => {
 			expect(aabb).not.toBeNull();
 			// Parent at (100, 200) + child at (10, 0) = global (110, 200)
 			// Rect 20x10: AABB = (100, 195) to (120, 205)
-			expect(aabb!.min.x).toBeCloseTo(100);
-			expect(aabb!.min.y).toBeCloseTo(195);
-			expect(aabb!.max.x).toBeCloseTo(120);
-			expect(aabb!.max.y).toBeCloseTo(205);
+			expect(aabb?.min.x).toBeCloseTo(100);
+			expect(aabb?.min.y).toBeCloseTo(195);
+			expect(aabb?.max.x).toBeCloseTo(120);
+			expect(aabb?.max.y).toBeCloseTo(205);
 		});
 	});
 });

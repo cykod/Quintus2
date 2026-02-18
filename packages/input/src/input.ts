@@ -1,3 +1,4 @@
+import type { Game } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { buttonName, gamepadButtonName } from "./bindings.js";
 
@@ -35,6 +36,9 @@ export class Input {
 
 	// Mouse state
 	private _mousePosition = new Vec2(0, 0);
+
+	/** @internal Game reference for debug logging. Set by InputPlugin. */
+	_game: Game | null = null;
 
 	constructor(config: InputConfig) {
 		this._deadZone = config.deadZone ?? 0.15;
@@ -339,10 +343,28 @@ export class Input {
 				state.pressed = true;
 				state.justPressed = true;
 				state.analogValue = 1;
+				if (this._game?.debug) {
+					const isInjected = binding.startsWith("inject:");
+					const msg = isInjected ? `${actionName} injected` : `${actionName} pressed`;
+					this._game.debugLog.write(
+						{ category: "input", message: msg },
+						this._game.fixedFrame,
+						this._game.elapsed,
+					);
+				}
 			} else if (!anyActive && state.pressed) {
 				state.pressed = false;
 				state.justReleased = true;
 				state.analogValue = 0;
+				if (this._game?.debug) {
+					const isInjected = binding.startsWith("inject:");
+					const msg = isInjected ? `${actionName} injection released` : `${actionName} released`;
+					this._game.debugLog.write(
+						{ category: "input", message: msg },
+						this._game.fixedFrame,
+						this._game.elapsed,
+					);
+				}
 			}
 		}
 	}

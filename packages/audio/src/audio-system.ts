@@ -1,4 +1,4 @@
-import type { AssetLoader } from "@quintus/core";
+import type { AssetLoader, Game } from "@quintus/core";
 import { type Signal, signal } from "@quintus/core";
 import { AudioBus } from "./audio-bus.js";
 import type { AutoplayGate } from "./autoplay-gate.js";
@@ -28,6 +28,9 @@ export class AudioSystem {
 	private _gate: AutoplayGate | null = null;
 	private _assets: AssetLoader;
 	private _activeHandles = new Set<{ source: AudioBufferSourceNode; playing: boolean }>();
+
+	/** @internal Game reference for debug logging. Set by AudioPlugin. */
+	_game: Game | null = null;
 
 	readonly onReady: Signal<void> = signal<void>();
 
@@ -60,6 +63,22 @@ export class AudioSystem {
 				`Audio asset '${name}' not found. Load it via game.assets.load({ audio: ['${name}.ogg'] }).`,
 			);
 			return noopHandle;
+		}
+
+		if (this._game?.debug) {
+			this._game.debugLog.write(
+				{
+					category: "audio",
+					message: `play "${name}"`,
+					data: {
+						name,
+						volume: options?.volume ?? 1,
+						loop: options?.loop ?? false,
+					},
+				},
+				this._game.fixedFrame,
+				this._game.elapsed,
+			);
 		}
 
 		const doPlay = (): AudioHandle => {

@@ -53,7 +53,7 @@ describe("Actor.raycast", () => {
 
 		const hit = actor.raycast(new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(target);
+		expect(hit?.collider).toBe(target);
 		// Should not hit self even though ray starts at actor's center
 	});
 
@@ -67,7 +67,7 @@ describe("Actor.raycast", () => {
 
 		const hit = actor.raycast(new Vec2(1, 0), 10000, { tags: ["target"] });
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(far);
+		expect(hit?.collider).toBe(far);
 	});
 });
 

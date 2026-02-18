@@ -36,7 +36,7 @@ export class SeededRandom {
 
 	/** Pick a random element from an array. */
 	pick<T>(array: readonly T[]): T {
-		return array[Math.floor(this.advance() * array.length)]!;
+		return array[Math.floor(this.advance() * array.length)] as T;
 	}
 
 	/** Return a shuffled copy (Fisher-Yates). Does NOT mutate the input. */
@@ -44,8 +44,8 @@ export class SeededRandom {
 		const result = [...array];
 		for (let i = result.length - 1; i > 0; i--) {
 			const j = Math.floor(this.advance() * (i + 1));
-			const tmp = result[i]!;
-			result[i] = result[j]!;
+			const tmp = result[i] as T;
+			result[i] = result[j] as T;
 			result[j] = tmp;
 		}
 		return result;

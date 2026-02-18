@@ -245,7 +245,7 @@ describe("GameLoop start/stop/tick", () => {
 		const loop = new GameLoop({ fixedDeltaTime: 1 / 60, maxAccumulator: 0.25 }, cbs);
 
 		loop.start();
-		const savedCallback = rafCallback!;
+		const savedCallback = rafCallback as FrameRequestCallback;
 		loop.stop();
 
 		// Manually fire the saved callback (simulating RAF firing after cancel)

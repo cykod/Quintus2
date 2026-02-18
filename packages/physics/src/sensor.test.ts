@@ -88,7 +88,7 @@ describe("Sensor", () => {
 
 			// Move actor far away
 			actor.position = new Vec2(500, 0);
-			world!.updatePosition(actor);
+			world?.updatePosition(actor);
 			game.step(); // Exits
 
 			expect(exited).toHaveLength(1);
@@ -135,7 +135,7 @@ describe("Sensor", () => {
 
 			// Separate sensors
 			sensorB.position = new Vec2(500, 0);
-			world!.updatePosition(sensorB);
+			world?.updatePosition(sensorB);
 			game.step();
 
 			expect(exited).toHaveLength(1);
@@ -277,7 +277,7 @@ describe("Sensor", () => {
 
 			// Move sensor near actor
 			sensor.position = new Vec2(5, 0);
-			world!.updatePosition(sensor);
+			world?.updatePosition(sensor);
 			game.step();
 
 			expect(entered).toHaveLength(1);

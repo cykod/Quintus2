@@ -12,10 +12,7 @@ export class Layer extends Node2D {
 
 	override addChild(node: Node): this;
 	override addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
-	override addChild(
-		nodeOrClass: Node | NodeConstructor<Node>,
-		props?: Partial<Node>,
-	): Node | this {
+	override addChild(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
 		let result: Node | this;
 		if (typeof nodeOrClass === "function") {
 			result = super.addChild(nodeOrClass, props);

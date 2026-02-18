@@ -282,7 +282,7 @@ describe("PhysicsWorld.shapeCast", () => {
 
 		const hit = world.shapeCast(Shape.rect(10, 10), Matrix2D.translate(0, 0), new Vec2(100, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(obstacle);
+		expect(hit?.collider).toBe(obstacle);
 	});
 
 	it("with circle sweeps correctly", () => {
@@ -296,7 +296,7 @@ describe("PhysicsWorld.shapeCast", () => {
 			new Vec2(60, 0), // motion ends past the obstacle so sweep should find it
 		);
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(obstacle);
+		expect(hit?.collider).toBe(obstacle);
 	});
 
 	it("along clear path returns null", () => {
@@ -320,7 +320,7 @@ describe("PhysicsWorld.shapeCast", () => {
 			exclude: [a],
 		});
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(b);
+		expect(hit?.collider).toBe(b);
 	});
 
 	it("returns correct travel/remainder", () => {
@@ -332,8 +332,8 @@ describe("PhysicsWorld.shapeCast", () => {
 		const hit = world.shapeCast(Shape.rect(10, 10), Matrix2D.translate(0, 0), motion);
 		expect(hit).not.toBeNull();
 		// travel + remainder should equal motion
-		const totalX = hit!.travel.x + hit!.remainder.x;
-		const totalY = hit!.travel.y + hit!.remainder.y;
+		const totalX = hit?.travel.x + hit?.remainder.x;
+		const totalY = hit?.travel.y + hit?.remainder.y;
 		expect(totalX).toBeCloseTo(motion.x, 0);
 		expect(totalY).toBeCloseTo(motion.y, 0);
 	});
@@ -346,7 +346,7 @@ describe("PhysicsWorld.shapeCast", () => {
 		const hit = world.shapeCast(Shape.rect(10, 10), Matrix2D.translate(0, 0), new Vec2(100, 0));
 		expect(hit).not.toBeNull();
 		// Contact point should be near the collision boundary
-		expect(hit!.point.x).toBeGreaterThan(30);
-		expect(hit!.point.x).toBeLessThan(50);
+		expect(hit?.point.x).toBeGreaterThan(30);
+		expect(hit?.point.x).toBeLessThan(50);
 	});
 });

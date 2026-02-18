@@ -298,8 +298,8 @@ function rayVsPolygon(
 	let bestNy = 0;
 
 	for (let i = 0; i < points.length; i++) {
-		const p1 = points[i]!;
-		const p2 = points[(i + 1) % points.length]!;
+		const p1 = points[i] as Vec2;
+		const p2 = points[(i + 1) % points.length] as Vec2;
 
 		// Transform vertices to world space
 		const v1x = a * p1.x + c * p1.y + e;
@@ -391,8 +391,8 @@ function isPointInConvexPolygon(
 	if (n < 3) return false;
 
 	for (let i = 0; i < n; i++) {
-		const p1 = points[i]!;
-		const p2 = points[(i + 1) % n]!;
+		const p1 = points[i] as Vec2;
+		const p2 = points[(i + 1) % n] as Vec2;
 		const v1x = a * p1.x + c * p1.y + e;
 		const v1y = b * p1.x + d * p1.y + f;
 		const v2x = a * p2.x + c * p2.y + e;

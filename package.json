@@ -17,7 +17,8 @@
 		"docs": "typedoc",
 		"test:platformer": "vitest run --config examples/platformer/vitest.config.ts",
 		"clean": "pnpm --recursive exec rm -rf dist",
-		"preinstall": "npx only-allow pnpm"
+		"preinstall": "npx only-allow pnpm",
+		"qdbg": "./bin/qdbg"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.0",

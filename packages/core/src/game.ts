@@ -230,6 +230,28 @@ export class Game {
 		this.debugLog.write({ category: "game", message, data }, this.fixedFrame, this.elapsed);
 	}
 
+	/**
+	 * Watch a signal and log emissions to the debug log.
+	 * No-op when debug mode is off.
+	 * @returns Disconnect function, or no-op function if debug is off.
+	 */
+	watchSignal<T>(sig: Signal<T>, label: string): () => void {
+		if (!this.debug) return () => {};
+		const handler = (data: T) => {
+			this.debugLog.write(
+				{
+					category: "signal",
+					message: `${label} emitted`,
+					data: data != null ? { payload: data } : undefined,
+				},
+				this.fixedFrame,
+				this.elapsed,
+			);
+		};
+		sig.connect(handler);
+		return () => sig.disconnect(handler);
+	}
+
 	// === Plugins ===
 	use(plugin: Plugin): this {
 		if (this._plugins.has(plugin.name)) {

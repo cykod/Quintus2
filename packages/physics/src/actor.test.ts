@@ -185,7 +185,7 @@ describe("Actor", () => {
 
 			const result = actor.moveAndCollide(new Vec2(100, 0));
 			expect(result).not.toBeNull();
-			expect(result!.collider).toBe(wall);
+			expect(result?.collider).toBe(wall);
 			expect(actor.position.x).toBeLessThan(50);
 			expect(actor.position.x).toBeGreaterThan(0);
 		});
@@ -210,7 +210,7 @@ describe("Actor", () => {
 			actor.move(0.5);
 
 			expect(actor.getSlideCollisions().length).toBeGreaterThanOrEqual(1);
-			expect(actor.getSlideCollisions()[0]!.collider).toBe(floor);
+			expect(actor.getSlideCollisions()[0]?.collider).toBe(floor);
 		});
 
 		it("is cleared on each move() call", () => {
@@ -243,7 +243,7 @@ describe("Actor", () => {
 			actor.move(0.5);
 
 			expect(collisions.length).toBeGreaterThanOrEqual(1);
-			expect(collisions[0]!.collider).toBe(floor);
+			expect(collisions[0]?.collider).toBe(floor);
 		});
 	});
 
@@ -326,7 +326,7 @@ describe("Actor", () => {
 			expect(actor1.position.x).toBeLessThan(50);
 			expect(actor1.position.x).toBeGreaterThan(0);
 			expect(actor1.getSlideCollisions().length).toBeGreaterThanOrEqual(1);
-			expect(actor1.getSlideCollisions()[0]!.collider).toBe(actor2);
+			expect(actor1.getSlideCollisions()[0]?.collider).toBe(actor2);
 		});
 
 		it("solid actor: onCollided fires with correct normal for stomp (top)", () => {
@@ -343,9 +343,9 @@ describe("Actor", () => {
 			player.move(0.5);
 
 			expect(collisions.length).toBeGreaterThanOrEqual(1);
-			expect(collisions[0]!.collider).toBe(enemy);
+			expect(collisions[0]?.collider).toBe(enemy);
 			// Normal should point up (away from enemy into player)
-			expect(collisions[0]!.normal.y).toBeLessThan(0);
+			expect(collisions[0]?.normal.y).toBeLessThan(0);
 		});
 
 		it("solid actor: onCollided fires with correct normal for side collision", () => {
@@ -363,7 +363,7 @@ describe("Actor", () => {
 
 			expect(collisions.length).toBeGreaterThanOrEqual(1);
 			// Normal should point left (away from enemy into player)
-			expect(collisions[0]!.normal.x).toBeLessThan(0);
+			expect(collisions[0]?.normal.x).toBeLessThan(0);
 		});
 
 		it("solid actor: collision groups control directionality", () => {
@@ -439,7 +439,7 @@ describe("Actor", () => {
 			actor.move(0.5);
 
 			expect(collisions.length).toBeGreaterThanOrEqual(1);
-			expect(collisions[0]!.collider).toBe(floor);
+			expect(collisions[0]?.collider).toBe(floor);
 		});
 
 		it("overriding onCollided allows self-handling", () => {
@@ -870,7 +870,7 @@ describe("Actor", () => {
 			const events = game.debugLog.peek({ category: "physics" });
 			const floorEvents = events.filter((e) => e.message.includes("floor_contact"));
 			expect(floorEvents.length).toBeGreaterThanOrEqual(1);
-			expect(floorEvents[0]!.message).toContain("entered");
+			expect(floorEvents[0]?.message).toContain("entered");
 		});
 	});
 

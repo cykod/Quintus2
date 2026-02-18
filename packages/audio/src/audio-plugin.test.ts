@@ -19,7 +19,7 @@ describe("AudioPlugin", () => {
 
 		const audio = getAudio(game);
 		expect(audio).not.toBeNull();
-		expect(audio!.context).toBe(mockCtx);
+		expect(audio?.context).toBe(mockCtx);
 
 		game.stop();
 	});
@@ -91,7 +91,7 @@ describe("AudioPlugin", () => {
 		const audio = getAudio(game);
 		expect(audio).not.toBeNull();
 		// Context should be null in headless
-		expect(audio!.context).toBeNull();
+		expect(audio?.context).toBeNull();
 
 		game.stop();
 	});
@@ -111,7 +111,7 @@ describe("AudioPlugin", () => {
 		// The noop loader should be registered and not throw
 		// We can't easily test it without calling load, but at least verify system works
 		const audio = getAudio(game);
-		expect(audio!.ready).toBe(false);
+		expect(audio?.ready).toBe(false);
 
 		game.stop();
 	});

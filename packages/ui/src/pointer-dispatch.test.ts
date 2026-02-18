@@ -1,8 +1,6 @@
 import { Game, Scene } from "@quintus/core";
-import { Vec2 } from "@quintus/math";
 import { describe, expect, it, vi } from "vitest";
-import { Button } from "./button.js";
-import { getPointerDispatcher, PointerDispatcher } from "./pointer-dispatch.js";
+import { getPointerDispatcher } from "./pointer-dispatch.js";
 
 // jsdom doesn't have PointerEvent — polyfill as MouseEvent subclass
 if (typeof globalThis.PointerEvent === "undefined") {
@@ -14,6 +12,7 @@ if (typeof globalThis.PointerEvent === "undefined") {
 		}
 	};
 }
+
 import { UINode } from "./ui-node.js";
 
 function createGame(): Game {
@@ -174,9 +173,7 @@ describe("PointerDispatcher", () => {
 			events.length = 0;
 
 			// Move outside the node
-			game.canvas.dispatchEvent(
-				new PointerEvent("pointermove", { clientX: 500, clientY: 500 }),
-			);
+			game.canvas.dispatchEvent(new PointerEvent("pointermove", { clientX: 500, clientY: 500 }));
 			expect(events).toContain("exit");
 
 			game.stop();
@@ -233,15 +230,14 @@ describe("PointerDispatcher", () => {
 			game.start(TestScene);
 
 			// Destroy the node (triggers onExitTree → unregister)
-			const scene = game.currentScene!;
+			const scene = game.currentScene as NonNullable<typeof game.currentScene>;
 			for (const child of [...scene.children]) {
 				child.destroy();
 			}
 			game.step();
 
 			const pointerCalls = removeSpy.mock.calls.filter(
-				([event]) =>
-					event === "pointerdown" || event === "pointerup" || event === "pointermove",
+				([event]) => event === "pointerdown" || event === "pointerup" || event === "pointermove",
 			);
 			expect(pointerCalls.length).toBe(3);
 			game.stop();
@@ -311,9 +307,7 @@ describe("PointerDispatcher", () => {
 			game.start(TestScene);
 
 			// Click at CSS pixel (400, 300) on an 800x600 viewport → game pixel (200, 150)
-			game.canvas.dispatchEvent(
-				new PointerEvent("pointerdown", { clientX: 400, clientY: 300 }),
-			);
+			game.canvas.dispatchEvent(new PointerEvent("pointerdown", { clientX: 400, clientY: 300 }));
 
 			expect(receivedX).toBeCloseTo(200);
 			expect(receivedY).toBeCloseTo(150);

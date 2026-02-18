@@ -37,8 +37,8 @@ describe("PhysicsPlugin", () => {
 
 			const world = getPhysicsWorld(game);
 			expect(world).not.toBeNull();
-			expect(world!.gravity.x).toBe(0);
-			expect(world!.gravity.y).toBe(800);
+			expect(world?.gravity.x).toBe(0);
+			expect(world?.gravity.y).toBe(800);
 		});
 
 		it("creates default collision groups", () => {
@@ -48,7 +48,7 @@ describe("PhysicsPlugin", () => {
 			const world = getPhysicsWorld(game);
 			expect(world).not.toBeNull();
 			// Default group should be valid
-			expect(() => world!.groups.validate("default")).not.toThrow();
+			expect(() => world?.groups.validate("default")).not.toThrow();
 		});
 
 		it("custom gravity applies correctly", () => {
@@ -57,8 +57,8 @@ describe("PhysicsPlugin", () => {
 
 			const world = getPhysicsWorld(game);
 			expect(world).not.toBeNull();
-			expect(world!.gravity.x).toBe(0);
-			expect(world!.gravity.y).toBe(400);
+			expect(world?.gravity.x).toBe(0);
+			expect(world?.gravity.y).toBe(400);
 		});
 
 		it("custom collision groups propagate", () => {
@@ -74,9 +74,9 @@ describe("PhysicsPlugin", () => {
 
 			const world = getPhysicsWorld(game);
 			expect(world).not.toBeNull();
-			expect(world!.groups.shouldCollide("player", "world")).toBe(true);
-			expect(() => world!.groups.validate("player")).not.toThrow();
-			expect(() => world!.groups.validate("world")).not.toThrow();
+			expect(world?.groups.shouldCollide("player", "world")).toBe(true);
+			expect(() => world?.groups.validate("player")).not.toThrow();
+			expect(() => world?.groups.validate("world")).not.toThrow();
 		});
 
 		it("custom cellSize passes through to PhysicsWorld", () => {
@@ -91,9 +91,9 @@ describe("PhysicsPlugin", () => {
 			body.position = new Vec2(0, 0);
 			const cs = body.addChild(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
-			world!.register(body);
+			world?.register(body);
 
-			const overlaps = world!.testOverlap(body);
+			const overlaps = world?.testOverlap(body);
 			expect(overlaps).toHaveLength(0);
 		});
 	});
@@ -172,8 +172,8 @@ describe("PhysicsPlugin", () => {
 			expect(world1).not.toBeNull();
 			expect(world2).not.toBeNull();
 			expect(world1).not.toBe(world2);
-			expect(world1!.gravity.y).toBe(100);
-			expect(world2!.gravity.y).toBe(999);
+			expect(world1?.gravity.y).toBe(100);
+			expect(world2?.gravity.y).toBe(999);
 		});
 	});
 });

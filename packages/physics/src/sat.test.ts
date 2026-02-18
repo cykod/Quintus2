@@ -26,8 +26,8 @@ function txrs(x: number, y: number, angle: number, sx: number, sy: number): Matr
 /** Assert normal approximately equals expected. */
 function expectNormal(result: SATResult | null, nx: number, ny: number): void {
 	expect(result).not.toBeNull();
-	expect(result!.normal.x).toBeCloseTo(nx, 4);
-	expect(result!.normal.y).toBeCloseTo(ny, 4);
+	expect(result?.normal.x).toBeCloseTo(nx, 4);
+	expect(result?.normal.y).toBeCloseTo(ny, 4);
 }
 
 // ── Shared shapes ────────────────────────────────────────────────
@@ -62,7 +62,7 @@ describe("SAT: Rect vs Rect", () => {
 	it("overlapping rectangles → correct depth, normal", () => {
 		const result = testOverlap(r16, tx(0, 0), r16, tx(10, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(6);
+		expect(result?.depth).toBeCloseTo(6);
 		expectNormal(result, 1, 0); // A toward B (B is to the right)
 	});
 
@@ -80,22 +80,22 @@ describe("SAT: Rect vs Rect", () => {
 		const result = testOverlap(r16, tx(0, 0), r32, tx(0, 0));
 		expect(result).not.toBeNull();
 		// Overlap on X: (16+32)/2 - 0 = 24, on Y: same = 24
-		expect(result!.depth).toBeCloseTo(24);
+		expect(result?.depth).toBeCloseTo(24);
 	});
 
 	it("equal-sized rects at same position → stable normal", () => {
 		const result = testOverlap(r16, tx(5, 5), r16, tx(5, 5));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(16);
+		expect(result?.depth).toBeCloseTo(16);
 		// Normal is valid (either axis is fine for coincident centers)
-		const n = result!.normal;
+		const n = result?.normal;
 		expect(n.x * n.x + n.y * n.y).toBeCloseTo(1);
 	});
 
 	it("vertical overlap → Y normal", () => {
 		const result = testOverlap(r16, tx(0, 0), r16, tx(0, 10));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(6);
+		expect(result?.depth).toBeCloseTo(6);
 		expectNormal(result, 0, 1); // B is below
 	});
 
@@ -115,7 +115,7 @@ describe("SAT: Circle vs Circle", () => {
 	it("overlapping circles → correct depth, normal", () => {
 		const result = testOverlap(c10, tx(0, 0), c10, tx(15, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(5); // 10+10-15
+		expect(result?.depth).toBeCloseTo(5); // 10+10-15
 		expectNormal(result, 1, 0);
 	});
 
@@ -133,23 +133,23 @@ describe("SAT: Circle vs Circle", () => {
 	it("concentric circles → stable normal, correct depth", () => {
 		const result = testOverlap(c10, tx(5, 5), c10, tx(5, 5));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(20); // 10+10
+		expect(result?.depth).toBeCloseTo(20); // 10+10
 		// Normal is arbitrary but valid
-		const n = result!.normal;
+		const n = result?.normal;
 		expect(n.x * n.x + n.y * n.y).toBeCloseTo(1);
 	});
 
 	it("different radii → correct depth", () => {
 		const result = testOverlap(c10, tx(0, 0), c5, tx(12, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(3); // 10+5-12
+		expect(result?.depth).toBeCloseTo(3); // 10+5-12
 	});
 
 	it("scaled circle → uses effective radius", () => {
 		const result = testOverlap(c10, txs(0, 0, 2, 2), c10, tx(25, 0));
 		// radiusA = 20, radiusB = 10, dist = 25
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(5); // 20+10-25
+		expect(result?.depth).toBeCloseTo(5); // 20+10-25
 	});
 });
 
@@ -164,7 +164,7 @@ describe("SAT: Rect vs Circle", () => {
 		const result = testOverlap(r32, tx(0, 0), c10, tx(20, 0));
 		expect(result).not.toBeNull();
 		// Rect right edge at 16, circle left edge at 10. Overlap = 6
-		expect(result!.depth).toBeCloseTo(6);
+		expect(result?.depth).toBeCloseTo(6);
 		expectNormal(result, 1, 0); // From rect toward circle
 	});
 
@@ -173,14 +173,14 @@ describe("SAT: Rect vs Circle", () => {
 		const result = testOverlap(r32, tx(0, 0), c10, tx(20, -20));
 		expect(result).not.toBeNull();
 		// Normal should point from rect toward circle (toward top-right)
-		expect(result!.normal.x).toBeGreaterThan(0);
-		expect(result!.normal.y).toBeLessThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.y).toBeLessThan(0);
 	});
 
 	it("circle inside rect → correct separation axis", () => {
 		const result = testOverlap(r32, tx(0, 0), c10, tx(2, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("circle at center of wide rect → Y-axis normal (overlapX > overlapY)", () => {
@@ -190,10 +190,10 @@ describe("SAT: Rect vs Circle", () => {
 		const c3 = Shape.circle(3);
 		const result = testOverlap(wideRect, tx(0, 0), c3, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(7); // halfH + radius = 4 + 3
+		expect(result?.depth).toBeCloseTo(7); // halfH + radius = 4 + 3
 		// Normal should be along Y axis (arbitrary direction for centered circle)
-		expect(Math.abs(result!.normal.y)).toBeCloseTo(1);
-		expect(result!.normal.x).toBeCloseTo(0);
+		expect(Math.abs(result?.normal.y)).toBeCloseTo(1);
+		expect(result?.normal.x).toBeCloseTo(0);
 	});
 
 	it("circle outside rect → null", () => {
@@ -218,7 +218,7 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 		const result = testOverlap(r16, txr(0, 0, angle), r16, tx(15, 0));
 		// Rotated rect is larger — should still overlap
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("45° rotated rect has larger AABB than unrotated", () => {
@@ -233,7 +233,7 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 		const c5 = Shape.circle(5);
 		const result = testOverlap(r16, txr(0, 0, Math.PI / 4), c5, tx(15, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("capsule vs rect → correct collision and normal", () => {
@@ -242,9 +242,9 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 		// A=rect at origin, B=capsule to the right → normal points right
 		const result = testOverlap(rect, tx(0, 0), capsule, tx(20, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 		// Capsule (B) is to the right of rect (A)
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 	});
 
 	it("capsule vs circle → correct collision", () => {
@@ -252,14 +252,14 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 		const circle = Shape.circle(5);
 		const result = testOverlap(capsule, tx(0, 0), circle, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+		expect(result?.depth).toBeCloseTo(2); // 5+5-8
 	});
 
 	it("capsule vs capsule → correct collision", () => {
 		const cap = Shape.capsule(5, 20);
 		const result = testOverlap(cap, tx(0, 0), cap, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(2); // 5+5-8 (side by side)
+		expect(result?.depth).toBeCloseTo(2); // 5+5-8 (side by side)
 	});
 
 	it("rotated capsule (horizontal) vs rect → correct collision", () => {
@@ -275,7 +275,7 @@ describe("SAT: General (rotated/capsule/polygon)", () => {
 		const tri2 = Shape.polygon([new Vec2(0, -10), new Vec2(10, 10), new Vec2(-10, 10)]);
 		const result = testOverlap(tri1, tx(0, 0), tri2, tx(5, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("pentagon vs rect → correct overlap", () => {
@@ -318,19 +318,19 @@ describe("SAT: Normal direction", () => {
 
 		// B to the right
 		let result = testOverlap(r16, tx(0, 0), r16, tx(10, 0));
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 
 		// B to the left
 		result = testOverlap(r16, tx(0, 0), r16, tx(-10, 0));
-		expect(result!.normal.x).toBeLessThan(0);
+		expect(result?.normal.x).toBeLessThan(0);
 
 		// B below
 		result = testOverlap(r16, tx(0, 0), r16, tx(0, 10));
-		expect(result!.normal.y).toBeGreaterThan(0);
+		expect(result?.normal.y).toBeGreaterThan(0);
 
 		// B above
 		result = testOverlap(r16, tx(0, 0), r16, tx(0, -10));
-		expect(result!.normal.y).toBeLessThan(0);
+		expect(result?.normal.y).toBeLessThan(0);
 	});
 
 	it("flip() correctly reverses the result", () => {
@@ -338,9 +338,9 @@ describe("SAT: Normal direction", () => {
 		const result = testOverlap(r16, tx(0, 0), r16, tx(10, 0));
 		const flipped = flip(result);
 		expect(flipped).not.toBeNull();
-		expect(flipped!.normal.x).toBeCloseTo(-result!.normal.x);
-		expect(flipped!.normal.y).toBeCloseTo(-result!.normal.y);
-		expect(flipped!.depth).toBeCloseTo(result!.depth);
+		expect(flipped?.normal.x).toBeCloseTo(-result?.normal.x);
+		expect(flipped?.normal.y).toBeCloseTo(-result?.normal.y);
+		expect(flipped?.depth).toBeCloseTo(result?.depth);
 	});
 
 	it("flip(null) returns null", () => {
@@ -353,7 +353,7 @@ describe("SAT: Normal direction", () => {
 		const result = testOverlap(r16, txr(0, 0, angle), r16, tx(10, 0));
 		expect(result).not.toBeNull();
 		// B is to the right, so normal should have positive X component
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 	});
 });
 
@@ -372,7 +372,7 @@ describe("Swept: findTOI", () => {
 		// Motion small enough that endpoint still overlaps
 		const result = findTOI(r16, tx(0, 0), new Vec2(3, 0), r16, tx(5, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBe(0);
+		expect(result?.toi).toBe(0);
 	});
 
 	it("returns correct toi for motion into obstacle", () => {
@@ -382,15 +382,15 @@ describe("Swept: findTOI", () => {
 		// toi ≈ 84/95 = 0.884
 		const result = findTOI(r16, tx(0, 0), new Vec2(95, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeCloseTo(84 / 95, 1);
+		expect(result?.toi).toBeCloseTo(84 / 95, 1);
 	});
 
 	it("works with rotated shapes", () => {
 		// Short enough motion that endpoint overlaps
 		const result = findTOI(r16, txr(0, 0, Math.PI / 4), new Vec2(40, 0), r16, tx(50, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("fast-moving body detected (no tunneling through thin wall)", () => {
@@ -398,8 +398,8 @@ describe("Swept: findTOI", () => {
 		const wall = Shape.rect(4, 100);
 		const result = findTOI(r16, tx(0, 0), new Vec2(100, 0), wall, tx(100, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("zero-length motion → no collision", () => {
@@ -425,7 +425,7 @@ describe("Swept: findTOI", () => {
 		expect(result).not.toBeNull();
 		// Contact when distance = 20 (both radii = 10), so at x=30
 		// toi ≈ 30/35 = 0.857
-		expect(result!.toi).toBeCloseTo(30 / 35, 1);
+		expect(result?.toi).toBeCloseTo(30 / 35, 1);
 	});
 });
 
@@ -446,13 +446,13 @@ describe("Swept: sweptAABB", () => {
 
 		expect(swept).not.toBeNull();
 		expect(binary).not.toBeNull();
-		expect(swept!.toi).toBeCloseTo(binary!.toi, 1);
+		expect(swept?.toi).toBeCloseTo(binary?.toi, 1);
 	});
 
 	it("returns toi=0 with correct normal for already-overlapping rects", () => {
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(100, 0), r16, tx(5, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBe(0);
+		expect(result?.toi).toBe(0);
 	});
 
 	it("returns null for non-colliding paths", () => {
@@ -474,8 +474,8 @@ describe("Swept: sweptAABB", () => {
 	it("correct normal for downward motion", () => {
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 200), r16, tx(0, 100));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeCloseTo(0);
-		expect(result!.normal.y).toBeCloseTo(1);
+		expect(result?.normal.x).toBeCloseTo(0);
+		expect(result?.normal.y).toBeCloseTo(1);
 	});
 
 	it("correct toi for simple case", () => {
@@ -484,22 +484,22 @@ describe("Swept: sweptAABB", () => {
 		// Contact when A moves 84: toi = 84/200 = 0.42
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(200, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeCloseTo(0.42);
+		expect(result?.toi).toBeCloseTo(0.42);
 	});
 
 	it("diagonal motion → correct entry axis", () => {
 		// Move diagonally, hit the Y face first
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(50, 200), r32, tx(0, 100));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("motion past target → still detects collision within t=0..1", () => {
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(1000, 0), r16, tx(100, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("grazing/tangent collision", () => {
@@ -522,9 +522,9 @@ describe("Swept: sweptAABB (already-overlapping edge cases)", () => {
 		// dy = 5 >= 0 → normal = (0, 1)
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(100, 0), r16, tx(0, 5));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBe(0);
-		expect(result!.normal.x).toBeCloseTo(0);
-		expect(result!.normal.y).toBeCloseTo(1);
+		expect(result?.toi).toBe(0);
+		expect(result?.normal.x).toBeCloseTo(0);
+		expect(result?.normal.y).toBeCloseTo(1);
 	});
 
 	it("returns Y-axis normal with negative dy (B above)", () => {
@@ -534,9 +534,9 @@ describe("Swept: sweptAABB (already-overlapping edge cases)", () => {
 		// dy = -5 < 0 → normal = (0, -1)
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(100, 0), r16, tx(0, -5));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBe(0);
-		expect(result!.normal.x).toBeCloseTo(0);
-		expect(result!.normal.y).toBeCloseTo(-1);
+		expect(result?.toi).toBe(0);
+		expect(result?.normal.x).toBeCloseTo(0);
+		expect(result?.normal.y).toBeCloseTo(-1);
 	});
 
 	it("returns X-axis normal when overlapX < overlapY (B to the right)", () => {
@@ -546,9 +546,9 @@ describe("Swept: sweptAABB (already-overlapping edge cases)", () => {
 		// dx = 5 >= 0 → normal = (1, 0)
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 100), r16, tx(5, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBe(0);
-		expect(result!.normal.x).toBeCloseTo(1);
-		expect(result!.normal.y).toBeCloseTo(0);
+		expect(result?.toi).toBe(0);
+		expect(result?.normal.x).toBeCloseTo(1);
+		expect(result?.normal.y).toBeCloseTo(0);
 	});
 
 	it("returns X-axis normal with negative dx (B to the left)", () => {
@@ -558,9 +558,9 @@ describe("Swept: sweptAABB (already-overlapping edge cases)", () => {
 		// dx = -5 < 0 → normal = (-1, 0)
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 100), r16, tx(-5, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBe(0);
-		expect(result!.normal.x).toBeCloseTo(-1);
-		expect(result!.normal.y).toBeCloseTo(0);
+		expect(result?.toi).toBe(0);
+		expect(result?.normal.x).toBeCloseTo(-1);
+		expect(result?.normal.y).toBeCloseTo(0);
 	});
 });
 
@@ -572,8 +572,8 @@ describe("Swept: sweptAABB (near-zero motion components)", () => {
 		// This triggers txEntry = -Infinity, txExit = Infinity branch
 		const result = sweptAABB(r16, tx(0, 0), new Vec2(0, 200), r16, tx(0, 100));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("near-zero x motion with non-overlapping x range returns null", () => {
@@ -599,16 +599,16 @@ describe("Swept: sweptAABB (near-zero motion components)", () => {
 		// A moving left toward B
 		const result = sweptAABB(r16, tx(100, 0), new Vec2(-200, 0), r16, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeCloseTo(-1);
-		expect(result!.normal.y).toBeCloseTo(0);
+		expect(result?.normal.x).toBeCloseTo(-1);
+		expect(result?.normal.y).toBeCloseTo(0);
 	});
 
 	it("upward motion produces correct negative-y normal", () => {
 		// A moving up toward B
 		const result = sweptAABB(r16, tx(0, 100), new Vec2(0, -200), r16, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeCloseTo(0);
-		expect(result!.normal.y).toBeCloseTo(-1);
+		expect(result?.normal.x).toBeCloseTo(0);
+		expect(result?.normal.y).toBeCloseTo(-1);
 	});
 });
 
@@ -623,7 +623,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		const cap = Shape.capsule(5, 20);
 		const result = testOverlap(cap, tx(8, 0), cap, txr(0, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("capsules positioned so t > 1 in closestPointsSegments", () => {
@@ -634,7 +634,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		const cap = Shape.capsule(5, 20);
 		const result = testOverlap(cap, tx(-8, 0), cap, txr(0, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("degenerate capsule A (aa <= EPSILON) triggers first-segment-point branch", () => {
@@ -643,7 +643,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		const normalCap = Shape.capsule(5, 20);
 		const result = testOverlap(degenerateCap, tx(0, 0), normalCap, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+		expect(result?.depth).toBeCloseTo(2); // 5+5-8
 	});
 
 	it("degenerate capsule B (ee <= EPSILON) triggers second-segment-point branch", () => {
@@ -652,7 +652,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		const normalCap = Shape.capsule(5, 20);
 		const result = testOverlap(normalCap, tx(0, 0), degenerateCap, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+		expect(result?.depth).toBeCloseTo(2); // 5+5-8
 	});
 
 	it("both capsules degenerate triggers point-vs-point branch", () => {
@@ -660,7 +660,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		const degenerateCap = Shape.capsule(5, 10);
 		const result = testOverlap(degenerateCap, tx(0, 0), degenerateCap, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+		expect(result?.depth).toBeCloseTo(2); // 5+5-8
 	});
 
 	it("parallel capsules trigger denom <= EPSILON fallback", () => {
@@ -669,7 +669,7 @@ describe("SAT: Capsule-vs-Capsule (segment endpoint clamping)", () => {
 		const cap = Shape.capsule(5, 20);
 		const result = testOverlap(cap, tx(0, 0), cap, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(2); // 5+5-8
+		expect(result?.depth).toBeCloseTo(2); // 5+5-8
 	});
 });
 
@@ -682,7 +682,7 @@ describe("SAT: Circle vs Polygon", () => {
 		// Circle at (15,0), sqPoly at origin. sqPoly edge at x=10, circle left at 5. Overlap=5
 		const result = testOverlap(c10, tx(15, 0), sqPoly, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(5);
+		expect(result?.depth).toBeCloseTo(5);
 	});
 
 	it("non-overlapping circle and polygon → null", () => {
@@ -694,27 +694,27 @@ describe("SAT: Circle vs Polygon", () => {
 		// Circle near top-right corner of sqPoly
 		const result = testOverlap(c10, tx(16, -16), sqPoly, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("circle fully inside polygon → depth > 0", () => {
 		const c3 = Shape.circle(3);
 		const result = testOverlap(c3, tx(0, 0), sqPoly, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("polygon (A) vs circle (B) → normal A→B", () => {
 		// Polygon on left, circle on right
 		const result = testOverlap(sqPoly, tx(0, 0), c10, tx(15, 0));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 	});
 
 	it("circle vs hexagon → overlap detected", () => {
 		const result = testOverlap(c10, tx(25, 0), bigHex, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -727,7 +727,7 @@ describe("SAT: Capsule vs Polygon", () => {
 		// Capsule at (12,0), sqPoly at origin. Capsule left side at 12-5=7, sqPoly right at 10. Overlap=3
 		const result = testOverlap(cap, tx(12, 0), sqPoly, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(3);
+		expect(result?.depth).toBeCloseTo(3);
 	});
 
 	it("non-overlapping capsule and polygon → null", () => {
@@ -740,25 +740,25 @@ describe("SAT: Capsule vs Polygon", () => {
 		// Capsule bottom at 0 + height/2 = 10, poly top at -10
 		const result = testOverlap(cap, tx(0, -17), sqPoly, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("capsule fully inside large polygon → depth > 0", () => {
 		const result = testOverlap(cap, tx(0, 0), bigHex, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("polygon (A) vs capsule (B) → normal A→B", () => {
 		const result = testOverlap(sqPoly, tx(0, 0), cap, tx(12, 0));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 	});
 
 	it("capsule vs triangle → overlap detected", () => {
 		const result = testOverlap(cap, tx(10, 0), smallTri, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -771,7 +771,7 @@ describe("SAT: Rect vs Rect (scaled)", () => {
 		// 2x scaled: effective 32×32. At distance 20, should overlap.
 		const result = testOverlap(r16, txs(0, 0, 2, 2), r16, tx(20, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("scaled rect no overlap → null", () => {
@@ -784,14 +784,14 @@ describe("SAT: Rect vs Rect (scaled)", () => {
 		// Half widths: 16 + 12 = 28 > 20, overlap = 8
 		const result = testOverlap(r16, txs(0, 0, 2, 2), r16, txs(20, 0, 1.5, 1.5));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeCloseTo(8, 0);
+		expect(result?.depth).toBeCloseTo(8, 0);
 	});
 
 	it("non-uniform scale on rect → correct collision", () => {
 		// Scale X by 3 → 48 wide, scale Y by 1 → 16 tall
 		const result = testOverlap(r16, txs(0, 0, 3, 1), r16, tx(30, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -806,13 +806,13 @@ describe("SAT: Rect vs Circle (scaled/rotated)", () => {
 		const result = testOverlap(r16, txs(0, 0, 2, 2), c10, tx(25, 0));
 		expect(result).not.toBeNull();
 		// Scaled rect half-width = 16, circle edge at 15. Overlap > 0
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("rotated rect vs scaled circle → overlap", () => {
 		const result = testOverlap(r16, txr(0, 0, Math.PI / 4), c10, txs(18, 0, 1.5, 1.5));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -824,13 +824,13 @@ describe("SAT: Rect vs Polygon (rotated)", () => {
 	it("rotated rect vs polygon → overlap detected", () => {
 		const result = testOverlap(r16, txr(0, 0, Math.PI / 6), sqPoly, tx(15, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("rotated polygon vs rect → overlap detected", () => {
 		const result = testOverlap(r16, tx(0, 0), sqPoly, txr(15, 0, Math.PI / 4));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -844,13 +844,13 @@ describe("SAT: Circle vs Capsule (rotated)", () => {
 		// Rotating capsule 90° makes it horizontal (extends along X)
 		const result = testOverlap(c10, tx(0, 0), cap, txr(12, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("circle vs 45°-rotated capsule → overlap", () => {
 		const result = testOverlap(c10, tx(0, 0), cap, txr(10, 0, Math.PI / 4));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -863,13 +863,13 @@ describe("SAT: Capsule vs Capsule (rotated)", () => {
 		// One vertical, one horizontal, both at origin
 		const result = testOverlap(cap, tx(0, 0), cap, txr(0, 0, Math.PI / 2));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("45°-angled capsules nearby → overlap", () => {
 		const result = testOverlap(cap, txr(0, 0, Math.PI / 4), cap, txr(7, 0, -Math.PI / 4));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("parallel rotated capsules far apart → null", () => {
@@ -885,13 +885,13 @@ describe("SAT: Polygon vs Polygon (rotated)", () => {
 		const result = testOverlap(sqPoly, txr(0, 0, Math.PI / 4), sqPoly, tx(16, 0));
 		// 45° rotation extends square diagonal, so overlaps at distance 16
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("two rotated triangles → overlap", () => {
 		const result = testOverlap(smallTri, txr(0, 0, Math.PI / 6), smallTri, txr(8, 0, -Math.PI / 6));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("rotated hexagon vs triangle → separation when far apart", () => {
@@ -909,7 +909,7 @@ describe("SAT: Non-uniform scale", () => {
 		const result = testOverlap(c10, txs(0, 0, 2, 1), c10, tx(25, 0));
 		expect(result).not.toBeNull();
 		// 20 + 10 - 25 = 5
-		expect(result!.depth).toBeCloseTo(5);
+		expect(result?.depth).toBeCloseTo(5);
 	});
 
 	it("non-uniform scaled rect → generalSAT fallback", () => {
@@ -918,7 +918,7 @@ describe("SAT: Non-uniform scale", () => {
 		// At distance 30, half-widths: 24 + 8 = 32 > 30, should overlap
 		const result = testOverlap(r16, txs(0, 0, 3, 1), r16, tx(30, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("non-uniform scaled capsule vs circle → overlap", () => {
@@ -927,7 +927,7 @@ describe("SAT: Non-uniform scale", () => {
 		// Scale capsule X=2, Y=1 → effective radius = 10
 		const result = testOverlap(cap, txs(0, 0, 2, 1), c10, tx(15, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -939,7 +939,7 @@ describe("SAT: Composed transforms", () => {
 		// Scale 1.5x + rotate 30° + translate to (10,0)
 		const result = testOverlap(r16, txrs(10, 0, Math.PI / 6, 1.5, 1.5), r16, tx(25, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("composed transform on circle vs polygon → overlap", () => {
@@ -947,7 +947,7 @@ describe("SAT: Composed transforms", () => {
 		// Scale 2x + rotate 45° + translate to (5,5)
 		const result = testOverlap(c5, txrs(5, 5, Math.PI / 4, 2, 2), sqPoly, tx(15, 5));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("composed transform on capsule vs rect → overlap", () => {
@@ -955,7 +955,7 @@ describe("SAT: Composed transforms", () => {
 		const r16 = Shape.rect(16, 16);
 		const result = testOverlap(cap, txrs(0, 0, Math.PI / 3, 1.5, 1.5), r16, tx(18, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -971,9 +971,9 @@ describe("SAT: Argument order swap", () => {
 		const ba = testOverlap(cap, tx(12, 0), r16, tx(0, 0));
 		expect(ab).not.toBeNull();
 		expect(ba).not.toBeNull();
-		expect(ab!.normal.x).toBeCloseTo(-ba!.normal.x, 3);
-		expect(ab!.normal.y).toBeCloseTo(-ba!.normal.y, 3);
-		expect(ab!.depth).toBeCloseTo(ba!.depth, 3);
+		expect(ab?.normal.x).toBeCloseTo(-ba?.normal.x, 3);
+		expect(ab?.normal.y).toBeCloseTo(-ba?.normal.y, 3);
+		expect(ab?.depth).toBeCloseTo(ba?.depth, 3);
 	});
 
 	it("Rect×Polygon vs Polygon×Rect → flipped normal", () => {
@@ -981,9 +981,9 @@ describe("SAT: Argument order swap", () => {
 		const ba = testOverlap(sqPoly, tx(12, 0), r16, tx(0, 0));
 		expect(ab).not.toBeNull();
 		expect(ba).not.toBeNull();
-		expect(ab!.normal.x).toBeCloseTo(-ba!.normal.x, 3);
-		expect(ab!.normal.y).toBeCloseTo(-ba!.normal.y, 3);
-		expect(ab!.depth).toBeCloseTo(ba!.depth, 3);
+		expect(ab?.normal.x).toBeCloseTo(-ba?.normal.x, 3);
+		expect(ab?.normal.y).toBeCloseTo(-ba?.normal.y, 3);
+		expect(ab?.depth).toBeCloseTo(ba?.depth, 3);
 	});
 
 	it("Circle×Capsule vs Capsule×Circle → flipped normal", () => {
@@ -991,9 +991,9 @@ describe("SAT: Argument order swap", () => {
 		const ba = testOverlap(cap, tx(12, 0), c10, tx(0, 0));
 		expect(ab).not.toBeNull();
 		expect(ba).not.toBeNull();
-		expect(ab!.normal.x).toBeCloseTo(-ba!.normal.x, 3);
-		expect(ab!.normal.y).toBeCloseTo(-ba!.normal.y, 3);
-		expect(ab!.depth).toBeCloseTo(ba!.depth, 3);
+		expect(ab?.normal.x).toBeCloseTo(-ba?.normal.x, 3);
+		expect(ab?.normal.y).toBeCloseTo(-ba?.normal.y, 3);
+		expect(ab?.depth).toBeCloseTo(ba?.depth, 3);
 	});
 
 	it("Circle×Polygon vs Polygon×Circle → flipped normal", () => {
@@ -1001,9 +1001,9 @@ describe("SAT: Argument order swap", () => {
 		const ba = testOverlap(sqPoly, tx(15, 0), c10, tx(0, 0));
 		expect(ab).not.toBeNull();
 		expect(ba).not.toBeNull();
-		expect(ab!.normal.x).toBeCloseTo(-ba!.normal.x, 3);
-		expect(ab!.normal.y).toBeCloseTo(-ba!.normal.y, 3);
-		expect(ab!.depth).toBeCloseTo(ba!.depth, 3);
+		expect(ab?.normal.x).toBeCloseTo(-ba?.normal.x, 3);
+		expect(ab?.normal.y).toBeCloseTo(-ba?.normal.y, 3);
+		expect(ab?.depth).toBeCloseTo(ba?.depth, 3);
 	});
 });
 
@@ -1016,13 +1016,13 @@ describe("SAT: Full containment", () => {
 		const result = testOverlap(c3, tx(0, 0), c20, tx(0, 0));
 		expect(result).not.toBeNull();
 		// 3 + 20 = 23
-		expect(result!.depth).toBeCloseTo(23);
+		expect(result?.depth).toBeCloseTo(23);
 	});
 
 	it("small polygon inside large polygon → positive depth", () => {
 		const result = testOverlap(smallTri, tx(0, 0), bigHex, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 
 	it("small capsule inside large rect → positive depth", () => {
@@ -1030,7 +1030,7 @@ describe("SAT: Full containment", () => {
 		const bigRect = Shape.rect(100, 100);
 		const result = testOverlap(cap, tx(0, 0), bigRect, tx(0, 0));
 		expect(result).not.toBeNull();
-		expect(result!.depth).toBeGreaterThan(0);
+		expect(result?.depth).toBeGreaterThan(0);
 	});
 });
 
@@ -1047,16 +1047,16 @@ describe("Swept: findTOI (extended)", () => {
 		// 10 + 50*t = 32 → t ≈ 0.44
 		const result = findTOI(c10, tx(0, 0), new Vec2(50, 0), r16, tx(40, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("capsule moving into rect → toi in (0,1)", () => {
 		// Capsule at x=0 moves right 50. Rect at x=40.
 		const result = findTOI(cap, tx(0, 0), new Vec2(50, 0), r16, tx(40, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("polygon moving into rect → toi in (0,1)", () => {
@@ -1065,43 +1065,43 @@ describe("Swept: findTOI (extended)", () => {
 		// Contact at t ≈ 22/50 = 0.44
 		const result = findTOI(sqPoly, tx(0, 0), new Vec2(50, 0), r16, tx(40, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("capsule moving into circle → toi in (0,1)", () => {
 		const result = findTOI(cap, tx(0, 0), new Vec2(50, 0), c10, tx(50, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("circle moving into polygon → toi in (0,1)", () => {
 		const result = findTOI(c10, tx(0, 0), new Vec2(50, 0), sqPoly, tx(50, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("polygon moving into polygon → toi in (0,1)", () => {
 		const result = findTOI(sqPoly, tx(0, 0), new Vec2(60, 0), sqPoly, tx(60, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("capsule moving into capsule → toi in (0,1)", () => {
 		const result = findTOI(cap, tx(0, 0), new Vec2(40, 0), cap, tx(40, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 
 	it("polygon moving into capsule → toi in (0,1)", () => {
 		const result = findTOI(sqPoly, tx(0, 0), new Vec2(50, 0), cap, tx(50, 0));
 		expect(result).not.toBeNull();
-		expect(result!.toi).toBeGreaterThan(0);
-		expect(result!.toi).toBeLessThan(1);
+		expect(result?.toi).toBeGreaterThan(0);
+		expect(result?.toi).toBeLessThan(1);
 	});
 });
 
@@ -1113,23 +1113,23 @@ describe("SAT: Normal direction (general)", () => {
 		// B is to the right
 		const result = testOverlap(cap, tx(0, 0), cap, tx(8, 0));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 
 		// B is to the left
 		const result2 = testOverlap(cap, tx(0, 0), cap, tx(-8, 0));
 		expect(result2).not.toBeNull();
-		expect(result2!.normal.x).toBeLessThan(0);
+		expect(result2?.normal.x).toBeLessThan(0);
 	});
 
 	it("polygon pair: normal points from A toward B", () => {
 		// B is to the right
 		const result = testOverlap(sqPoly, tx(0, 0), sqPoly, tx(15, 0));
 		expect(result).not.toBeNull();
-		expect(result!.normal.x).toBeGreaterThan(0);
+		expect(result?.normal.x).toBeGreaterThan(0);
 
 		// B is above
 		const result2 = testOverlap(sqPoly, tx(0, 0), sqPoly, tx(0, -15));
 		expect(result2).not.toBeNull();
-		expect(result2!.normal.y).toBeLessThan(0);
+		expect(result2?.normal.y).toBeLessThan(0);
 	});
 });

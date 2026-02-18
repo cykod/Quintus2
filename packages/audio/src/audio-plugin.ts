@@ -20,6 +20,7 @@ export function AudioPlugin(): Plugin {
 			}
 
 			const system = new AudioSystem(context, game.assets);
+			system._game = game;
 			audioMap.set(game, system);
 
 			// Autoplay gate (browser only)

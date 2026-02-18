@@ -77,11 +77,18 @@ export class Color {
 
 		// Expand 3-char hex to 6-char
 		if (h.length === 3) {
-			h = h[0]! + h[0]! + h[1]! + h[1]! + h[2]! + h[2]!;
+			const c0 = h.charAt(0);
+			const c1 = h.charAt(1);
+			const c2 = h.charAt(2);
+			h = c0 + c0 + c1 + c1 + c2 + c2;
 		}
 		// Expand 4-char hex to 8-char
 		if (h.length === 4) {
-			h = h[0]! + h[0]! + h[1]! + h[1]! + h[2]! + h[2]! + h[3]! + h[3]!;
+			const c0 = h.charAt(0);
+			const c1 = h.charAt(1);
+			const c2 = h.charAt(2);
+			const c3 = h.charAt(3);
+			h = c0 + c0 + c1 + c1 + c2 + c2 + c3 + c3;
 		}
 
 		const r = Number.parseInt(h.slice(0, 2), 16) / 255;

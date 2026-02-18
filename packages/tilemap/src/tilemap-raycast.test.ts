@@ -112,9 +112,9 @@ describe("TileMap.raycast (DDA)", () => {
 		// Row 2: 0 1 1 1 0 → first solid at col=1 (x=16..32)
 		const hit = map.raycast(new Vec2(0, 2 * 16 + 8), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.col).toBe(1);
-		expect(hit!.row).toBe(2);
-		expect(hit!.tileId).toBe(0); // localId = data(1) - firstgid(1) = 0
+		expect(hit?.col).toBe(1);
+		expect(hit?.row).toBe(2);
+		expect(hit?.tileId).toBe(0); // localId = data(1) - firstgid(1) = 0
 	});
 
 	it("vertical ray hits first solid tile", () => {
@@ -124,8 +124,8 @@ describe("TileMap.raycast (DDA)", () => {
 		// Cast downward through col=2 → first solid at row=1
 		const hit = map.raycast(new Vec2(2 * 16 + 8, 0), new Vec2(0, 1));
 		expect(hit).not.toBeNull();
-		expect(hit!.col).toBe(2);
-		expect(hit!.row).toBe(1);
+		expect(hit?.col).toBe(2);
+		expect(hit?.row).toBe(1);
 	});
 
 	it("diagonal ray traverses correctly", () => {
@@ -136,7 +136,7 @@ describe("TileMap.raycast (DDA)", () => {
 		const hit = map.raycast(new Vec2(0, 0), new Vec2(1, 1));
 		expect(hit).not.toBeNull();
 		// Should hit one of the solid tiles (localId = 0)
-		expect(hit!.tileId).toBe(0);
+		expect(hit?.tileId).toBe(0);
 	});
 
 	it("ray misses (no solid tiles in path) returns null", () => {
@@ -165,7 +165,7 @@ describe("TileMap.raycast (DDA)", () => {
 		const hit = map.raycast(new Vec2(0, 2 * 16 + 8), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
 		// Hit point x should be at the left edge of col=1 = 16
-		expect(hit!.point.x).toBeCloseTo(16, 1);
+		expect(hit?.point.x).toBeCloseTo(16, 1);
 	});
 
 	it("normal points outward from the hit tile face", () => {
@@ -175,8 +175,8 @@ describe("TileMap.raycast (DDA)", () => {
 		// Hitting from the left → normal should be (-1, 0)
 		const hit = map.raycast(new Vec2(0, 2 * 16 + 8), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.normal.x).toBe(-1);
-		expect(hit!.normal.y).toBe(0);
+		expect(hit?.normal.x).toBe(-1);
+		expect(hit?.normal.y).toBe(0);
 	});
 
 	it("custom solidCheck filters specific tile types", () => {
@@ -207,8 +207,8 @@ describe("TileMap.raycast (DDA)", () => {
 			(tileId) => tileId === 2,
 		);
 		expect(hit).not.toBeNull();
-		expect(hit!.col).toBe(3);
-		expect(hit!.tileId).toBe(2);
+		expect(hit?.col).toBe(3);
+		expect(hit?.tileId).toBe(2);
 	});
 
 	it("ray starting inside a solid tile returns that tile at distance 0", () => {
@@ -218,9 +218,9 @@ describe("TileMap.raycast (DDA)", () => {
 		// Start inside tile (1,1)
 		const hit = map.raycast(new Vec2(1 * 16 + 8, 1 * 16 + 8), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.col).toBe(1);
-		expect(hit!.row).toBe(1);
-		expect(hit!.distance).toBe(0);
+		expect(hit?.col).toBe(1);
+		expect(hit?.row).toBe(1);
+		expect(hit?.distance).toBe(0);
 	});
 
 	it("works with non-zero TileMap position offset", () => {
@@ -232,8 +232,8 @@ describe("TileMap.raycast (DDA)", () => {
 		// First solid at col=1: x = 100 + 16 = 116
 		const hit = map.raycast(new Vec2(100, 50 + 2 * 16 + 8), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.col).toBe(1);
-		expect(hit!.row).toBe(2);
+		expect(hit?.col).toBe(1);
+		expect(hit?.row).toBe(2);
 	});
 
 	it("returns null and warns when TileMap has rotation transform", () => {

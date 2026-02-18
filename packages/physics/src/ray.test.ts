@@ -41,9 +41,9 @@ describe("rayIntersectShape", () => {
 			const transform = Matrix2D.translate(50, 0);
 			const hit = rayIntersectShape(new Vec2(0, 0), new Vec2(1, 0), 100, shape, transform);
 			expect(hit).not.toBeNull();
-			expect(hit!.t).toBeCloseTo(40, 1); // center at 50, halfWidth = 10
-			expect(hit!.normal.x).toBeCloseTo(-1, 5);
-			expect(hit!.normal.y).toBeCloseTo(0, 5);
+			expect(hit?.t).toBeCloseTo(40, 1); // center at 50, halfWidth = 10
+			expect(hit?.normal.x).toBeCloseTo(-1, 5);
+			expect(hit?.normal.y).toBeCloseTo(0, 5);
 		});
 
 		it("misses rect (parallel ray)", () => {
@@ -67,7 +67,7 @@ describe("rayIntersectShape", () => {
 			const hit = rayIntersectShape(new Vec2(0, 0), new Vec2(1, 0), 200, shape, transform);
 			expect(hit).not.toBeNull();
 			// Normal should point generally left (toward the ray origin)
-			expect(hit!.normal.x).toBeLessThan(0);
+			expect(hit?.normal.x).toBeLessThan(0);
 		});
 
 		it("origin inside rect — returns null", () => {
@@ -84,9 +84,9 @@ describe("rayIntersectShape", () => {
 			const transform = Matrix2D.translate(50, 0);
 			const hit = rayIntersectShape(new Vec2(0, 0), new Vec2(1, 0), 100, shape, transform);
 			expect(hit).not.toBeNull();
-			expect(hit!.t).toBeCloseTo(40, 1); // center at 50, radius = 10
-			expect(hit!.normal.x).toBeCloseTo(-1, 5);
-			expect(hit!.normal.y).toBeCloseTo(0, 5);
+			expect(hit?.t).toBeCloseTo(40, 1); // center at 50, radius = 10
+			expect(hit?.normal.x).toBeCloseTo(-1, 5);
+			expect(hit?.normal.y).toBeCloseTo(0, 5);
 		});
 
 		it("origin inside circle — returns null", () => {
@@ -110,8 +110,8 @@ describe("rayIntersectShape", () => {
 			const transform = Matrix2D.translate(50, 0);
 			const hit = rayIntersectShape(new Vec2(0, 0), new Vec2(1, 0), 100, shape, transform);
 			expect(hit).not.toBeNull();
-			expect(hit!.t).toBeCloseTo(40, 1); // center at 50, radius = 10
-			expect(hit!.normal.x).toBeCloseTo(-1, 5);
+			expect(hit?.t).toBeCloseTo(40, 1); // center at 50, radius = 10
+			expect(hit?.normal.x).toBeCloseTo(-1, 5);
 		});
 
 		it("hits capsule cap", () => {
@@ -120,7 +120,7 @@ describe("rayIntersectShape", () => {
 			const transform = Matrix2D.translate(0, 0);
 			const hit = rayIntersectShape(new Vec2(0, 50), new Vec2(0, -1), 100, shape, transform);
 			expect(hit).not.toBeNull();
-			expect(hit!.normal.y).toBeGreaterThan(0); // Normal should point away from shape
+			expect(hit?.normal.y).toBeGreaterThan(0); // Normal should point away from shape
 		});
 	});
 
@@ -131,9 +131,9 @@ describe("rayIntersectShape", () => {
 			const transform = Matrix2D.translate(50, 0);
 			const hit = rayIntersectShape(new Vec2(0, 0), new Vec2(1, 0), 100, shape, transform);
 			expect(hit).not.toBeNull();
-			expect(hit!.t).toBeGreaterThan(0);
+			expect(hit?.t).toBeGreaterThan(0);
 			// Normal should point generally left (toward the ray origin)
-			expect(hit!.normal.x).toBeLessThan(0);
+			expect(hit?.normal.x).toBeLessThan(0);
 		});
 
 		it("origin inside polygon — returns null", () => {
@@ -165,8 +165,8 @@ describe("PhysicsWorld.raycast", () => {
 
 		const hit = world.raycast(new Vec2(0, 0), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(near);
-		expect(hit!.distance).toBeCloseTo(40, 1);
+		expect(hit?.collider).toBe(near);
+		expect(hit?.distance).toBeCloseTo(40, 1);
 	});
 
 	it("raycastAll returns all hits sorted by distance", () => {
@@ -178,9 +178,9 @@ describe("PhysicsWorld.raycast", () => {
 
 		const hits = world.raycastAll(new Vec2(0, 0), new Vec2(1, 0));
 		expect(hits).toHaveLength(2);
-		expect(hits[0]!.collider).toBe(near);
-		expect(hits[1]!.collider).toBe(far);
-		expect(hits[0]!.distance).toBeLessThan(hits[1]!.distance);
+		expect(hits[0]?.collider).toBe(near);
+		expect(hits[1]?.collider).toBe(far);
+		expect(hits[0]?.distance).toBeLessThan(hits[1]?.distance);
 	});
 
 	it("QueryOptions.groups filters correctly", () => {
@@ -200,7 +200,7 @@ describe("PhysicsWorld.raycast", () => {
 			groups: ["enemy"],
 		});
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(enemy);
+		expect(hit?.collider).toBe(enemy);
 	});
 
 	it("QueryOptions.tags filters correctly", () => {
@@ -215,7 +215,7 @@ describe("PhysicsWorld.raycast", () => {
 			tags: ["target"],
 		});
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(tagged);
+		expect(hit?.collider).toBe(tagged);
 	});
 
 	it("QueryOptions.exclude skips specified bodies", () => {
@@ -229,7 +229,7 @@ describe("PhysicsWorld.raycast", () => {
 			exclude: [near],
 		});
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(far);
+		expect(hit?.collider).toBe(far);
 	});
 
 	it("QueryOptions.includeSensors controls sensor inclusion", () => {
@@ -246,7 +246,7 @@ describe("PhysicsWorld.raycast", () => {
 			includeSensors: true,
 		});
 		expect(hit2).not.toBeNull();
-		expect(hit2!.collider).toBe(sensor);
+		expect(hit2?.collider).toBe(sensor);
 	});
 
 	it("QueryOptions.filter custom predicate works", () => {
@@ -260,7 +260,7 @@ describe("PhysicsWorld.raycast", () => {
 			filter: (body) => body !== a,
 		});
 		expect(hit).not.toBeNull();
-		expect(hit!.collider).toBe(b);
+		expect(hit?.collider).toBe(b);
 	});
 
 	it("ray against body with multiple shapes returns closest shape hit", () => {
@@ -281,7 +281,7 @@ describe("PhysicsWorld.raycast", () => {
 
 		const hit = world.raycast(new Vec2(0, 0), new Vec2(1, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.colliderShape).toBe(cs1); // closer shape
+		expect(hit?.colliderShape).toBe(cs1); // closer shape
 	});
 
 	it("returns null when ray hits nothing", () => {
@@ -301,6 +301,6 @@ describe("PhysicsWorld.raycast", () => {
 		// Non-normalized direction
 		const hit = world.raycast(new Vec2(0, 0), new Vec2(5, 0));
 		expect(hit).not.toBeNull();
-		expect(hit!.distance).toBeCloseTo(40, 1);
+		expect(hit?.distance).toBeCloseTo(40, 1);
 	});
 });

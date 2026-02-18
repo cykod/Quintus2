@@ -951,14 +951,20 @@ export class PhysicsWorld {
 			const shapeNodes = body.getShapes();
 
 			for (let i = 0; i < shapes.length; i++) {
-				const { shape, transform } = shapes[i]!;
-				const result = rayIntersectShape(origin, normalizedDir, maxDistance, shape, transform);
+				const shapeEntry = shapes[i] as { shape: Shape2D; transform: Matrix2D };
+				const result = rayIntersectShape(
+					origin,
+					normalizedDir,
+					maxDistance,
+					shapeEntry.shape,
+					shapeEntry.transform,
+				);
 
 				if (result) {
 					const hitPoint = new Vec2(origin.x + dirX * result.t, origin.y + dirY * result.t);
 					hits.push({
 						collider: body,
-						colliderShape: shapeNodes[i]!,
+						colliderShape: shapeNodes[i] as (typeof shapeNodes)[number],
 						point: hitPoint,
 						normal: result.normal,
 						distance: result.t,
@@ -971,7 +977,7 @@ export class PhysicsWorld {
 		hits.sort((a, b) => a.distance - b.distance);
 
 		if (firstOnly && hits.length > 1) {
-			return [hits[0]!];
+			return [hits[0] as RaycastHit];
 		}
 
 		return hits;

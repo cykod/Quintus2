@@ -26,6 +26,7 @@ export class Node2D extends Node {
 	visible = true;
 	alpha = 1;
 	renderFixed = false;
+	ySortChildren = false;
 
 	constructor() {
 		super();

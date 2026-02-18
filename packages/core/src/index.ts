@@ -46,3 +46,5 @@ export type {
 } from "./snapshot-types.js";
 // Snapshot utilities
 export { countInSnapshot, findAllInSnapshot, findInSnapshot } from "./snapshot-utils.js";
+// Timer
+export { Timer } from "./timer.js";

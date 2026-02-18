@@ -1,3 +1,17 @@
+## Add Y-Sort rendering, Timer node, and fix all lint warnings
+*Tuesday, February 17th at 8pm*
+Implements Phase A engine enhancements for the dungeon crawler demo: 
+ySortChildren property on Node2D for automatic Y-position-based render 
+ordering, and a Timer node for deterministic one-shot/repeating delays using 
+onFixedUpdate. Resolves all 377 Biome lint diagnostics across the codebase by 
+replacing non-null assertions with type-safe alternatives (charAt for string 
+indexing, as-assertions for array access in hot loops), removing unused 
+imports, fixing import ordering, and eliminating useless constructors. Also 
+includes Phase 8 design document, debug skill updates, and audio/input debug 
+instrumentation.
+
+---
+
 ## Implement Phase 7: deterministic testing and AI infrastructure
 *Tuesday, February 17th at 2pm*
 Implement @quintus/headless (HeadlessGame with runFor/runUntil), @quintus/test 

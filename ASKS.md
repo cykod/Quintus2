@@ -219,3 +219,13 @@
 [DEVL] tue 2/17 1pm - Review Phase 7 design for potential issues and risks
 
 [IMPL] tue 2/17 1pm - Implement Phase 7: Deterministic Testing & AI Infrastructure (headless, test, snapshot packages)
+
+[MILE] tue 2/17 2pm - Implemented Phase 7: deterministic testing and AI infrastructure with @quintus/headless, @quintus/test, and @quintus/snapshot packages
+
+[DSGN] tue 2/17 2pm - Design Phase 8: Debug CLI & AI Skills
+
+[IMPL] tue 2/17 3pm - Implement Phase 8 remaining work: promote CLI to qdbg, input/audio instrumentation, signal watching
+
+[DSGN] tue 2/17 3pm - Design top-down 2D dungeon crawler — engine gaps analysis and demo game plan
+
+[IMPL] tue 2/17 4pm - Implement Phase A engine enhancements (Y-sort rendering + Timer node) for dungeon crawler

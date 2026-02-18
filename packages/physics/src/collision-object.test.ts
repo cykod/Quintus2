@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { _registerPhysicsAccessors, type BodyType, CollisionObject } from "./collision-object.js";
 import { CollisionShape } from "./collision-shape.js";
 import { getPhysicsWorld, PhysicsPlugin } from "./physics-plugin.js";
+import type { PhysicsWorld } from "./physics-world.js";
 import { Shape } from "./shapes.js";
 
 // === Helpers ===
@@ -112,8 +113,8 @@ describe("CollisionObject", () => {
 
 			const transforms = body.getShapeTransforms();
 			expect(transforms).toHaveLength(1);
-			expect(transforms[0]!.shape).toBe(cs.shape);
-			expect(transforms[0]!.transform).toBeDefined();
+			expect(transforms[0]?.shape).toBe(cs.shape);
+			expect(transforms[0]?.transform).toBeDefined();
 		});
 
 		it("returns empty array when no shapes", () => {
@@ -137,10 +138,10 @@ describe("CollisionObject", () => {
 			const aabb = body.getWorldAABB();
 			expect(aabb).not.toBeNull();
 			// Rect 20x10 centered at (100, 200)
-			expect(aabb!.min.x).toBeCloseTo(90);
-			expect(aabb!.min.y).toBeCloseTo(195);
-			expect(aabb!.max.x).toBeCloseTo(110);
-			expect(aabb!.max.y).toBeCloseTo(205);
+			expect(aabb?.min.x).toBeCloseTo(90);
+			expect(aabb?.min.y).toBeCloseTo(195);
+			expect(aabb?.max.x).toBeCloseTo(110);
+			expect(aabb?.max.y).toBeCloseTo(205);
 		});
 
 		it("merges AABB across multiple shapes", () => {
@@ -157,8 +158,8 @@ describe("CollisionObject", () => {
 			const aabb = body.getWorldAABB();
 			expect(aabb).not.toBeNull();
 			// Should span from -55 to 55 on x-axis
-			expect(aabb!.min.x).toBeCloseTo(-55);
-			expect(aabb!.max.x).toBeCloseTo(55);
+			expect(aabb?.min.x).toBeCloseTo(-55);
+			expect(aabb?.max.x).toBeCloseTo(55);
 		});
 	});
 
@@ -252,7 +253,7 @@ describe("CollisionObject", () => {
 			}
 			game.start(TestScene);
 
-			const world = getPhysicsWorld(game)!;
+			const world = getPhysicsWorld(game) as PhysicsWorld;
 
 			// Probe body — overlaps at (52, 50)
 			const probe = makeBody("static", new Vec2(52, 50));
@@ -276,7 +277,7 @@ describe("CollisionObject", () => {
 			}
 			game.start(TestScene);
 
-			const world = getPhysicsWorld(game)!;
+			const world = getPhysicsWorld(game) as PhysicsWorld;
 
 			// Probe overlapping the body
 			const probe = makeBody("static", new Vec2(52, 50));
@@ -330,7 +331,7 @@ describe("CollisionObject", () => {
 			game.start(TestScene);
 
 			// If _registerPhysicsAccessors didn't work, body wouldn't be in the world
-			const world = getPhysicsWorld(game)!;
+			const world = getPhysicsWorld(game) as PhysicsWorld;
 
 			const probe = makeBody("static", new Vec2(2, 0));
 			world.register(probe);
@@ -367,7 +368,7 @@ describe("CollisionObject", () => {
 			class SceneB extends Scene {}
 			game.start(SceneA);
 
-			const world = getPhysicsWorld(game)!;
+			const world = getPhysicsWorld(game) as PhysicsWorld;
 
 			// Verify body is registered
 			const probe = makeBody("static", new Vec2(2, 0));
@@ -375,7 +376,7 @@ describe("CollisionObject", () => {
 			expect(world.testOverlap(probe)).toContain(body);
 
 			// Switch scene — old body should be unregistered (destroy → onExitTree)
-			game.currentScene!.switchTo(SceneB);
+			game.currentScene?.switchTo(SceneB);
 			expect(world.testOverlap(probe)).not.toContain(body);
 		});
 
@@ -400,7 +401,7 @@ describe("CollisionObject", () => {
 
 			// Move actor far away and step again
 			actor.position = new Vec2(500, 0);
-			const world = getPhysicsWorld(game)!;
+			const world = getPhysicsWorld(game) as PhysicsWorld;
 			world.updatePosition(actor);
 			game.step();
 

@@ -286,12 +286,12 @@ describe("parseTsx", () => {
 		const ts = parseTsx(tsx);
 		expect(ts.tiles).toHaveLength(2);
 
-		const solid = ts.tiles![0];
+		const solid = ts.tiles?.[0];
 		expect(solid?.type).toBe("Solid");
 		expect(solid?.properties?.[0]?.value).toBe(false);
 		expect(solid?.objectgroup?.objects).toHaveLength(1);
 
-		const animated = ts.tiles![1];
+		const animated = ts.tiles?.[1];
 		expect(animated?.animation).toHaveLength(2);
 	});
 

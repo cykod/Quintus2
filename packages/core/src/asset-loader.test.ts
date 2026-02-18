@@ -206,8 +206,8 @@ describe("AssetLoader", () => {
 
 			const result = loader.get<{ mockBuffer: boolean; path: string }>("bgm");
 			expect(result).not.toBeNull();
-			expect(result!.mockBuffer).toBe(true);
-			expect(result!.path).toBe("music/bgm.ogg");
+			expect(result?.mockBuffer).toBe(true);
+			expect(result?.path).toBe("music/bgm.ogg");
 		});
 
 		it("custom loader receives correct name and path", async () => {
@@ -300,7 +300,7 @@ describe("AssetLoader", () => {
 			});
 
 			expect(progressCalls.length).toBe(3);
-			expect(progressCalls[progressCalls.length - 1]!.total).toBe(3);
+			expect(progressCalls[progressCalls.length - 1]?.total).toBe(3);
 		});
 	});
 });

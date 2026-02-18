@@ -872,8 +872,8 @@ describe("Integration: physics full-loop", () => {
 			}
 
 			expect(contacts.length).toBeGreaterThanOrEqual(1);
-			expect(contacts[0]!.a).toBe(player);
-			expect(contacts[0]!.b).toBe(enemy);
+			expect(contacts[0]?.a).toBe(player);
+			expect(contacts[0]?.b).toBe(enemy);
 		});
 
 		it("provides correct normal for stomp-vs-side detection", () => {
@@ -911,7 +911,7 @@ describe("Integration: physics full-loop", () => {
 
 			expect(normals.length).toBeGreaterThanOrEqual(1);
 			// Normal should point up (stomp from above)
-			expect(normals[0]!.y).toBeLessThan(0);
+			expect(normals[0]?.y).toBeLessThan(0);
 		});
 
 		it("fires for actor-to-static contacts", () => {
@@ -943,7 +943,7 @@ describe("Integration: physics full-loop", () => {
 			}
 
 			expect(contacts.length).toBeGreaterThanOrEqual(1);
-			expect(contacts[0]!.collider).toBe(wall);
+			expect(contacts[0]?.collider).toBe(wall);
 		});
 
 		it("dispose function stops callbacks", () => {
@@ -1021,10 +1021,10 @@ describe("Integration: physics full-loop", () => {
 
 			expect(contacts.length).toBeGreaterThanOrEqual(1);
 			// Callback args should be (player, enemy) even though enemy was the mover
-			expect(contacts[0]!.a).toBe(player);
-			expect(contacts[0]!.b).toBe(enemy);
+			expect(contacts[0]?.a).toBe(player);
+			expect(contacts[0]?.b).toBe(enemy);
 			// Normal should point into groupA (player), i.e. towards +x since enemy approaches from left
-			expect(contacts[0]!.info.normal.x).toBeGreaterThan(0);
+			expect(contacts[0]?.info.normal.x).toBeGreaterThan(0);
 		});
 	});
 

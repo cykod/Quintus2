@@ -4,11 +4,7 @@ import { FLIPPED_HORIZONTALLY_FLAG, FLIPPED_VERTICALLY_FLAG } from "./tiled-type
 import { parseTmx } from "./tmx-parser.js";
 
 /** Minimal valid TMX with 1 tile layer and 1 inline tileset. */
-function minimalTmx(
-	layerData = "0,0,0,0,0,0",
-	width = 3,
-	height = 2,
-): string {
+function minimalTmx(layerData = "0,0,0,0,0,0", width = 3, height = 2): string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" orientation="orthogonal" renderorder="right-down"
      width="${width}" height="${height}" tilewidth="16" tileheight="16">
@@ -224,9 +220,7 @@ describe("parseTmx", () => {
 	it("preserves flip flags in tile data", () => {
 		const flippedH = (1 | FLIPPED_HORIZONTALLY_FLAG) >>> 0;
 		const flippedV = (2 | FLIPPED_VERTICALLY_FLAG) >>> 0;
-		const map = parseTmx(
-			minimalTmx(`${flippedH},${flippedV},0,0,0,0`),
-		);
+		const map = parseTmx(minimalTmx(`${flippedH},${flippedV},0,0,0,0`));
 		const layer = map.layers[0] as { type: string; data: number[] };
 		expect(layer.data[0]).toBe(flippedH);
 		expect(layer.data[1]).toBe(flippedV);

@@ -37,7 +37,7 @@ export class Vec2Pool {
 			// Pool exhausted — allocate a new temporary (not pooled)
 			return { x, y };
 		}
-		const tmp = this.pool[this.cursor++]!;
+		const tmp = this.pool[this.cursor++] as { x: number; y: number };
 		tmp.x = x;
 		tmp.y = y;
 		return tmp;

@@ -1,5 +1,6 @@
-import { Game, Node, Node2D, Scene } from "@quintus/core";
+import { Game, Node2D, Scene } from "@quintus/core";
 import { describe, expect, it, vi } from "vitest";
+import type { Input } from "./input.js";
 import type { InputEvent } from "./input-event.js";
 import { getInput, InputPlugin } from "./input-plugin.js";
 import type { InputReceiver } from "./input-receiver.js";
@@ -30,13 +31,13 @@ describe("InputPlugin", () => {
 			}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 			input.inject("jump", true);
 			game.step();
 
 			expect(received.length).toBe(1);
-			expect(received[0]!.action).toBe("jump");
-			expect(received[0]!.pressed).toBe(true);
+			expect(received[0]?.action).toBe("jump");
+			expect(received[0]?.pressed).toBe(true);
 
 			game.stop();
 		});
@@ -66,7 +67,7 @@ describe("InputPlugin", () => {
 			}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 			input.inject("jump", true);
 			game.step();
 
@@ -102,7 +103,7 @@ describe("InputPlugin", () => {
 			}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 			input.inject("jump", true);
 			game.step();
 
@@ -130,7 +131,7 @@ describe("InputPlugin", () => {
 			}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 			input.inject("jump", true);
 			game.step();
 			received.length = 0;
@@ -139,8 +140,8 @@ describe("InputPlugin", () => {
 			game.step();
 
 			expect(received.length).toBe(1);
-			expect(received[0]!.action).toBe("jump");
-			expect(received[0]!.pressed).toBe(false);
+			expect(received[0]?.action).toBe("jump");
+			expect(received[0]?.pressed).toBe(false);
 
 			game.stop();
 		});
@@ -164,7 +165,7 @@ describe("InputPlugin", () => {
 			}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 			input.inject("jump", true);
 			game.step();
 			received.length = 0;
@@ -186,7 +187,7 @@ describe("InputPlugin", () => {
 			class TestScene extends Scene {}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 			input.inject("jump", true);
 			game.step();
 			expect(input.isPressed("jump")).toBe(true);
@@ -208,7 +209,7 @@ describe("InputPlugin", () => {
 			class TestScene extends Scene {}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 
 			document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
 			game.step();
@@ -227,7 +228,7 @@ describe("InputPlugin", () => {
 			class TestScene extends Scene {}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 
 			document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
 			game.step();
@@ -247,7 +248,7 @@ describe("InputPlugin", () => {
 			class TestScene extends Scene {}
 			game.start(TestScene);
 
-			const input = getInput(game)!;
+			const input = getInput(game) as Input;
 
 			game.canvas.dispatchEvent(new MouseEvent("mousedown", { button: 0 }));
 			game.step();

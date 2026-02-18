@@ -1,36 +1,36 @@
 ---
 name: debug-game
 description: Debug a running Quintus game — inspect scene tree, step frames, simulate input, analyze physics, and view events. Use when the user wants to debug, test, or understand the runtime behavior of a Quintus game demo.
-allowed-tools: Bash(quintus-debug:*),Bash(playwright-cli:*)
+allowed-tools: Bash(qdbg:*),Bash(playwright-cli:*)
 ---
 
 # Quintus Game Debugger
 
-Debug running Quintus games through the `quintus-debug` CLI wrapper, which provides ergonomic access to the engine's debug bridge (`window.__quintusDebug`).
+Debug running Quintus games through the `qdbg` CLI wrapper, which provides ergonomic access to the engine's debug bridge (`window.__quintusDebug`).
 
 ## Quick Start
 
 ```bash
 # 1. Connect to the running demo (starts dev server if needed)
-quintus-debug connect platformer-demo
+qdbg connect platformer-demo
 
 # 2. See the scene tree
-quintus-debug tree
+qdbg tree
 
 # 3. Step a few frames and inspect
-quintus-debug step 10
-quintus-debug physics Player
+qdbg step 10
+qdbg physics Player
 
 # 4. Test input
-quintus-debug tap jump 1
-quintus-debug step 30
-quintus-debug physics Player
+qdbg tap jump 1
+qdbg step 30
+qdbg physics Player
 
 # 5. View events
-quintus-debug events --category=physics
+qdbg events --category=physics
 
 # 6. Done
-quintus-debug disconnect
+qdbg disconnect
 ```
 
 ## Core Mental Model
@@ -105,26 +105,26 @@ To land on a platform from below (e.g., reaching a platform at (100, 220) rect 8
 
 ```bash
 # 1. Check surroundings — understand what's above you
-quintus-debug nearby Player 150
+qdbg nearby Player 150
 
 # 2. Position BESIDE the platform, not under it (platform x range = 60–140)
 #    Clear edge = platform_edge - player_half_width - margin
-quintus-debug move-to Player move_left 45 -
+qdbg move-to Player move_left 45 -
 
 # 3. Jump straight up from the clear position
-quintus-debug tap jump 1
+qdbg tap jump 1
 
 # 4. Wait a few frames to rise above the platform top (y < 202 for a 214-top platform)
-quintus-debug step 11
+qdbg step 11
 
 # 5. Drift sideways over the platform
-quintus-debug move-to Player move_right 110 -
+qdbg move-to Player move_right 110 -
 
 # 6. Let gravity land you — step a few frames
-quintus-debug step 20
+qdbg step 20
 
 # 7. Verify
-quintus-debug physics Player
+qdbg physics Player
 ```
 
 **Key insight:** You must jump from beside the platform and arc over its edge. Jumping from directly underneath hits the platform's underside (ceiling collision), killing your vertical velocity.

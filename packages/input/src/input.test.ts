@@ -300,10 +300,7 @@ describe("Input", () => {
 			expect(input.isPressed("jump")).toBe(false);
 
 			// Gamepad button 0 (a) pressed
-			mockGamepad(
-				[{ pressed: true }],
-				[0, 0, 0, 0],
-			);
+			mockGamepad([{ pressed: true }], [0, 0, 0, 0]);
 
 			input._pollGamepad();
 			expect(input.isPressed("jump")).toBe(true);
