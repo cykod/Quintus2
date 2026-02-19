@@ -1,3 +1,16 @@
+## Add scene registry for string-based scene transitions
+*Wednesday, February 18th at 7pm*
+Add a scene registry to Game that allows scenes to be referenced by string 
+names instead of class constructors, eliminating circular import issues. The 
+registry adds registerScene(), registerScenes(), and a SceneTarget type (string 
+| SceneConstructor) accepted by start(), switchTo(), and _switchScene(). Both 
+platformer and dungeon examples are updated to use string-based transitions, 
+removing the _Level1Ref/_setLevel1Ref mutable-reference hack. Ten new tests 
+cover registration, resolution, chaining, error cases, and backwards 
+compatibility.
+
+---
+
 ## Fix dungeon crawler sprites and add complete dungeon example
 *Wednesday, February 18th at 1pm*
 Corrected all 16 tile mappings in the dungeon crawler sprites.ts and state.ts 

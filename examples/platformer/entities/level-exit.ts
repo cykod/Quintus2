@@ -1,4 +1,3 @@
-import type { SceneConstructor } from "@quintus/core";
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
@@ -6,7 +5,7 @@ import { gameState } from "../state.js";
 
 export class LevelExit extends Sensor {
 	override collisionGroup = "items";
-	nextScene!: SceneConstructor;
+	nextScene!: string;
 
 	override onReady() {
 		super.onReady();

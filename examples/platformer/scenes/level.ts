@@ -1,5 +1,5 @@
 import { Camera } from "@quintus/camera";
-import { Node, Scene, type SceneConstructor } from "@quintus/core";
+import { Node, Scene } from "@quintus/core";
 import { Rect } from "@quintus/math";
 import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
@@ -15,7 +15,7 @@ import { HUD } from "../hud/hud.js";
 /** Base Level scene with shared setup logic. Subclasses set asset + nextScene. */
 export abstract class Level extends Scene {
 	abstract readonly levelAsset: string;
-	abstract readonly nextScene: SceneConstructor;
+	abstract readonly nextScene: string;
 
 	protected player!: Player;
 

@@ -1,13 +1,7 @@
-import { Scene, type SceneConstructor } from "@quintus/core";
+import { Scene } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
 import { gameState, resetState } from "../state.js";
-
-/** Lazily set by level1.ts to avoid circular imports. */
-export let _Level1Ref: SceneConstructor | null = null;
-export function _setLevel1Ref(ref: SceneConstructor): void {
-	_Level1Ref = ref;
-}
 
 export class GameOverScene extends Scene {
 	override onReady() {
@@ -48,7 +42,7 @@ export class GameOverScene extends Scene {
 		});
 		retryBtn.onPressed.connect(() => {
 			resetState();
-			if (_Level1Ref) this.switchTo(_Level1Ref);
+			this.switchTo("level1");
 		});
 	}
 }

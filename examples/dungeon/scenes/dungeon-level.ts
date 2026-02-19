@@ -1,5 +1,5 @@
 import { Camera } from "@quintus/camera";
-import { Node, Node2D, Scene, type SceneConstructor } from "@quintus/core";
+import { Node, Node2D, Scene } from "@quintus/core";
 import { Rect, Vec2 } from "@quintus/math";
 import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
@@ -14,7 +14,7 @@ import { HUD } from "../hud/hud.js";
 /** Base scene for dungeon levels. Subclasses set levelAsset + nextScene. */
 export abstract class DungeonLevel extends Scene {
 	abstract readonly levelAsset: string;
-	abstract readonly nextScene: SceneConstructor;
+	abstract readonly nextScene: string;
 
 	protected player!: Player;
 	protected map!: TileMap;

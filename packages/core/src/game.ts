@@ -7,7 +7,7 @@ import { GameLoop } from "./game-loop.js";
 import type { Node } from "./node.js";
 import type { Plugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";
-import type { Scene, SceneConstructor } from "./scene.js";
+import type { Scene, SceneConstructor, SceneTarget } from "./scene.js";
 import { type Signal, signal } from "./signal.js";
 
 export interface GameOptions {
@@ -48,6 +48,7 @@ export class Game {
 	// === State ===
 	private _currentScene: Scene | null = null;
 	private _plugins = new Map<string, Plugin>();
+	private _sceneRegistry = new Map<string, SceneConstructor>();
 
 	/** Deterministic random number generator. */
 	readonly random: SeededRandom;
@@ -151,6 +152,37 @@ export class Game {
 		);
 	}
 
+	// === Scene Registry ===
+
+	/** Register a scene class under a string name for string-based transitions. */
+	registerScene(name: string, SceneClass: SceneConstructor): this {
+		if (this._sceneRegistry.has(name)) {
+			console.warn(`Scene "${name}" is already registered. Overwriting.`);
+		}
+		this._sceneRegistry.set(name, SceneClass);
+		return this;
+	}
+
+	/** Register multiple scenes at once. */
+	registerScenes(scenes: Record<string, SceneConstructor>): this {
+		for (const [name, SceneClass] of Object.entries(scenes)) {
+			this.registerScene(name, SceneClass);
+		}
+		return this;
+	}
+
+	/** @internal Resolve a SceneTarget to a SceneConstructor. */
+	_resolveScene(target: SceneTarget): SceneConstructor {
+		if (typeof target === "string") {
+			const SceneClass = this._sceneRegistry.get(target);
+			if (!SceneClass) {
+				throw new Error(`Scene "${target}" is not registered. Use game.registerScene() first.`);
+			}
+			return SceneClass;
+		}
+		return target;
+	}
+
 	// === Scene Management ===
 	get currentScene(): Scene | null {
 		return this._currentScene;
@@ -168,9 +200,9 @@ export class Game {
 		return this.loop.fixedFrame;
 	}
 
-	/** Start the game loop with the given scene class. */
-	start(SceneClass: SceneConstructor): void {
-		this._loadScene(SceneClass);
+	/** Start the game loop with the given scene class or registered scene name. */
+	start(target: SceneTarget): void {
+		this._loadScene(this._resolveScene(target));
 
 		if (this.debug) {
 			// Render one frame so the initial state is visible, but don't start the loop
@@ -280,7 +312,8 @@ export class Game {
 
 	// === Internal: Scene Loading ===
 	/** @internal */
-	_switchScene(SceneClass: SceneConstructor): void {
+	_switchScene(target: SceneTarget): void {
+		const SceneClass = this._resolveScene(target);
 		const fromName = this._currentScene?.name ?? null;
 
 		// Destroy old scene

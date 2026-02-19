@@ -7,6 +7,9 @@ import { type Signal, signal } from "./signal.js";
 /** Constructor type for class-based scenes. */
 export type SceneConstructor = new (game: Game) => Scene;
 
+/** A scene can be referenced by its class constructor or by its registered string name. */
+export type SceneTarget = string | SceneConstructor;
+
 export class Scene extends Node {
 	/** @internal Marker for scene identification */
 	readonly _isScene = true;
@@ -71,8 +74,8 @@ export class Scene extends Node {
 	}
 
 	// === Scene Transitions ===
-	switchTo(SceneClass: SceneConstructor): void {
-		this._game._switchScene(SceneClass);
+	switchTo(target: SceneTarget): void {
+		this._game._switchScene(target);
 	}
 
 	// === Internal: Update Traversal ===

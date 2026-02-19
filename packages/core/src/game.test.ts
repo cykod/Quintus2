@@ -249,6 +249,98 @@ describe("Game", () => {
 		expect(customGame.backgroundColor).toBe("#ff0000");
 	});
 
+	describe("scene registry", () => {
+		it("registerScene() registers and resolves a scene by name", () => {
+			const game = createGame();
+			class MyScene extends Scene {}
+			game.registerScene("my-scene", MyScene);
+			game.start("my-scene");
+			expect(game.currentScene).toBeInstanceOf(MyScene);
+		});
+
+		it("registerScene() returns this for chaining", () => {
+			const game = createGame();
+			class A extends Scene {}
+			class B extends Scene {}
+			const result = game.registerScene("a", A).registerScene("b", B);
+			expect(result).toBe(game);
+		});
+
+		it("registerScene() warns on duplicate name", () => {
+			const game = createGame();
+			class A extends Scene {}
+			class B extends Scene {}
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			game.registerScene("dup", A);
+			game.registerScene("dup", B);
+			expect(warnSpy).toHaveBeenCalledWith('Scene "dup" is already registered. Overwriting.');
+			warnSpy.mockRestore();
+			// Should use the latest registration
+			game.start("dup");
+			expect(game.currentScene).toBeInstanceOf(B);
+		});
+
+		it("registerScenes() batch registers multiple scenes", () => {
+			const game = createGame();
+			class A extends Scene {}
+			class B extends Scene {}
+			game.registerScenes({ a: A, b: B });
+			game.start("a");
+			expect(game.currentScene).toBeInstanceOf(A);
+			game.currentScene?.switchTo("b");
+			expect(game.currentScene).toBeInstanceOf(B);
+		});
+
+		it("start() with string name works", () => {
+			const game = createGame();
+			class Level extends Scene {}
+			game.registerScene("level", Level);
+			game.start("level");
+			expect(game.currentScene).toBeInstanceOf(Level);
+		});
+
+		it("start() with unregistered string throws", () => {
+			const game = createGame();
+			expect(() => game.start("unknown")).toThrowError(
+				'Scene "unknown" is not registered. Use game.registerScene() first.',
+			);
+		});
+
+		it("start() with class ref still works", () => {
+			const game = createGame();
+			class Direct extends Scene {}
+			game.start(Direct);
+			expect(game.currentScene).toBeInstanceOf(Direct);
+		});
+
+		it("switchTo() with string name works", () => {
+			const game = createGame();
+			class A extends Scene {}
+			class B extends Scene {}
+			game.registerScene("b", B);
+			game.start(A);
+			game.currentScene?.switchTo("b");
+			expect(game.currentScene).toBeInstanceOf(B);
+		});
+
+		it("switchTo() with unregistered string throws", () => {
+			const game = createGame();
+			game.start(Scene);
+			expect(() => game.currentScene?.switchTo("nope")).toThrowError(
+				'Scene "nope" is not registered. Use game.registerScene() first.',
+			);
+		});
+
+		it("switchTo() with class ref still works", () => {
+			const game = createGame();
+			class A extends Scene {}
+			class B extends Scene {}
+			game.start(A);
+			game.currentScene?.switchTo(B);
+			expect(game.currentScene).toBeInstanceOf(B);
+		});
+	});
+
 	describe("pluggable renderer", () => {
 		function mockRenderer(): Renderer & { calls: string[] } {
 			const calls: string[] = [];

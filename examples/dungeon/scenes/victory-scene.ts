@@ -2,7 +2,6 @@ import { Scene } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
 import { gameState, resetState } from "../state.js";
-import { _Level1Ref } from "./game-over-scene.js";
 
 export class VictoryScene extends Scene {
 	override onReady() {
@@ -51,7 +50,7 @@ export class VictoryScene extends Scene {
 		});
 		playAgainBtn.onPressed.connect(() => {
 			resetState();
-			if (_Level1Ref) this.switchTo(_Level1Ref);
+			this.switchTo("level1");
 		});
 	}
 }

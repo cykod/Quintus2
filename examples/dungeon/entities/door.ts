@@ -1,4 +1,3 @@
-import type { SceneConstructor } from "@quintus/core";
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
@@ -6,7 +5,7 @@ import { gameState } from "../state.js";
 
 export class Door extends Sensor {
 	override collisionGroup = "items";
-	nextScene!: SceneConstructor;
+	nextScene!: string;
 	locked = false;
 
 	private _sprite!: AnimatedSprite;

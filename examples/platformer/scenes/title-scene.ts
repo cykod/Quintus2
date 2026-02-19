@@ -2,7 +2,6 @@ import { Scene } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
 import { resetState } from "../state.js";
-import { Level1 } from "./level1.js";
 
 export class TitleScene extends Scene {
 	override onReady() {
@@ -52,7 +51,7 @@ export class TitleScene extends Scene {
 		});
 		startBtn.onPressed.connect(() => {
 			resetState();
-			this.switchTo(Level1);
+			this.switchTo("level1");
 		});
 	}
 }
