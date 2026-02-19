@@ -20,7 +20,7 @@ export class HUD extends Layer {
 				i < gameState.health
 					? entitySheet.getFrameRect(TILE.HEART_FULL)
 					: entitySheet.getFrameRect(TILE.HEART_EMPTY);
-			const heart = this.addChild(Sprite, {
+			const heart = this.add(Sprite, {
 				texture: "tileset",
 				sourceRect: rect,
 				centered: false,
@@ -30,7 +30,7 @@ export class HUD extends Layer {
 		}
 
 		// Current sword icon
-		this.swordSprite = this.addChild(Sprite, {
+		this.swordSprite = this.add(Sprite, {
 			texture: "tileset",
 			sourceRect: entitySheet.getFrameRect(gameState.sword.spriteFrame),
 			centered: false,
@@ -38,7 +38,7 @@ export class HUD extends Layer {
 		});
 
 		// Score label
-		this.scoreLabel = this.addChild(Label, {
+		this.scoreLabel = this.add(Label, {
 			position: new Vec2(250, 4),
 			text: `Score: ${gameState.score}`,
 			fontSize: 8,
@@ -47,31 +47,34 @@ export class HUD extends Layer {
 		});
 
 		// Key count (only shown when keys > 0)
-		this.keyLabel = this.addChild(Label, {
+		this.keyLabel = this.add(Label, {
 			position: new Vec2(250, 16),
 			text: "",
 			fontSize: 8,
 			color: Color.fromHex("#ffd54f"),
 			align: "right",
 		});
-	}
 
-	override onUpdate(_dt: number) {
-		// Update heart sprites
-		for (let i = 0; i < this.hearts.length; i++) {
-			this.hearts[i].sourceRect =
-				i < gameState.health
-					? entitySheet.getFrameRect(TILE.HEART_FULL)
-					: entitySheet.getFrameRect(TILE.HEART_EMPTY);
-		}
+		// Signal-driven updates (no polling)
+		gameState.on("health").connect(({ value }) => {
+			for (let i = 0; i < this.hearts.length; i++) {
+				this.hearts[i].sourceRect =
+					i < value
+						? entitySheet.getFrameRect(TILE.HEART_FULL)
+						: entitySheet.getFrameRect(TILE.HEART_EMPTY);
+			}
+		});
 
-		// Update sword icon
-		this.swordSprite.sourceRect = entitySheet.getFrameRect(gameState.sword.spriteFrame);
+		gameState.on("score").connect(({ value }) => {
+			this.scoreLabel.text = `Score: ${value}`;
+		});
 
-		// Update score
-		this.scoreLabel.text = `Score: ${gameState.score}`;
+		gameState.on("keys").connect(({ value }) => {
+			this.keyLabel.text = value > 0 ? `Keys: ${value}` : "";
+		});
 
-		// Update key count
-		this.keyLabel.text = gameState.keys > 0 ? `Keys: ${gameState.keys}` : "";
+		gameState.on("sword").connect(({ value }) => {
+			this.swordSprite.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
+		});
 	}
 }

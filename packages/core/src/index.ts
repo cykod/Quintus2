@@ -4,6 +4,9 @@ export type { AssetManifest, LoaderFn } from "./asset-loader.js";
 // Assets
 export { AssetLoader } from "./asset-loader.js";
 export { Canvas2DRenderer } from "./canvas2d-renderer.js";
+// Constants
+export type { ConstantDef } from "./constants.js";
+export { ConstantsRegistry } from "./constants.js";
 // Debug
 export type { DebugAction, DebugBridge } from "./debug-bridge.js";
 export { installDebugBridge } from "./debug-bridge.js";
@@ -31,6 +34,9 @@ export { Node2D } from "./node2d.js";
 export type { Plugin } from "./plugin.js";
 // Plugins
 export { definePlugin } from "./plugin.js";
+// Reactive state
+export type { ChangePayload, ReactiveState, ReactiveStateAPI } from "./reactive-state.js";
+export { reactiveState } from "./reactive-state.js";
 // Renderer
 export type { Renderer } from "./renderer.js";
 export type { SceneConstructor, SceneTarget } from "./scene.js";

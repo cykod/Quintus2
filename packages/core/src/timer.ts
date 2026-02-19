@@ -1,4 +1,4 @@
-import { Node } from "./node.js";
+import { _registerTimerFactory, Node } from "./node.js";
 import { type Signal, signal } from "./signal.js";
 
 /**
@@ -55,3 +55,6 @@ export class Timer extends Node {
 		}
 	}
 }
+
+// Register Timer factory for Node.after() / Node.every()
+_registerTimerFactory(() => new Timer());

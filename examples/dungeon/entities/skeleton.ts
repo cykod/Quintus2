@@ -110,8 +110,8 @@ export class Skeleton extends BaseEnemy {
 		if (dir.length() < 1) return;
 		const norm = dir.normalize();
 
-		const weapon = this.parent?.addChild(EnemyWeapon);
-		if (!weapon) return;
+		if (!this.parent) return;
+		const weapon = this.parent.add(EnemyWeapon);
 		weapon.position.x = this.position.x + norm.x * 10;
 		weapon.position.y = this.position.y + norm.y * 10;
 		weapon.damage = this.damage;

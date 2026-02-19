@@ -8,7 +8,7 @@ import { Vec2 } from "@quintus/math";
 import { PhysicsPlugin } from "@quintus/physics";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "../config.js";
-import { resetState } from "../state.js";
+import { gameState } from "../state.js";
 
 const ASSETS_DIR = resolve(import.meta.dirname, "..", "assets");
 
@@ -36,5 +36,5 @@ export async function loadPlatformerAssets(game: HeadlessGame): Promise<void> {
 }
 
 export function resetPlatformerState(): void {
-	resetState();
+	gameState.reset();
 }

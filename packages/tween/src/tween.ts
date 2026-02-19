@@ -117,11 +117,6 @@ export class Tween {
 		return this;
 	}
 
-	andThen(): this {
-		this._nextParallel = false;
-		return this;
-	}
-
 	delay(duration: number): this {
 		const step: DelayStep = { type: "delay", duration: Math.max(0, duration), elapsed: 0 };
 		this._groups.push([step]);

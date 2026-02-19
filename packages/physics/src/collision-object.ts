@@ -113,7 +113,7 @@ export abstract class CollisionObject extends Node2D {
 
 	/** Get the PhysicsWorld from the game's plugin. */
 	protected _getWorld(): PhysicsWorld | null {
-		const game = this.game;
+		const game = this.gameOrNull;
 		if (!game || !_getPhysicsWorldFn) return null;
 		return _getPhysicsWorldFn(game);
 	}

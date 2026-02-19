@@ -1,3 +1,20 @@
+## Implement API ergonomics overhaul (9-phase code smell fixes)
+*Thursday, February 19th at 9am*
+Implement all 9 phases of API ergonomics improvements identified in 
+CODE_SMELLS.md. Core engine changes: node.game/node.scene now throw outside 
+tree with gameOrNull/sceneOrNull escape hatches; unified add() API on Node 
+(addChild deprecated); is() type guard and typed findFirst/findAll queries; 
+@quintus/tilemap/physics side-effect import replacing unsafe casts; 
+node.after()/every() timer convenience methods; reactiveState() with 
+Proxy-based change signals and per-key subscriptions; game.consts 
+ConstantsRegistry for tweakable values; removed andThen() from tween API. All 6 
+examples updated to use new APIs — null-check boilerplate eliminated, 
+signal-driven HUDs replace polling, duck-typing replaced with type-safe is() 
+guards. Build, 1589 tests, platformer integration tests, and lint all pass 
+clean.
+
+---
+
 ## Add pixel-snap rendering to fix sub-pixel tile seams
 *Thursday, February 19th at 7am*
 Add a pixelSnap property to Canvas2DRenderer that rounds transform translation 

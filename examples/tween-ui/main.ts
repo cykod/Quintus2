@@ -87,24 +87,24 @@ class DemoScene extends Scene {
 		// --- World-space animated shapes ---
 		const box = new AnimBox(50, 50, Color.fromHex("#e91e63"));
 		box.position = new Vec2(100, 200);
-		this.addChild(box);
+		this.add(box);
 		this.shapes.push(box);
 
 		const circle = new AnimCircle(25, Color.fromHex("#2196f3"));
 		circle.position = new Vec2(250, 200);
-		this.addChild(circle);
+		this.add(circle);
 		this.shapes.push(circle);
 
 		const star = new AnimStar(30, Color.fromHex("#ffc107"));
 		star.position = new Vec2(400, 200);
-		this.addChild(star);
+		this.add(star);
 		this.shapes.push(star);
 
 		// --- HUD Layer (screen-fixed UI) ---
 		const hud = new Layer();
 		hud.fixed = true;
 		hud.zIndex = 100;
-		this.addChild(hud);
+		this.add(hud);
 
 		// Title panel
 		const topPanel = new Panel();
@@ -112,7 +112,7 @@ class DemoScene extends Scene {
 		topPanel.height = 36;
 		topPanel.position = new Vec2(0, 0);
 		topPanel.backgroundColor = Color.fromHex("#000000").withAlpha(0.6);
-		hud.addChild(topPanel);
+		hud.add(topPanel);
 
 		const title = new Label();
 		title.text = "Tween & UI Showcase";
@@ -123,7 +123,7 @@ class DemoScene extends Scene {
 		title.width = 500;
 		title.height = 36;
 		title.position = new Vec2(250, 18);
-		hud.addChild(title);
+		hud.add(title);
 
 		// Bottom control panel
 		const bottomPanel = new Panel();
@@ -133,7 +133,7 @@ class DemoScene extends Scene {
 		bottomPanel.backgroundColor = Color.fromHex("#0a0a1a").withAlpha(0.85);
 		bottomPanel.borderColor = Color.fromHex("#333366");
 		bottomPanel.borderWidth = 1;
-		hud.addChild(bottomPanel);
+		hud.add(bottomPanel);
 
 		// Button row
 		const btnContainer = new Container();
@@ -143,7 +143,7 @@ class DemoScene extends Scene {
 		btnContainer.width = 480;
 		btnContainer.height = 44;
 		btnContainer.position = new Vec2(10, 298);
-		hud.addChild(btnContainer);
+		hud.add(btnContainer);
 
 		const makeButton = (label: string, color: string): Button => {
 			const btn = new Button();
@@ -157,7 +157,7 @@ class DemoScene extends Scene {
 			btn.textColor = Color.WHITE;
 			btn.borderColor = Color.WHITE.withAlpha(0.2);
 			btn.borderWidth = 1;
-			btnContainer.addChild(btn);
+			btnContainer.add(btn);
 			return btn;
 		};
 
@@ -174,7 +174,7 @@ class DemoScene extends Scene {
 		progressLabel.width = 200;
 		progressLabel.height = 14;
 		progressLabel.position = new Vec2(15, 348);
-		hud.addChild(progressLabel);
+		hud.add(progressLabel);
 
 		this.progress = new ProgressBar();
 		this.progress.width = 330;
@@ -186,7 +186,7 @@ class DemoScene extends Scene {
 		this.progress.borderColor = Color.fromHex("#333366");
 		this.progress.borderWidth = 1;
 		this.progress.position = new Vec2(15, 363);
-		hud.addChild(this.progress);
+		hud.add(this.progress);
 
 		// Animation counter
 		this.countLabel = new Label();
@@ -196,7 +196,7 @@ class DemoScene extends Scene {
 		this.countLabel.width = 120;
 		this.countLabel.height = 16;
 		this.countLabel.position = new Vec2(370, 360);
-		hud.addChild(this.countLabel);
+		hud.add(this.countLabel);
 
 		// Audio status
 		const audioLabel = new Label();
@@ -206,7 +206,7 @@ class DemoScene extends Scene {
 		audioLabel.width = 120;
 		audioLabel.height = 14;
 		audioLabel.position = new Vec2(370, 346);
-		hud.addChild(audioLabel);
+		hud.add(audioLabel);
 
 		// --- Wire up buttons ---
 		bounceBtn.onPressed.connect(() => this.doBounce());
@@ -232,7 +232,7 @@ class DemoScene extends Scene {
 			shape
 				.tween()
 				.to({ position: { y: startY + 80 } }, 0.4, Ease.bounceOut)
-				.andThen()
+
 				.to({ position: { y: startY } }, 0.3, Ease.quadOut);
 		}
 	}
@@ -246,7 +246,7 @@ class DemoScene extends Scene {
 				.tween()
 				.delay(i * 0.15) // stagger
 				.to({ alpha: 0.1 }, 0.5, Ease.quadInOut)
-				.andThen()
+
 				.to({ alpha: 1 }, 0.5, Ease.quadInOut);
 		}
 	}
@@ -272,9 +272,9 @@ class DemoScene extends Scene {
 			shape
 				.tween()
 				.to({ position: { x: baseX + 60, y: baseY - 60 } }, 0.3, Ease.sineOut)
-				.andThen()
+
 				.to({ position: { x: baseX - 60, y: baseY - 30 } }, 0.3, Ease.sineInOut)
-				.andThen()
+
 				.to({ position: { x: baseX, y: baseY } }, 0.4, Ease.backOut);
 		}
 	}

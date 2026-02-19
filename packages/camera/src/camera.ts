@@ -176,10 +176,7 @@ export class Camera extends Node {
 		this._updateShake(dt);
 
 		// Set the scene's viewTransform
-		const scene = this.scene;
-		if (scene) {
-			scene.viewTransform = this.viewTransform;
-		}
+		this.scene.viewTransform = this.viewTransform;
 	}
 
 	// === Internal ===
@@ -235,7 +232,7 @@ export class Camera extends Node {
 	}
 
 	private _clampToBounds(): void {
-		if (!this.bounds || !this.game) return;
+		if (!this.bounds) return;
 
 		const z = this._effectiveZoom();
 		const halfViewW = this.game.width / (2 * z);
@@ -261,7 +258,7 @@ export class Camera extends Node {
 	}
 
 	private _applyDeadZone(targetX: number, targetY: number): void {
-		if (!this.deadZone || !this.game) return;
+		if (!this.deadZone) return;
 
 		const z = this._effectiveZoom();
 		// Convert dead zone from screen pixels to world units

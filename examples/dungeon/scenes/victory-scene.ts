@@ -1,20 +1,20 @@
 import { Scene } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
-import { gameState, resetState } from "../state.js";
+import { gameState } from "../state.js";
 
 export class VictoryScene extends Scene {
 	override onReady() {
 		const ui = this.add(Layer);
 		ui.fixed = true;
 
-		ui.addChild(Panel, {
+		ui.add(Panel, {
 			width: 320,
 			height: 240,
 			backgroundColor: Color.fromHex("#1a1a2e"),
 		});
 
-		ui.addChild(Label, {
+		ui.add(Label, {
 			position: new Vec2(160, 50),
 			text: "Victory!",
 			fontSize: 28,
@@ -22,7 +22,7 @@ export class VictoryScene extends Scene {
 			align: "center",
 		});
 
-		ui.addChild(Label, {
+		ui.add(Label, {
 			position: new Vec2(160, 90),
 			text: "The dungeon is conquered!",
 			fontSize: 10,
@@ -30,7 +30,7 @@ export class VictoryScene extends Scene {
 			align: "center",
 		});
 
-		ui.addChild(Label, {
+		ui.add(Label, {
 			position: new Vec2(160, 120),
 			text: `Final Score: ${gameState.score}`,
 			fontSize: 14,
@@ -38,7 +38,7 @@ export class VictoryScene extends Scene {
 			align: "center",
 		});
 
-		const playAgainBtn = ui.addChild(Button, {
+		const playAgainBtn = ui.add(Button, {
 			position: new Vec2(100, 170),
 			width: 120,
 			height: 30,
@@ -49,7 +49,7 @@ export class VictoryScene extends Scene {
 			textColor: Color.WHITE,
 		});
 		playAgainBtn.onPressed.connect(() => {
-			resetState();
+			gameState.reset();
 			this.switchTo("level1");
 		});
 	}

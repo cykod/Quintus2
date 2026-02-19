@@ -48,20 +48,6 @@ describe("Tween", () => {
 			expect(node.rotation).toBeCloseTo(Math.PI, 5);
 		});
 
-		it("andThen() is a no-op (sequential is default)", () => {
-			const sys = createSystem();
-			const node = new TestNode();
-			node.value = 0;
-			const tween = sys.create(node);
-			tween.to({ value: 10 }, 0.5).andThen().to({ value: 20 }, 0.5);
-
-			tween._tick(0.5);
-			expect(node.value).toBeCloseTo(10, 5);
-
-			tween._tick(0.5);
-			expect(node.value).toBeCloseTo(20, 5);
-		});
-
 		it("delay() pauses for the given duration", () => {
 			const sys = createSystem();
 			const node = new TestNode();

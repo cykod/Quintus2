@@ -1,24 +1,11 @@
+import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
 import type { DrawContext } from "@quintus/core";
 import { Game, Scene, type Signal, signal } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { Color, Vec2 } from "@quintus/math";
-import {
-	Actor,
-	CollisionShape,
-	PhysicsPlugin,
-	Sensor,
-	Shape,
-	StaticCollider,
-} from "@quintus/physics";
+import { Actor, CollisionShape, PhysicsPlugin, Sensor, Shape } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
-
-// Register physics factories for tilemap collision generation
-TileMap.registerPhysics({
-	StaticCollider: StaticCollider as never,
-	CollisionShape: CollisionShape as never,
-	shapeRect: Shape.rect,
-});
 
 // === Game Setup ===
 const game = new Game({
@@ -58,13 +45,12 @@ class Player extends Actor {
 
 	onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(12, 14);
+		this.add(CollisionShape).shape = Shape.rect(12, 14);
 		this.tag("player");
 	}
 
 	onFixedUpdate(dt: number) {
-		const input = this.game?.input;
-		if (!input) return;
+		const input = this.game.input;
 		this.velocity.x = 0;
 		if (input.isPressed("move_left")) this.velocity.x = -this.speed;
 		if (input.isPressed("move_right")) this.velocity.x = this.speed;
@@ -96,7 +82,7 @@ class Coin extends Sensor {
 
 	onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.circle(6);
+		this.add(CollisionShape).shape = Shape.circle(6);
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
 				this.collected.emit();

@@ -1,20 +1,20 @@
 import { Scene } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
-import { gameState, resetState } from "../state.js";
+import { gameState } from "../state.js";
 
 export class GameOverScene extends Scene {
 	override onReady() {
 		const ui = this.add(Layer);
 		ui.fixed = true;
 
-		ui.addChild(Panel, {
+		ui.add(Panel, {
 			width: 320,
 			height: 240,
 			backgroundColor: Color.fromHex("#1a1a2e"),
 		});
 
-		ui.addChild(Label, {
+		ui.add(Label, {
 			position: new Vec2(160, 60),
 			text: "Game Over",
 			fontSize: 24,
@@ -22,7 +22,7 @@ export class GameOverScene extends Scene {
 			align: "center",
 		});
 
-		ui.addChild(Label, {
+		ui.add(Label, {
 			position: new Vec2(160, 100),
 			text: `Score: ${gameState.score}`,
 			fontSize: 12,
@@ -30,7 +30,7 @@ export class GameOverScene extends Scene {
 			align: "center",
 		});
 
-		const retryBtn = ui.addChild(Button, {
+		const retryBtn = ui.add(Button, {
 			position: new Vec2(110, 160),
 			width: 100,
 			height: 30,
@@ -41,7 +41,7 @@ export class GameOverScene extends Scene {
 			textColor: Color.WHITE,
 		});
 		retryBtn.onPressed.connect(() => {
-			resetState();
+			gameState.reset();
 			this.switchTo("level1");
 		});
 	}

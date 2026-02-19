@@ -1,3 +1,5 @@
+import { reactiveState } from "@quintus/core";
+
 export interface SwordDef {
 	name: string;
 	damage: number;
@@ -21,31 +23,12 @@ export const SHIELDS: ShieldDef[] = [
 	{ name: "Knight's Shield", defense: 2, spriteFrame: 122 },
 ];
 
-export interface GameState {
-	health: number;
-	maxHealth: number;
-	currentLevel: number;
-	sword: SwordDef;
-	shield: ShieldDef | null;
-	score: number;
-	keys: number;
-}
-
-export const gameState: GameState = {
+export const gameState = reactiveState({
 	health: 3,
 	maxHealth: 3,
 	currentLevel: 1,
-	sword: SWORDS[0],
-	shield: null,
+	sword: SWORDS[0] as SwordDef,
+	shield: null as ShieldDef | null,
 	score: 0,
 	keys: 0,
-};
-
-export function resetState(): void {
-	gameState.health = gameState.maxHealth;
-	gameState.currentLevel = 1;
-	gameState.sword = SWORDS[0];
-	gameState.shield = null;
-	gameState.score = 0;
-	gameState.keys = 0;
-}
+});

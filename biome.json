@@ -43,7 +43,8 @@
 			"!**/coverage",
 			"!docs/api",
 			"!examples/platformer/assets/*.json",
-			"!examples/platformer/tools"
+			"!examples/platformer/tools",
+			"!examples/**/assets/*.tsx"
 		]
 	}
 }

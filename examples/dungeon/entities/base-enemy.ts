@@ -1,6 +1,6 @@
 import { type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
-import { Actor, type CollisionObject, CollisionShape, Shape } from "@quintus/physics";
+import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import type { SpriteSheet } from "@quintus/sprites";
 import { AnimatedSprite } from "@quintus/sprites";
 import { Ease } from "@quintus/tween";
@@ -38,11 +38,11 @@ export abstract class BaseEnemy extends Actor {
 
 	override onReady() {
 		super.onReady();
-		const shape = this.addChild(CollisionShape);
+		const shape = this.add(CollisionShape);
 		shape.shape = Shape.rect(10, 10);
 		this.tag("enemy");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = this.spriteSheet;
 		this._sprite.play(this.idleAnimation);
 
@@ -83,25 +83,20 @@ export abstract class BaseEnemy extends Actor {
 		this._sprite.tween().to({ alpha: 0 }, 0.2);
 	}
 
-	protected _findPlayer(): CollisionObject | null {
-		// Find the player by tag in the scene
-		const players = this.scene?.findAll("player");
-		if (players && players.length > 0) return players[0] as unknown as CollisionObject;
-		return null;
+	protected _findPlayer(): Actor | null {
+		return this.scene.findFirst("player") as Actor | null;
 	}
 
 	protected _distanceToPlayer(): number {
 		const player = this._findPlayer();
 		if (!player) return Number.POSITIVE_INFINITY;
-		const p = (player as unknown as { position: Vec2 }).position;
-		return this.position.distanceTo(p);
+		return this.position.distanceTo(player.position);
 	}
 
 	protected _directionToPlayer(): Vec2 {
 		const player = this._findPlayer();
 		if (!player) return Vec2.ZERO;
-		const p = (player as unknown as { position: Vec2 }).position;
-		return p.sub(this.position);
+		return player.position.sub(this.position);
 	}
 
 	protected _moveToward(target: Vec2, speed: number, dt: number): void {

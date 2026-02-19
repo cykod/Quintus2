@@ -12,8 +12,7 @@ class Ball extends Node2D {
 		this.position = this.position.add(this.velocity.scale(dt));
 
 		// Bounce off walls
-		const game = this.scene?.game;
-		if (!game) return;
+		const game = this.game;
 		if (this.position.x - this.radius < 0 || this.position.x + this.radius > game.width) {
 			this.velocity = new Vec2(-this.velocity.x, this.velocity.y);
 			// Clamp inside bounds

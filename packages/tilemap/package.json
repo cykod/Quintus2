@@ -8,6 +8,11 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
+		},
+		"./physics": {
+			"types": "./dist/physics.d.ts",
+			"import": "./dist/physics.js",
+			"require": "./dist/physics.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

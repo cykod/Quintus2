@@ -1,7 +1,7 @@
+import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
-import { Node, Node2D, Scene } from "@quintus/core";
+import { Node2D, Scene } from "@quintus/core";
 import { Rect, Vec2 } from "@quintus/math";
-import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
 import { Chest, type LootType } from "../entities/chest.js";
 import { Door } from "../entities/door.js";
@@ -23,13 +23,6 @@ export abstract class DungeonLevel extends Scene {
 	protected entities!: Node2D;
 
 	override onReady() {
-		// Register physics factories for TileMap collision generation
-		TileMap.registerPhysics({
-			StaticCollider: StaticCollider as never,
-			CollisionShape: CollisionShape as never,
-			shapeRect: Shape.rect,
-		});
-
 		// Load tilemap
 		this.map = this.add(TileMap);
 		this.map.tilesetImage = "tileset";
@@ -49,7 +42,7 @@ export abstract class DungeonLevel extends Scene {
 
 		// Spawn player at designated spawn point
 		const spawnPos = this.map.getSpawnPoint("player_start");
-		this.player = this.entities.addChild(Player);
+		this.player = this.entities.add(Player);
 		this.player.position = spawnPos;
 
 		// Spawn all entities from object layer
@@ -80,17 +73,17 @@ export abstract class DungeonLevel extends Scene {
 			const pos = new Vec2(obj.x, obj.y);
 			switch (obj.type) {
 				case "Skeleton": {
-					const skel = this.entities.addChild(Skeleton);
+					const skel = this.entities.add(Skeleton);
 					skel.position = pos;
 					break;
 				}
 				case "Orc": {
-					const orc = this.entities.addChild(Orc);
+					const orc = this.entities.add(Orc);
 					orc.position = pos;
 					break;
 				}
 				case "Chest": {
-					const chest = this.entities.addChild(Chest);
+					const chest = this.entities.add(Chest);
 					chest.position = pos;
 					const lt = obj.properties.get("lootType");
 					if (lt) chest.lootType = lt as LootType;
@@ -99,12 +92,12 @@ export abstract class DungeonLevel extends Scene {
 					break;
 				}
 				case "HealthPickup": {
-					const hp = this.entities.addChild(HealthPickup);
+					const hp = this.entities.add(HealthPickup);
 					hp.position = pos;
 					break;
 				}
 				case "Door": {
-					const door = this.entities.addChild(Door);
+					const door = this.entities.add(Door);
 					door.position = pos;
 					door.nextScene = this.nextScene;
 					if (obj.properties.get("locked") === true) {
@@ -122,15 +115,7 @@ export abstract class DungeonLevel extends Scene {
 		if (this._deathTriggered) return;
 		this._deathTriggered = true;
 
-		const timer = this.add(Node);
-		let elapsed = 0;
-		timer.onUpdate = (dt: number) => {
-			elapsed += dt;
-			if (elapsed > 0.5) {
-				timer.destroy();
-				this._goToGameOver();
-			}
-		};
+		this.after(0.5, () => this._goToGameOver());
 	}
 
 	protected abstract _goToGameOver(): void;

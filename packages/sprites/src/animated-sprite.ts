@@ -6,6 +6,9 @@ export class AnimatedSprite extends Node2D {
 	/** The sprite sheet containing frame and animation data. */
 	spriteSheet: SpriteSheet | null = null;
 
+	/** Animation to auto-play on ready. Set via props pattern: add(AnimatedSprite, { animation: "idle" }). */
+	animation: string | null = null;
+
 	/** Whether the sprite is drawn centered at its origin. Default: true. */
 	centered = true;
 
@@ -98,6 +101,12 @@ export class AnimatedSprite extends Node2D {
 	}
 
 	// === Lifecycle ===
+
+	onReady(): void {
+		if (this.animation) {
+			this.play(this.animation);
+		}
+	}
 
 	onUpdate(dt: number): void {
 		if (!this._playing || !this.spriteSheet) return;

@@ -1,6 +1,7 @@
 import { SeededRandom } from "@quintus/math";
 import { AssetLoader } from "./asset-loader.js";
 import { Canvas2DRenderer } from "./canvas2d-renderer.js";
+import { ConstantsRegistry } from "./constants.js";
 import { installDebugBridge } from "./debug-bridge.js";
 import { DebugLog } from "./debug-log.js";
 import { GameLoop } from "./game-loop.js";
@@ -55,6 +56,9 @@ export class Game {
 
 	/** Asset loader. */
 	readonly assets: AssetLoader;
+
+	/** Named constants registry for tweakable game values. */
+	readonly consts = new ConstantsRegistry();
 
 	/** Fixed delta time (1/60 by default). */
 	readonly fixedDeltaTime: number;

@@ -497,7 +497,7 @@ export class PhysicsWorld {
 					monitor.onBodyEntered(body);
 
 					// Debug instrumentation
-					const game = monitor.game;
+					const game = monitor.gameOrNull;
 					if (game?.debug) {
 						game.debugLog.write(
 							{
@@ -517,7 +517,7 @@ export class PhysicsWorld {
 					monitor.onBodyExited(body);
 
 					// Debug instrumentation
-					const game = monitor.game;
+					const game = monitor.gameOrNull;
 					if (game?.debug) {
 						game.debugLog.write(
 							{

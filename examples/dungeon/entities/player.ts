@@ -45,19 +45,18 @@ export class Player extends Actor {
 	override onReady() {
 		super.onReady();
 		// Feet-only hitbox (smaller than full sprite for top-down feel)
-		const shape = this.addChild(CollisionShape);
+		const shape = this.add(CollisionShape);
 		shape.shape = Shape.rect(10, 6);
 		shape.offset = new Vec2(0, 4);
 		this.tag("player");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("player_idle");
 	}
 
 	override onFixedUpdate(dt: number) {
-		const input = this.game?.input;
-		if (!input) return;
+		const input = this.game.input;
 
 		// Attack cooldown
 		if (this._attackCooldown > 0) {
@@ -134,8 +133,8 @@ export class Player extends Actor {
 
 		// Spawn weapon hitbox in facing direction
 		const dir = DIRECTION_VECTORS[this.direction];
-		const hitbox = this.parent?.addChild(WeaponHitbox);
-		if (!hitbox) return;
+		if (!this.parent) return;
+		const hitbox = this.parent.add(WeaponHitbox);
 
 		hitbox.position.x = this.position.x + dir.x * 12;
 		hitbox.position.y = this.position.y + dir.y * 12;

@@ -251,3 +251,13 @@
 [ASKS] wed 2/18 7pm - Review current examples for syntax and code smells before building more examples off the engine
 
 [DSGN] wed 2/18 9pm - Design API ergonomics improvements addressing code smells found in examples review
+
+[MILE] thu 2/19 7am - Added pixel-snap rendering to Canvas2DRenderer to fix sub-pixel tile banding artifacts
+
+[ASKS] thu 2/19 8am - Brainstorm what a TSX/JSX-style syntax for composing game engine nodes (UI and scene nodes) might look like
+
+[IMPL] thu 2/19 8am - Implement API ergonomics code smell fixes (type narrowing, unified add(), type guards, tilemap physics bridge, convenience methods, reactive state, constants registry, tween polish)
+
+[DSGN] thu 2/19 8am - Design JSX-based declarative node composition pattern for scenes, UI, and components
+
+[MILE] thu 2/19 9am - Implemented 9-phase API ergonomics overhaul with unified add() API, reactive state, type guards, timer convenience methods, constants registry, and updated all 6 examples

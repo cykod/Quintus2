@@ -18,7 +18,7 @@ export class HUD extends Layer {
 
 		// Heart icons
 		for (let i = 0; i < gameState.maxHealth; i++) {
-			const heart = this.addChild(Sprite, {
+			const heart = this.add(Sprite, {
 				texture: "tileset",
 				sourceRect: i < gameState.health ? HEART_FULL : HEART_EMPTY,
 				centered: false,
@@ -27,29 +27,34 @@ export class HUD extends Layer {
 			this.hearts.push(heart);
 		}
 
-		this.coinLabel = this.addChild(Label, {
+		this.coinLabel = this.add(Label, {
 			position: new Vec2(8, 16),
 			text: `Coins: ${gameState.coins}`,
 			fontSize: 8,
 			color: Color.fromHex("#ffd54f"),
 		});
 
-		this.scoreLabel = this.addChild(Label, {
+		this.scoreLabel = this.add(Label, {
 			position: new Vec2(250, 4),
 			text: `Score: ${gameState.score}`,
 			fontSize: 8,
 			color: Color.WHITE,
 			align: "right",
 		});
-	}
 
-	override onUpdate(_dt: number) {
-		// Update heart sprites
-		for (let i = 0; i < this.hearts.length; i++) {
-			(this.hearts[i] as Sprite).sourceRect = i < gameState.health ? HEART_FULL : HEART_EMPTY;
-		}
+		// Signal-driven updates (no polling)
+		gameState.on("health").connect(({ value }) => {
+			for (let i = 0; i < this.hearts.length; i++) {
+				(this.hearts[i] as Sprite).sourceRect = i < value ? HEART_FULL : HEART_EMPTY;
+			}
+		});
 
-		this.scoreLabel.text = `Score: ${gameState.score}`;
-		this.coinLabel.text = `Coins: ${gameState.coins}`;
+		gameState.on("coins").connect(({ value }) => {
+			this.coinLabel.text = `Coins: ${value}`;
+		});
+
+		gameState.on("score").connect(({ value }) => {
+			this.scoreLabel.text = `Score: ${value}`;
+		});
 	}
 }

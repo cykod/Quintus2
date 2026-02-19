@@ -4,6 +4,9 @@ import { defineConfig } from "vite";
 const pkg = (name: string) =>
 	fileURLToPath(new URL(`../packages/${name}/src/index.ts`, import.meta.url));
 
+const subpath = (name: string, path: string) =>
+	fileURLToPath(new URL(`../packages/${name}/src/${path}.ts`, import.meta.url));
+
 export default defineConfig({
 	root: ".",
 	server: {
@@ -12,6 +15,7 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
+			"@quintus/tilemap/physics": subpath("tilemap", "physics"),
 			"@quintus/core": pkg("core"),
 			"@quintus/math": pkg("math"),
 			"@quintus/physics": pkg("physics"),

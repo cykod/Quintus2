@@ -16,10 +16,10 @@ export class Chest extends Sensor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(12, 12);
+		this.add(CollisionShape).shape = Shape.rect(12, 12);
 		this.tag("chest");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("chest_closed");
 
@@ -33,7 +33,7 @@ export class Chest extends Sensor {
 
 	override onFixedUpdate(_dt: number) {
 		if (this._opened || !this._playerInRange) return;
-		if (this.game?.input.isJustPressed("interact")) {
+		if (this.game.input.isJustPressed("interact")) {
 			this._open();
 		}
 	}

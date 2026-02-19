@@ -445,4 +445,39 @@ describe("AnimatedSprite", () => {
 
 		expect(ctx.alphaValues).toContain(0.3);
 	});
+
+	it("animation prop auto-plays on ready", () => {
+		const sheet = createSheet();
+		let sprite!: AnimatedSprite;
+		const game = createGame();
+		game.start(
+			class TestScene extends Scene {
+				onReady() {
+					sprite = this.add(AnimatedSprite, {
+						spriteSheet: sheet,
+						animation: "run",
+					});
+				}
+			},
+		);
+
+		expect(sprite.currentAnimation).toBe("run");
+		expect(sprite.playing).toBe(true);
+	});
+
+	it("animation prop null does not auto-play", () => {
+		const sheet = createSheet();
+		let sprite!: AnimatedSprite;
+		const game = createGame();
+		game.start(
+			class TestScene extends Scene {
+				onReady() {
+					sprite = this.add(AnimatedSprite, { spriteSheet: sheet });
+				}
+			},
+		);
+
+		expect(sprite.currentAnimation).toBe("");
+		expect(sprite.playing).toBe(false);
+	});
 });

@@ -11,10 +11,10 @@ export class HealthPickup extends Sensor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(8, 8);
+		this.add(CollisionShape).shape = Shape.rect(8, 8);
 		this.tag("health");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("heart");
 

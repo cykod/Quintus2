@@ -46,13 +46,12 @@ class Player extends Actor {
 
 	onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(14, 24);
+		this.add(CollisionShape).shape = Shape.rect(14, 24);
 		this.tag("player");
 	}
 
 	onFixedUpdate(dt: number) {
-		const input = this.game?.input;
-		if (!input) return;
+		const input = this.game.input;
 		this.velocity.x = 0;
 		if (input.isPressed("move_left")) this.velocity.x = -this.speed;
 		if (input.isPressed("move_right")) this.velocity.x = this.speed;
@@ -76,7 +75,7 @@ class Coin extends Sensor {
 
 	onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.circle(8);
+		this.add(CollisionShape).shape = Shape.circle(8);
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
 				this.collected.emit();
@@ -110,7 +109,7 @@ function addPlatform(
 	const plat = new DrawableStatic(w, h, Color.fromHex(color));
 	plat.position = new Vec2(x, y);
 	plat.collisionGroup = "world";
-	scene.addChild(plat);
+	scene.add(plat);
 	return plat;
 }
 
@@ -125,7 +124,7 @@ class DrawableStatic extends StaticCollider {
 
 	onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(this.w, this.h);
+		this.add(CollisionShape).shape = Shape.rect(this.w, this.h);
 	}
 
 	onDraw(ctx: DrawContext) {

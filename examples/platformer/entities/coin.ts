@@ -11,10 +11,10 @@ export class Coin extends Sensor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.circle(4);
+		this.add(CollisionShape).shape = Shape.circle(4);
 		this.tag("coin");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("coin_idle");
 

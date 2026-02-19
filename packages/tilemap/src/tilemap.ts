@@ -238,8 +238,7 @@ export class TileMap extends Node2D {
 		}
 		if (this._collisionGenerated) return 0;
 
-		const game = this.game;
-		if (!game || !game.hasPlugin("physics")) {
+		if (!this.game.hasPlugin("physics")) {
 			throw new Error(
 				"TileMap.generateCollision() requires PhysicsPlugin. Call game.use(PhysicsPlugin()) first.",
 			);
@@ -463,9 +462,6 @@ export class TileMap extends Node2D {
 
 	private _loadMap(): void {
 		const game = this.game;
-		if (!game) {
-			throw new Error("TileMap: Cannot load map — node is not in a scene tree.");
-		}
 
 		// Try JSON first (existing path)
 		const json = game.assets.getJSON<TiledMap>(this.asset);
@@ -499,29 +495,23 @@ export class TileMap extends Node2D {
 
 		// Determine visible tile range from the scene's viewTransform
 		const game = this.game;
+		const vt = this.scene.viewTransform;
 		let startCol = 0;
 		let startRow = 0;
 		let endCol = layer.width;
 		let endRow = layer.height;
 
-		if (game) {
-			const scene = this.scene;
-			const vt = scene?.viewTransform;
-			if (
-				vt &&
-				!(vt.a === 1 && vt.b === 0 && vt.c === 0 && vt.d === 1 && vt.e === 0 && vt.f === 0)
-			) {
-				// Compute inverse view transform to get visible world rect
-				const inv = vt.inverse();
-				const topLeft = inv.transformPoint(new Vec2(0, 0));
-				const bottomRight = inv.transformPoint(new Vec2(game.width, game.height));
+		if (!(vt.a === 1 && vt.b === 0 && vt.c === 0 && vt.d === 1 && vt.e === 0 && vt.f === 0)) {
+			// Compute inverse view transform to get visible world rect
+			const inv = vt.inverse();
+			const topLeft = inv.transformPoint(new Vec2(0, 0));
+			const bottomRight = inv.transformPoint(new Vec2(game.width, game.height));
 
-				// Convert to tile coordinates with padding
-				startCol = Math.max(0, Math.floor(topLeft.x / parsed.tileWidth) - 1);
-				startRow = Math.max(0, Math.floor(topLeft.y / parsed.tileHeight) - 1);
-				endCol = Math.min(layer.width, Math.ceil(bottomRight.x / parsed.tileWidth) + 1);
-				endRow = Math.min(layer.height, Math.ceil(bottomRight.y / parsed.tileHeight) + 1);
-			}
+			// Convert to tile coordinates with padding
+			startCol = Math.max(0, Math.floor(topLeft.x / parsed.tileWidth) - 1);
+			startRow = Math.max(0, Math.floor(topLeft.y / parsed.tileHeight) - 1);
+			endCol = Math.min(layer.width, Math.ceil(bottomRight.x / parsed.tileWidth) + 1);
+			endRow = Math.min(layer.height, Math.ceil(bottomRight.y / parsed.tileHeight) + 1);
 		}
 
 		// Draw visible tiles

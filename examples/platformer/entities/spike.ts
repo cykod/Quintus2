@@ -8,10 +8,10 @@ export class Spike extends Sensor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(6, 4);
+		this.add(CollisionShape).shape = Shape.rect(6, 4);
 		this.tag("spike");
 
-		const sprite = this.addChild(AnimatedSprite);
+		const sprite = this.add(AnimatedSprite);
 		sprite.spriteSheet = entitySheet;
 		sprite.play("spike");
 

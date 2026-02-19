@@ -5,7 +5,7 @@ import { gameState } from "../state.js";
 
 export class Door extends Sensor {
 	override collisionGroup = "items";
-	nextScene!: string;
+	nextScene = "";
 	locked = false;
 
 	private _sprite!: AnimatedSprite;
@@ -14,10 +14,10 @@ export class Door extends Sensor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(12, 12);
+		this.add(CollisionShape).shape = Shape.rect(12, 12);
 		this.tag("door");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("door_closed");
 
@@ -31,7 +31,7 @@ export class Door extends Sensor {
 
 	override onFixedUpdate(_dt: number) {
 		if (this._used || !this._playerInRange) return;
-		if (!this.game?.input.isJustPressed("interact")) return;
+		if (!this.game.input.isJustPressed("interact")) return;
 
 		if (this.locked) {
 			if (gameState.keys > 0) {
@@ -45,6 +45,6 @@ export class Door extends Sensor {
 		this._used = true;
 		this._sprite.play("door_open");
 		gameState.currentLevel++;
-		this.scene?.switchTo(this.nextScene);
+		if (this.nextScene) this.scene.switchTo(this.nextScene);
 	}
 }

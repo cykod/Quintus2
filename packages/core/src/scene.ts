@@ -1,6 +1,5 @@
 import { Matrix2D } from "@quintus/math";
 import type { Game } from "./game.js";
-import type { NodeConstructor } from "./node.js";
 import { Node } from "./node.js";
 import { type Signal, signal } from "./signal.js";
 
@@ -43,31 +42,23 @@ export class Scene extends Node {
 		return this._game;
 	}
 
-	/** @internal Destruction queue for deferred destruction. */
-	private _destructionQueue: Node[] = [];
-
-	// === Entity Spawning ===
-	add(node: Node): this;
-	add<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
-	add(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
-		if (typeof nodeOrClass === "function") {
-			const node = new nodeOrClass();
-			if (props) Object.assign(node, props);
-			this.addChild(node);
-			return node;
-		}
-		this.addChild(nodeOrClass);
+	/** Scene is always its own scene. */
+	override get scene(): Scene {
 		return this;
 	}
 
-	// === Scene-Wide Queries ===
-	override findAll(tag: string): Node[] {
-		return super.findAll(tag);
+	/** Scene is always its own scene. */
+	override get sceneOrNull(): Scene {
+		return this;
 	}
 
-	override findAllByType<T extends Node>(type: NodeConstructor<T>): T[] {
-		return super.findAllByType(type);
+	/** Scene always has a game. */
+	override get gameOrNull(): Game {
+		return this._game;
 	}
+
+	/** @internal Destruction queue for deferred destruction. */
+	private _destructionQueue: Node[] = [];
 
 	count(tag: string): number {
 		return this.findAll(tag).length;

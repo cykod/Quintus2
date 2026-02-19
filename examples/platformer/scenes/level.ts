@@ -1,7 +1,7 @@
+import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
-import { Node, Scene } from "@quintus/core";
+import { Scene } from "@quintus/core";
 import { Rect } from "@quintus/math";
-import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
 import { Coin } from "../entities/coin.js";
 import { FlyingEnemy } from "../entities/flying-enemy.js";
@@ -20,13 +20,6 @@ export abstract class Level extends Scene {
 	protected player!: Player;
 
 	override onReady() {
-		// Register physics factories for TileMap collision generation
-		TileMap.registerPhysics({
-			StaticCollider: StaticCollider as never,
-			CollisionShape: CollisionShape as never,
-			shapeRect: Shape.rect,
-		});
-
 		// Load tilemap
 		const map = this.add(TileMap);
 		map.tilesetImage = "tileset";
@@ -39,22 +32,12 @@ export abstract class Level extends Scene {
 			collisionGroup: "world",
 		});
 
-		// Make floating platforms one-way (player can jump through from below)
-		// Ground floor tiles are within 3 tile rows of the map bottom
-		/*const groundThreshold = map.bounds.height - map.tileHeight * 3;
-		for (const child of map.children) {
-			if (child instanceof StaticCollider && child.position.y < groundThreshold) {
-				child.oneWay = true;
-			}
-			}*/
-
 		// Spawn player at the designated spawn point
 		const spawnPos = map.getSpawnPoint("player_start");
 		this.player = this.add(Player);
 		this.player.position = spawnPos;
 
 		// Spawn entities from the object layer using type mapping
-		// Player type is excluded from mapping (already spawned above manually)
 		const spawned = map.spawnObjects("entities", {
 			Coin: Coin,
 			PatrolEnemy: PatrolEnemy,
@@ -72,7 +55,7 @@ export abstract class Level extends Scene {
 		}
 
 		// Setup enemy-player collision (contact-based via physics)
-		this.game?.physics.onContact("player", "enemies", (player, enemy, info) => {
+		this.game.physics.onContact("player", "enemies", (player, enemy, info) => {
 			const p = player as Player;
 			const e = enemy as PatrolEnemy | FlyingEnemy;
 
@@ -106,15 +89,7 @@ export abstract class Level extends Scene {
 		this._deathTriggered = true;
 
 		// Brief delay before switching to game over screen
-		const timer = this.add(Node);
-		let elapsed = 0;
-		timer.onUpdate = (dt: number) => {
-			elapsed += dt;
-			if (elapsed > 0.5) {
-				timer.destroy();
-				this._goToGameOver();
-			}
-		};
+		this.after(0.5, () => this._goToGameOver());
 	}
 
 	protected abstract _goToGameOver(): void;

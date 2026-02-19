@@ -18,10 +18,10 @@ export class PatrolEnemy extends Actor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(7, 7);
+		this.add(CollisionShape).shape = Shape.rect(7, 7);
 		this.tag("enemy");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("enemy_walk");
 	}

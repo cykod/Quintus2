@@ -1,5 +1,6 @@
 import { type Signal, signal } from "./signal.js";
 import type { NodeSnapshot } from "./snapshot-types.js";
+import type { Timer } from "./timer.js";
 
 export type PauseMode = "inherit" | "independent";
 
@@ -99,7 +100,23 @@ export class Node {
 	}
 
 	// === Tree Manipulation ===
+	add(node: Node): this;
+	add<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
+	add(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
+		if (typeof nodeOrClass === "function") {
+			const node = new nodeOrClass();
+			if (props) Object.assign(node, props);
+			this._addChildNode(node);
+			return node;
+		}
+
+		this._addChildNode(nodeOrClass);
+		return this;
+	}
+
+	/** @deprecated Use add() instead. */
 	addChild(node: Node): this;
+	/** @deprecated Use add() instead. */
 	addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
 	addChild(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
 		if (typeof nodeOrClass === "function") {
@@ -108,7 +125,6 @@ export class Node {
 			this._addChildNode(node);
 			return node;
 		}
-
 		this._addChildNode(nodeOrClass);
 		return this;
 	}
@@ -134,7 +150,7 @@ export class Node {
 			this._enterTreeRecursive(node);
 		}
 
-		this.game?._markRenderDirty();
+		this.gameOrNull?._markRenderDirty();
 	}
 
 	private _isAncestorOf(node: Node): boolean {
@@ -179,7 +195,7 @@ export class Node {
 			node.readySignal.emit();
 
 			// Debug instrumentation: log onReady
-			const game = node.game;
+			const game = node.gameOrNull;
 			if (game?.debug) {
 				const tags = node._tags.size > 0 ? ` tags=[${[...node._tags].join(",")}]` : "";
 				game.debugLog.write(
@@ -206,7 +222,7 @@ export class Node {
 		this._children.splice(idx, 1);
 		node._parent = null;
 
-		this.game?._markRenderDirty();
+		this.gameOrNull?._markRenderDirty();
 	}
 
 	private _exitTreeRecursive(node: Node): void {
@@ -227,6 +243,13 @@ export class Node {
 		}
 	}
 
+	// === Type Guard ===
+
+	/** Type-narrowing check: `if (node.is(Actor)) { node.move(dt); }` */
+	is<T extends Node>(type: NodeConstructor<T>): this is T {
+		return this instanceof type;
+	}
+
 	// === Tree Queries ===
 	find(name: string): Node | null {
 		for (const child of this._children) {
@@ -237,10 +260,29 @@ export class Node {
 		return null;
 	}
 
-	findAll(tag: string): Node[] {
+	findAll(tag: string): Node[];
+	findAll<T extends Node>(tag: string, type: NodeConstructor<T>): T[];
+	findAll(tag: string, type?: NodeConstructor<Node>): Node[] {
 		const result: Node[] = [];
 		this._collectByTag(tag, result);
+		if (type) return result.filter((n) => n instanceof type);
 		return result;
+	}
+
+	/** Find the first node with the given tag, optionally narrowed by type. */
+	findFirst(tag: string): Node | null;
+	findFirst<T extends Node>(tag: string, type: NodeConstructor<T>): T | null;
+	findFirst(tag: string, type?: NodeConstructor<Node>): Node | null {
+		return this._findFirstByTag(tag, type ?? null);
+	}
+
+	private _findFirstByTag(tag: string, type: NodeConstructor<Node> | null): Node | null {
+		if (this.hasTag(tag) && (!type || this instanceof type)) return this;
+		for (const child of this._children) {
+			const found = child._findFirstByTag(tag, type);
+			if (found) return found;
+		}
+		return null;
 	}
 
 	private _collectByTag(tag: string, result: Node[]): void {
@@ -281,7 +323,21 @@ export class Node {
 	}
 
 	// === Scene/Game Access ===
-	get scene(): import("./scene.js").Scene | null {
+
+	/** Returns the Scene this node belongs to. Throws if not in a tree. */
+	get scene(): import("./scene.js").Scene {
+		const s = this.sceneOrNull;
+		if (!s) {
+			throw new Error(
+				`${this.constructor.name}#${this.id} "${this.name}" is not inside a scene tree. ` +
+					"Use sceneOrNull if you need to check outside lifecycle hooks.",
+			);
+		}
+		return s;
+	}
+
+	/** Returns the Scene this node belongs to, or null if not in a tree. */
+	get sceneOrNull(): import("./scene.js").Scene | null {
 		// Walk up to root and check if it's a Scene
 		// biome-ignore lint/suspicious/noExplicitAny: internal scene detection
 		let current: any = this;
@@ -294,9 +350,49 @@ export class Node {
 		return null;
 	}
 
-	get game(): import("./game.js").Game | null {
-		const s = this.scene;
+	/** Returns the Game instance. Throws if not in a tree. */
+	get game(): import("./game.js").Game {
+		const g = this.gameOrNull;
+		if (!g) {
+			throw new Error(
+				`${this.constructor.name}#${this.id} "${this.name}" is not inside a scene tree. ` +
+					"Use gameOrNull if you need to check outside lifecycle hooks.",
+			);
+		}
+		return g;
+	}
+
+	/** Returns the Game instance, or null if not in a tree. */
+	get gameOrNull(): import("./game.js").Game | null {
+		const s = this.sceneOrNull;
 		return s ? s.game : null;
+	}
+
+	// === Timer Convenience ===
+
+	/** Run a callback once after `seconds` of fixed-time. Returns the Timer for manual stop. */
+	after(seconds: number, callback: () => void): Timer {
+		const timer = _createTimer();
+		timer.duration = seconds;
+		timer.repeat = false;
+		timer.autostart = true;
+		timer.timeout.connect(() => {
+			callback();
+			timer.destroy();
+		});
+		this.add(timer);
+		return timer;
+	}
+
+	/** Run a callback every `seconds` of fixed-time. Returns the Timer for manual stop. */
+	every(seconds: number, callback: () => void): Timer {
+		const timer = _createTimer();
+		timer.duration = seconds;
+		timer.repeat = true;
+		timer.autostart = true;
+		timer.timeout.connect(callback);
+		this.add(timer);
+		return timer;
 	}
 
 	// === Serialization ===
@@ -323,7 +419,7 @@ export class Node {
 		if (this._isDestroyed) return;
 		this._isDestroyed = true;
 		this._pendingDestroy = true;
-		this.scene?._queueDestroy(this);
+		this.sceneOrNull?._queueDestroy(this);
 	}
 
 	/** @internal Process pending destruction. Called by game loop cleanup. */
@@ -332,7 +428,7 @@ export class Node {
 		this._pendingDestroy = false;
 
 		// Debug instrumentation: log onDestroy
-		const game = this.game;
+		const game = this.gameOrNull;
 		if (game?.debug) {
 			game.debugLog.write(
 				{
@@ -388,4 +484,20 @@ export class Node {
 		if (this._parent) return this._parent._resolvePauseMode();
 		return "inherit";
 	}
+}
+
+// Lazy Timer factory to break circular import (Timer extends Node).
+// The Timer class is set by timer.ts when it loads, after node.ts has finished.
+let _TimerFactory: (() => Timer) | null = null;
+
+/** @internal Called by timer.ts to register the factory. */
+export function _registerTimerFactory(factory: () => Timer): void {
+	_TimerFactory = factory;
+}
+
+function _createTimer(): Timer {
+	if (!_TimerFactory) {
+		throw new Error("Timer not available. Ensure @quintus/core Timer is imported.");
+	}
+	return _TimerFactory();
 }

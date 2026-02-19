@@ -23,17 +23,16 @@ export class Player extends Actor {
 
 	override onReady() {
 		super.onReady();
-		this.addChild(CollisionShape).shape = Shape.rect(6, 7);
+		this.add(CollisionShape).shape = Shape.rect(6, 7);
 		this.tag("player");
 
-		this._sprite = this.addChild(AnimatedSprite);
+		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("player_idle");
 	}
 
 	override onFixedUpdate(dt: number) {
-		const input = this.game?.input;
-		if (!input) return;
+		const input = this.game.input;
 
 		// Horizontal movement
 		this.velocity.x = 0;
@@ -51,11 +50,11 @@ export class Player extends Actor {
 			if (this.isOnFloor()) {
 				this.velocity.y = this.jumpForce;
 				this._canDoubleJump = true;
-				this.game?.audio.play("jump", { bus: "sfx" });
+				this.game.audio.play("jump", { bus: "sfx" });
 			} else if (this._canDoubleJump) {
 				this.velocity.y = this.doubleJumpForce;
 				this._canDoubleJump = false;
-				this.game?.audio.play("jump", { bus: "sfx", volume: 0.7 });
+				this.game.audio.play("jump", { bus: "sfx", volume: 0.7 });
 			}
 		}
 

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Game } from "./game.js";
 import { Node } from "./node.js";
 import { Scene } from "./scene.js";
+import "./timer.js"; // ensure Timer factory is registered
 
 // Helper: create a game with a simple scene for tree tests
 function createTestGame(): Game {
@@ -40,7 +41,46 @@ class TestNode extends Node {
 }
 
 describe("Node", () => {
-	// === Tree Manipulation ===
+	// === add() API ===
+	it("add(instance) adds to children array and sets parent", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const child = new Node();
+		scene.add(child);
+		expect(scene.children).toContain(child);
+		expect(child.parent).toBe(scene);
+	});
+
+	it("add(Class) constructs and adds to tree", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const child = scene.add(Node);
+		expect(child).toBeInstanceOf(Node);
+		expect(child.parent).toBe(scene);
+		expect(child.isReady).toBe(true);
+	});
+
+	it("add(Class, props) sets properties on the new node", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const child = scene.add(Node, { name: "test", pauseMode: "independent" });
+		expect(child.name).toBe("test");
+		expect(child.pauseMode).toBe("independent");
+		expect(child.parent).toBe(scene);
+	});
+
+	it("non-scene node can use add()", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const parent = new Node();
+		scene.add(parent);
+		const child = parent.add(Node, { name: "nested" });
+		expect(child.parent).toBe(parent);
+		expect(child.isReady).toBe(true);
+		expect(child.name).toBe("nested");
+	});
+
+	// === Tree Manipulation (legacy addChild) ===
 	it("addChild adds to children array and sets parent", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
@@ -311,6 +351,82 @@ describe("Node", () => {
 		expect(node.tags.size).toBe(3);
 	});
 
+	// === Type Guard ===
+	it("is() returns true for matching type", () => {
+		class SpecialNode extends Node {}
+		const node = new SpecialNode();
+		expect(node.is(SpecialNode)).toBe(true);
+		expect(node.is(Node)).toBe(true);
+	});
+
+	it("is() returns false for non-matching type", () => {
+		class SpecialNode extends Node {}
+		const node = new Node();
+		expect(node.is(SpecialNode)).toBe(false);
+	});
+
+	it("is() narrows type for TypeScript", () => {
+		class SpecialNode extends Node {
+			value = 42;
+		}
+		const node: Node = new SpecialNode();
+		if (node.is(SpecialNode)) {
+			// TypeScript should know node.value exists here
+			expect(node.value).toBe(42);
+		}
+	});
+
+	// === Typed findAll & findFirst ===
+	it("findAll(tag, Type) filters by tag and type", () => {
+		class Enemy extends Node {}
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const a = new Enemy();
+		a.tag("enemy");
+		const b = new Node();
+		b.tag("enemy");
+		scene.add(a);
+		scene.add(b);
+		const enemies = scene.findAll("enemy", Enemy);
+		expect(enemies).toHaveLength(1);
+		expect(enemies[0]).toBe(a);
+	});
+
+	it("findFirst(tag) returns first matching node", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const a = new Node();
+		a.tag("coin");
+		const b = new Node();
+		b.tag("coin");
+		scene.add(a);
+		scene.add(b);
+		expect(scene.findFirst("coin")).toBe(a);
+	});
+
+	it("findFirst(tag) returns null when none found", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		expect(scene.findFirst("missing")).toBeNull();
+	});
+
+	it("findFirst(tag, Type) returns typed result", () => {
+		class Player extends Node {
+			speed = 100;
+		}
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const p = new Player();
+		p.tag("player");
+		const n = new Node();
+		n.tag("player");
+		scene.add(n);
+		scene.add(p);
+		const found = scene.findFirst("player", Player);
+		expect(found).toBe(p);
+		expect(found?.speed).toBe(100);
+	});
+
 	// === Queries ===
 	it("find(name) searches depth-first", () => {
 		const game = createTestGame();
@@ -536,13 +652,79 @@ describe("Node", () => {
 		expect(node.game).toBe(game);
 	});
 
-	it("scene accessor returns null for orphaned node", () => {
+	it("scene accessor throws for orphaned node", () => {
 		const node = new Node();
-		expect(node.scene).toBeNull();
+		expect(() => node.scene).toThrow("not inside a scene tree");
 	});
 
-	it("game accessor returns null for orphaned node", () => {
+	it("game accessor throws for orphaned node", () => {
 		const node = new Node();
-		expect(node.game).toBeNull();
+		expect(() => node.game).toThrow("not inside a scene tree");
+	});
+
+	it("sceneOrNull returns null for orphaned node", () => {
+		const node = new Node();
+		expect(node.sceneOrNull).toBeNull();
+	});
+
+	it("gameOrNull returns null for orphaned node", () => {
+		const node = new Node();
+		expect(node.gameOrNull).toBeNull();
+	});
+
+	it("sceneOrNull returns scene for node in tree", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const node = new Node();
+		scene.addChild(node);
+		expect(node.sceneOrNull).toBe(scene);
+	});
+
+	it("gameOrNull returns game for node in tree", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const node = new Node();
+		scene.addChild(node);
+		expect(node.gameOrNull).toBe(game);
+	});
+
+	// === Timer Convenience ===
+	it("after() fires callback once after delay", () => {
+		const game = createTestGame();
+		game.start(class extends Scene {});
+		const node = new Node();
+		game.currentScene?.add(node);
+		const fn = vi.fn();
+		node.after(0.5, fn);
+		// 0.5s at 60fps = 30 steps, +1 to be safe with boundary
+		for (let i = 0; i < 31; i++) game.step();
+		expect(fn).toHaveBeenCalledOnce();
+		// Should not fire again (timer self-destructs)
+		for (let i = 0; i < 31; i++) game.step();
+		expect(fn).toHaveBeenCalledOnce();
+	});
+
+	it("every() fires callback repeatedly", () => {
+		const game = createTestGame();
+		game.start(class extends Scene {});
+		const node = new Node();
+		game.currentScene?.add(node);
+		const fn = vi.fn();
+		node.every(0.5, fn);
+		// 62 steps ≈ 1.03s = 2 fires at 0.5s intervals
+		for (let i = 0; i < 62; i++) game.step();
+		expect(fn).toHaveBeenCalledTimes(2);
+	});
+
+	it("after() returns timer that can be stopped", () => {
+		const game = createTestGame();
+		game.start(class extends Scene {});
+		const node = new Node();
+		game.currentScene?.add(node);
+		const fn = vi.fn();
+		const timer = node.after(0.5, fn);
+		timer.stop();
+		for (let i = 0; i < 60; i++) game.step();
+		expect(fn).not.toHaveBeenCalled();
 	});
 });
