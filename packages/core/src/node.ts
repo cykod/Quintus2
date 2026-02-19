@@ -4,6 +4,9 @@ import type { Timer } from "./timer.js";
 
 export type PauseMode = "inherit" | "independent";
 
+/** Symbol used to distinguish Node classes from plain functions in JSX. */
+export const IS_NODE_CLASS = Symbol.for("quintus:NodeClass");
+
 export interface NodeConstructor<T extends Node = Node> {
 	new (): T;
 }
@@ -21,6 +24,8 @@ export function _resetNodeIdCounter(): void {
 }
 
 export class Node {
+	static readonly [IS_NODE_CLASS] = true;
+
 	// === Identity ===
 	name: string;
 	readonly id: number;

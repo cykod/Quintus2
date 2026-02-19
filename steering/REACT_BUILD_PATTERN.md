@@ -1,17 +1,18 @@
 # JSX Declarative Build Pattern — Detailed Design
 
-> **Goal:** Add an optional JSX-based `declare()` pattern that makes node tree composition visual and concise — especially for UI, scene setup, and entity prefabs.
+> **Goal:** Add an optional JSX-based `build()` pattern that makes node tree composition visual and concise — especially for UI, scene setup, and entity prefabs.
 > **Outcome:** A new `@quintus/jsx` package that provides a custom JSX runtime. Users who opt in get `<TileMap asset="level1.json" />` syntax; everyone else keeps using `this.add(TileMap)` with zero impact.
 
 ## Status
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Package setup & core runtime (`h`, `Fragment`, `ref`, coercion) | Pending |
+| 1 | Package setup & core runtime (`h`, `jsx`, `Fragment`, `ref`, coercion) | Done |
 | 2 | TypeScript JSX type definitions | Pending |
-| 3 | Lifecycle integration (`declare()` on Node) | Pending |
+| 3 | Lifecycle integration (`build()` on Node) | Pending |
 | 4 | Functional components (prefabs) | Pending |
 | 5 | Tests & examples | Pending |
+| 6 | Reactive props (`bind()` connect bridge) | Pending |
 
 ---
 
@@ -20,7 +21,7 @@
 1. **Purely optional** — zero changes to existing imperative API. No user sees JSX unless they opt in.
 2. **One-shot creation** — JSX runs once to build the node tree, like SolidJS. No virtual DOM, no re-rendering, no reconciliation.
 3. **Nodes, not descriptors** — `h()` creates real Node instances eagerly. What you get back is the actual node, not a proxy.
-4. **Template method inheritance** — base classes define structure with `declareXxx()` hooks; subclasses override the hooks to inject content into specific tree regions.
+4. **Template method inheritance** — base classes define structure with `buildXxx()` hooks; subclasses override the hooks to inject content into specific tree regions.
 5. **Coercion for ergonomics** — `[100, 400]` becomes `Vec2(100, 400)`, `"#ff0000"` becomes `Color`, etc.
 6. **Signal-aware** — function props auto-connect to signals on the target node.
 
@@ -31,13 +32,13 @@
 ```
 packages/jsx/
   src/
-    index.ts              # Public API: h, Fragment, ref, materialize
+    index.ts              # Public API: h, Fragment, ref, bind
     jsx-runtime.ts        # Auto-import runtime (jsx, jsxs, Fragment)
     jsx-dev-runtime.ts    # Dev-mode runtime (same, can add warnings later)
-    h.ts                  # Core factory function
+    h.ts                  # Core factory function + jsx() wrapper
     ref.ts                # Ref<T> type and ref() factory
     coerce.ts             # Prop coercion logic
-    types.ts              # JSX namespace augmentation
+    types.ts              # JSX namespace (module-scoped)
   tsconfig.json
   tsup.config.ts
   package.json
@@ -84,56 +85,101 @@ Without this, everything works exactly as before.
 
 ## Phase 1: Core Runtime
 
-### The `h()` Function
+### Two Entry Points: `jsx()` and `h()`
 
-The heart of the system. Creates a real Node instance, applies props with coercion, adds children, fills refs.
+TypeScript's `react-jsx` transform emits `jsx(type, { ...props, children }, key?)` — children are **inside** the props object as `props.children`, and the third argument is `key`, not a child. The manual hyperscript API `h()` uses the more familiar `h(type, props, ...children)` rest-params signature.
+
+Both entry points share the same internal creation logic:
 
 ```typescript
 // packages/jsx/src/h.ts
 
-import { Node, type NodeConstructor } from "@quintus/core";
-import { Vec2, Color } from "@quintus/math";
-import type { Signal } from "@quintus/core";
-import type { Ref } from "./ref.js";
+import { Node, type NodeConstructor, IS_NODE_CLASS } from "@quintus/core";
+import { applyProp } from "./coerce.js";
+import { isRef, type Ref } from "./ref.js";
 
 export const Fragment = Symbol("Fragment");
 
 type NodeElementChild = Node | NodeElementChild[] | null | undefined | false;
 
-export function h<T extends Node>(
-  type: NodeConstructor<T> | typeof Fragment,
+// ---- Shared internal logic ----
+
+function _createElement<T extends Node>(
+  type: NodeConstructor<T> | typeof Fragment | ((props: Record<string, unknown>) => Node | Node[]),
   props: Record<string, unknown> | null,
-  ...children: NodeElementChild[]
+  children: Node[],
+  key?: string | number,
 ): T | Node[] {
-  // Fragment: just return flattened children
+  // Fragment: just return children
   if (type === Fragment) {
-    return flattenChildren(children);
+    return children;
   }
 
-  const node = new type();
+  // Functional component (plain function, not a Node class)
+  if (typeof type === "function" && !(IS_NODE_CLASS in type)) {
+    const mergedProps = { ...props, children };
+    return type(mergedProps) as T | Node[];
+  }
+
+  // Class component: create real Node instance
+  const node = new (type as NodeConstructor<T>)();
+
+  // Apply key as name (for debugging / lookups)
+  if (key != null) node.name = String(key);
 
   if (props) {
-    for (const [key, value] of Object.entries(props)) {
-      if (key === "ref") {
-        // Fill ref after node is created
+    for (const [k, value] of Object.entries(props)) {
+      if (k === "ref") {
         (value as Ref<T>).current = node;
         continue;
       }
-      if (key === "children") continue; // handled below
-      applyProp(node, key, value);
+      if (k === "children" || k === "key") continue;
+      applyProp(node, k, value);
     }
   }
 
-  // Add children
-  for (const child of flattenChildren(children)) {
-    node.addChild(child);
+  // Add children via public API
+  for (const child of children) {
+    node.add(child);
   }
 
   return node;
 }
+
+// ---- JSX runtime entry point ----
+// Called by TypeScript's react-jsx transform: jsx(type, { ...props, children }, key?)
+
+export function jsx<T extends Node>(
+  type: NodeConstructor<T> | typeof Fragment | ((props: Record<string, unknown>) => Node | Node[]),
+  props: Record<string, unknown> | null,
+  key?: string | number,
+): T | Node[] {
+  // Extract children from props (where TypeScript puts them)
+  const rawChildren = props?.children;
+  const children = rawChildren
+    ? flattenChildren(Array.isArray(rawChildren) ? rawChildren : [rawChildren])
+    : [];
+
+  return _createElement(type, props, children, key);
+}
+
+export { jsx as jsxs };
+
+// ---- Manual hyperscript entry point ----
+// Called by users directly: h(Type, { prop: value }, child1, child2)
+
+export function h<T extends Node>(
+  type: NodeConstructor<T> | typeof Fragment | ((props: Record<string, unknown>) => Node | Node[]),
+  props: Record<string, unknown> | null,
+  ...children: NodeElementChild[]
+): T | Node[] {
+  return _createElement(type, props, flattenChildren(children));
+}
 ```
 
-**Evaluation order:** JSX evaluates children first, bottom-up. So `<Player><CollisionShape /></Player>` first creates the CollisionShape, then creates Player and adds CollisionShape as its child. The tree is built inside-out, exactly matching the engine's `onReady()` order (children ready before parent).
+**Key difference:** `jsx()` reads children from `props.children` (how TypeScript emits it), while `h()` takes children as rest params (how users write it manually). Both converge in `_createElement()`.
+
+**`IS_NODE_CLASS`** is a `Symbol.for("quintus:NodeClass")` exported from `@quintus/core` and set as a static property on `Node`. Using `Symbol.for()` ensures it works even if multiple package instances are loaded.
 
 ### Prop Application with Coercion
 
@@ -142,6 +188,7 @@ export function h<T extends Node>(
 
 import { Vec2, Color } from "@quintus/math";
 import { Signal } from "@quintus/core";
+import { isRef } from "./ref.js";
 
 /** Property names that should coerce string values to Color. */
 const COLOR_PROPS = new Set([
@@ -157,26 +204,32 @@ export function applyProp(node: object, key: string, value: unknown): void {
     return;
   }
 
-  // 2. Vec2 coercion: [x, y] tuple → Vec2
+  // 2. Ref unwrapping: Ref<T> → T.current (the referenced node)
+  if (isRef(value)) {
+    (node as Record<string, unknown>)[key] = value.current;
+    return;
+  }
+
+  // 3. Vec2 coercion: [x, y] tuple → Vec2
   if (Array.isArray(value) && value.length === 2
       && typeof value[0] === "number" && typeof value[1] === "number") {
     (node as Record<string, unknown>)[key] = new Vec2(value[0], value[1]);
     return;
   }
 
-  // 3. Color coercion: "#hex" string on color-named props → Color
+  // 4. Color coercion: "#hex" string on color-named props → Color
   if (typeof value === "string" && COLOR_PROPS.has(key)) {
     (node as Record<string, unknown>)[key] = Color.fromHex(value);
     return;
   }
 
-  // 4. Uniform scale shorthand: scale={2} → Vec2(2, 2)
+  // 5. Uniform scale shorthand: scale={2} → Vec2(2, 2)
   if (key === "scale" && typeof value === "number") {
     (node as Record<string, unknown>)[key] = new Vec2(value, value);
     return;
   }
 
-  // 5. Direct assignment (default path)
+  // 6. Direct assignment (default path)
   (node as Record<string, unknown>)[key] = value;
 }
 ```
@@ -186,6 +239,7 @@ Coercion rules (in priority order):
 | Input | Target | Result |
 |-------|--------|--------|
 | `() => {}` on Signal prop | `Signal<T>` | `.connect(fn)` |
+| `Ref<T>` | any Node prop | Unwrap to `ref.current` |
 | `[100, 200]` on Vec2 prop | `Vec2` | `new Vec2(100, 200)` |
 | `"#ff0000"` on color-named prop | `Color` | `Color.fromHex("#ff0000")` |
 | `2` on `scale` | `Vec2` | `new Vec2(2, 2)` |
@@ -198,12 +252,19 @@ Coercion rules (in priority order):
 
 import type { Node } from "@quintus/core";
 
+const REF_BRAND = Symbol("Ref");
+
 export interface Ref<T extends Node = Node> {
   current: T | null;
+  readonly [REF_BRAND]: true;
 }
 
 export function ref<T extends Node>(): Ref<T> {
-  return { current: null };
+  return { current: null, [REF_BRAND]: true } as Ref<T>;
+}
+
+export function isRef(value: unknown): value is Ref {
+  return value != null && typeof value === "object" && REF_BRAND in (value as object);
 }
 ```
 
@@ -212,7 +273,7 @@ Usage:
 class Level extends Scene {
   player = ref<Player>();
 
-  declare() {
+  build() {
     return <Player ref={this.player} position={[100, 400]} />;
   }
 
@@ -223,7 +284,9 @@ class Level extends Scene {
 }
 ```
 
-`ref.current` is filled during `h()` execution — before the node enters the tree or `onReady()` fires. By the time any lifecycle method runs, all refs from `declare()` are populated.
+`ref.current` is filled during `jsx()` / `h()` execution — before the node enters the tree or `onReady()` fires. By the time any lifecycle method runs, all refs from `build()` are populated.
+
+Refs are also **unwrapped** when passed as props to other nodes. For example, `<Camera follow={this.player} />` unwraps to `camera.follow = this.player.current` (the actual Player node), not the Ref wrapper.
 
 ### Fragment & Children Flattening
 
@@ -242,7 +305,7 @@ function flattenChildren(children: NodeElementChild[]): Node[] {
 }
 ```
 
-Fragments `<>...</>` compile to `h(Fragment, null, ...children)` which returns a flat `Node[]`. This lets `declare()` return multiple root nodes.
+Fragments `<>...</>` compile to `jsx(Fragment, { children: [...] })` which returns a flat `Node[]`. This lets `build()` return multiple root nodes.
 
 ### JSX Runtime Modules
 
@@ -250,25 +313,32 @@ TypeScript's `react-jsx` transform auto-imports from `@quintus/jsx/jsx-runtime`:
 
 ```typescript
 // packages/jsx/src/jsx-runtime.ts
-export { h as jsx, h as jsxs, Fragment } from "./h.js";
+export { jsx, jsxs, Fragment } from "./h.js";
 ```
 
 ```typescript
 // packages/jsx/src/jsx-dev-runtime.ts
-export { h as jsxDEV, Fragment } from "./h.js";
+import { jsx, Fragment } from "./h.js";
+export { jsx as jsxDEV, Fragment };
 ```
+
+Note: `jsxDEV` has additional parameters `(type, props, key, isStaticChildren, source, self)` in React's convention. We accept and ignore the extras since `jsx()` uses `...rest` for future compatibility.
 
 ### Phase 1 Checklist
 
-- [ ] Create `packages/jsx/` package structure (package.json, tsconfig, tsup.config)
-- [ ] Implement `h()` function with overloads for class components and Fragment
-- [ ] Implement `flattenChildren()` with null/false/array handling
-- [ ] Implement `applyProp()` with coercion (Vec2 tuples, Color strings, scale shorthand, Signal connect)
-- [ ] Implement `ref<T>()` factory
-- [ ] Implement `Fragment` symbol
-- [ ] Create `jsx-runtime.ts` and `jsx-dev-runtime.ts` exports
-- [ ] Export public API from `src/index.ts`
-- [ ] Unit tests for `h()`, `ref()`, `applyProp()`
+- [x] Create `packages/jsx/` package structure (package.json, tsconfig, tsup.config)
+- [x] Add `IS_NODE_CLASS` symbol to `Node` in `@quintus/core` (static readonly property + export)
+- [x] Implement `_createElement()` shared factory logic
+- [x] Implement `jsx()` entry point (children in props, key param)
+- [x] Implement `h()` entry point (children as rest params)
+- [x] Implement `flattenChildren()` with null/false/array handling
+- [x] Implement `applyProp()` with coercion (Vec2 tuples, Color strings, scale shorthand, Signal connect, Ref unwrapping)
+- [x] Implement `ref<T>()` factory with branded symbol
+- [x] Implement `isRef()` type guard
+- [x] Implement `Fragment` symbol
+- [x] Create `jsx-runtime.ts` and `jsx-dev-runtime.ts` exports
+- [x] Export public API from `src/index.ts`
+- [x] Unit tests for `jsx()`, `h()`, `ref()`, `isRef()`, `applyProp()`
 
 ---
 
@@ -276,7 +346,9 @@ export { h as jsxDEV, Fragment } from "./h.js";
 
 The type system must ensure that `<Label text="foo" bogus={42} />` is a type error. This is the most technically complex part.
 
-### JSX Namespace
+### Module-Scoped JSX Namespace
+
+Modern TypeScript (5.1+) resolves JSX types from the `jsxImportSource` module, so **no global namespace pollution** is needed. The JSX namespace is exported from the runtime module, avoiding conflicts with React or other JSX libraries in the same project.
 
 ```typescript
 // packages/jsx/src/types.ts
@@ -287,11 +359,11 @@ import type { Ref } from "./ref.js";
 
 // ---- Utility types ----
 
-/** Extract writable (non-readonly) keys from a type. */
+/** Extract writable (non-readonly) keys from a type, excluding methods and _ prefixed. */
 type WritableKeys<T> = {
-  [K in keyof T]-?: IfEquals<
-    { [Q in K]: T[K] }, { -readonly [Q in K]: T[K] }, K
-  >
+  [K in keyof T]-?: K extends `_${string}` ? never :
+    T[K] extends Function ? never :
+    IfEquals<{ [Q in K]: T[K] }, { -readonly [Q in K]: T[K] }, K>
 }[keyof T];
 
 type IfEquals<X, Y, A = X, B = never> =
@@ -303,129 +375,98 @@ type CoercedPropType<T> =
   T extends Color ? Color | string :
   T;
 
-/** For Signal<T> properties, accept a handler function. */
-type SignalPropType<T> =
-  T extends Signal<infer P> ? ((payload: P) => void) | Signal<P> : CoercedPropType<T>;
-
-/**
- * JSX props for a Node class T:
- * - All writable public properties (with coercion)
- * - Signal properties accept handler functions
- * - Plus ref, children, name, key
- */
-type NodeJSXProps<T extends Node> = {
-  [K in WritableKeys<T>]?: SignalPropType<T[K]>;
-} & {
-  ref?: Ref<T>;
-  children?: JSX.Element | JSX.Element[];
-  key?: string | number;
-};
-
-// ---- JSX Namespace ----
-
-declare global {
-  namespace JSX {
-    /** A JSX expression evaluates to a Node (or Node[] for fragments). */
-    type Element = Node | Node[];
-
-    /** Class components must extend Node. */
-    type ElementClass = Node;
-
-    /** Props for class components are derived from the class's writable properties. */
-    interface IntrinsicClassAttributes<T> {
-      ref?: T extends Node ? Ref<T> : never;
-      key?: string | number;
-      children?: Element | Element[];
-    }
-
-    /** Tell TypeScript to look for __jsxProps on classes for prop types. */
-    interface ElementAttributesProperty {
-      __jsxProps: {};
-    }
-
-    /** No intrinsic elements (no lowercase tags like <div>). */
-    interface IntrinsicElements {}
-  }
-}
-```
-
-### Prop Type Derivation Strategy
-
-The main challenge: TypeScript needs to know what props each Node class accepts. There are two approaches:
-
-**Approach A: `__jsxProps` marker type (explicit).**
-Each Node class declares its prop type:
-```typescript
-class Label extends UINode {
-  declare __jsxProps: NodeJSXProps<Label>;
-  text = "";
-  fontSize = 16;
-  // ...
-}
-```
-
-Pro: Precise control. Con: Every class needs the declaration.
-
-**Approach B: `LibraryManagedAttributes` (automatic).**
-TypeScript's `LibraryManagedAttributes` transforms props globally:
-```typescript
-declare global {
-  namespace JSX {
-    type LibraryManagedAttributes<C, P> =
-      C extends NodeConstructor<infer T> ? NodeJSXProps<T> : P;
-  }
-}
-```
-
-Pro: Zero boilerplate — any Node class works as JSX automatically. Con: May allow setting internal properties; harder to exclude specific keys.
-
-**Recommendation:** Start with Approach B (automatic). If we find cases where certain properties should be excluded (like `_parent`, `id`), add a `JsxExclude` type helper or filter by naming convention (exclude `_` prefixed and `readonly`). The `WritableKeys` utility already excludes `readonly` properties, which handles `id`, `_isScene`, signal properties, etc.
-
-### Handling `readonly` Signal Props
-
-Signals are declared `readonly` (e.g., `readonly onPressed: Signal<void>`), so `WritableKeys` excludes them. But we want `<Button onPressed={() => ...} />` to work. Solution: a separate signal-props type that's merged in:
-
-```typescript
 /** Extract Signal properties (including readonly ones) and offer handler functions. */
 type SignalProps<T> = {
   [K in keyof T as T[K] extends Signal<unknown> ? K : never]?:
     T[K] extends Signal<infer P> ? (payload: P) => void : never;
 };
 
-type NodeJSXProps<T extends Node> = {
+/**
+ * JSX props for a Node class T:
+ * - All writable, non-method, non-underscored public properties (with coercion)
+ * - Signal properties accept handler functions (even if readonly)
+ * - Plus ref, children, key
+ */
+export type NodeJSXProps<T extends Node> = {
   [K in WritableKeys<T>]?: CoercedPropType<T[K]>;
 } & SignalProps<T> & {
   ref?: Ref<T>;
-  children?: JSX.Element | JSX.Element[];
+  children?: Node | Node[];
   key?: string | number;
 };
 ```
 
-Now `<Button onPressed={() => play()} />` type-checks correctly, mapping the function to `Signal<void>.connect()` at runtime.
+### JSX Namespace in Runtime Module
+
+```typescript
+// Appended to packages/jsx/src/jsx-runtime.ts (or a separate .d.ts)
+
+import type { Node, NodeConstructor } from "@quintus/core";
+import type { Ref } from "./ref.js";
+import type { NodeJSXProps } from "./types.js";
+
+export namespace JSX {
+  /** A JSX expression evaluates to a Node (or Node[] for fragments). */
+  export type Element = Node | Node[];
+
+  /** Class components must extend Node. */
+  export type ElementClass = Node;
+
+  /** Tell TS how to derive prop types from Node constructors. */
+  export type LibraryManagedAttributes<C, P> =
+    C extends NodeConstructor<infer T> ? NodeJSXProps<T> : P;
+
+  /** No intrinsic elements (no lowercase tags like <div>). */
+  export interface IntrinsicElements {}
+}
+```
+
+### Prop Type Derivation Strategy
+
+We use `LibraryManagedAttributes` (automatic approach) — zero boilerplate, any Node class works as JSX automatically. The `WritableKeys` utility already handles safety:
+
+- `readonly` properties excluded (handles `id`, `_isScene`, etc.)
+- `_`-prefixed properties excluded (handles `_parent`, `_children`, etc.)
+- Function-typed properties excluded (handles `onUpdate`, `destroy`, etc.)
+- Signal properties handled separately via `SignalProps` (allows handler connection even though signals are readonly)
+
+### Scene Exclusion
+
+`Scene` requires a `game: Game` constructor argument, so its constructor signature `new (game: Game) => Scene` doesn't match `NodeConstructor<T>` which requires `new () => T`. This means `<Level1 />` is already a **type error** — Scene subclasses can't be used in JSX because they don't satisfy the zero-arg constructor constraint.
+
+For extra safety, `_createElement` can add a runtime check:
+
+```typescript
+if (typeof type === "function" && type.prototype?._isScene) {
+  throw new Error(`Cannot use Scene class "${type.name}" in JSX. Scenes are created via game.start().`);
+}
+```
 
 ### Phase 2 Checklist
 
-- [ ] Define `WritableKeys<T>`, `CoercedPropType<T>`, `SignalProps<T>`, `NodeJSXProps<T>` utility types
-- [ ] Declare global `JSX` namespace with `Element`, `ElementClass`, `IntrinsicClassAttributes`
+- [ ] Define `WritableKeys<T>` (excluding methods, `_` prefixed, readonly)
+- [ ] Define `CoercedPropType<T>`, `SignalProps<T>`, `NodeJSXProps<T>` utility types
+- [ ] Export module-scoped `JSX` namespace from `jsx-runtime.ts`
 - [ ] Implement `LibraryManagedAttributes` to auto-derive props from Node classes
 - [ ] Verify type-checking: valid props pass, invalid props error
 - [ ] Verify coercion types: `position={[100, 200]}` accepted, `position="bad"` rejected
 - [ ] Verify signal types: `onPressed={() => {}}` accepted, `onPressed={42}` rejected
+- [ ] Verify Scene exclusion: `<Level1 />` is a type error
 - [ ] Write type-level tests (`.test-d.ts` files using `expectTypeOf` / `assertType`)
 
 ---
 
 ## Phase 3: Lifecycle Integration
 
-### The `declare()` Method
+### The `build()` Method
 
-Added to `Node` as a no-op virtual method. Returns the node's "declared" children — nodes created via JSX (or `h()` directly) that should be added as children when the node enters the tree.
+Added to `Node` as a no-op virtual method. Returns the node's "built" children — nodes created via JSX (or `h()` directly) that should be added as children when the node enters the tree.
 
 ```typescript
 // In packages/core/src/node.ts
 
 /** Override to declaratively define child nodes (used with @quintus/jsx). */
-declare(): Node | Node[] | null {
+build(): Node | Node[] | null {
   return null;
 }
 ```
@@ -442,14 +483,14 @@ The current flow in `_enterTreeRecursive`:
 5. if (!ready) → onReady(), readySignal.emit()
 ```
 
-With `declare()`:
+With `build()`:
 
 ```
 1. node._isInsideTree = true
 2. node.onEnterTree()
 3. node.treeEntered.emit()
-4. Process declare() → add returned nodes as children  [NEW]
-5. for each child (existing + declared) → recurse
+4. Process build() → add returned nodes as children  [NEW]
+5. for each child (existing + built) → recurse
 6. if (!ready) → onReady(), readySignal.emit()
 ```
 
@@ -461,19 +502,21 @@ private _enterTreeRecursive(node: Node): void {
   node.onEnterTree();
   node.treeEntered.emit();
 
-  // NEW: Process declare() — add declared children before recursing
-  const declared = node.declare();
-  if (declared) {
-    const nodes = Array.isArray(declared) ? declared.flat(Infinity) : [declared];
+  // NEW: Process build() — add built children before recursing
+  const built = node.build();
+  if (built) {
+    const nodes = Array.isArray(built) ? built.flat(Infinity) : [built];
     for (const child of nodes) {
-      if (child instanceof Node && !child.parent) {
-        node.addChild(child);  // _addChildNode skips _enterTreeRecursive
-                                // because we're mid-recursion — see below
+      if (child instanceof Node && !child._parent) {
+        // Direct add to _children — skip nested _enterTreeRecursive
+        // (we'll enter these children in the loop below)
+        node._children.push(child);
+        child._parent = node;
       }
     }
   }
 
-  // Enter children (now includes both pre-existing and declared children)
+  // Enter children (now includes both pre-existing and built children)
   for (const child of node._children) {
     if (!child._isInsideTree) {
       this._enterTreeRecursive(child);
@@ -490,29 +533,13 @@ private _enterTreeRecursive(node: Node): void {
 }
 ```
 
-**Important subtlety:** When `node.addChild(child)` is called inside `_enterTreeRecursive`, the parent node already has `_isInsideTree = true`. This means `_addChildNode` would normally trigger a nested `_enterTreeRecursive` on the child. But we need to defer that until step 5 (the child loop), where we skip already-entered children via the `!child._isInsideTree` guard.
+**Why direct `_children.push` instead of `_addChildNode()`?** Because `_addChildNode` would trigger a nested `_enterTreeRecursive` call (the parent already has `_isInsideTree = true`). We need to defer tree-entry until step 5, where all children (pre-existing + built) are entered in order. The `!child._isInsideTree` guard ensures no double-entry.
 
-To handle this cleanly, we can add the children directly to `_children` without going through `_addChildNode`:
-
-```typescript
-// Inside _enterTreeRecursive, after declare():
-if (declared) {
-  const nodes = Array.isArray(declared) ? declared.flat(Infinity) : [declared];
-  for (const child of nodes) {
-    if (child instanceof Node && !child._parent) {
-      // Direct add: skip _enterTreeRecursive (we'll handle it in the loop below)
-      node._children.push(child);
-      child._parent = node;
-    }
-  }
-}
-```
-
-This ensures declared children are added to the tree but their `_enterTreeRecursive` is called in order with all other children.
+This code is all within the `Node` class (in `@quintus/core`), so private field access is valid.
 
 ### Scene Special Case
 
-`Scene._loadScene()` calls `scene.onReady()` directly (Scene is the tree root, not added via `addChild`). We need to process `declare()` here too:
+`Game._loadScene()` calls `scene.onReady()` directly (Scene is the tree root, not added via `addChild`). We need to process `build()` here too:
 
 ```typescript
 // In packages/core/src/game.ts
@@ -521,13 +548,13 @@ private _loadScene(SceneClass: SceneConstructor): void {
   const scene = new SceneClass(this);
   this._currentScene = scene;
 
-  // NEW: Process declare() for the scene root
-  const declared = scene.declare();
-  if (declared) {
-    const nodes = Array.isArray(declared) ? declared.flat(Infinity) : [declared];
+  // NEW: Process build() for the scene root
+  const built = scene.build();
+  if (built) {
+    const nodes = Array.isArray(built) ? built.flat(Infinity) : [built];
     for (const child of nodes) {
       if (child instanceof Node) {
-        scene.addChild(child);  // triggers _enterTreeRecursive normally
+        scene.add(child);  // triggers _enterTreeRecursive normally
       }
     }
   }
@@ -540,37 +567,37 @@ private _loadScene(SceneClass: SceneConstructor): void {
 }
 ```
 
-**Flow for a Scene with `declare()`:**
-1. `new Level1(game)` — constructor runs, but `declare()` NOT called yet
-2. `scene.declare()` → returns JSX tree (nodes created eagerly by `h()`)
-3. `scene.addChild(player)` → player enters tree → player's `declare()` runs → player's children enter tree → player's `onReady()` fires
-4. `scene.addChild(camera)` → camera enters tree → camera's `onReady()` fires
-5. `scene.onReady()` → runs AFTER all declared children are ready
+**Flow for a Scene with `build()`:**
+1. `new Level1(game)` — constructor runs, but `build()` NOT called yet
+2. `scene.build()` → returns JSX tree (nodes created eagerly by `jsx()` / `h()`)
+3. `scene.add(player)` → player enters tree → player's `build()` runs → player's children enter tree → player's `onReady()` fires
+4. `scene.add(camera)` → camera enters tree → camera's `onReady()` fires
+5. `scene.onReady()` → runs AFTER all built children are ready
 
-This means by the time `scene.onReady()` executes, every declared child (and their children) are in the tree and ready. All refs are populated. Imperative code in `onReady()` can safely access them.
+This means by the time `scene.onReady()` executes, every built child (and their children) are in the tree and ready. All refs are populated. Imperative code in `onReady()` can safely access them.
 
-### Interaction Between `declare()` and `h()` Children
+### Interaction Between `build()` and `jsx()` Children
 
 A node can have children from two sources:
-1. **JSX composition children:** `<Player><HealthBar /></Player>` — HealthBar is added by `h()` before Player enters the tree
-2. **`declare()` children:** Player's own `declare()` returns CollisionShape + AnimatedSprite
+1. **JSX composition children:** `<Player><HealthBar /></Player>` — HealthBar is added by `jsx()` before Player enters the tree
+2. **`build()` children:** Player's own `build()` returns CollisionShape + AnimatedSprite
 
 Both coexist. The order is:
-- JSX children first (already in `_children` when `declare()` runs)
-- `declare()` children second (appended during tree entry)
+- JSX children first (already in `_children` when `build()` runs)
+- `build()` children second (appended during tree entry)
 
-This is intuitive: "I'm a Player. The JSX that created me gave me a HealthBar. My own `declare()` adds my intrinsic CollisionShape and Sprite."
+This is intuitive: "I'm a Player. The JSX that created me gave me a HealthBar. My own `build()` adds my intrinsic CollisionShape and Sprite."
 
 ### Phase 3 Checklist
 
-- [ ] Add `declare(): Node | Node[] | null` virtual method to `Node` base class
-- [ ] Modify `_enterTreeRecursive` to process `declare()` before recursing children
-- [ ] Modify `Game._loadScene` to process Scene's `declare()` before `onReady()`
-- [ ] Test: `declare()` children are in tree before `onReady()` fires
-- [ ] Test: refs from `declare()` are populated by `onReady()` time
-- [ ] Test: nested `declare()` works (Scene declares Player, Player declares CollisionShape)
-- [ ] Test: `declare()` + imperative `addChild` in `onReady()` coexist
-- [ ] Test: nodes without `declare()` (returns null) are unaffected
+- [ ] Add `build(): Node | Node[] | null` virtual method to `Node` base class
+- [ ] Modify `_enterTreeRecursive` to process `build()` before recursing children
+- [ ] Modify `Game._loadScene` to process Scene's `build()` before `onReady()`
+- [ ] Test: `build()` children are in tree before `onReady()` fires
+- [ ] Test: refs from `build()` are populated by `onReady()` time
+- [ ] Test: nested `build()` works (Scene builds Player, Player builds CollisionShape)
+- [ ] Test: `build()` + imperative `add()` in `onReady()` coexist
+- [ ] Test: nodes without `build()` (returns null) are unaffected
 - [ ] Test: Fragment return (multiple root nodes) works
 
 ---
@@ -599,38 +626,32 @@ function HealthBar(props: { max: number; current: number }) {
 <HealthBar max={5} current={3} />
 ```
 
-### How It Works in `h()`
+### How It Works in `_createElement()`
 
-When `h()` receives a plain function instead of a class constructor:
+Functional components are detected via the `IS_NODE_CLASS` symbol:
 
 ```typescript
-export function h<T extends Node>(
-  type: NodeConstructor<T> | typeof Fragment | ((props: unknown) => Node | Node[]),
-  props: Record<string, unknown> | null,
-  ...children: NodeElementChild[]
-): T | Node[] {
-  // Fragment
-  if (type === Fragment) {
-    return flattenChildren(children);
-  }
-
-  // Functional component
-  if (typeof type === "function" && !isNodeConstructor(type)) {
-    const mergedProps = { ...props, children: flattenChildren(children) };
-    return type(mergedProps) as T | Node[];
-  }
-
-  // Class component (existing logic)
-  const node = new (type as NodeConstructor<T>)();
-  // ... apply props, add children, fill ref
-  return node;
-}
-
-function isNodeConstructor(fn: Function): boolean {
-  // Check if it's a class (has prototype chain from Node)
-  return fn.prototype instanceof Node || fn === Node;
+// In _createElement():
+if (typeof type === "function" && !(IS_NODE_CLASS in type)) {
+  // It's a functional component — call it with merged props
+  const mergedProps = { ...props, children };
+  return type(mergedProps) as T | Node[];
 }
 ```
+
+**Why `IS_NODE_CLASS` instead of `fn.prototype instanceof Node`?** The symbol check is resilient to duplicate package instances (uses `Symbol.for()`), doesn't require prototype chain traversal, and works even with minified or proxied constructors. It's set as a static property on `Node`:
+
+```typescript
+// In @quintus/core/src/node.ts
+export const IS_NODE_CLASS = Symbol.for("quintus:NodeClass");
+
+class Node {
+  static readonly [IS_NODE_CLASS] = true;
+  // ... rest of Node
+}
+```
+
+All Node subclasses inherit the static symbol automatically.
 
 ### Prefab with Refs
 
@@ -668,7 +689,7 @@ function StandardHUD() {
 
 ### Phase 4 Checklist
 
-- [ ] Detect functional components in `h()` (function that doesn't extend Node)
+- [ ] Detect functional components in `_createElement()` via `IS_NODE_CLASS` symbol
 - [ ] Pass merged props (including flattened children) to functional component
 - [ ] Support Fragment return from functional components
 - [ ] Support ref forwarding in functional components
@@ -689,13 +710,12 @@ A base class defines the overall scene structure with named hook methods. Subcla
 abstract class Level extends Scene {
   player = ref<Player>();
   map = ref<TileMap>();
-  score = signal(0);
 
   // Subclasses must provide:
   abstract mapAsset: string;
   abstract spawnPoint: [number, number];
 
-  declare() {
+  build() {
     return <>
       <TileMap
         ref={this.map}
@@ -705,22 +725,24 @@ abstract class Level extends Scene {
       <Player ref={this.player} position={this.spawnPoint} />
       <Camera follow={this.player} smoothing={0.1} />
       <Node2D ySortChildren zIndex={1}>
-        {this.declareEntities()}
+        {this.buildEntities()}
       </Node2D>
       <Layer fixed zIndex={100}>
-        {this.declareHUD()}
+        {this.buildHUD()}
       </Layer>
     </>;
   }
 
   // Hooks with sensible defaults
-  declareEntities(): JSX.Element { return <></>; }
+  buildEntities(): JSX.Element { return <></>; }
 
-  declareHUD(): JSX.Element {
-    return <Label text={() => `Score: ${this.score.value}`} position={[10, 10]} />;
+  buildHUD(): JSX.Element {
+    return <Label text="Score: 0" position={[10, 10]} />;
   }
 }
 ```
+
+Note: `follow={this.player}` passes a `Ref<Player>` — the coercion system auto-unwraps it to `this.player.current` (the actual Player node).
 
 ### Subclass: Simple Level
 
@@ -729,7 +751,7 @@ class Level1 extends Level {
   mapAsset = "level1.json";
   spawnPoint: [number, number] = [100, 400];
 
-  declareEntities() {
+  buildEntities() {
     return <>
       <Skeleton position={[200, 300]} />
       <Skeleton position={[500, 280]} />
@@ -748,15 +770,14 @@ class BossLevel extends Level {
   spawnPoint: [number, number] = [50, 400];
   boss = ref<Dragon>();
 
-  declareEntities() {
+  buildEntities() {
     return <Dragon ref={this.boss} position={[400, 200]} />;
   }
 
-  declareHUD() {
+  buildHUD() {
     return <>
-      {super.declareHUD()}
+      {super.buildHUD()}
       <ProgressBar
-        value={() => this.boss.current!.health / this.boss.current!.maxHealth}
         width={200}
         fillColor="#ff0000"
         position={[100, 10]}
@@ -766,9 +787,11 @@ class BossLevel extends Level {
 }
 ```
 
+Note: The boss health bar's `value` would be updated imperatively in `onReady()` or via the `bind()` reactive bridge (see Phase 6).
+
 ### Subclass: Completely Custom
 
-A subclass can override `declare()` entirely if the parent structure doesn't fit:
+A subclass can override `build()` entirely if the parent structure doesn't fit:
 
 ```tsx
 class CutsceneLevel extends Level {
@@ -776,7 +799,7 @@ class CutsceneLevel extends Level {
   spawnPoint: [number, number] = [0, 0];
 
   // Full override — ignores parent structure
-  declare() {
+  build() {
     return <>
       <TileMap asset="cutscene.json" tilesetImage="cutscene-tiles" />
       <CutscenePlayer position={[100, 200]} />
@@ -791,16 +814,16 @@ class CutsceneLevel extends Level {
 | Customization depth | Mechanism | Example |
 |---|---|---|
 | Change a value | Override class property | `mapAsset = "level2.json"` |
-| Add content to a region | Override `declareXxx()` hook | `declareEntities() { return <Skeleton .../> }` |
-| Extend a region | `super.declareXxx()` + additions | `super.declareHUD()` + boss health bar |
-| Replace entire structure | Override `declare()` | Custom cutscene layout |
+| Add content to a region | Override `buildXxx()` hook | `buildEntities() { return <Skeleton .../> }` |
+| Extend a region | `super.buildXxx()` + additions | `super.buildHUD()` + boss health bar |
+| Replace entire structure | Override `build()` | Custom cutscene layout |
 | Add imperative logic | `onReady()` after super | Dynamic spawning from Tiled data |
 
 ---
 
-## Entity `declare()` Example
+## Entity `build()` Example
 
-Entities (not just Scenes) benefit from `declare()`:
+Entities (not just Scenes) benefit from `build()`:
 
 ### Before (imperative)
 
@@ -810,9 +833,9 @@ class Player extends Actor {
 
   override onReady() {
     super.onReady();
-    this.addChild(CollisionShape).shape = Shape.rect(6, 7);
+    this.add(CollisionShape, { shape: Shape.rect(6, 7) });
     this.tag("player");
-    this._sprite = this.addChild(AnimatedSprite);
+    this._sprite = this.add(AnimatedSprite);
     this._sprite.spriteSheet = entitySheet;
     this._sprite.play("player_idle");
   }
@@ -825,7 +848,7 @@ class Player extends Actor {
 class Player extends Actor {
   private sprite = ref<AnimatedSprite>();
 
-  declare() {
+  build() {
     return <>
       <CollisionShape shape={Shape.rect(6, 7)} />
       <AnimatedSprite ref={this.sprite} spriteSheet={entitySheet} animation="player_idle" />
@@ -849,39 +872,34 @@ UI benefits the most from JSX — deep nesting becomes readable:
 
 ```typescript
 onReady() {
-  const hud = new Layer();
+  const hud = this.add(Layer);
   hud.fixed = true;
   hud.zIndex = 100;
-  this.addChild(hud);
 
-  const topPanel = new Panel();
+  const topPanel = hud.add(Panel);
   topPanel.width = 500;
   topPanel.height = 36;
   topPanel.backgroundColor = Color.fromHex("#000000").withAlpha(0.6);
-  hud.addChild(topPanel);
 
-  const title = new Label();
+  const title = hud.add(Label);
   title.text = "Tween & UI Showcase";
   title.fontSize = 18;
   title.color = Color.fromHex("#e0e0e0");
   title.align = "center";
   title.width = 500;
   title.height = 36;
-  hud.addChild(title);
 
-  const btnContainer = new Container();
+  const btnContainer = hud.add(Container);
   btnContainer.direction = "horizontal";
   btnContainer.gap = 10;
   btnContainer.padding = 10;
-  hud.addChild(btnContainer);
 
-  const bounceBtn = new Button();
+  const bounceBtn = btnContainer.add(Button);
   bounceBtn.text = "Bounce";
   bounceBtn.width = 90;
   bounceBtn.height = 34;
   bounceBtn.fontSize = 13;
   bounceBtn.backgroundColor = Color.fromHex("#e91e63");
-  btnContainer.addChild(bounceBtn);
 
   bounceBtn.onPressed.connect(() => this.doBounce());
   // ... repeat for each button
@@ -891,7 +909,7 @@ onReady() {
 ### After (JSX)
 
 ```tsx
-declare() {
+build() {
   return (
     <Layer fixed zIndex={100}>
       <Panel width={500} height={36} backgroundColor="#000000">
@@ -926,7 +944,7 @@ import { Player, Camera, TileMap } from "./entities.js";
 class Level1 extends Scene {
   player = ref<Player>();
 
-  declare() {
+  build() {
     return h(Fragment, null,
       h(TileMap, { tilesetImage: "tileset", asset: "level1.json" }),
       h(Player, { ref: this.player, position: [100, 400] }),
@@ -945,32 +963,41 @@ Not as pretty, but works with zero config changes. This is also what tests use w
 ### Tests
 
 **Unit: `packages/jsx/src/h.test.ts`**
+- `jsx()` with class component creates node instance
+- `jsx()` extracts children from props.children
+- `jsx()` passes key to node.name
 - `h()` with class component creates node instance
-- `h()` applies props via Object.assign
-- `h()` adds children to node
-- `h()` fills ref.current
-- `h()` with Fragment returns flat Node array
-- `h()` with null/false children skips them
-- `h()` coercion: tuple → Vec2
-- `h()` coercion: string → Color for color props
-- `h()` coercion: number → Vec2 for scale
-- `h()` signal auto-connect: function prop on Signal property
-- `h()` with functional component calls function and returns result
-- `h()` with nested children builds correct tree
+- `h()` takes children as rest params
+- `h()` / `jsx()` applies props via applyProp
+- `h()` / `jsx()` fills ref.current
+- Fragment returns flat Node array
+- null/false children are skipped
+- Coercion: tuple → Vec2
+- Coercion: string → Color for color props
+- Coercion: number → Vec2 for scale
+- Coercion: Ref → unwrapped .current
+- Signal auto-connect: function prop on Signal property
+- Functional component: calls function and returns result
+- Functional component: detected via IS_NODE_CLASS absence
+- Nested children builds correct tree
+- Scene subclass in jsx() throws runtime error
 
 **Unit: `packages/jsx/src/ref.test.ts`**
 - `ref()` starts with current === null
-- ref.current set by h() when ref prop is provided
+- `ref()` has REF_BRAND symbol
+- `isRef()` returns true for ref objects
+- `isRef()` returns false for plain objects
+- ref.current set by jsx() when ref prop is provided
 - Multiple refs in same tree all populated
 
-**Integration: `packages/jsx/src/declare.test.ts`**
-- Scene with `declare()` → children in tree before `onReady()`
-- Node with `declare()` → children ready before parent's `onReady()`
-- Nested `declare()` → grandchildren ready before grandparent
-- `declare()` + imperative `addChild` in `onReady()` coexist
-- `declare()` returning null → no effect
-- `declare()` returning Fragment → multiple root children
-- Template method pattern: base class `declare()` calls subclass hook
+**Integration: `packages/jsx/src/build.test.ts`**
+- Scene with `build()` → children in tree before `onReady()`
+- Node with `build()` → children ready before parent's `onReady()`
+- Nested `build()` → grandchildren ready before grandparent
+- `build()` + imperative `add()` in `onReady()` coexist
+- `build()` returning null → no effect
+- `build()` returning Fragment → multiple root children
+- Template method pattern: base class `build()` calls subclass hook
 - Ref populated by `onReady()` time
 
 **Type tests: `packages/jsx/src/types.test-d.ts`**
@@ -980,6 +1007,8 @@ Not as pretty, but works with zero config changes. This is also what tests use w
 - `<Label position="bad" />` — type error
 - `<Button onPressed={() => {}} />` — valid (Signal handler)
 - `<Button onPressed={42} />` — type error
+- `<Label onUpdate={...} />` — type error (methods excluded)
+- `<Label _parent={...} />` — type error (underscore excluded)
 
 ### Example Conversion
 
@@ -990,12 +1019,165 @@ Convert the tween-ui example to offer a JSX variant alongside the imperative one
 
 ### Phase 5 Checklist
 
-- [ ] Unit tests for `h()` (class, Fragment, coercion, signals, children, refs)
-- [ ] Unit tests for `ref()`
-- [ ] Integration tests for `declare()` lifecycle
+- [ ] Unit tests for `jsx()` and `h()` (class, Fragment, coercion, signals, children, refs, key)
+- [ ] Unit tests for `ref()` and `isRef()`
+- [ ] Integration tests for `build()` lifecycle
 - [ ] Type-level tests for JSX prop validation
 - [ ] JSX demo example
 - [ ] Verify `pnpm build` and `pnpm test` pass across all packages
+
+---
+
+## Phase 6: Reactive Props (`bind()` Connect Bridge)
+
+Phases 1–5 provide one-shot JSX — `build()` runs once to create the tree. But game UIs often need dynamic updates: score labels, health bars, ammo counters. Phase 6 adds a lightweight **connect bridge** that links signals to node properties without a full reactive system.
+
+### The `bind()` Helper
+
+```typescript
+// packages/jsx/src/bind.ts
+
+import type { Signal } from "@quintus/core";
+
+const BINDING_BRAND = Symbol("Binding");
+
+export interface ReactiveBinding<T = unknown> {
+  readonly [BINDING_BRAND]: true;
+  readonly signal: Signal<unknown>;
+  readonly compute: (...args: unknown[]) => T;
+}
+
+/**
+ * Create a reactive binding: when the signal emits, the compute function
+ * is called and its return value is assigned to the target property.
+ *
+ * The compute function is also called once immediately during applyProp()
+ * to set the initial value.
+ */
+export function bind<S, T>(
+  signal: Signal<S>,
+  compute: (payload: S) => T,
+): ReactiveBinding<T>;
+export function bind<T>(
+  signal: Signal<void>,
+  compute: () => T,
+): ReactiveBinding<T>;
+export function bind(
+  signal: Signal<unknown>,
+  compute: (...args: unknown[]) => unknown,
+): ReactiveBinding {
+  return { [BINDING_BRAND]: true, signal, compute };
+}
+
+export function isBinding(value: unknown): value is ReactiveBinding {
+  return value != null && typeof value === "object" && BINDING_BRAND in (value as object);
+}
+```
+
+### Integration with `applyProp()`
+
+A new coercion rule (highest priority after signal auto-connect):
+
+```typescript
+// In applyProp(), added as rule 2:
+
+// 2. Reactive binding: bind(signal, compute) → initial value + auto-update
+if (isBinding(value)) {
+  // Set initial value
+  (node as Record<string, unknown>)[key] = value.compute();
+  // Connect for future updates
+  value.signal.connect((...args: unknown[]) => {
+    (node as Record<string, unknown>)[key] = value.compute(...args);
+  });
+  return;
+}
+```
+
+Updated coercion rules (in priority order):
+
+| Input | Target | Result |
+|-------|--------|--------|
+| `() => {}` on Signal prop | `Signal<T>` | `.connect(fn)` |
+| `bind(signal, fn)` | any prop | Initial `fn()` + re-assign on emit |
+| `Ref<T>` | any Node prop | Unwrap to `ref.current` |
+| `[100, 200]` on Vec2 prop | `Vec2` | `new Vec2(100, 200)` |
+| `"#ff0000"` on color-named prop | `Color` | `Color.fromHex("#ff0000")` |
+| `2` on `scale` | `Vec2` | `new Vec2(2, 2)` |
+| anything else | — | Direct assignment |
+
+### Usage Examples
+
+**Score label (Signal<void>, reads value by closure):**
+```tsx
+class Level extends Scene {
+  private _score = 0;
+  readonly scoreChanged = signal<void>();
+
+  buildHUD() {
+    return <Label
+      text={bind(this.scoreChanged, () => `Score: ${this._score}`)}
+      position={[10, 10]}
+    />;
+  }
+
+  addScore(points: number) {
+    this._score += points;
+    this.scoreChanged.emit();
+  }
+}
+```
+
+**Boss health bar (Signal<number>, uses payload directly):**
+```tsx
+class BossLevel extends Level {
+  boss = ref<Dragon>();
+
+  buildHUD() {
+    return <>
+      {super.buildHUD()}
+      <ProgressBar
+        value={bind(this.boss.current!.healthChanged, (hp) => hp / 100)}
+        width={200}
+        fillColor="#ff0000"
+        position={[100, 10]}
+      />
+    </>;
+  }
+}
+```
+
+### Cleanup
+
+When a node is removed from the tree (`destroy()` or `removeChild()`), signal connections made by `bind()` must be disconnected to prevent memory leaks.
+
+**Approach:** `applyProp()` stores binding disconnect handles on the node (e.g., in a `WeakMap<Node, Array<() => void>>`). The `Node.destroy()` override (or an `onExitTree` hook) calls all disconnect handles.
+
+```typescript
+// Internal cleanup registry
+const bindingCleanups = new WeakMap<Node, Array<() => void>>();
+
+// In applyProp(), after connecting:
+const disconnect = value.signal.connect((...args) => { ... });
+const cleanups = bindingCleanups.get(node as Node) ?? [];
+cleanups.push(disconnect);
+bindingCleanups.set(node as Node, cleanups);
+```
+
+The cleanup integration hooks into `Node.onExitTree()` or is called explicitly during `destroy()`. Since this only affects nodes using `bind()`, there's zero overhead for nodes that don't.
+
+### Phase 6 Checklist
+
+- [ ] Implement `bind()` factory and `isBinding()` guard
+- [ ] Add reactive binding detection to `applyProp()` (before Ref unwrapping)
+- [ ] Implement cleanup registry (WeakMap of disconnect handles)
+- [ ] Hook cleanup into `Node.destroy()` / `onExitTree()`
+- [ ] Unit tests: `bind()` sets initial value via `compute()`
+- [ ] Unit tests: `bind()` updates value on signal emit
+- [ ] Unit tests: `bind()` with payload (Signal<number>)
+- [ ] Unit tests: `bind()` with void signal (Signal<void>)
+- [ ] Unit tests: cleanup disconnects on node destroy
+- [ ] Integration test: score label updates in real scene
+- [ ] Type checking: `bind(signal, compute)` return type matches target prop type
 
 ---
 
@@ -1067,10 +1249,9 @@ This is per-project, NOT in the engine's tsconfig.base.json. The engine packages
 
 ## What This Design Does NOT Include
 
-1. **Reactive props / signals-as-props** — the `() => expression` pattern shown in the brainstorm (where function props auto-subscribe to signals) is deferred. V1 only connects signals, it doesn't create reactive bindings. Reactive UI would be a future enhancement.
-2. **Key-based reconciliation** — no list diffing or DOM-style reconciliation. JSX runs once. Dynamic lists use imperative code.
-3. **Context / providers** — no React-style context system. Use the existing scene tree queries (`findByType`, signals) for cross-node communication.
-4. **Hot reloading** — no HMR for JSX trees. Changing JSX requires a scene restart.
+1. **Key-based reconciliation** — no list diffing or DOM-style reconciliation. JSX runs once. Dynamic lists use imperative code.
+2. **Context / providers** — no React-style context system. Use the existing scene tree queries (`findByType`, signals) for cross-node communication.
+3. **Hot reloading** — no HMR for JSX trees. Changing JSX requires a scene restart.
 
 ---
 
@@ -1082,5 +1263,5 @@ This is per-project, NOT in the engine's tsconfig.base.json. The engine packages
 - [ ] `pnpm test` passes with no warnings
 - [ ] `pnpm lint` clean
 - [ ] JSX demo runs in browser via `pnpm dev`
-- [ ] Existing tests unaffected (declare() returns null by default)
+- [ ] Existing tests unaffected (build() returns null by default)
 - [ ] No bundle size impact on users who don't import `@quintus/jsx`

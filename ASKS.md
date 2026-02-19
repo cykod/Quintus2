@@ -261,3 +261,9 @@
 [DSGN] thu 2/19 8am - Design JSX-based declarative node composition pattern for scenes, UI, and components
 
 [MILE] thu 2/19 9am - Implemented 9-phase API ergonomics overhaul with unified add() API, reactive state, type guards, timer convenience methods, constants registry, and updated all 6 examples
+
+[DEVL] thu 2/19 10am - Review JSX declarative build pattern design for potential issues and risks
+
+[IMPL] thu 2/19 2pm - Implement @quintus/jsx package Phase 1: core JSX runtime (h, jsx, Fragment, ref, coercion)
+
+[IMPL] thu 2/19 3pm - Implement @quintus/jsx Phase 1 — Core JSX Runtime (h, jsx, Fragment, ref, applyProp with coercion)

@@ -1,3 +1,17 @@
+## Add @quintus/jsx package with core JSX runtime (Phase 1)
+*Thursday, February 19th at 4pm*
+Implements Phase 1 of the React-style JSX build pattern for Quintus. Creates 
+the new @quintus/jsx package with h() and jsx() element creation, Fragment 
+support, ref() for node references, and applyProp() with smart coercion (tuples 
+to Vec2, hex strings to Color, numbers to uniform scale, functions to Signal 
+connections, Ref unwrapping). Adds IS_NODE_CLASS symbol to @quintus/core Node 
+class for distinguishing class components from functional components. Includes 
+46 tests covering all creation paths, coercion rules, tree nesting, and Scene 
+exclusion guard. The package exports three entry points: main index, 
+jsx-runtime for TypeScript auto-import, and jsx-dev-runtime for dev mode.
+
+---
+
 ## Implement API ergonomics overhaul (9-phase code smell fixes)
 *Thursday, February 19th at 9am*
 Implement all 9 phases of API ergonomics improvements identified in 

@@ -1,0 +1,54 @@
+{
+	"name": "@quintus/jsx",
+	"version": "0.0.0",
+	"description": "Optional JSX runtime for declarative node tree composition",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		},
+		"./jsx-runtime": {
+			"types": "./dist/jsx-runtime.d.ts",
+			"import": "./dist/jsx-runtime.js",
+			"require": "./dist/jsx-runtime.cjs"
+		},
+		"./jsx-dev-runtime": {
+			"types": "./dist/jsx-dev-runtime.d.ts",
+			"import": "./dist/jsx-dev-runtime.js",
+			"require": "./dist/jsx-dev-runtime.cjs"
+		}
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch"
+	},
+	"keywords": [
+		"game-engine",
+		"quintus",
+		"html5",
+		"2d",
+		"jsx"
+	],
+	"peerDependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/math": "workspace:*"
+	},
+	"devDependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/math": "workspace:*"
+	},
+	"license": "SEE LICENSE IN LICENSE.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/cykod/Quintus",
+		"directory": "packages/jsx"
+	}
+}
