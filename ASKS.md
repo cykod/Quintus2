@@ -237,3 +237,17 @@
 [IMPL] wed 2/18 11am - Fix dungeon crawler sprites to match tile descriptions and design
 
 [ASKS] wed 2/18 12pm - Propose a scene registry pattern so games can reference scenes by name instead of passing class references around
+
+[MILE] wed 2/18 1pm - Fixed dungeon crawler sprite mappings and added complete dungeon example with tile catalog CSV
+
+[DSGN] wed 2/18 1pm - Design scene registry pattern for string-based scene switching
+
+[IMPL] wed 2/18 1pm - Implement scene registry for string-based scene transitions
+
+[MILE] wed 2/18 7pm - Added scene registry for string-based scene transitions, eliminating circular import hacks
+
+[IMPL] wed 2/18 7pm - Implement pixel-snapping in the renderer and tilemap to fix sub-pixel tile banding/seam artifacts
+
+[ASKS] wed 2/18 7pm - Review current examples for syntax and code smells before building more examples off the engine
+
+[DSGN] wed 2/18 9pm - Design API ergonomics improvements addressing code smells found in examples review

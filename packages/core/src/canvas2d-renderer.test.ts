@@ -710,6 +710,59 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 		expect(clearRect).toHaveBeenCalledWith(0, 0, 200, 200);
 		expect(fillRect).toHaveBeenCalledWith(0, 0, 200, 200);
 	});
+
+	it("pixelSnap rounds transform translation to integers", () => {
+		const setup = createTestSetup();
+		const { ctx, scene, renderer } = setup;
+		renderer.pixelSnap = true;
+		const setTransform = vi.spyOn(ctx, "setTransform");
+
+		class Positioned extends Node2D {
+			override onDraw(_ctx: DrawContext): void {}
+		}
+		const node = new Positioned();
+		node.position = new Vec2(10.7, 20.3);
+		scene.addChild(node);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		// Translation snapped: 10.7 → 11, 20.3 → 20
+		expect(setTransform).toHaveBeenCalledWith(1, 0, 0, 1, 11, 20);
+	});
+
+	it("pixelSnap defaults to false when pixelArt is not set", () => {
+		const setup = createTestSetup();
+		expect(setup.renderer.pixelSnap).toBe(false);
+	});
+
+	it("pixelSnap defaults to true when pixelArt is enabled", () => {
+		const canvas = document.createElement("canvas");
+		canvas.width = 200;
+		canvas.height = 200;
+		const assets = new AssetLoader();
+		const renderer = new Canvas2DRenderer(canvas, 200, 200, "#000000", assets, true);
+		expect(renderer.pixelSnap).toBe(true);
+	});
+
+	it("without pixelSnap, fractional positions pass through", () => {
+		const setup = createTestSetup();
+		const { ctx, scene, renderer } = setup;
+		renderer.pixelSnap = false;
+		const setTransform = vi.spyOn(ctx, "setTransform");
+
+		class Positioned extends Node2D {
+			override onDraw(_ctx: DrawContext): void {}
+		}
+		const node = new Positioned();
+		node.position = new Vec2(10.7, 20.3);
+		scene.addChild(node);
+
+		renderer.markRenderDirty();
+		renderer.render(scene);
+
+		expect(setTransform).toHaveBeenCalledWith(1, 0, 0, 1, 10.7, 20.3);
+	});
 });
 
 // ─── Y-Sort Rendering ────────────────────────────────────────────────────────

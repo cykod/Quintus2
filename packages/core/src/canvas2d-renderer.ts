@@ -153,6 +153,13 @@ export class Canvas2DRenderer implements Renderer {
 	private readonly backgroundColor: string;
 	private readonly pixelArt: boolean;
 
+	/**
+	 * When true, snap transform translation to integer pixels before rendering.
+	 * Prevents sub-pixel seams between tiles and sprites.
+	 * Defaults to the value of `pixelArt`.
+	 */
+	pixelSnap: boolean;
+
 	// Pre-allocated render list — reused between frames
 	private renderList: Node2D[] = [];
 	private _renderListDirty = true;
@@ -173,6 +180,7 @@ export class Canvas2DRenderer implements Renderer {
 		this.gameHeight = height;
 		this.backgroundColor = backgroundColor;
 		this.pixelArt = pixelArt;
+		this.pixelSnap = pixelArt;
 		if (pixelArt) {
 			ctx.imageSmoothingEnabled = false;
 		}
@@ -222,6 +230,7 @@ export class Canvas2DRenderer implements Renderer {
 		);
 
 		// 4. Draw each node
+		const snap = this.pixelSnap;
 		for (const node of this.renderList) {
 			ctx.save();
 
@@ -231,10 +240,24 @@ export class Canvas2DRenderer implements Renderer {
 
 			if (node.renderFixed || !hasView) {
 				const t = node.globalTransform;
-				ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
+				ctx.setTransform(
+					t.a,
+					t.b,
+					t.c,
+					t.d,
+					snap ? Math.round(t.e) : t.e,
+					snap ? Math.round(t.f) : t.f,
+				);
 			} else {
 				const t = vt.multiply(node.globalTransform);
-				ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
+				ctx.setTransform(
+					t.a,
+					t.b,
+					t.c,
+					t.d,
+					snap ? Math.round(t.e) : t.e,
+					snap ? Math.round(t.f) : t.f,
+				);
 			}
 
 			try {

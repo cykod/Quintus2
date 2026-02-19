@@ -1,3 +1,16 @@
+## Add pixel-snap rendering to fix sub-pixel tile seams
+*Thursday, February 19th at 7am*
+Add a pixelSnap property to Canvas2DRenderer that rounds transform translation 
+components (e, f) to integers via Math.round() before ctx.setTransform() calls. 
+This eliminates the 1px banding/seam artifacts visible between tiles when 
+camera smoothing or fractional positions produce sub-pixel offsets. The 
+property defaults to true when pixelArt mode is enabled, matching the old 
+Quintus engine's strategy of sub-pixel physics with integer-snapped rendering. 
+Uses Math.round() over Math.floor() following Godot's PR #43813 findings (less 
+jitter at integer boundaries, no systematic bias).
+
+---
+
 ## Add scene registry for string-based scene transitions
 *Wednesday, February 18th at 7pm*
 Add a scene registry to Game that allows scenes to be referenced by string 
