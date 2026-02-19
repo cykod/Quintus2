@@ -1,3 +1,16 @@
+## Add JSX type definitions with auto-derived props (Phase 2)
+*Thursday, February 19th at 6pm*
+Add TypeScript JSX type definitions to @quintus/jsx that automatically derive 
+prop types from any Node subclass via LibraryManagedAttributes. Implements 
+WritableKeys to exclude readonly, methods, and underscore-prefixed properties; 
+CoercedPropType for Vec2 tuple and Color string ergonomics; SignalProps for 
+auto-connecting signal handlers. Includes module-scoped JSX namespace in both 
+jsx-runtime and jsx-dev-runtime, vitest typecheck configuration, and 31 
+type-level tests covering writable props, readonly exclusion, coercion, 
+signals, and Scene guard.
+
+---
+
 ## Add @quintus/jsx package with core JSX runtime (Phase 1)
 *Thursday, February 19th at 4pm*
 Implements Phase 1 of the React-style JSX build pattern for Quintus. Creates 

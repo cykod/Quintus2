@@ -7,6 +7,11 @@ export default defineConfig({
 		passWithNoTests: true,
 		setupFiles: ["vitest-canvas-mock"],
 		include: ["packages/*/src/**/*.test.ts"],
+		typecheck: {
+			enabled: true,
+			tsconfig: "./packages/jsx/tsconfig.typetest.json",
+			include: ["packages/jsx/src/**/*.test-d.{ts,tsx}"],
+		},
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "json", "html"],

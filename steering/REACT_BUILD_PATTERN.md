@@ -8,7 +8,7 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Package setup & core runtime (`h`, `jsx`, `Fragment`, `ref`, coercion) | Done |
-| 2 | TypeScript JSX type definitions | Pending |
+| 2 | TypeScript JSX type definitions | Done |
 | 3 | Lifecycle integration (`build()` on Node) | Pending |
 | 4 | Functional components (prefabs) | Pending |
 | 5 | Tests & examples | Pending |
@@ -444,15 +444,15 @@ if (typeof type === "function" && type.prototype?._isScene) {
 
 ### Phase 2 Checklist
 
-- [ ] Define `WritableKeys<T>` (excluding methods, `_` prefixed, readonly)
-- [ ] Define `CoercedPropType<T>`, `SignalProps<T>`, `NodeJSXProps<T>` utility types
-- [ ] Export module-scoped `JSX` namespace from `jsx-runtime.ts`
-- [ ] Implement `LibraryManagedAttributes` to auto-derive props from Node classes
-- [ ] Verify type-checking: valid props pass, invalid props error
-- [ ] Verify coercion types: `position={[100, 200]}` accepted, `position="bad"` rejected
-- [ ] Verify signal types: `onPressed={() => {}}` accepted, `onPressed={42}` rejected
-- [ ] Verify Scene exclusion: `<Level1 />` is a type error
-- [ ] Write type-level tests (`.test-d.ts` files using `expectTypeOf` / `assertType`)
+- [x] Define `WritableKeys<T>` (excluding methods, `_` prefixed, readonly)
+- [x] Define `CoercedPropType<T>`, `SignalProps<T>`, `NodeJSXProps<T>` utility types
+- [x] Export module-scoped `JSX` namespace from `jsx-runtime.ts`
+- [x] Implement `LibraryManagedAttributes` to auto-derive props from Node classes
+- [x] Verify type-checking: valid props pass, invalid props error
+- [x] Verify coercion types: `position={[100, 200]}` accepted, `position="bad"` rejected
+- [x] Verify signal types: `onPressed={() => {}}` accepted, `onPressed={42}` rejected
+- [x] Verify Scene exclusion: `<Level1 />` is a type error
+- [x] Write type-level tests (`.test-d.ts` files using `expectTypeOf` / `assertType`)
 
 ---
 

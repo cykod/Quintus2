@@ -267,3 +267,9 @@
 [IMPL] thu 2/19 2pm - Implement @quintus/jsx package Phase 1: core JSX runtime (h, jsx, Fragment, ref, coercion)
 
 [IMPL] thu 2/19 3pm - Implement @quintus/jsx Phase 1 — Core JSX Runtime (h, jsx, Fragment, ref, applyProp with coercion)
+
+[MILE] thu 2/19 4pm - Added @quintus/jsx package Phase 1 with core JSX runtime, ref system, smart prop coercion, and 46 tests
+
+[IMPL] thu 2/19 4pm - Implement Phase 2 JSX TypeScript type definitions for @quintus/jsx
+
+[IMPL] thu 2/19 5pm - Implement Phase 2 JSX TypeScript type definitions (WritableKeys, CoercedPropType, SignalProps, NodeJSXProps, JSX namespace)
