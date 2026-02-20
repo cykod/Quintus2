@@ -421,6 +421,76 @@ describe("TileMap", () => {
 		});
 	});
 
+	describe("generateCollision with oneWayTileIds", () => {
+		it("splits tiles into solid and one-way colliders", () => {
+			const game = createTestGame();
+			game.use(
+				PhysicsPlugin({
+					collisionGroups: {
+						default: { collidesWith: ["default"] },
+						world: { collidesWith: ["default"] },
+					},
+				}),
+			);
+
+			// Build a map with ground tiles (GID 1) and platform tiles (GID 56 = localId 55)
+			const json = makeTiledJSON({
+				layers: [
+					{
+						name: "tiles",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						// Row 0: platform tiles (GID 56)
+						// Row 1: empty
+						// Row 2: ground tiles (GID 1)
+						data: [56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+					},
+				],
+			});
+			const map = setupTileMap(game, json);
+
+			const count = map.generateCollision({
+				layer: "tiles",
+				allSolid: true,
+				collisionGroup: "world",
+				oneWayTileIds: [55], // localId 55 = GID 56
+			});
+
+			expect(count).toBeGreaterThan(0);
+
+			// Verify both solid and one-way colliders were created
+			const colliders = map.getChildren(StaticCollider);
+			const solidColliders = colliders.filter((c) => !c.oneWay);
+			const oneWayColliders = colliders.filter((c) => c.oneWay);
+
+			expect(solidColliders.length).toBeGreaterThan(0);
+			expect(oneWayColliders.length).toBeGreaterThan(0);
+			expect(solidColliders.length + oneWayColliders.length).toBe(count);
+		});
+
+		it("works with empty oneWayTileIds (falls back to normal path)", () => {
+			const game = createTestGame();
+			game.use(
+				PhysicsPlugin({
+					collisionGroups: {
+						default: { collidesWith: ["default"] },
+						world: { collidesWith: ["default"] },
+					},
+				}),
+			);
+			const map = setupTileMap(game);
+
+			const count = map.generateCollision({
+				layer: "ground",
+				allSolid: true,
+				collisionGroup: "world",
+				oneWayTileIds: [],
+			});
+			expect(count).toBeGreaterThan(0);
+		});
+	});
+
 	describe("generateCollision edge cases", () => {
 		it("throws when map not loaded", () => {
 			const map = new TileMap();

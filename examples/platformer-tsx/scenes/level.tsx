@@ -33,24 +33,31 @@ export abstract class Level extends Scene {
 	}
 
 	override onReady() {
-		// Generate collision from ground layer
+		// Extract entity tiles first (clears them from layer data)
+		const COIN_TILE = 88; // local tile ID for coin
+		const SPIKE_TILE = 75; // local tile ID for spike
+		this.map!.spawnFromTiles("tiles", {
+			[COIN_TILE]: Coin,
+			[SPIKE_TILE]: Spike,
+		});
+
+		// Generate collision — tile IDs 55/56/57 become one-way platforms
 		this.map!.generateCollision({
-			layer: "ground",
+			layer: "tiles",
 			allSolid: true,
 			collisionGroup: "world",
+			oneWayTileIds: [55, 56, 57],
 		});
 
 		// Position player at the designated spawn point
 		this.player!.position = this.map!.getSpawnPoint("player_start");
 
-		// Spawn entities from the object layer using type mapping
+		// Spawn remaining entities from the object layer using type mapping
 		const spawned = this.map!.spawnObjects("entities", {
-			Coin: Coin,
 			PatrolEnemy: PatrolEnemy,
 			FlyingEnemy: FlyingEnemy,
 			HealthPickup: HealthPickup,
 			LevelExit: LevelExit,
-			Spike: Spike,
 		});
 
 		// Set nextScene on all LevelExit instances

@@ -1,3 +1,16 @@
+## Consolidate tilemap layers with tile-based entity spawning
+*Friday, February 20th at 3pm*
+Merged the separate ground and platforms layers in both platformer levels into 
+a single tiles layer by adding oneWayTileIds support to generateCollision(), 
+which splits collision into solid and one-way passes from a single layer. Added 
+spawnFromTiles() to TileMap for spawning nodes (coins, spikes) directly from 
+tile IDs instead of object-layer placement, clearing matched tiles after 
+spawning. Updated both the platformer and platformer-tsx examples to use the 
+consolidated approach, added excludeTileIds parameter to buildSolidGrid(), and 
+included tests for all new functionality.
+
+---
+
 ## Add one-way platform support and fix level tile IDs
 *Friday, February 20th at 1pm*
 Extended TileMap.generateCollision() to support per-layer collision tracking 

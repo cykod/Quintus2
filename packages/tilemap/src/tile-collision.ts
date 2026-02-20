@@ -78,16 +78,21 @@ export function mergeRects(solid: boolean[], width: number, height: number): Mer
  * @param layer Parsed tile layer.
  * @param solidTileIds Set of local tile IDs that are solid.
  *        If null, all non-empty tiles are treated as solid.
+ * @param excludeTileIds Optional set of local tile IDs to exclude from solid.
+ *        Useful for carving out one-way tiles from an allSolid layer.
  * @returns Row-major boolean array.
  */
 export function buildSolidGrid(
 	layer: ParsedTileLayer,
 	solidTileIds: Set<number> | null,
+	excludeTileIds?: Set<number>,
 ): boolean[] {
 	const solid = new Array<boolean>(layer.tiles.length);
 	for (let i = 0; i < layer.tiles.length; i++) {
 		const tile = layer.tiles[i];
 		if (!tile) {
+			solid[i] = false;
+		} else if (excludeTileIds?.has(tile.localId)) {
 			solid[i] = false;
 		} else if (solidTileIds === null) {
 			// allSolid mode: all non-empty tiles are solid

@@ -297,3 +297,13 @@
 [IMPL] fri 2/20 12pm - Rebuild platformer example level 2 with correct tiles from level 1, and convert platforms to one-way jump-through tiles
 
 [DEVL] fri 2/20 12pm - Review DUNGEON_REBUILD.md for potential issues and risks
+
+[MILE] fri 2/20 1pm - Added TSX platformer example completing JSX Phase 4 with declarative build() pattern for all entities, scenes, and HUD
+
+[MILE] fri 2/20 1pm - Added one-way platform support with per-layer collision tracking and fixed level tile IDs in both TMX files
+
+[IMPL] fri 2/20 1pm - Add an objects tile layer to the platformer tileset for coins and spikes, and migrate entity-based placement to tile-based instantiation
+
+[ASKS] fri 2/20 2pm - Propose consolidating platformer's 3 tileset layers into 1 layer with tile-ID-based routing for one-way platforms, coins, and spikes
+
+[IMPL] fri 2/20 3pm - Update the platformer-jsx example to be at functional parity with the platformer example, using JSX syntax

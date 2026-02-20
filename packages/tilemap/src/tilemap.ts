@@ -223,6 +223,55 @@ export class TileMap extends Node2D {
 		return spawned;
 	}
 
+	/**
+	 * Spawn nodes from a tile layer using a local tile ID -> constructor mapping.
+	 * Each matching tile is replaced by a spawned node positioned at the tile center.
+	 * Tiles are cleared after spawning so they don't render.
+	 *
+	 * @param layerName The tile layer to read from.
+	 * @param mapping Map of local tile IDs (0-based) to Node constructors.
+	 * @param options.clearTiles Remove matched tiles after spawning (default: true).
+	 * @returns Array of spawned nodes.
+	 */
+	spawnFromTiles(
+		layerName: string,
+		mapping: Record<number, NodeConstructor>,
+		options?: { clearTiles?: boolean },
+	): Node[] {
+		const layer = this._getTileLayer(layerName);
+		if (!layer || !this._parsed) return [];
+
+		const parsed = this._parsed;
+		const spawned: Node[] = [];
+		const clearTiles = options?.clearTiles ?? true;
+
+		for (let row = 0; row < layer.height; row++) {
+			for (let col = 0; col < layer.width; col++) {
+				const idx = row * layer.width + col;
+				const tile = layer.tiles[idx];
+				if (!tile) continue;
+
+				const Ctor = mapping[tile.localId];
+				if (!Ctor) continue;
+
+				const node = new Ctor();
+				if (node instanceof Node2D) {
+					node.position.x = col * parsed.tileWidth + parsed.tileWidth / 2;
+					node.position.y = row * parsed.tileHeight + parsed.tileHeight / 2;
+				}
+
+				this.addChild(node);
+				spawned.push(node);
+
+				if (clearTiles) {
+					layer.tiles[idx] = null;
+				}
+			}
+		}
+
+		return spawned;
+	}
+
 	// === Tile Collision ===
 
 	/**
@@ -233,6 +282,10 @@ export class TileMap extends Node2D {
 		allSolid?: boolean;
 		collisionGroup?: string;
 		oneWay?: boolean;
+		/** Local tile IDs that should generate one-way (jump-through) colliders
+		 *  instead of solid colliders. These tiles are excluded from the solid grid
+		 *  and get their own one-way colliders. */
+		oneWayTileIds?: number[];
 	}): number {
 		if (!this._parsed) {
 			throw new Error("TileMap: Map not loaded. Cannot generate collision.");
@@ -252,28 +305,58 @@ export class TileMap extends Node2D {
 
 		const allSolid = options?.allSolid ?? false;
 		const collisionGroup = options?.collisionGroup ?? "default";
-
-		// Build solid grid
-		const solidTileIds = allSolid ? null : getSolidTileIds(this._parsed.tilesets);
-		const solid = buildSolidGrid(tileLayer, solidTileIds);
-
-		// Merge into rectangles
-		const rects = mergeRects(solid, tileLayer.width, tileLayer.height);
-
-		// Create colliders — pass physics factories to avoid hard dependency in tile-collision.ts
 		const factories = this._getPhysicsFactories();
-		const colliders = createColliders(
-			rects,
-			this._parsed.tileWidth,
-			this._parsed.tileHeight,
-			collisionGroup,
-			this,
-			factories,
-			options?.oneWay,
-		);
+		const oneWayTileIds = options?.oneWayTileIds;
+
+		let totalColliders = 0;
+
+		if (oneWayTileIds && oneWayTileIds.length > 0) {
+			const oneWayIdSet = new Set(oneWayTileIds);
+
+			// Build solid grid excluding one-way tiles
+			const solidTileIds = allSolid ? null : getSolidTileIds(this._parsed.tilesets);
+			const solidGrid = buildSolidGrid(tileLayer, solidTileIds, oneWayIdSet);
+			const solidRects = mergeRects(solidGrid, tileLayer.width, tileLayer.height);
+			totalColliders += createColliders(
+				solidRects,
+				this._parsed.tileWidth,
+				this._parsed.tileHeight,
+				collisionGroup,
+				this,
+				factories,
+				false,
+			).length;
+
+			// Build one-way grid from only one-way tile IDs
+			const oneWayGrid = buildSolidGrid(tileLayer, oneWayIdSet);
+			const oneWayRects = mergeRects(oneWayGrid, tileLayer.width, tileLayer.height);
+			totalColliders += createColliders(
+				oneWayRects,
+				this._parsed.tileWidth,
+				this._parsed.tileHeight,
+				collisionGroup,
+				this,
+				factories,
+				true,
+			).length;
+		} else {
+			// Original code path
+			const solidTileIds = allSolid ? null : getSolidTileIds(this._parsed.tilesets);
+			const solid = buildSolidGrid(tileLayer, solidTileIds);
+			const rects = mergeRects(solid, tileLayer.width, tileLayer.height);
+			totalColliders = createColliders(
+				rects,
+				this._parsed.tileWidth,
+				this._parsed.tileHeight,
+				collisionGroup,
+				this,
+				factories,
+				options?.oneWay,
+			).length;
+		}
 
 		this._collisionGeneratedLayers.add(layerKey);
-		return colliders.length;
+		return totalColliders;
 	}
 
 	private _getPhysicsFactories(): PhysicsFactories {

@@ -115,6 +115,49 @@ describe("buildSolidGrid", () => {
 		const solid = buildSolidGrid(layer, solidIds);
 		expect(solid).toEqual([true, false, true]);
 	});
+
+	it("excludes tiles in excludeTileIds when allSolid", () => {
+		const layer: ParsedTileLayer = {
+			name: "tiles",
+			tiles: [
+				{ localId: 10, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+				{ localId: 55, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+				{ localId: 20, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+				null,
+				{ localId: 56, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+			],
+			width: 5,
+			height: 1,
+			visible: true,
+			opacity: 1,
+			offsetX: 0,
+			offsetY: 0,
+			properties: new Map(),
+		};
+		const solid = buildSolidGrid(layer, null, new Set([55, 56]));
+		expect(solid).toEqual([true, false, true, false, false]);
+	});
+
+	it("excludes tiles in excludeTileIds when using solidTileIds", () => {
+		const layer: ParsedTileLayer = {
+			name: "tiles",
+			tiles: [
+				{ localId: 10, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+				{ localId: 55, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+				{ localId: 20, tileset: {} as never, flipH: false, flipV: false, flipD: false },
+			],
+			width: 3,
+			height: 1,
+			visible: true,
+			opacity: 1,
+			offsetX: 0,
+			offsetY: 0,
+			properties: new Map(),
+		};
+		const solidIds = new Set([10, 55, 20]);
+		const solid = buildSolidGrid(layer, solidIds, new Set([55]));
+		expect(solid).toEqual([true, false, true]);
+	});
 });
 
 describe("getSolidTileIds", () => {
