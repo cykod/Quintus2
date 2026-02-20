@@ -188,9 +188,26 @@ export class Node {
 		node.onEnterTree();
 		node.treeEntered.emit();
 
-		// Enter children first (depth-first)
+		// Process build() on first entry — add built children before recursing
+		if (!node._isReady) {
+			const built = node.build();
+			if (built !== null) {
+				const nodes = Array.isArray(built) ? (built.flat(Infinity) as unknown[]) : [built];
+				for (const child of nodes) {
+					if (child instanceof Node && !child._parent) {
+						// Direct push — skip _addChildNode to avoid nested _enterTreeRecursive
+						node._children.push(child);
+						child._parent = node;
+					}
+				}
+			}
+		}
+
+		// Enter children (includes both pre-existing and built children)
 		for (const child of node._children) {
-			this._enterTreeRecursive(child);
+			if (!child._isInsideTree) {
+				this._enterTreeRecursive(child);
+			}
 		}
 
 		// Ready is called bottom-up (children before parent), only on first entry
@@ -418,6 +435,12 @@ export class Node {
 	onUpdate(_dt: number): void {}
 	onFixedUpdate(_dt: number): void {}
 	onDestroy(): void {}
+
+	// === Declarative Build (override with @quintus/jsx) ===
+	/** Override to declaratively define child nodes (used with @quintus/jsx). */
+	build(): Node | Node[] | null {
+		return null;
+	}
 
 	// === Destruction ===
 	destroy(): void {

@@ -5,7 +5,7 @@ import { ConstantsRegistry } from "./constants.js";
 import { installDebugBridge } from "./debug-bridge.js";
 import { DebugLog } from "./debug-log.js";
 import { GameLoop } from "./game-loop.js";
-import type { Node } from "./node.js";
+import { Node } from "./node.js";
 import type { Plugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";
 import type { Scene, SceneConstructor, SceneTarget } from "./scene.js";
@@ -347,6 +347,18 @@ export class Game {
 	private _loadScene(SceneClass: SceneConstructor): void {
 		const scene = new SceneClass(this);
 		this._currentScene = scene;
+
+		// Process build() for the scene root
+		const built = scene.build();
+		if (built !== null) {
+			const nodes = Array.isArray(built) ? (built.flat(Infinity) as unknown[]) : [built];
+			for (const child of nodes) {
+				if (child instanceof Node) {
+					scene.add(child);
+				}
+			}
+		}
+
 		scene.onReady();
 		scene._markReady();
 		scene.sceneReady.emit();

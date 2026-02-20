@@ -9,7 +9,7 @@
 |-------|-------------|--------|
 | 1 | Package setup & core runtime (`h`, `jsx`, `Fragment`, `ref`, coercion) | Done |
 | 2 | TypeScript JSX type definitions | Done |
-| 3 | Lifecycle integration (`build()` on Node) | Pending |
+| 3 | Lifecycle integration (`build()` on Node) | Done |
 | 4 | Functional components (prefabs) | Pending |
 | 5 | Tests & examples | Pending |
 | 6 | Reactive props (`bind()` connect bridge) | Pending |
@@ -590,15 +590,15 @@ This is intuitive: "I'm a Player. The JSX that created me gave me a HealthBar. M
 
 ### Phase 3 Checklist
 
-- [ ] Add `build(): Node | Node[] | null` virtual method to `Node` base class
-- [ ] Modify `_enterTreeRecursive` to process `build()` before recursing children
-- [ ] Modify `Game._loadScene` to process Scene's `build()` before `onReady()`
-- [ ] Test: `build()` children are in tree before `onReady()` fires
-- [ ] Test: refs from `build()` are populated by `onReady()` time
-- [ ] Test: nested `build()` works (Scene builds Player, Player builds CollisionShape)
-- [ ] Test: `build()` + imperative `add()` in `onReady()` coexist
-- [ ] Test: nodes without `build()` (returns null) are unaffected
-- [ ] Test: Fragment return (multiple root nodes) works
+- [x] Add `build(): Node | Node[] | null` virtual method to `Node` base class
+- [x] Modify `_enterTreeRecursive` to process `build()` before recursing children
+- [x] Modify `Game._loadScene` to process Scene's `build()` before `onReady()`
+- [x] Test: `build()` children are in tree before `onReady()` fires
+- [x] Test: refs from `build()` are populated by `onReady()` time
+- [x] Test: nested `build()` works (Scene builds Player, Player builds CollisionShape)
+- [x] Test: `build()` + imperative `add()` in `onReady()` coexist
+- [x] Test: nodes without `build()` (returns null) are unaffected
+- [x] Test: Fragment return (multiple root nodes) works
 
 ---
 

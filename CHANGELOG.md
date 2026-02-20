@@ -1,3 +1,15 @@
+## Add build() lifecycle for declarative JSX node trees (Phase 3)
+*Thursday, February 19th at 8pm*
+Adds the build() virtual method to Node that returns JSX-created children 
+during tree entry. When a node enters the scene tree, build() runs before child 
+recursion, so all built children are in-tree and ready by onReady() time. 
+Modified _enterTreeRecursive to process build results with direct _children 
+push (avoiding nested recursion), and _loadScene to handle Scene root builds. 
+Includes 9 integration tests covering nested builds, refs, fragments, 
+composition coexistence, and correct bottom-up ready ordering.
+
+---
+
 ## Add JSX type definitions with auto-derived props (Phase 2)
 *Thursday, February 19th at 6pm*
 Add TypeScript JSX type definitions to @quintus/jsx that automatically derive 
