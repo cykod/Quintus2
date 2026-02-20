@@ -37,7 +37,7 @@ export class TileMap extends Node2D {
 
 	// === Internal State ===
 	private _parsed: ParsedMap | null = null;
-	private _collisionGenerated = false;
+	private _collisionGeneratedLayers = new Set<string>();
 
 	get asset(): string {
 		return this._asset;
@@ -232,11 +232,14 @@ export class TileMap extends Node2D {
 		layer?: string;
 		allSolid?: boolean;
 		collisionGroup?: string;
+		oneWay?: boolean;
 	}): number {
 		if (!this._parsed) {
 			throw new Error("TileMap: Map not loaded. Cannot generate collision.");
 		}
-		if (this._collisionGenerated) return 0;
+
+		const layerKey = options?.layer ?? "";
+		if (this._collisionGeneratedLayers.has(layerKey)) return 0;
 
 		if (!this.game.hasPlugin("physics")) {
 			throw new Error(
@@ -266,9 +269,10 @@ export class TileMap extends Node2D {
 			collisionGroup,
 			this,
 			factories,
+			options?.oneWay,
 		);
 
-		this._collisionGenerated = true;
+		this._collisionGeneratedLayers.add(layerKey);
 		return colliders.length;
 	}
 

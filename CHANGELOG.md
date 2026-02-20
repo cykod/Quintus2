@@ -1,3 +1,17 @@
+## Add one-way platform support and fix level tile IDs
+*Friday, February 20th at 1pm*
+Extended TileMap.generateCollision() to support per-layer collision tracking 
+and one-way platforms. Changed the internal _collisionGenerated boolean to a 
+per-layer Set so generateCollision() can be called for multiple layers (e.g., 
+"ground" and "platforms"). Added oneWay option that passes through to created 
+StaticColliders. Rebuilt level2.tmx to fix wrong auto-tiled IDs from wangsets 
+(replacing tiles 11/12/26 with correct 56/57/58 for platforms, and fixing 
+right-side ground islands). Split platform tiles (56/57/58) into a separate 
+"platforms" layer in both level1.tmx and level2.tmx so they generate one-way 
+collision — players can jump through from below and land on top.
+
+---
+
 ## Add TSX platformer example and complete JSX Phase 4
 *Friday, February 20th at 1pm*
 Converts the complete platformer example to JSX/TSX declarative syntax, 

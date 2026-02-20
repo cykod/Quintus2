@@ -32,6 +32,14 @@ export abstract class Level extends Scene {
 			collisionGroup: "world",
 		});
 
+		// Generate one-way collision from platforms layer (jump-through)
+		map.generateCollision({
+			layer: "platforms",
+			allSolid: true,
+			collisionGroup: "world",
+			oneWay: true,
+		});
+
 		// Spawn player at the designated spawn point
 		const spawnPos = map.getSpawnPoint("player_start");
 		this.player = this.add(Player);

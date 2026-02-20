@@ -313,7 +313,7 @@ describe("TileMap", () => {
 			expect(colliders.length).toBe(count);
 		});
 
-		it("only generates collision once", () => {
+		it("only generates collision once per layer", () => {
 			const game = createTestGame();
 			game.use(
 				PhysicsPlugin({
@@ -325,10 +325,15 @@ describe("TileMap", () => {
 			);
 			const map = setupTileMap(game);
 
+			// Same layer (default) returns 0 on second call
 			const count1 = map.generateCollision({ allSolid: true });
 			const count2 = map.generateCollision({ allSolid: true });
 			expect(count1).toBeGreaterThan(0);
 			expect(count2).toBe(0);
+
+			// Different named layer still works
+			const count3 = map.generateCollision({ layer: "ground", allSolid: true });
+			expect(count3).toBeGreaterThan(0);
 		});
 	});
 

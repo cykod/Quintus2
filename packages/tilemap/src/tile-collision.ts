@@ -16,7 +16,7 @@ export interface MergedRect {
 
 /** Physics constructors passed to createColliders to avoid hard dependency. */
 export interface PhysicsFactories {
-	StaticCollider: new () => Node2D & { collisionGroup: string };
+	StaticCollider: new () => Node2D & { collisionGroup: string; oneWay: boolean };
 	CollisionShape: new () => Node2D & { shape: unknown };
 	shapeRect: (w: number, h: number) => unknown;
 }
@@ -140,6 +140,7 @@ export function createColliders(
 	collisionGroup: string,
 	parent: Node2D,
 	factories: PhysicsFactories,
+	oneWay?: boolean,
 ): Node2D[] {
 	const colliders: Node2D[] = [];
 
@@ -156,6 +157,7 @@ export function createColliders(
 		collider.position.x = centerX;
 		collider.position.y = centerY;
 		collider.collisionGroup = collisionGroup;
+		if (oneWay) collider.oneWay = true;
 
 		const shape = new factories.CollisionShape();
 		shape.shape = factories.shapeRect(pixelW, pixelH);
