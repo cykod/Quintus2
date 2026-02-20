@@ -8,8 +8,20 @@ export class VictoryScene extends Scene {
 			<Layer fixed>
 				<Panel width={320} height={240} backgroundColor="#1a1a2e" />
 				<Label position={[160, 50]} text="Victory!" fontSize={28} color="#81c784" align="center" />
-				<Label position={[160, 100]} text={`Final Score: ${gameState.score}`} fontSize={14} color="#ffffff" align="center" />
-				<Label position={[160, 120]} text={`Coins: ${gameState.coins}`} fontSize={12} color="#ffd54f" align="center" />
+				<Label
+					position={[160, 100]}
+					text={`Final Score: ${gameState.score}`}
+					fontSize={14}
+					color="#ffffff"
+					align="center"
+				/>
+				<Label
+					position={[160, 120]}
+					text={`Coins: ${gameState.coins}`}
+					fontSize={12}
+					color="#ffd54f"
+					align="center"
+				/>
 				<Button
 					position={[100, 160]}
 					width={120}

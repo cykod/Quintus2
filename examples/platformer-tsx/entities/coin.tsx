@@ -7,7 +7,7 @@ import { gameState } from "../state.js";
 export class Coin extends Sensor {
 	override collisionGroup = "items";
 
-	sprite?: AnimatedSprite;
+	sprite!: AnimatedSprite;
 
 	override build() {
 		return (
@@ -45,7 +45,7 @@ export class Coin extends Sensor {
 			.to({ scale: { x: 1.8, y: 1.8 } }, 0.2, Ease.backOut)
 			.onComplete(() => this.destroy());
 
-		this.sprite!.killTweens();
-		this.sprite!.tween().to({ alpha: 0 }, 0.2, Ease.backOut);
+		this.sprite.killTweens();
+		this.sprite.tween().to({ alpha: 0 }, 0.2, Ease.backOut);
 	}
 }

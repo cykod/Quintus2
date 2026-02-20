@@ -17,7 +17,7 @@ export class Player extends Actor {
 	private _invincibleTimer = 0;
 	private _facing: "left" | "right" = "right";
 
-	sprite?: AnimatedSprite;
+	sprite!: AnimatedSprite;
 
 	readonly damaged: Signal<number> = signal<number>();
 	readonly died: Signal<void> = signal<void>();
@@ -71,22 +71,22 @@ export class Player extends Actor {
 		this.move(dt);
 
 		// Animation state
-		this.sprite!.flipH = this._facing === "left";
+		this.sprite.flipH = this._facing === "left";
 		if (!this.isOnFloor()) {
-			this.sprite!.play("player_jump");
+			this.sprite.play("player_jump");
 		} else if (Math.abs(this.velocity.x) > 1) {
-			this.sprite!.play("player_run");
+			this.sprite.play("player_run");
 		} else {
-			this.sprite!.play("player_idle");
+			this.sprite.play("player_idle");
 		}
 
 		// Invincibility timer + blink effect
 		if (this._invincible) {
 			this._invincibleTimer -= dt;
-			this.sprite!.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
+			this.sprite.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
 			if (this._invincibleTimer <= 0) {
 				this._invincible = false;
-				this.sprite!.alpha = 1;
+				this.sprite.alpha = 1;
 			}
 		}
 

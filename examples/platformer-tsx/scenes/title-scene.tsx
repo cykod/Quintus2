@@ -7,9 +7,27 @@ export class TitleScene extends Scene {
 		return (
 			<Layer fixed>
 				<Panel width={320} height={240} backgroundColor="#1a1a2e" />
-				<Label position={[160, 50]} text="Quintus Platformer" fontSize={20} color="#4fc3f7" align="center" />
-				<Label position={[160, 80]} text="A Quintus 2.0 Demo" fontSize={10} color="#888888" align="center" />
-				<Label position={[160, 130]} text="Arrow keys to move, Up/Space to jump" fontSize={8} color="#aaaaaa" align="center" />
+				<Label
+					position={[160, 50]}
+					text="Quintus Platformer"
+					fontSize={20}
+					color="#4fc3f7"
+					align="center"
+				/>
+				<Label
+					position={[160, 80]}
+					text="A Quintus 2.0 Demo"
+					fontSize={10}
+					color="#888888"
+					align="center"
+				/>
+				<Label
+					position={[160, 130]}
+					text="Arrow keys to move, Up/Space to jump"
+					fontSize={8}
+					color="#aaaaaa"
+					align="center"
+				/>
 				<Button
 					position={[110, 170]}
 					width={100}

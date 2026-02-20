@@ -12,7 +12,7 @@ export class PatrolEnemy extends Actor {
 	override solid = true;
 	override collisionGroup = "enemies";
 
-	sprite?: AnimatedSprite;
+	sprite!: AnimatedSprite;
 
 	readonly died: Signal<void> = signal<void>();
 
@@ -44,7 +44,7 @@ export class PatrolEnemy extends Actor {
 		this.velocity.x = this.speed * this.direction;
 		this.move(dt);
 
-		this.sprite!.flipH = this.direction < 0;
+		this.sprite.flipH = this.direction < 0;
 	}
 
 	stomp(): void {
@@ -58,8 +58,8 @@ export class PatrolEnemy extends Actor {
 			.onComplete(() => this.destroy());
 
 		// Fade sprite
-		this.sprite!.killTweens();
-		this.sprite!.tween().to({ alpha: 0 }, 0.15);
+		this.sprite.killTweens();
+		this.sprite.tween().to({ alpha: 0 }, 0.15);
 
 		this.died.emit();
 	}

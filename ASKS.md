@@ -307,3 +307,5 @@
 [ASKS] fri 2/20 2pm - Propose consolidating platformer's 3 tileset layers into 1 layer with tile-ID-based routing for one-way platforms, coins, and spikes
 
 [IMPL] fri 2/20 3pm - Update the platformer-jsx example to be at functional parity with the platformer example, using JSX syntax
+
+[MILE] fri 2/20 3pm - Consolidated tilemap layers with tile-based entity spawning and oneWayTileIds support

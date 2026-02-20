@@ -1,3 +1,15 @@
+## Fix all linting warnings across the codebase
+*Friday, February 20th at 4pm*
+Fixed all Biome linting warnings by replacing non-null assertion operators with 
+definite assignment assertions on JSX ref-bound properties across the 
+platformer-tsx example (coin, flying-enemy, health-pickup, patrol-enemy, 
+player, hud, level), fixing indentation from spaces to tabs in the platformer 
+level scene, reformatting long JSX attribute lines in title-scene, 
+game-over-scene, victory-scene, and hud, and excluding the worktrees directory 
+from Biome's scan to prevent nested config conflicts.
+
+---
+
 ## Consolidate tilemap layers with tile-based entity spawning
 *Friday, February 20th at 3pm*
 Merged the separate ground and platforms layers in both platformer levels into 

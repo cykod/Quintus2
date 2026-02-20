@@ -17,9 +17,9 @@ export abstract class Level extends Scene {
 	abstract readonly levelAsset: string;
 	abstract readonly nextScene: string;
 
-	protected player?: Player;
-	protected map?: TileMap;
-	protected camera?: Camera;
+	protected player!: Player;
+	protected map!: TileMap;
+	protected camera!: Camera;
 
 	override build() {
 		return (
@@ -36,13 +36,13 @@ export abstract class Level extends Scene {
 		// Extract entity tiles first (clears them from layer data)
 		const COIN_TILE = 88; // local tile ID for coin
 		const SPIKE_TILE = 75; // local tile ID for spike
-		this.map!.spawnFromTiles("tiles", {
+		this.map.spawnFromTiles("tiles", {
 			[COIN_TILE]: Coin,
 			[SPIKE_TILE]: Spike,
 		});
 
 		// Generate collision — tile IDs 55/56/57 become one-way platforms
-		this.map!.generateCollision({
+		this.map.generateCollision({
 			layer: "tiles",
 			allSolid: true,
 			collisionGroup: "world",
@@ -50,10 +50,10 @@ export abstract class Level extends Scene {
 		});
 
 		// Position player at the designated spawn point
-		this.player!.position = this.map!.getSpawnPoint("player_start");
+		this.player.position = this.map.getSpawnPoint("player_start");
 
 		// Spawn remaining entities from the object layer using type mapping
-		const spawned = this.map!.spawnObjects("entities", {
+		const spawned = this.map.spawnObjects("entities", {
 			PatrolEnemy: PatrolEnemy,
 			FlyingEnemy: FlyingEnemy,
 			HealthPickup: HealthPickup,
@@ -82,10 +82,10 @@ export abstract class Level extends Scene {
 		});
 
 		// Camera bounds from map dimensions
-		this.camera!.bounds = new Rect(0, 0, this.map!.bounds.width, this.map!.bounds.height);
+		this.camera.bounds = new Rect(0, 0, this.map.bounds.width, this.map.bounds.height);
 
 		// Handle player death
-		this.player!.died.connect(() => this._onPlayerDied());
+		this.player.died.connect(() => this._onPlayerDied());
 	}
 
 	private _deathTriggered = false;

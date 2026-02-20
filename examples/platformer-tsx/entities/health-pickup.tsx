@@ -7,7 +7,7 @@ import { gameState } from "../state.js";
 export class HealthPickup extends Sensor {
 	override collisionGroup = "items";
 
-	sprite?: AnimatedSprite;
+	sprite!: AnimatedSprite;
 
 	override build() {
 		return (
@@ -33,8 +33,8 @@ export class HealthPickup extends Sensor {
 					.to({ position: { y: this.position.y - 16 } }, 0.3, Ease.quadOut)
 					.onComplete(() => this.destroy());
 
-				this.sprite!.killTweens();
-				this.sprite!.tween().to({ alpha: 0 }, 0.3, Ease.quadOut);
+				this.sprite.killTweens();
+				this.sprite.tween().to({ alpha: 0 }, 0.3, Ease.quadOut);
 			}
 		});
 	}

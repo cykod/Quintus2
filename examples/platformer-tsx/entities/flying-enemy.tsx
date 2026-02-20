@@ -16,7 +16,7 @@ export class FlyingEnemy extends Actor {
 
 	private _time = 0;
 
-	sprite?: AnimatedSprite;
+	sprite!: AnimatedSprite;
 
 	readonly died: Signal<void> = signal<void>();
 
@@ -50,7 +50,7 @@ export class FlyingEnemy extends Actor {
 			this.direction *= -1;
 		}
 
-		this.sprite!.flipH = this.direction < 0;
+		this.sprite.flipH = this.direction < 0;
 	}
 
 	stomp(): void {
@@ -64,8 +64,8 @@ export class FlyingEnemy extends Actor {
 			.onComplete(() => this.destroy());
 
 		// Fade sprite
-		this.sprite!.killTweens();
-		this.sprite!.tween().to({ alpha: 0 }, 0.2, Ease.quadIn);
+		this.sprite.killTweens();
+		this.sprite.tween().to({ alpha: 0 }, 0.2, Ease.quadIn);
 
 		this.died.emit();
 	}

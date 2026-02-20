@@ -11,25 +11,42 @@ export class HUD extends Layer {
 	override zIndex = 100;
 
 	private hearts: Sprite[] = [];
-	coinLabel?: Label;
-	scoreLabel?: Label;
+	coinLabel!: Label;
+	scoreLabel!: Label;
 
 	override build() {
 		this.fixed = true;
-		this.hearts = Array.from({ length: gameState.maxHealth }, (_, i) => (
-			<Sprite
-				texture="tileset"
-				sourceRect={i < gameState.health ? HEART_FULL : HEART_EMPTY}
-				centered={false}
-				position={[4 + i * 10, 4]}
-			/>
-		) as Sprite);
+		this.hearts = Array.from(
+			{ length: gameState.maxHealth },
+			(_, i) =>
+				(
+					<Sprite
+						texture="tileset"
+						sourceRect={i < gameState.health ? HEART_FULL : HEART_EMPTY}
+						centered={false}
+						position={[4 + i * 10, 4]}
+					/>
+				) as Sprite,
+		);
 
 		return (
 			<>
 				{this.hearts}
-				<Label ref="coinLabel" position={[8, 16]} text={`Coins: ${gameState.coins}`} fontSize={8} color="#ffd54f" />
-				<Label ref="scoreLabel" position={[250, 4]} text={`Score: ${gameState.score}`} fontSize={8} color="#ffffff" align="right" />
+				<Label
+					ref="coinLabel"
+					position={[8, 16]}
+					text={`Coins: ${gameState.coins}`}
+					fontSize={8}
+					color="#ffd54f"
+				/>
+				<Label
+					ref="scoreLabel"
+					position={[250, 4]}
+					text={`Score: ${gameState.score}`}
+					fontSize={8}
+					color="#ffffff"
+					align="right"
+				/>
 			</>
 		);
 	}
@@ -43,11 +60,11 @@ export class HUD extends Layer {
 		});
 
 		gameState.on("coins").connect(({ value }) => {
-			this.coinLabel!.text = `Coins: ${value}`;
+			this.coinLabel.text = `Coins: ${value}`;
 		});
 
 		gameState.on("score").connect(({ value }) => {
-			this.scoreLabel!.text = `Score: ${value}`;
+			this.scoreLabel.text = `Score: ${value}`;
 		});
 	}
 }
