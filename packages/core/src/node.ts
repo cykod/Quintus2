@@ -7,6 +7,12 @@ export type PauseMode = "inherit" | "independent";
 /** Symbol used to distinguish Node classes from plain functions in JSX. */
 export const IS_NODE_CLASS = Symbol.for("quintus:NodeClass");
 
+/** @internal Symbol for tracking the current build() owner across packages. */
+const CURRENT_BUILD_OWNER = Symbol.for("quintus:currentBuildOwner");
+
+/** @internal Symbol for the dollar-ref resolver registered by @quintus/jsx. */
+const RESOLVE_BUILD_REFS = Symbol.for("quintus:resolveBuildRefs");
+
 export interface NodeConstructor<T extends Node = Node> {
 	new (): T;
 }
@@ -190,7 +196,19 @@ export class Node {
 
 		// Process build() on first entry — add built children before recursing
 		if (!node._isReady) {
+			const g = globalThis as Record<symbol, unknown>;
+			const prevOwner = g[CURRENT_BUILD_OWNER];
+			g[CURRENT_BUILD_OWNER] = node;
+
 			const built = node.build();
+
+			// Resolve $ refs if @quintus/jsx is loaded
+			const resolve = g[RESOLVE_BUILD_REFS];
+			if (typeof resolve === "function") (resolve as () => void)();
+
+			// Restore (not null-clear, because build() can call add() which nests)
+			g[CURRENT_BUILD_OWNER] = prevOwner;
+
 			if (built !== null) {
 				const nodes = Array.isArray(built) ? (built.flat(Infinity) as unknown[]) : [built];
 				for (const child of nodes) {

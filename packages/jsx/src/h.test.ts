@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { applyProp } from "./coerce.js";
 import { Fragment, h, jsx } from "./h.js";
 import { ref } from "./ref.js";
+import { resolveDollarRefs } from "./ref-scope.js";
+
+const CURRENT_BUILD_OWNER = Symbol.for("quintus:currentBuildOwner");
 
 // === Test helpers ===
 
@@ -341,5 +344,106 @@ describe("coercion via h()/jsx()", () => {
 		const node = h(NodeWithSignal, { onHit: handler }) as NodeWithSignal;
 		node.onHit.emit(5);
 		expect(handler).toHaveBeenCalledWith(5);
+	});
+});
+
+// === String ref tests ===
+
+describe("string refs", () => {
+	it("assigns node to build owner property", () => {
+		class Owner extends Node {
+			sprite?: Node2D;
+		}
+		const owner = new Owner();
+		const g = globalThis as Record<symbol, unknown>;
+		g[CURRENT_BUILD_OWNER] = owner;
+
+		h(Node2D, { ref: "sprite" });
+
+		expect(owner.sprite).toBeInstanceOf(Node2D);
+
+		g[CURRENT_BUILD_OWNER] = undefined;
+		resolveDollarRefs();
+	});
+
+	it("throws outside build() (no owner)", () => {
+		const g = globalThis as Record<symbol, unknown>;
+		g[CURRENT_BUILD_OWNER] = undefined;
+
+		expect(() => h(Node, { ref: "sprite" })).toThrow(
+			/ref="sprite" can only be used inside build\(\)/,
+		);
+	});
+
+	it("throws on non-existent property (typo detection)", () => {
+		class Owner extends Node {
+			sprite?: Node2D;
+		}
+		const owner = new Owner();
+		const g = globalThis as Record<symbol, unknown>;
+		g[CURRENT_BUILD_OWNER] = owner;
+
+		expect(() => h(Node2D, { ref: "sprit" })).toThrow(/ref="sprit": no property "sprit" on Owner/);
+
+		g[CURRENT_BUILD_OWNER] = undefined;
+		resolveDollarRefs();
+	});
+});
+
+// === Callback ref tests ===
+
+describe("callback refs", () => {
+	it("calls function with created node", () => {
+		const cb = vi.fn();
+		const node = h(Node2D, { ref: cb }) as Node2D;
+		expect(cb).toHaveBeenCalledWith(node);
+	});
+});
+
+// === Dollar ref tests ===
+
+describe("dollar refs", () => {
+	it("queues $-prefixed string props and resolves after resolveDollarRefs()", () => {
+		class Owner extends Node {
+			player?: Node;
+		}
+		const owner = new Owner();
+		const g = globalThis as Record<symbol, unknown>;
+		g[CURRENT_BUILD_OWNER] = owner;
+
+		const player = h(Node, { ref: "player", name: "hero" }) as Node;
+		const camera = h(Node, null) as Node;
+
+		// Apply dollar ref prop manually via applyProp
+		applyProp(camera, "follow", "$player");
+
+		// Before resolution, follow should not be set
+		expect((camera as Record<string, unknown>).follow).toBeUndefined();
+
+		// Resolve
+		resolveDollarRefs();
+
+		expect((camera as Record<string, unknown>).follow).toBe(player);
+
+		g[CURRENT_BUILD_OWNER] = undefined;
+	});
+
+	it("$ ref on color-named prop is treated as dollar ref, not color", () => {
+		class Owner extends Node {
+			source?: Node;
+		}
+		const owner = new Owner();
+		const g = globalThis as Record<symbol, unknown>;
+		g[CURRENT_BUILD_OWNER] = owner;
+
+		const source = h(Node, { ref: "source" }) as Node;
+		const target: Record<string, unknown> = { color: null };
+
+		applyProp(target, "color", "$source");
+		resolveDollarRefs();
+
+		expect(target.color).toBe(source);
+
+		g[CURRENT_BUILD_OWNER] = undefined;
 	});
 });

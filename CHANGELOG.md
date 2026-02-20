@@ -1,3 +1,18 @@
+## Add type-safe string refs, callback refs, and dollar refs to JSX
+*Friday, February 20th at 10am*
+Reimplements JSX phases 1-3 ref system with three ref forms: string refs 
+(ref="sprite") that assign to the build owner with runtime typo detection, 
+callback refs (ref={n => ...}) for edge cases, and dollar refs ("$player") for 
+order-independent cross-node references. Build owner tracking via Symbol.for in 
+core's _enterTreeRecursive and _loadScene enables string ref assignment with 
+save/restore for nested builds. The ref-scope module registers a resolver on 
+globalThis so core can trigger dollar ref resolution after each build() without 
+importing @quintus/jsx. Runtime validation throws actionable errors for refs 
+used outside build(), typos in property names, and unresolved dollar refs 
+listing available names.
+
+---
+
 ## Add build() lifecycle for declarative JSX node trees (Phase 3)
 *Thursday, February 19th at 8pm*
 Adds the build() virtual method to Node that returns JSX-created children 

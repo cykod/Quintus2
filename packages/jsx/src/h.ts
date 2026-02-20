@@ -1,6 +1,11 @@
 import { IS_NODE_CLASS, Node, type NodeConstructor, Scene } from "@quintus/core";
 import { applyProp } from "./coerce.js";
 import type { Ref } from "./ref.js";
+import { isRef } from "./ref.js";
+import { registerStringRef } from "./ref-scope.js";
+
+/** @internal Symbol for tracking the current build() owner across packages. */
+const CURRENT_BUILD_OWNER = Symbol.for("quintus:currentBuildOwner");
 
 export const Fragment = Symbol("Fragment");
 
@@ -55,7 +60,27 @@ function _createElement<T extends Node>(
 	if (props) {
 		for (const [k, value] of Object.entries(props)) {
 			if (k === "ref") {
-				(value as Ref<T>).current = node;
+				if (typeof value === "string") {
+					// String ref: register for $ resolution + assign to build owner
+					registerStringRef(value, node);
+					const g = globalThis as Record<symbol, unknown>;
+					const owner = g[CURRENT_BUILD_OWNER];
+
+					if (!owner) throw new Error(`ref="${value}" can only be used inside build()`);
+
+					if (!(value in (owner as object)))
+						throw new Error(
+							`ref="${value}": no property "${value}" on ${(owner as object).constructor.name}`,
+						);
+
+					(owner as Record<string, unknown>)[value] = node;
+				} else if (typeof value === "function") {
+					// Callback ref
+					(value as (node: Node) => void)(node);
+				} else if (isRef(value)) {
+					// Legacy Ref<T>
+					(value as Ref<T>).current = node;
+				}
 				continue;
 			}
 			if (k === "children" || k === "key") continue;

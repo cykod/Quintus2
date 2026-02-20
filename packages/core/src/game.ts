@@ -6,6 +6,13 @@ import { installDebugBridge } from "./debug-bridge.js";
 import { DebugLog } from "./debug-log.js";
 import { GameLoop } from "./game-loop.js";
 import { Node } from "./node.js";
+
+/** @internal Symbol for tracking the current build() owner across packages. */
+const CURRENT_BUILD_OWNER = Symbol.for("quintus:currentBuildOwner");
+
+/** @internal Symbol for the dollar-ref resolver registered by @quintus/jsx. */
+const RESOLVE_BUILD_REFS = Symbol.for("quintus:resolveBuildRefs");
+
 import type { Plugin } from "./plugin.js";
 import type { Renderer } from "./renderer.js";
 import type { Scene, SceneConstructor, SceneTarget } from "./scene.js";
@@ -348,8 +355,19 @@ export class Game {
 		const scene = new SceneClass(this);
 		this._currentScene = scene;
 
-		// Process build() for the scene root
+		// Process build() for the scene root with owner tracking
+		const g = globalThis as Record<symbol, unknown>;
+		const prevOwner = g[CURRENT_BUILD_OWNER];
+		g[CURRENT_BUILD_OWNER] = scene;
+
 		const built = scene.build();
+
+		// Resolve $ refs if @quintus/jsx is loaded
+		const resolve = g[RESOLVE_BUILD_REFS];
+		if (typeof resolve === "function") (resolve as () => void)();
+
+		g[CURRENT_BUILD_OWNER] = prevOwner;
+
 		if (built !== null) {
 			const nodes = Array.isArray(built) ? (built.flat(Infinity) as unknown[]) : [built];
 			for (const child of nodes) {

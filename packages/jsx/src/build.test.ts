@@ -2,6 +2,8 @@ import { Game, Node, Node2D, Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
 import { Fragment, h } from "./h.js";
 import { ref } from "./ref.js";
+// Import ref-scope to ensure resolver is registered on globalThis
+import "./ref-scope.js";
 
 // === Test helpers ===
 
@@ -239,10 +241,11 @@ describe("build() lifecycle", () => {
 		// weapon ready -> player ready -> scene.onReady()
 		expect(readyOrder).toEqual(["weapon", "player", "scene"]);
 
-		const scene = game.currentScene!;
-		const player = scene.children[0];
-		expect(player.name).toBe("hero");
-		expect(player.children[0].name).toBe("sword");
+		const scene = game.currentScene;
+		expect(scene).toBeTruthy();
+		const player = scene?.children[0];
+		expect(player?.name).toBe("hero");
+		expect(player?.children[0].name).toBe("sword");
 
 		game.stop();
 	});
@@ -264,6 +267,224 @@ describe("build() lifecycle", () => {
 
 		scene.add(new Parent());
 		expect(childReady).toBe(true);
+
+		game.stop();
+	});
+});
+
+// === String ref integration tests ===
+
+describe("string ref lifecycle", () => {
+	it("string refs are populated by onReady() time", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+
+		let spriteAtReady: Node2D | undefined;
+
+		class Parent extends Node {
+			sprite?: Node2D;
+
+			override build() {
+				return h(Node2D, { ref: "sprite", name: "mySprite" }) as Node;
+			}
+			override onReady() {
+				spriteAtReady = this.sprite;
+			}
+		}
+
+		scene.add(new Parent());
+
+		expect(spriteAtReady).toBeInstanceOf(Node2D);
+		expect(spriteAtReady?.name).toBe("mySprite");
+
+		game.stop();
+	});
+
+	it("nested build owners don't leak refs to outer owner", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+
+		class Inner extends Node {
+			innerChild?: Node;
+
+			override build() {
+				return h(Node, { ref: "innerChild", name: "inner-target" }) as Node;
+			}
+		}
+
+		class Outer extends Node {
+			outerChild?: Node;
+
+			override build() {
+				return h(
+					Fragment,
+					null,
+					h(Node, { ref: "outerChild", name: "outer-target" }),
+					h(Inner, null),
+				);
+			}
+		}
+
+		const outer = new Outer();
+		scene.add(outer);
+
+		// Outer's ref should be populated
+		expect(outer.outerChild).toBeInstanceOf(Node);
+		expect(outer.outerChild?.name).toBe("outer-target");
+
+		// Outer should NOT have innerChild (that belongs to Inner)
+		expect((outer as Record<string, unknown>).innerChild).toBeUndefined();
+
+		// Inner's ref should be populated
+		const inner = outer.children[1] as Inner;
+		expect(inner.innerChild).toBeInstanceOf(Node);
+		expect(inner.innerChild?.name).toBe("inner-target");
+
+		game.stop();
+	});
+});
+
+// === Dollar ref integration tests ===
+
+describe("dollar ref lifecycle", () => {
+	it("dollar refs resolve across build() children (Camera follow=$player)", () => {
+		const game = createTestGame();
+
+		class CameraNode extends Node {
+			follow: Node | null = null;
+			smoothing = 0;
+		}
+
+		class Player extends Node {}
+
+		let cameraRef: CameraNode | undefined;
+		let playerRef: Player | undefined;
+
+		class TestScene extends Scene {
+			camera?: CameraNode;
+			player?: Player;
+
+			override build() {
+				return h(
+					Fragment,
+					null,
+					h(CameraNode, { ref: "camera", follow: "$player", smoothing: 0.1 }),
+					h(Player, { ref: "player", name: "hero" }),
+				);
+			}
+			override onReady() {
+				cameraRef = this.camera;
+				playerRef = this.player;
+			}
+		}
+
+		game.start(TestScene);
+
+		expect(cameraRef).toBeInstanceOf(CameraNode);
+		expect(playerRef).toBeInstanceOf(Player);
+		expect(cameraRef?.follow).toBe(playerRef);
+		expect(cameraRef?.smoothing).toBe(0.1);
+
+		game.stop();
+	});
+
+	it("dollar refs resolve regardless of order (player before camera)", () => {
+		const game = createTestGame();
+
+		class CameraNode extends Node {
+			follow: Node | null = null;
+		}
+
+		class Player extends Node {}
+
+		class TestScene extends Scene {
+			camera?: CameraNode;
+			player?: Player;
+
+			override build() {
+				return h(
+					Fragment,
+					null,
+					h(Player, { ref: "player", name: "hero" }),
+					h(CameraNode, { ref: "camera", follow: "$player" }),
+				);
+			}
+		}
+
+		game.start(TestScene);
+
+		const scene = game.currentScene as TestScene;
+		expect(scene.camera?.follow).toBe(scene.player);
+
+		game.stop();
+	});
+});
+
+// === Callback ref integration tests ===
+
+describe("callback ref lifecycle", () => {
+	it("callback ref works inside build()", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+
+		let capturedNode: Node2D | null = null;
+
+		class Parent extends Node {
+			override build() {
+				return h(Node2D, {
+					ref: (n: Node) => {
+						capturedNode = n as Node2D;
+					},
+					name: "target",
+				}) as Node;
+			}
+		}
+
+		scene.add(new Parent());
+
+		expect(capturedNode).toBeInstanceOf(Node2D);
+		expect(capturedNode?.name).toBe("target");
+
+		game.stop();
+	});
+});
+
+// === Scene dollar ref integration tests ===
+
+describe("scene dollar refs", () => {
+	it("Scene dollar refs resolved before children enter tree", () => {
+		const game = createTestGame();
+
+		class CameraNode extends Node {
+			follow: Node | null = null;
+		}
+
+		class Player extends Node {}
+
+		let cameraFollowAtReady: Node | null = null;
+
+		class TestScene extends Scene {
+			camera?: CameraNode;
+			player?: Player;
+
+			override build() {
+				return h(
+					Fragment,
+					null,
+					h(CameraNode, { ref: "camera", follow: "$player" }),
+					h(Player, { ref: "player" }),
+				);
+			}
+			override onReady() {
+				// By the time Scene.onReady fires, all built children are in tree and dollar refs resolved
+				cameraFollowAtReady = this.camera?.follow ?? null;
+			}
+		}
+
+		game.start(TestScene);
+
+		const scene = game.currentScene as TestScene;
+		expect(cameraFollowAtReady).toBe(scene.player);
 
 		game.stop();
 	});

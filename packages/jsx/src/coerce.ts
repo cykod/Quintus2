@@ -1,6 +1,7 @@
 import { Signal } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { isRef } from "./ref.js";
+import { queueDollarRef } from "./ref-scope.js";
 
 /** Property names that should coerce string values to Color. */
 const COLOR_PROPS = new Set([
@@ -22,13 +23,19 @@ export function applyProp(node: object, key: string, value: unknown): void {
 		return;
 	}
 
-	// 2. Ref unwrapping: Ref<T> → ref.current
+	// 2. Dollar ref: "$name" → queue for deferred resolution after build()
+	if (typeof value === "string" && value.startsWith("$")) {
+		queueDollarRef(node, key, value.slice(1));
+		return;
+	}
+
+	// 3. Ref unwrapping: Ref<T> → ref.current
 	if (isRef(value)) {
 		(node as Record<string, unknown>)[key] = value.current;
 		return;
 	}
 
-	// 3. Vec2 coercion: [x, y] tuple → Vec2
+	// 4. Vec2 coercion: [x, y] tuple → Vec2
 	if (
 		Array.isArray(value) &&
 		value.length === 2 &&
@@ -39,18 +46,18 @@ export function applyProp(node: object, key: string, value: unknown): void {
 		return;
 	}
 
-	// 4. Color coercion: "#hex" string on color-named props → Color
+	// 5. Color coercion: "#hex" string on color-named props → Color
 	if (typeof value === "string" && COLOR_PROPS.has(key)) {
 		(node as Record<string, unknown>)[key] = Color.fromHex(value);
 		return;
 	}
 
-	// 5. Uniform scale shorthand: scale={2} → Vec2(2, 2)
+	// 6. Uniform scale shorthand: scale={2} → Vec2(2, 2)
 	if (key === "scale" && typeof value === "number") {
 		(node as Record<string, unknown>)[key] = new Vec2(value, value);
 		return;
 	}
 
-	// 6. Direct assignment (default path)
+	// 7. Direct assignment (default path)
 	(node as Record<string, unknown>)[key] = value;
 }

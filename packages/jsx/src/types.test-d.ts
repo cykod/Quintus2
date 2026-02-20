@@ -39,6 +39,11 @@ class TestActor extends Node2D {
 	readonly collided: Signal<{ normal: Vec2 }> = signal<{ normal: Vec2 }>();
 }
 
+class TestCamera extends Node {
+	follow: Node | null = null;
+	smoothing = 0.1;
+}
+
 // ---- WritableKeys Tests ----
 
 describe("NodeJSXProps — writable properties", () => {
@@ -223,8 +228,18 @@ describe("NodeJSXProps — signal handlers", () => {
 // ---- JSX-specific Props ----
 
 describe("NodeJSXProps — JSX-specific props", () => {
-	test("accepts ref prop", () => {
+	test("accepts ref as string", () => {
 		expectTypeOf<NodeJSXProps<TestLabel>>().toHaveProperty("ref");
+		expectTypeOf<string>().toMatchTypeOf<NonNullable<NodeJSXProps<TestLabel>["ref"]>>();
+	});
+
+	test("accepts ref as callback", () => {
+		expectTypeOf<(node: TestLabel) => void>().toMatchTypeOf<
+			NonNullable<NodeJSXProps<TestLabel>["ref"]>
+		>();
+	});
+
+	test("accepts ref as legacy Ref<T>", () => {
 		expectTypeOf<Ref<TestLabel>>().toMatchTypeOf<NonNullable<NodeJSXProps<TestLabel>["ref"]>>();
 	});
 
@@ -282,5 +297,28 @@ describe("NodeJSXProps — all props optional", () => {
 			onPressed: () => {},
 			onHoverChanged: (_hovered: boolean) => {},
 		});
+	});
+});
+
+// ---- Dollar Ref Type Tests ----
+
+describe("NodeJSXProps — dollar refs", () => {
+	test("$string accepted on Node-typed property", () => {
+		type FollowType = NodeJSXProps<TestCamera>["follow"];
+		expectTypeOf<`$${string}`>().toMatchTypeOf<NonNullable<FollowType>>();
+	});
+
+	test("$string accepted as literal on Node-typed prop", () => {
+		assertType<NodeJSXProps<TestCamera>>({ follow: "$player" });
+	});
+
+	test("$string NOT accepted on Vec2-typed property", () => {
+		type PosType = NonNullable<NodeJSXProps<TestLabel>["position"]>;
+		expectTypeOf<`$${string}`>().not.toMatchTypeOf<PosType>();
+	});
+
+	test("$string NOT accepted on number-typed property", () => {
+		type SmoothType = NonNullable<NodeJSXProps<TestCamera>["smoothing"]>;
+		expectTypeOf<`$${string}`>().not.toMatchTypeOf<SmoothType>();
 	});
 });

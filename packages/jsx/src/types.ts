@@ -28,15 +28,19 @@ type WritableKeys<T> = {
 
 /**
  * Coerce property types for JSX ergonomics.
+ * - Node-typed props also accept "$refName" dollar refs
  * - Vec2 props also accept [number, number] tuples
  * - The `scale` prop additionally accepts a single number (uniform scale)
  * - Color props also accept hex strings
  */
-type CoercedPropType<T, K extends string = string> = T extends Vec2
-	? Vec2 | [number, number] | (K extends "scale" ? number : never)
-	: T extends Color
-		? Color | string
-		: T;
+type CoercedPropType<T, K extends string = string> =
+	NonNullable<T> extends Node
+		? T | `$${string}`
+		: T extends Vec2
+			? Vec2 | [number, number] | (K extends "scale" ? number : never)
+			: T extends Color
+				? Color | string
+				: T;
 
 /**
  * Extract Signal properties and map them to handler functions.
@@ -64,7 +68,7 @@ export type NodeJSXProps<T extends Node> = {
 		K & string
 	>;
 } & SignalProps<T> & {
-		ref?: Ref<T>;
+		ref?: string | ((node: T) => void) | Ref<T>;
 		children?: Node | Node[];
 		key?: string | number;
 	};
