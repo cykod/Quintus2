@@ -1,3 +1,15 @@
+## Fix Layer renderFixed propagation via _onChildAdded hook
+*Friday, February 20th at 12pm*
+Layer's addChild() override for propagating renderFixed to children was never 
+called because Node.add() (the recommended API) routes through _addChildNode() 
+directly, bypassing addChild(). The JSX build() path also bypasses it via 
+direct array push. Added a protected _onChildAdded() hook to Node, called from 
+both _addChildNode() and the build() path. Layer now overrides this hook 
+instead of addChild(), fixing HUD hearts and labels that were scrolling 
+off-screen with the camera in both imperative and JSX platformer examples.
+
+---
+
 ## Fix input edge flag timing for high-refresh-rate displays
 *Friday, February 20th at 12pm*
 Fixed a bug where jump presses (and other isJustPressed actions) were 

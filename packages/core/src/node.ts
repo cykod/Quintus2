@@ -155,6 +155,7 @@ export class Node {
 
 		this._children.push(node);
 		node._parent = this;
+		this._onChildAdded(node);
 
 		// If this node is inside a tree, propagate entry
 		if (this._isInsideTree || this._isSceneRoot()) {
@@ -216,6 +217,7 @@ export class Node {
 						// Direct push — skip _addChildNode to avoid nested _enterTreeRecursive
 						node._children.push(child);
 						child._parent = node;
+						node._onChildAdded(child);
 					}
 				}
 			}
@@ -453,6 +455,9 @@ export class Node {
 	onUpdate(_dt: number): void {}
 	onFixedUpdate(_dt: number): void {}
 	onDestroy(): void {}
+
+	/** Called after a child is added to this node. Override in subclasses (e.g., Layer). */
+	protected _onChildAdded(_child: Node): void {}
 
 	// === Declarative Build (override with @quintus/jsx) ===
 	/** Override to declaratively define child nodes (used with @quintus/jsx). */

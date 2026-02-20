@@ -73,4 +73,21 @@ describe("Layer", () => {
 		expect(child).toBeInstanceOf(Node2D);
 		expect(child.renderFixed).toBe(true);
 	});
+
+	it("add() propagates renderFixed to children", () => {
+		const layer = new Layer();
+		layer.fixed = true;
+
+		const child = new Node2D();
+		layer.add(child);
+		expect(child.renderFixed).toBe(true);
+	});
+
+	it("add() with class constructor propagates renderFixed", () => {
+		const layer = new Layer();
+		layer.fixed = true;
+		const child = layer.add(Node2D);
+		expect(child).toBeInstanceOf(Node2D);
+		expect(child.renderFixed).toBe(true);
+	});
 });
