@@ -1,3 +1,17 @@
+## Fix input edge flag timing for high-refresh-rate displays
+*Friday, February 20th at 12pm*
+Fixed a bug where jump presses (and other isJustPressed actions) were 
+intermittently lost on high-refresh-rate displays (120Hz+). The root cause was 
+that _beginFrame() cleared justPressed/justReleased edge flags every browser 
+frame, but fixedUpdate only runs when the physics accumulator has enough time. 
+On faster displays, browser frames without a corresponding fixedUpdate would 
+clear the flag before any game code could see it. Edge flag clearing is now 
+done via postFixedUpdate after each physics step, ensuring presses are never 
+lost. Also added preventDefault for bound keys (fixes Space scrolling the page) 
+and newlyTransitioned tracking for correct InputEvent propagation.
+
+---
+
 ## Add type-safe string refs, callback refs, and dollar refs to JSX
 *Friday, February 20th at 10am*
 Reimplements JSX phases 1-3 ref system with three ref forms: string refs 

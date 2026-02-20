@@ -26,10 +26,18 @@ export function InputPlugin(config: InputConfig): Plugin {
 				propagateTransitions(game, input);
 			});
 
+			// Consume edge flags after each fixedUpdate so isJustPressed is
+			// true for exactly one physics step, and presses are never lost
+			// on high-refresh-rate displays.
+			game.postFixedUpdate.connect(() => {
+				input._consumeEdgeFlags();
+			});
+
 			// --- DOM Listeners (browser only) ---
 			if (typeof document !== "undefined") {
 				const onKeyDown = (e: KeyboardEvent) => {
 					if (e.repeat) return;
+					if (input._isBoundKey(e.code)) e.preventDefault();
 					input._bufferKeyPress(e.code);
 				};
 
@@ -118,7 +126,7 @@ function propagateTransitions(game: Game, input: Input): void {
 	const scene = game.currentScene;
 	if (!scene) return;
 
-	for (const actionName of input.actionNames) {
+	for (const actionName of input.newlyTransitioned) {
 		const jp = input.isJustPressed(actionName);
 		const jr = input.isJustReleased(actionName);
 		if (!jp && !jr) continue;

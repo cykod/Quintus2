@@ -225,19 +225,31 @@ describe("InputPlugin", () => {
 		it("repeated key events are ignored", () => {
 			const game = createGame();
 			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
-			class TestScene extends Scene {}
-			game.start(TestScene);
 
-			const input = getInput(game) as Input;
+			let justPressedCount = 0;
+
+			class Tracker extends Node2D {
+				onFixedUpdate(_dt: number) {
+					const input = getInput(this.game) as Input;
+					if (input.isJustPressed("jump")) justPressedCount++;
+				}
+			}
+
+			class TestScene extends Scene {
+				onReady() {
+					this.add(Tracker);
+				}
+			}
+			game.start(TestScene);
 
 			document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
 			game.step();
-			expect(input.isJustPressed("jump")).toBe(true);
+			expect(justPressedCount).toBe(1);
 
 			// Repeated keydown should not re-trigger justPressed
 			document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", repeat: true }));
 			game.step();
-			expect(input.isJustPressed("jump")).toBe(false);
+			expect(justPressedCount).toBe(1); // still 1, not 2
 
 			game.stop();
 		});

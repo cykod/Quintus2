@@ -16,7 +16,7 @@ function requireInput(game: Game): Input {
 }
 
 describe("Input integration", () => {
-	it("keyboard press triggers action, step sees isJustPressed, next step clears it", () => {
+	it("keyboard press triggers action, fixedUpdate sees isJustPressed, next step clears it", () => {
 		const game = createGame();
 		game.use(
 			InputPlugin({
@@ -24,9 +24,21 @@ describe("Input integration", () => {
 			}),
 		);
 
+		let seenJustPressed = false;
+
+		class Tracker extends Node2D {
+			onFixedUpdate(_dt: number) {
+				if (requireInput(this.game).isJustPressed("jump")) {
+					seenJustPressed = true;
+				}
+			}
+		}
+
 		game.start(
 			class TestScene extends Scene {
-				onReady() {}
+				onReady() {
+					this.add(Tracker);
+				}
 			},
 		);
 
@@ -36,12 +48,13 @@ describe("Input integration", () => {
 		input._bufferKeyPress("Space");
 		game.step();
 
-		expect(input.isJustPressed("jump")).toBe(true);
+		expect(seenJustPressed).toBe(true);
 		expect(input.isPressed("jump")).toBe(true);
 
-		// Next step: justPressed should be cleared
+		// Next step: justPressed should not re-fire
+		seenJustPressed = false;
 		game.step();
-		expect(input.isJustPressed("jump")).toBe(false);
+		expect(seenJustPressed).toBe(false);
 		expect(input.isPressed("jump")).toBe(true);
 	});
 
@@ -53,9 +66,22 @@ describe("Input integration", () => {
 			}),
 		);
 
+		let justPressedSeen = false;
+		let justReleasedSeen = false;
+
+		class Tracker extends Node2D {
+			onFixedUpdate(_dt: number) {
+				const input = requireInput(this.game);
+				if (input.isJustPressed("jump")) justPressedSeen = true;
+				if (input.isJustReleased("jump")) justReleasedSeen = true;
+			}
+		}
+
 		game.start(
 			class TestScene extends Scene {
-				onReady() {}
+				onReady() {
+					this.add(Tracker);
+				}
 			},
 		);
 
@@ -65,18 +91,19 @@ describe("Input integration", () => {
 		input.inject("jump", true);
 		game.step();
 
-		expect(input.isJustPressed("jump")).toBe(true);
+		expect(justPressedSeen).toBe(true);
 		expect(input.isPressed("jump")).toBe(true);
 
-		// Next step
+		// Next step: justPressed should not re-fire
+		justPressedSeen = false;
 		game.step();
-		expect(input.isJustPressed("jump")).toBe(false);
+		expect(justPressedSeen).toBe(false);
 		expect(input.isPressed("jump")).toBe(true);
 
 		// Inject release
 		input.inject("jump", false);
 		game.step();
-		expect(input.isJustReleased("jump")).toBe(true);
+		expect(justReleasedSeen).toBe(true);
 		expect(input.isPressed("jump")).toBe(false);
 	});
 
@@ -116,7 +143,7 @@ describe("Input integration", () => {
 		expect(seenJustPressed).toBe(true);
 	});
 
-	it("multiple physics steps per frame all see same isJustPressed", () => {
+	it("isJustPressed fires for exactly one fixedUpdate per press", () => {
 		const game = createGame();
 		game.use(
 			InputPlugin({
@@ -149,8 +176,12 @@ describe("Input integration", () => {
 		const input = requireInput(game);
 		input.inject("jump", true);
 
-		// Step runs: beginFrame (clears + flushes injection → justPressed=true),
-		// then fixedUpdate, then update
+		// Step runs: beginFrame (flushes injection → justPressed=true),
+		// then fixedUpdate (sees it), then postFixedUpdate (consumes it)
+		game.step();
+		expect(justPressedCount).toBe(1);
+
+		// Second step: justPressed was consumed, so it should not re-fire
 		game.step();
 		expect(justPressedCount).toBe(1);
 	});

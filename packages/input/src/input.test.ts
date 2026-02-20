@@ -29,23 +29,42 @@ describe("Input", () => {
 			expect(input.isPressed("jump")).toBe(true);
 		});
 
-		it("isJustPressed is true for exactly one frame", () => {
+		it("isJustPressed is true for exactly one physics step", () => {
 			const input = createInput();
 			input._bufferKeyPress("Space");
 			input._beginFrame();
 
 			expect(input.isJustPressed("jump")).toBe(true);
 
-			// Next frame: justPressed should be cleared
-			input._beginFrame();
+			// After fixedUpdate consumes edge flags, justPressed is cleared
+			input._consumeEdgeFlags();
 			expect(input.isJustPressed("jump")).toBe(false);
 			expect(input.isPressed("jump")).toBe(true); // still pressed
 		});
 
-		it("isJustReleased is true for exactly one frame", () => {
+		it("isJustPressed survives frames without fixedUpdate", () => {
 			const input = createInput();
 			input._bufferKeyPress("Space");
 			input._beginFrame();
+
+			expect(input.isJustPressed("jump")).toBe(true);
+
+			// Another browser frame without fixedUpdate — justPressed persists
+			input._beginFrame();
+			expect(input.isJustPressed("jump")).toBe(true);
+			expect(input.isPressed("jump")).toBe(true);
+
+			// Now a fixedUpdate runs and consumes it
+			input._consumeEdgeFlags();
+			expect(input.isJustPressed("jump")).toBe(false);
+			expect(input.isPressed("jump")).toBe(true);
+		});
+
+		it("isJustReleased is true for exactly one physics step", () => {
+			const input = createInput();
+			input._bufferKeyPress("Space");
+			input._beginFrame();
+			input._consumeEdgeFlags();
 
 			input._bufferKeyRelease("Space");
 			input._beginFrame();
@@ -53,8 +72,8 @@ describe("Input", () => {
 			expect(input.isJustReleased("jump")).toBe(true);
 			expect(input.isPressed("jump")).toBe(false);
 
-			// Next frame: justReleased should be cleared
-			input._beginFrame();
+			// After fixedUpdate consumes edge flags, justReleased is cleared
+			input._consumeEdgeFlags();
 			expect(input.isJustReleased("jump")).toBe(false);
 		});
 
@@ -192,7 +211,8 @@ describe("Input", () => {
 			expect(input.isJustPressed("jump")).toBe(true);
 			expect(input.isPressed("jump")).toBe(true);
 
-			// Next frame: no new injection, just beginFrame
+			// Consume edge flags (simulating fixedUpdate) then next frame
+			input._consumeEdgeFlags();
 			input._beginFrame();
 			expect(input.isJustPressed("jump")).toBe(false);
 			expect(input.isPressed("jump")).toBe(true);
@@ -319,8 +339,8 @@ describe("Input", () => {
 			input._pollGamepad();
 			expect(input.isPressed("jump")).toBe(true);
 
-			// Clear edge flags for next frame
-			input._beginFrame();
+			// Consume edge flags (simulating fixedUpdate)
+			input._consumeEdgeFlags();
 
 			// Release
 			mockGamepad([{ pressed: false }], [0, 0, 0, 0]);

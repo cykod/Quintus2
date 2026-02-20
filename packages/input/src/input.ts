@@ -34,6 +34,9 @@ export class Input {
 	private _injectionBuffer: Map<string, boolean>;
 	private _injectionAnalogBuffer: Map<string, number>;
 
+	// Tracks actions that had new transitions this browser frame (for InputEvent propagation)
+	private _newlyTransitioned: Set<string>;
+
 	// Mouse state
 	private _mousePosition = new Vec2(0, 0);
 
@@ -51,6 +54,7 @@ export class Input {
 		this._mouseReleaseBuffer = new Set();
 		this._injectionBuffer = new Map();
 		this._injectionAnalogBuffer = new Map();
+		this._newlyTransitioned = new Set();
 
 		// Initialize action states
 		for (const [name, bindings] of Object.entries(config.actions)) {
@@ -135,22 +139,44 @@ export class Input {
 		return [...this._actions.keys()];
 	}
 
+	/** @internal Check if a key code is mapped to any action (for preventDefault). */
+	_isBoundKey(code: string): boolean {
+		return this._bindingToActions.has(code);
+	}
+
 	// === Internal (called by InputPlugin) ===
 
 	/**
-	 * @internal Called once per frame before any fixedUpdate/update.
-	 * Clears previous frame's edge flags, then flushes all input buffers.
+	 * @internal Called once per browser frame before any fixedUpdate/update.
+	 * Flushes all input buffers. Edge flags are NOT cleared here — they persist
+	 * until consumed by _consumeEdgeFlags() after a fixedUpdate runs.
+	 * This prevents lost presses on high-refresh-rate displays where a browser
+	 * frame may run without a corresponding fixedUpdate.
 	 */
 	_beginFrame(): void {
-		// 1. Clear previous frame's edge flags
+		this._newlyTransitioned.clear();
+		this._flushInputBuffers();
+		this._flushInjectionBuffer();
+	}
+
+	/**
+	 * @internal Called after each fixedUpdate to consume edge flags.
+	 * This ensures isJustPressed/isJustReleased are true for exactly one
+	 * physics step, and that presses are never lost between frames.
+	 */
+	_consumeEdgeFlags(): void {
 		for (const state of this._actions.values()) {
 			state.justPressed = false;
 			state.justReleased = false;
 		}
+	}
 
-		// 2. Flush all buffered input (keyboard, mouse, injection)
-		this._flushInputBuffers();
-		this._flushInjectionBuffer();
+	/**
+	 * @internal Actions that had new transitions this browser frame.
+	 * Used by InputPlugin for propagating InputEvents (separate from polling).
+	 */
+	get newlyTransitioned(): ReadonlySet<string> {
+		return this._newlyTransitioned;
 	}
 
 	/**
@@ -322,9 +348,11 @@ export class Input {
 			if (nowPressed && !state.pressed) {
 				state.pressed = true;
 				state.justPressed = true;
+				this._newlyTransitioned.add(actionName);
 			} else if (!nowPressed && state.pressed) {
 				state.pressed = false;
 				state.justReleased = true;
+				this._newlyTransitioned.add(actionName);
 			}
 		}
 	}
@@ -343,6 +371,7 @@ export class Input {
 				state.pressed = true;
 				state.justPressed = true;
 				state.analogValue = 1;
+				this._newlyTransitioned.add(actionName);
 				if (this._game?.debug) {
 					const isInjected = binding.startsWith("inject:");
 					const msg = isInjected ? `${actionName} injected` : `${actionName} pressed`;
@@ -356,6 +385,7 @@ export class Input {
 				state.pressed = false;
 				state.justReleased = true;
 				state.analogValue = 0;
+				this._newlyTransitioned.add(actionName);
 				if (this._game?.debug) {
 					const isInjected = binding.startsWith("inject:");
 					const msg = isInjected ? `${actionName} injection released` : `${actionName} released`;
