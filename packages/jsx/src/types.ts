@@ -69,7 +69,7 @@ export type NodeJSXProps<T extends Node> = {
 	>;
 } & SignalProps<T> & {
 		ref?: string | ((node: T) => void) | Ref<T>;
-		children?: Node | Node[];
+		children?: Node | Node[] | (Node | Node[])[];
 		key?: string | number;
 	};
 

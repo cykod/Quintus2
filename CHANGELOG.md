@@ -1,3 +1,14 @@
+## Add TSX platformer example and complete JSX Phase 4
+*Friday, February 20th at 1pm*
+Converts the complete platformer example to JSX/TSX declarative syntax, 
+validating the @quintus/jsx build() pattern against a real game. All entities 
+(Player, enemies, pickups), scenes (Title, GameOver, Victory, Level1/2), and 
+HUD use build() with typed refs. Also fixes JSX children type to support nested 
+arrays, adds @quintus/jsx to the examples workspace with Vite aliases, and 
+updates the REACT_BUILD_PATTERN Phase 4 checklist to Done.
+
+---
+
 ## Fix Layer renderFixed propagation via _onChildAdded hook
 *Friday, February 20th at 12pm*
 Layer's addChild() override for propagating renderFixed to children was never 

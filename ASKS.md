@@ -277,3 +277,23 @@
 [MILE] thu 2/19 6pm - Added JSX type definitions with auto-derived props, WritableKeys, CoercedPropType, SignalProps, and 31 type-level tests (Phase 2)
 
 [IMPL] thu 2/19 6pm - Implement JSX build() lifecycle integration (Phase 3 of REACT_BUILD_PATTERN)
+
+[MILE] thu 2/19 8pm - Added build() lifecycle method to Node for declarative JSX node tree composition (Phase 3)
+
+[ASKS] fri 2/20 9am - Rewrite Phase 4 of REACT_BUILD_PATTERN.md to focus on converting platformer and dungeon examples to use JSX/TSX
+
+[IMPL] fri 2/20 9am - Reimplement JSX phases 1-3 with type-safe refs and runtime typo checks
+
+[MILE] fri 2/20 10am - Added type-safe string refs, callback refs, and dollar refs to JSX with runtime validation and build owner tracking
+
+[IMPL] fri 2/20 10am - Implement Phase 4: Convert platformer example to TSX with JSX build() pattern
+
+[DSGN] fri 2/20 12pm - Design phased dungeon game rebuild with testable components, weapons, inventory, and TSX
+
+[MILE] fri 2/20 12pm - Fixed input edge flag timing bug where isJustPressed was lost on high-refresh-rate displays, added preventDefault for bound keys
+
+[MILE] fri 2/20 12pm - Fixed Layer renderFixed propagation via _onChildAdded hook, resolving HUD hearts scrolling off-screen in platformer examples
+
+[IMPL] fri 2/20 12pm - Rebuild platformer example level 2 with correct tiles from level 1, and convert platforms to one-way jump-through tiles
+
+[DEVL] fri 2/20 12pm - Review DUNGEON_REBUILD.md for potential issues and risks

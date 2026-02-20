@@ -9,6 +9,7 @@
 		"@quintus/audio": "workspace:*",
 		"@quintus/camera": "workspace:*",
 		"@quintus/core": "workspace:*",
+		"@quintus/jsx": "workspace:*",
 		"@quintus/headless": "workspace:*",
 		"@quintus/input": "workspace:*",
 		"@quintus/math": "workspace:*",

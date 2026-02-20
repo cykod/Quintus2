@@ -15,6 +15,9 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
+			"@quintus/jsx/jsx-runtime": subpath("jsx", "jsx-runtime"),
+			"@quintus/jsx/jsx-dev-runtime": subpath("jsx", "jsx-dev-runtime"),
+			"@quintus/jsx": pkg("jsx"),
 			"@quintus/tilemap/physics": subpath("tilemap", "physics"),
 			"@quintus/core": pkg("core"),
 			"@quintus/math": pkg("math"),

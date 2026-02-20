@@ -53,6 +53,9 @@ importers:
       '@quintus/input':
         specifier: workspace:*
         version: link:../packages/input
+      '@quintus/jsx':
+        specifier: workspace:*
+        version: link:../packages/jsx
       '@quintus/math':
         specifier: workspace:*
         version: link:../packages/math
