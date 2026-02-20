@@ -1,133 +1,133 @@
 tile_id,description,category
-0,dark brown wall face solid,wall
-1,dark brown wall face variant,wall
-2,wall top edge reddish top darker bottom transition,wall
-3,dark brown wall face with horizontal line detail,wall
-4,wall with dark archway or alcove at bottom,wall
-5,wall with dark opening variant,wall
-6,very dark wall or void tile,wall
-7,small blue-gray character or figure on dark background,character
-8,teal-blue character on dark background,character
-9,blue-gray character on dark background,character
-10,small creature on dark background,character
-11,dark figure or character on dark background,character
-12,dark stone floor with circular detail purple-brown,floor
-13,dark brown wall face similar to tile 0,wall
-14,blue-gray stone brick wall with mortar lines,wall
-15,dark brown wall face similar to tile 0,wall
-16,wall or floor with reddish accent detail,wall
-17,wall with reddish-brown tone and light accent,wall
-18,teal-blue lizardman or character on dark background,character
-19,round dark coin or shield on dark background,item
-20,blue-green gem or diamond item on dark background,item
-21,gray armored figure on dark background,character
-22,dark stone doorway or passage open,door
-23,wooden door with planks in stone frame closed,door
-24,stone floor with scattered debris or rubble,floor
-25,dark brown stone wall face,wall
-26,wooden chest closed brown with red lid,prop
-27,dark stone wall with shadow or crack detail,wall
-28,light gray stone brick wall face,wall
-29,red shield with pointed bottom,shield
-30,orange wooden crate or box,prop
-31,iron gate or barred window gray bars,door
-32,green slime enemy small blob creature,enemy
-33,wooden door reinforced with brace,door
-34,wooden door variant with metal brace darker,door
-35,blue-gray horizontal stone steps or bars,wall
-36,gray horizontal brick wall uniform rows,wall
-37,gray horizontal brick wall lighter variant,wall
-38,gray horizontal brick wall with subtle variation,wall
-39,dark blue-gray brick wall shadow variant,wall
-40,stone wall with barred window or grate,wall
-41,orange and white tiled floor or mosaic pattern,floor
-42,dark doorway or passage opening,door
-43,skeleton or skull decoration white bones on dark,decoration
-44,white skull on dark background,decoration
-45,red gem or heart on dark background,item
-46,wooden chest closed front view,prop
-47,wooden chest open front view,prop
-48,sand or light brown floor tile plain,floor
-49,sand floor tile with small dark speckle,floor
-50,sand floor tile with tiny dot detail,floor
-51,sand floor tile with subtle crack or mark,floor
-52,sand floor with corner shadow bottom-right,floor
-53,sand floor with corner shadow bottom-left,floor
-54,dark metal chest or crate closed,prop
-55,dark metal chest or crate with lighter lid,prop
-56,dark blue oval gem on dark background,item
-57,blue-gray brick wall with horizontal mortar lines,wall
-58,blue-gray brick wall with offset brick pattern,wall
-59,blue-gray stone block wall solid,wall
-60,fully transparent empty tile,empty
-61,fully transparent empty tile,empty
-62,fully transparent empty tile,empty
-63,wooden crate or barrel with dark border,prop
-64,gray stone flower or cross ornament,decoration
-65,dark metallic chest or cabinet front view,prop
-66,wooden shield with metal boss center,shield
-67,wooden chest closed front-facing,prop
-68,wooden chest open with gold visible inside,prop
-69,open scroll or book with writing,item
-70,wooden bookshelf filled with colored books,prop
-71,blue and red flag or banner on pole,decoration
-72,wooden crate or box,prop
-73,small wooden barrel front-facing,prop
-74,blue tunic or chestplate armor item,item
-75,wooden door closed vertical planks,door
-76,iron fence or gate section left,wall
-77,iron fence or gate section middle,wall
-78,iron fence or gate section right,wall
-79,brick fireplace with orange fire burning,decoration
-80,stone brick window with wooden shutters,wall
-81,stained glass window or bookshelf colored squares,decoration
-82,round wooden shield with metal rim and boss,shield
-83,ornate stained glass window or mosaic panel,decoration
-84,purple-robed wizard or mage character facing forward,character
-85,brown-haired human adventurer character facing forward,character
-86,brown-haired human or dwarf character facing forward,character
-87,skeleton enemy with red eyes facing forward,enemy
-88,human male character with brown hair facing forward,character
-89,treasure chest closed with metal clasp,prop
-90,treasure chest open showing gold coins inside,prop
-91,mimic chest enemy with eyes and teeth,enemy
-92,red gift box or present with bow on top,item
-93,pickaxe tool with wooden handle and metal head,item
-94,bookshelf with colorful books on wooden shelves,prop
-95,orange and blue flag or banner on pole,decoration
-96,skeleton with dark hood or cloak undead enemy,enemy
-97,dark armored knight or death knight enemy,enemy
-98,human female character with brown-red hair,character
-99,human female character with purple-dark hair,character
-100,human male knight with helmet and armor,character
-101,small dark coin or token with embossed center,item
-102,small dark shield with silver or white emblem,shield
-103,dark purple potion bottle with stopper,item
-104,tall red-purple potion bottle with narrow neck,item
-105,tall purple potion bottle with narrow neck,item
-106,tall reddish-brown potion bottle with narrow neck,item
-107,orange-red potion flask or bottle,item
-108,green slime enemy or blob creature,enemy
-109,human character with light brown hair facing forward,character
-110,red slime enemy with angry eyes,enemy
-111,orange slime enemy with angry eyes,enemy
-112,dark brown humanoid demon or imp with horns,enemy
-113,dark hooded figure grim reaper or necromancer,enemy
-114,green humanoid creature goblin or orc,enemy
-115,red humanoid creature demon or devil,enemy
-116,blue hooded figure ice mage or wizard,enemy
-117,purple mushroom creature with white spots,enemy
-118,gray mushroom creature with white spots,enemy
-119,red and brown axe weapon,weapon
-120,orange treasure chest with gold trim,prop
-121,ghost or spirit white with dark eyes,enemy
-122,dark shield with red and blue heraldic emblem,shield
-123,brown snail enemy with shell,enemy
-124,gray snail enemy with shell,enemy
-125,brown wooden mug or tankard,item
-126,green wooden mug or tankard with liquid,item
-127,red wooden mug or tankard with liquid,item
-128,brown torch on wall bracket dim or unlit,prop
-129,red-orange torch on wall bracket lit,prop
-130,tall brown hooded figure dark wizard or cultist,enemy
-131,tall dark red robed figure dark priest or warlock,enemy
+0,dark brown ceiling full,ceiling
+1,dark brown ceiling top left,ceiling
+2,dark brown ceiling top center,ceiling
+3,dark brown ceiling top right,ceiling
+4,dark brown ceiling bottom left,ceiling
+5,dark brown ceiling bottom right,ceiling
+6,wall top of colum,wall
+7,wall snake fountain off,wall
+8,wall snake fountain on,wall
+9,small open door,door
+10,large open door left,door
+11,large open door right,door
+12,dark brown ceiling variant 1,ceiling
+13,dark brown ceiling middle left,ceiling
+14,gray wall,wall
+15,dark brown ceiling middle right,ceiling
+16,dark brown ceiling bottom left,ceiling
+17,dark brown ceiling bottom right,ceiling
+18,wall middle column,wall
+19,wall fountain off,wall
+20,wall fountain on,wall
+21,small door opening animation 2/2,door
+22,large door opening animation 2/2 left,door
+23,large door opening animation 2/2 right,door
+24,dark brown ceiling full alternative 2 rubble,ceiling
+25,dark brown ceiling bottom left,ceiling
+26,dark brown ceiling bottom center,ceiling
+27,dark brown ceiling bottom right,ceiling
+28,wall with grates,wall
+29,wall with banner,wall
+30,floor with bottom of column,floor
+31,bottom of empty fountain,object
+32,bottom of full fountain,objecy
+33,small door opening animation 1/2,door
+34,large door opening animation 1/2 left,door
+35,large door opening animation 2/2 right,door
+36,platform stairs left,floor
+37,platform stairs center,floor
+38,platform stairs right,floor
+39,platform stairs full,floor
+40,wall full variaent,wall
+41,spikes,trap
+42,floor varient,floor
+43,small fountain empty,floor
+44,small fountain full,floor
+45,small door closer,door
+46,large door closed left,door
+47,large door closer right,door
+48,full floor,floor
+49,full floor variant,floor
+50,full floor shadow top,floor
+51,full floor shadow top variant,floor
+52,full floor shadow top right,floor
+53,full floor shadow top left,floor
+54,minecart sidewise,minecart
+55,minecart vertical,minecart
+56,minecart angled,minecart
+57,wall floor to left,wall
+58,wall floor both sides,wall
+59,wall floor to right,wall
+60,ignore,ignore
+61,ignore,ignore
+62,ignore,ignore
+63,crate,object
+64,graveyard cross,object
+65,gravestone,object
+66,table,object
+67,minecart rails start top,rails
+68,minecart rails start bottom,rails
+69,minecart rails turn right from bottom,rails
+70,minecart rails horizontal,rails
+71,minecart rails turn left from bottom,rails
+72,table,object
+73,stool,object
+74,anvil,object
+75,bookshelf,object
+76,fence left,object
+77,fence middle,object
+78,fence right,object
+79,minecart rails horizontal start left,rails
+80,minecart rails horizontal start right,rails
+81,minecart rails vertical,rails
+82,barrel,object
+83,minecart rails vertical,rails
+84,wizard,npc
+85,man1,npc
+86,blacksmith,npc
+87,dwarf,enemy
+88,barbarian,enemy
+89,chest closed,object
+90,chest opening animation 1/1,object
+91,chest open,object
+92,mimic chest,enemy
+93,minecart rails turn left from top,rails
+94,minecart rails horizontal,rails
+95,minecart rails turn left from top,rails
+96,knight 1,player
+97,knight 2,player
+98,knight 3,player
+99,woman,npc
+100,knight female,player
+101,shield wooden,items
+102,shield metal,items
+103,sword small,items
+104,sword large,items
+105,sword barbarian,items
+106,sword wide,items
+107,sword wooden,items
+108,slime,enemy
+109,cyclops,enemy
+110,crab,enemy
+111,dark wizard,enemy
+112,elf,enemy
+113,potion gray,items
+114,potion green,items
+115,potion red,items
+116,potion blue,items
+117,war hammer,items
+118,battle axe,items
+119,hand axe,items
+120,bat,enemy
+121,ghost,enemy
+122,spider,enemy
+123,brown rat,enemy
+124,gray rat,enemy
+125,gray wand,items
+126,green wand,items
+127,red want,items
+128,blue wand,items
+129,special purple wand,items
+130,special blue wand,items
+131,spear,items
