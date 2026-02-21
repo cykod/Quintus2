@@ -7,16 +7,16 @@
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Sprite audit & correction | Pending |
-| 2 | Test infrastructure & basic scene | Pending |
-| 3 | Player movement & collision (TSX) | Pending |
-| 4 | Equipment system (Weapon/Shield base classes) | Pending |
-| 5 | Combat system (attack, defend, hitboxes) | Pending |
-| 6 | Enemy AI (BaseEnemy, Dwarf, Barbarian) | Pending |
-| 7 | Interactables (Chest, Door, HealthPickup) | Pending |
-| 8 | Inventory & potion system | Pending |
-| 9 | HUD (TSX) | Pending |
-| 10 | Level rebuild & scene flow | Pending |
+| 1 | Sprite audit & correction | Done |
+| 2 | Test infrastructure & basic scene | Done |
+| 3 | Player movement & collision (TSX) | Done |
+| 4 | Equipment system (Weapon/Shield base classes) | Done |
+| 5 | Combat system (attack, defend, hitboxes) | Done |
+| 6 | Enemy AI (BaseEnemy, Dwarf, Barbarian) | Done |
+| 7 | Interactables (Chest, Door, HealthPickup) | Done |
+| 8 | Inventory & potion system | Done |
+| 9 | HUD (TSX) | Done |
+| 10 | Level rebuild & scene flow | Done |
 
 ---
 
@@ -197,35 +197,37 @@ Category: trap
 
 ## Architecture: Scene Tree with Equipment
 
+The TileMap serves as both the tile renderer AND the Y-sorted entity container. All gameplay entities (player, enemies, items) are children of the TileMap, Y-sorted for correct top-down overlap rendering. This matches the platformer pattern where `spawnObjects()` adds entities as TileMap children.
+
 ```
 Scene (DungeonLevel)
-├── TileMap
-├── Node2D (entities, ySortChildren=true)
-│   ├── Player (Actor)
+├── TileMap (ySortChildren=true) ← renders tiles AND contains all entities
+│   ├── Player (Actor)                    ← spawned via getSpawnPoint()
 │   │   ├── CollisionShape (rect 10×6, offset y+4)
 │   │   ├── AnimatedSprite (player body)
 │   │   ├── Weapon (Node2D) ← always visible child
 │   │   │   └── Sprite (current weapon tile)
 │   │   └── Shield (Node2D) ← always visible child
 │   │       └── Sprite (current shield tile)
-│   ├── Dwarf (Actor, BaseEnemy)
+│   ├── Dwarf (Actor, BaseEnemy)          ← spawned via spawnObjects()
 │   │   ├── CollisionShape
 │   │   ├── AnimatedSprite (body)
 │   │   ├── Weapon (Node2D) ← enemy weapon, always visible
 │   │   │   └── Sprite
 │   │   └── Shield (Node2D) ← optional
 │   │       └── Sprite
-│   ├── Barbarian (Actor, BaseEnemy)
+│   ├── Barbarian (Actor, BaseEnemy)      ← spawned via spawnObjects()
 │   │   └── ... same structure
-│   ├── Chest (Sensor)
+│   ├── Chest (Sensor)                    ← spawned via spawnObjects()
 │   │   ├── CollisionShape
 │   │   └── AnimatedSprite (closed → opening → open)
-│   ├── Door (Sensor)
+│   ├── Door (Sensor)                     ← spawned via spawnObjects()
 │   │   ├── CollisionShape
 │   │   └── AnimatedSprite (closed → open)
-│   └── HealthPickup (Sensor)
+│   └── HealthPickup (Sensor)             ← spawned via spawnObjects()
 │       ├── CollisionShape
 │       └── AnimatedSprite (potion)
+├── BuffManager (Node)
 ├── Camera (follows player)
 └── HUD (Layer, fixed)
     ├── Sprite[] (health — potion icons)
@@ -234,6 +236,12 @@ Scene (DungeonLevel)
     ├── Sprite (current potion icon, if held)
     └── Label (keys)
 ```
+
+### Entity Spawning: Two Methods
+
+1. **`map.spawnObjects("entities", ENTITY_MAPPING)`** — Primary method. Reads objects from the Tiled object layer, creates node instances by type, positions them, and auto-applies Tiled custom properties to matching node properties. No switch statements needed.
+
+2. **`map.spawnFromTiles("items", TILE_MAPPING)`** — Optional. Converts specific tile IDs in a tile layer into game nodes. Matched tiles are cleared so they don't render or generate collision. Useful for mass-placed items like health pickups.
 
 ### Equipment as Node2D Children
 
@@ -754,15 +762,15 @@ Add to `examples/dungeon/tsconfig.json` (create if needed):
 
 ### Phase 3 Checklist
 
-- [ ] Create/update `examples/dungeon/tsconfig.json` with JSX settings
-- [ ] Add `@quintus/jsx` as dependency in example setup
-- [ ] Convert `player.ts` → `player.tsx` with `build()` pattern
-- [ ] Verify `ref="sprite"` populates `this.sprite` by `onReady()` time
-- [ ] `__tests__/player.test.ts`: 4-way movement tests (up, down, left, right)
-- [ ] Test: diagonal normalization
-- [ ] Test: wall collision blocks movement
-- [ ] Test: player stops when no input
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] Create/update `examples/dungeon/tsconfig.json` with JSX settings
+- [x] Add `@quintus/jsx` as dependency in example setup (handled via jsxImportSource in tsconfig)
+- [x] Convert `player.ts` → `player.tsx` with `build()` pattern
+- [x] Verify `ref="sprite"` populates `this.sprite` by `onReady()` time
+- [x] `__tests__/player.test.ts`: 4-way movement tests (up, down, left, right)
+- [x] Test: diagonal normalization (via `InputScript.hold()` for simultaneous input)
+- [x] Test: wall collision blocks movement
+- [x] Test: player stops when no input
+- [x] Verify: `pnpm test:dungeon` passes
 
 ---
 
@@ -1044,17 +1052,17 @@ describe("Dungeon — Equipment System", () => {
 
 ### Phase 4 Checklist
 
-- [ ] **Prerequisite:** Add `packages/tween/src/actor-child-tween.test.ts` — verify tween on child Node2D of Actor works during physics
-- [ ] Create `entities/equipment-utils.ts` with direction-to-transform helpers
-- [ ] Create `entities/equipped-weapon.tsx` — `EquippedWeapon extends Node2D` with `build()`, swing animation
-- [ ] Create `entities/equipped-shield.tsx` — `EquippedShield extends Node2D` with `build()`, raise/lower
-- [ ] Update Player `build()` to include `EquippedWeapon` and `EquippedShield` as children
-- [ ] Wire `setWeapon()` to update sprite when gameState.sword changes
-- [ ] Wire `setShield()` to update sprite when gameState.shield changes
-- [ ] `__tests__/equipment.test.ts`: weapon is child of player
-- [ ] Test: shield visible/hidden based on gameState
-- [ ] Test: weapon swing tween plays on attack
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] **Prerequisite:** Add `packages/tween/src/actor-child-tween.test.ts` — verify tween on child Node2D of Actor works during physics
+- [x] Create `entities/equipment-utils.ts` with direction-to-transform helpers
+- [x] Create `entities/equipped-weapon.tsx` — `EquippedWeapon extends Node2D` with `build()`, swing animation
+- [x] Create `entities/equipped-shield.tsx` — `EquippedShield extends Node2D` with `build()`, raise/lower
+- [x] Update Player `build()` to include `EquippedWeapon` and `EquippedShield` as children
+- [x] Wire `setWeapon()` to update sprite when gameState.sword changes
+- [x] Wire `setShield()` to update sprite when gameState.shield changes
+- [x] `__tests__/equipment.test.ts`: weapon is child of player
+- [x] Test: shield visible/hidden based on gameState
+- [x] Test: weapon swing tween plays on attack
+- [x] Verify: `pnpm test:dungeon` passes
 
 ---
 
@@ -1237,18 +1245,18 @@ describe("Dungeon — Combat: Damage", () => {
 
 ### Phase 5 Checklist
 
-- [ ] Convert `weapon-hitbox.ts` → `.tsx` with `build()` for CollisionShape
-- [ ] Convert `enemy-weapon.ts` → `.tsx` with `build()` for CollisionShape
-- [ ] Wire Player attack to call `weapon.swing()` + spawn WeaponHitbox
-- [ ] Add `directionToOffset()` to `equipment-utils.ts` for hitbox positioning
-- [ ] Position WeaponHitbox at `player.globalPosition + directionOffset * 12` on spawn
-- [ ] Wire Player defend to call `shield.raise()` / `shield.lower()`
-- [ ] Verify defending halves speed
-- [ ] `__tests__/combat.test.ts`: attack spawns hitbox
-- [ ] Test: hitbox auto-destroys
-- [ ] Test: attack cooldown prevents rapid attacks
-- [ ] Test: defending halves speed
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] Convert `weapon-hitbox.ts` → `.tsx` with `build()` for CollisionShape
+- [x] Convert `enemy-weapon.ts` → `.tsx` with `build()` for CollisionShape
+- [x] Wire Player attack to call `weapon.swing()` + spawn WeaponHitbox
+- [x] Add `directionToOffset()` to `equipment-utils.ts` for hitbox positioning
+- [x] Position WeaponHitbox at `player.globalPosition + directionOffset * 12` on spawn
+- [x] Wire Player defend to call `shield.raise()` / `shield.lower()`
+- [x] Verify defending halves speed
+- [x] `__tests__/combat.test.ts`: attack spawns hitbox
+- [x] Test: hitbox auto-destroys
+- [x] Test: attack cooldown prevents rapid attacks
+- [x] Test: defending halves speed
+- [x] Verify: `pnpm test:dungeon` passes
 
 ---
 
@@ -1380,16 +1388,16 @@ describe("Dungeon — Enemy: Barbarian", () => {
 
 ### Phase 6 Checklist
 
-- [ ] Convert `base-enemy.ts` → `.tsx`, make `sprite` a ref property (class renames done in Phase 1)
-- [ ] Convert `dwarf.tsx` with `build()` — CollisionShape + AnimatedSprite + EquippedWeapon
-- [ ] Convert `barbarian.tsx` with `build()` — same structure, different stats/weapon
-- [ ] Wire enemy `_performAttack` to trigger `weapon.swing()`
-- [ ] `__tests__/enemy.test.ts`: enemies exist in scene
-- [ ] Test: dwarf patrols (position changes over time)
-- [ ] Test: dwarf has visible weapon child
-- [ ] Test: enemy takes damage from player weapon
-- [ ] Test: enemy death awards score points
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] Convert `base-enemy.ts` → `.tsx`, make `sprite` a ref property (class renames done in Phase 1)
+- [x] Convert `dwarf.tsx` with `build()` — CollisionShape + AnimatedSprite + EquippedWeapon
+- [x] Convert `barbarian.tsx` with `build()` — same structure, different stats/weapon
+- [x] Wire enemy `_performAttack` to trigger `weapon.swing()`
+- [x] `__tests__/enemy.test.ts`: enemies exist in scene
+- [x] Test: dwarf patrols (position changes over time)
+- [x] Test: dwarf has visible weapon child
+- [x] Test: enemy takes damage from player weapon
+- [x] Test: enemy death awards score points
+- [x] Verify: `pnpm test:dungeon` passes
 
 ---
 
@@ -1608,16 +1616,16 @@ describe("Dungeon — HealthPickup", () => {
 
 ### Phase 7 Checklist
 
-- [ ] Convert `chest.ts` → `.tsx` with `build()` and 3-frame opening animation
-- [ ] Convert `door.ts` → `.tsx` with `build()` and 4-frame opening sequence
-- [ ] Convert `health-pickup.ts` → `.tsx` with `build()` and potion_red sprite
-- [ ] Fix all tile references (chest: 89→90→91, door: 45→33→21→9)
-- [ ] Add `this.after()` calls for timed animation transitions
-- [ ] `__tests__/interactables.test.ts`: chests exist and can be opened
-- [ ] Test: doors exist and require key when locked
-- [ ] Test: health pickups exist and heal when collected
-- [ ] Test: health pickup not collected at full health
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] Convert `chest.ts` → `.tsx` with `build()` and 3-frame opening animation
+- [x] Convert `door.ts` → `.tsx` with `build()` and 4-frame opening sequence
+- [x] Convert `health-pickup.ts` → `.tsx` with `build()` and potion_red sprite
+- [x] Fix all tile references (chest: 89→90→91, door: 45→33→21→9)
+- [x] Add `this.after()` calls for timed animation transitions
+- [x] `__tests__/interactables.test.ts`: chests exist and can be opened
+- [x] Test: doors exist and require key when locked
+- [x] Test: health pickups exist and heal when collected
+- [x] Test: health pickup not collected at full health
+- [x] Verify: `pnpm test:dungeon` passes
 
 ---
 
@@ -1874,24 +1882,28 @@ describe("Dungeon — Weapon Inventory", () => {
 
 ### Phase 8 Checklist
 
-- [ ] Add `PotionDef` interface and `POTIONS` array to `state.ts`
-- [ ] Add `potion`, `activeBuff`, `buffTimeRemaining` to gameState
-- [ ] Create `entities/potion-pickup.tsx` — collectible potion sensor
-- [ ] Create `entities/buff-manager.ts` — standalone Node for buff timer countdown
-- [ ] Add `use_potion` input binding ("Q" / "P")
-- [ ] Implement potion usage in Player: health/speed/attack effects
-- [ ] Player reads `buffMgr.speedMultiplier` / `buffMgr.damageMultiplier` — no direct buff timer logic in Player
-- [ ] Speed buff: multiply `effectiveSpeed` by buff multiplier
-- [ ] Attack buff: multiply weapon hitbox damage by buff multiplier
-- [ ] Visual indicators: sprite alpha/tint changes during buffs
-- [ ] Add PotionPickup and BuffManager to DungeonLevel spawn mapping/build()
-- [ ] `__tests__/inventory.test.ts`: potion collection sets state
-- [ ] Test: health potion restores HP
-- [ ] Test: speed buff increases movement distance
-- [ ] Test: attack buff increases damage multiplier
-- [ ] Test: buff expires after duration
-- [ ] Test: weapon upgrade from chest replaces current
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] Add `PotionDef` interface and `POTIONS` array to `state.ts`
+- [x] Add `potion`, `activeBuff`, `buffTimeRemaining` to gameState
+- [x] Create `entities/potion-pickup.tsx` — collectible potion sensor
+- [x] Create `entities/buff-manager.ts` — standalone Node for buff timer countdown
+- [x] Add `use_potion` input binding ("Q" / "P")
+- [x] Implement potion usage in Player: health/speed/attack effects
+- [x] Player reads `gameState.activeBuff` directly for speed/damage multipliers
+- [x] Speed buff: multiply `effectiveSpeed` by buff multiplier
+- [x] Attack buff: multiply weapon hitbox damage by buff multiplier
+- [x] Visual indicators: sprite alpha changes during buffs
+- [x] Add `PotionPickup` to spawn switch in `scenes/dungeon-level.ts`
+- [x] Add `BuffManager` to DungeonLevel `onReady()` (standalone Node added to scene)
+- [x] Add `"potion"` loot type to Chest
+- [x] Add potion icon to HUD with reactive updates
+- [x] `__tests__/inventory.test.ts`: 7 tests for potion/buff/equipment
+- [x] Test: health potion restores HP
+- [x] Test: speed buff increases movement distance
+- [x] Test: attack buff increases damage multiplier
+- [x] Test: buff expires after duration
+- [x] Test: weapon upgrade from chest replaces current
+- [x] Test: shield from chest equips
+- [x] Verify: `pnpm test:dungeon` passes (50 tests, 8 files)
 
 ---
 
@@ -2065,139 +2077,195 @@ describe("Dungeon — HUD", () => {
 
 ### Phase 9 Checklist
 
-- [ ] Convert `hud/hud.ts` → `.tsx` with `build()` + string refs
-- [ ] Add potion icon to HUD (shows current potion or grayed out)
-- [ ] Convert `scenes/title-scene.ts` → `.tsx` with pure `build()`
-- [ ] Convert `scenes/game-over-scene.ts` → `.tsx` with pure `build()`
-- [ ] Convert `scenes/victory-scene.ts` → `.tsx` with pure `build()`
-- [ ] Update instruction text in TitleScene (add potion key)
-- [ ] `__tests__/hud.test.ts`: HUD exists in scene
-- [ ] Test: health icons use correct potion tile IDs (115/113)
-- [ ] Test: weapon icon updates on sword change
-- [ ] Test: potion icon updates on potion pickup
-- [ ] Verify: `pnpm test:dungeon` passes
+- [x] Convert `hud/hud.ts` → `.tsx` with `build()` + string refs
+- [x] Add potion icon to HUD (shows current potion or grayed out)
+- [x] Convert `scenes/title-scene.ts` → `.tsx` with pure `build()`
+- [x] Convert `scenes/game-over-scene.ts` → `.tsx` with pure `build()`
+- [x] Convert `scenes/victory-scene.ts` → `.tsx` with pure `build()`
+- [x] Update instruction text in TitleScene (add potion key)
+- [x] `__tests__/hud.test.ts`: HUD exists in scene
+- [x] Test: health icons use correct potion tile IDs (115/113)
+- [x] Test: weapon icon updates on sword change
+- [x] Test: potion icon updates on potion pickup
+- [x] Verify: `pnpm test:dungeon` passes (59 tests, 9 files)
 
 ---
 
 ## Phase 10: Level Rebuild & Scene Flow
 
-Rebuild levels with correct tiles and proper wall/door placement. Convert DungeonLevel to TSX. Verify full game flow headlessly.
+Rebuild levels with correct tiles and proper wall/door placement. Convert DungeonLevel to use the same `spawnObjects()` / `spawnFromTiles()` pattern as the platformer example. Verify full game flow headlessly.
 
-### DungeonLevel TSX Conversion
+### Design Approach: Match Platformer Pattern
 
-```tsx
-// scenes/dungeon-level.tsx
+The platformer example demonstrates a clean level-loading pattern using TileMap's built-in spawn methods:
+
+1. **`map.spawnFromTiles(layer, mapping)`** — Converts specific tile IDs in a tile layer into game nodes (e.g., coin tiles → `Coin` instances). Matched tiles are cleared from the layer so they don't render or generate collision.
+2. **`map.spawnObjects(layer, mapping)`** — Converts Tiled objects (from object layers) into game nodes. Auto-applies Tiled custom properties to matching node properties. No manual switch statements needed.
+
+The dungeon should adopt this same pattern, replacing the manual `_spawnEntities()` switch statement with declarative mappings.
+
+### Key Differences from Platformer
+
+The dungeon is top-down (not a side-scroller), so it needs **Y-sorting** for correct overlap rendering. The TileMap extends Node2D and supports `ySortChildren`, so spawned entities (children of the map) are automatically Y-sorted. The player is also added to the map as a child.
+
+### Entity Spawn Mapping (Static)
+
+Define a single mapping object used by `spawnObjects()`. Tiled custom properties (`lootType`, `lootTier`, `locked`, `potionType`) are auto-applied by `spawnObjects` to matching node properties — no manual property-reading code needed.
+
+```typescript
+// scenes/entity-mapping.ts
+import { Barbarian } from "../entities/barbarian.js";
+import { Chest } from "../entities/chest.js";
+import { Door } from "../entities/door.js";
+import { Dwarf } from "../entities/dwarf.js";
+import { HealthPickup } from "../entities/health-pickup.js";
+import { PotionPickup } from "../entities/potion-pickup.js";
+
+/** Type → constructor mapping for spawnObjects(). */
+export const ENTITY_MAPPING = {
+  Dwarf: Dwarf,
+  Skeleton: Dwarf,       // backward compat for old TMX files
+  Barbarian: Barbarian,
+  Orc: Barbarian,        // backward compat for old TMX files
+  Chest: Chest,
+  HealthPickup: HealthPickup,
+  PotionPickup: PotionPickup,
+  Door: Door,
+};
+```
+
+### Tile-Based Spawn Mapping (Optional)
+
+If health pickups or decorative objects (barrels, crates) are placed as tiles in a dedicated `items` tile layer rather than as objects, use `spawnFromTiles()` to extract them:
+
+```typescript
+import { TILE } from "../sprites.js";
+
+/** Tile ID → constructor mapping for spawnFromTiles(). */
+const TILE_ENTITY_MAPPING = {
+  [TILE.POTION_RED]: HealthPickup,
+  [TILE.BARREL]: Barrel,     // if Barrel entity exists
+  [TILE.CRATE]: Crate,       // if Crate entity exists
+};
+```
+
+This is optional — only use `spawnFromTiles` if the TMX levels place items as tiles. The primary approach is objects.
+
+### DungeonLevel Implementation
+
+```typescript
+// scenes/dungeon-level.ts
 export abstract class DungeonLevel extends Scene {
   abstract readonly levelAsset: string;
   abstract readonly nextScene: string;
 
-  protected player?: Player;
-  protected map?: TileMap;
-  protected camera?: Camera;
-  protected entities?: Node2D;
-
-  override build() {
-    return (
-      <>
-        <TileMap ref="map" tilesetImage="tileset" asset={this.levelAsset} />
-        <Node2D ref="entities" ySortChildren zIndex={1} />
-        <Camera ref="camera" follow="$player" smoothing={0.1} zoom={2} />
-        <BuffManager />
-        <HUD />
-      </>
-    );
-  }
+  protected player!: Player;
+  protected map!: TileMap;
+  protected camera!: Camera;
 
   override onReady() {
-    // Generate collision from walls layer
-    this.map!.generateCollision({
+    // 1. Load tilemap
+    this.map = this.add(TileMap);
+    this.map.tilesetImage = "tileset";
+    this.map.asset = this.levelAsset;
+    this.map.ySortChildren = true;  // Top-down: sort entities by Y coordinate
+    this.map.zIndex = 0;
+
+    // 2. Extract entity tiles BEFORE collision generation (clears tiles from layer)
+    // Only if an "items" tile layer exists with tile-placed entities:
+    // map.spawnFromTiles("items", TILE_ENTITY_MAPPING);
+
+    // 3. Generate collision from walls layer
+    this.map.generateCollision({
       layer: "walls",
       allSolid: true,
       collisionGroup: "world",
     });
 
-    // Spawn player
-    const spawnPos = this.map!.getSpawnPoint("player_start");
-    this.player = this.entities!.add(Player);
+    // 4. Spawn player at designated spawn point
+    const spawnPos = this.map.getSpawnPoint("player_start");
+    this.player = this.map.add(Player);   // Child of map for Y-sorting
     this.player.position = spawnPos;
 
-    // Spawn entities from Tiled objects
-    this._spawnEntities();
+    // 5. Spawn all entities from object layer (auto-applies Tiled properties)
+    const spawned = this.map.spawnObjects("entities", ENTITY_MAPPING);
 
-    // Camera bounds
-    this.camera!.bounds = new Rect(0, 0, this.map!.bounds.width, this.map!.bounds.height);
+    // 6. Post-spawn configuration (properties that come from the scene, not Tiled)
+    for (const node of spawned) {
+      if (node instanceof Door) {
+        node.nextScene = this.nextScene;
+      }
+    }
 
-    // Camera shake on damage
-    this.player.damaged.connect(() => this.camera!.shake(2, 0.2));
+    // 7. Camera setup
+    this.camera = this.add(Camera);
+    this.camera.follow = this.player;
+    this.camera.smoothing = 0.1;
+    this.camera.zoom = 2;
+    this.camera.bounds = new Rect(0, 0, this.map.bounds.width, this.map.bounds.height);
 
-    // Death handling
+    // 8. Camera shake on damage
+    this.player.damaged.connect(() => this.camera.shake(2, 0.2));
+
+    // 9. BuffManager + HUD
+    this.add(BuffManager);
+    this.add(HUD);
+
+    // 10. Death handling
     this.player.died.connect(() => this._onPlayerDied());
   }
 
-  private _spawnEntities(): void {
-    const objects = this.map!.getObjects("entities");
-    for (const obj of objects) {
-      const pos = new Vec2(obj.x, obj.y);
-      switch (obj.type) {
-        case "Dwarf":
-        case "Skeleton": {  // Support old TMX type name
-          const enemy = this.entities!.add(Dwarf);
-          enemy.position = pos;
-          break;
-        }
-        case "Barbarian":
-        case "Orc": {
-          const enemy = this.entities!.add(Barbarian);
-          enemy.position = pos;
-          break;
-        }
-        case "Chest": {
-          const chest = this.entities!.add(Chest);
-          chest.position = pos;
-          const lt = obj.properties.get("lootType");
-          if (lt) chest.lootType = lt as LootType;
-          const tier = obj.properties.get("lootTier");
-          if (tier != null) chest.lootTier = Number(tier);
-          break;
-        }
-        case "HealthPickup": {
-          const hp = this.entities!.add(HealthPickup);
-          hp.position = pos;
-          break;
-        }
-        case "PotionPickup": {
-          const pp = this.entities!.add(PotionPickup);
-          pp.position = pos;
-          const pType = obj.properties.get("potionType");
-          if (pType) pp.potionType = pType as "health" | "speed" | "attack";
-          break;
-        }
-        case "Door": {
-          const door = this.entities!.add(Door);
-          door.position = pos;
-          door.nextScene = this.nextScene;
-          if (obj.properties.get("locked") === true) door.locked = true;
-          break;
-        }
-      }
-    }
-  }
+  // ... _onPlayerDied, _goToGameOver unchanged
 }
 ```
 
-### TMX Level Tile Corrections
+### What Changed from the Manual Approach
 
-The walls layer in level1.tmx already uses the correct wall tiles (0-28 range for ceiling/wall). The key corrections needed:
+| Before (manual `_spawnEntities`) | After (`spawnObjects` pattern) |
+|---|---|
+| 50-line switch statement in `_spawnEntities()` | Single `map.spawnObjects("entities", ENTITY_MAPPING)` call |
+| Manual `obj.properties.get("lootType")` for each property | Auto-applied: `spawnObjects` sets `node.lootType` from Tiled property |
+| Manual position assignment per entity | Auto-positioned by `spawnObjects` |
+| Separate `Node2D` container with `ySortChildren` | `map.ySortChildren = true` — TileMap IS the Y-sorted container |
+| Player added to separate entities container | Player added to TileMap (same parent as other entities) |
+| Each new entity type requires code changes in switch | Just add to `ENTITY_MAPPING` — no logic changes |
 
-1. **Ensure doors are placed IN walls** — a door should replace a wall tile or be placed at a wall opening. The door entity should be positioned at the gap in the wall where the player passes through.
+### Entity Property Requirements
 
-2. **Object layer entity types** — Update from "Skeleton"/"Orc" to "Dwarf"/"Barbarian" (or keep backward compat in spawn mapping as shown above).
+For `spawnObjects()` auto-property-binding to work, entity classes must expose matching public properties for any Tiled custom properties:
 
-3. **Add potion entities** to levels 2 and 3.
+| Entity | Tiled Properties | Class Property |
+|---|---|---|
+| `Chest` | `lootType`, `lootTier` | `chest.lootType: LootType`, `chest.lootTier: number` |
+| `Door` | `locked` | `door.locked: boolean` |
+| `PotionPickup` | `potionType` | `pp.potionType: "health" \| "speed" \| "attack"` |
+| `Dwarf` | (none needed) | — |
+| `Barbarian` | (none needed) | — |
+| `HealthPickup` | (none needed) | — |
+
+These are already defined in the current entity classes — no changes needed.
+
+### TMX Level Structure
+
+Each TMX level file should follow this layer structure:
+
+```
+TMX File
+├── floor (tile layer)        — decorative floor tiles
+├── walls (tile layer)        — wall/ceiling tiles → generateCollision()
+├── items (tile layer)        — OPTIONAL: tile-placed entities → spawnFromTiles()
+└── entities (object layer)   — named objects → spawnObjects()
+    ├── player_start (type: Player)
+    ├── dwarf1 (type: Dwarf)
+    ├── chest1 (type: Chest, props: lootType=sword, lootTier=0)
+    ├── door1 (type: Door, props: locked=true)
+    ├── health1 (type: HealthPickup)
+    └── potion1 (type: PotionPickup, props: potionType=speed)
+```
 
 ### Level Design Notes
 
-The TMX files define the actual level geometry. The wall layer creates collision. The entities layer places objects. Door placement rules:
+Door placement rules (unchanged):
 
 ```
 Good: Door entity at a gap in the wall perimeter
@@ -2214,6 +2282,7 @@ Ensure each level's TMX has:
 - `player_start` point inside the walled area
 - Enemies placed in accessible floor areas
 - Chests placed on floor tiles
+- Potion pickups in levels 2 and 3
 
 ### Full Flow Tests (`__tests__/flow.test.ts`)
 
@@ -2267,19 +2336,24 @@ describe("Dungeon — Scene Flow", () => {
 
 ### Phase 10 Checklist
 
-- [ ] Convert `scenes/dungeon-level.ts` → `.tsx` with `build()` + `$` refs
-- [ ] Add "Dwarf"/"Barbarian" support in spawn mapping (alongside old names)
-- [ ] Add PotionPickup to spawn mapping
-- [ ] Verify level1.tmx: door at wall gap, all walls form perimeter
-- [ ] Verify level2.tmx: same checks, add potion pickups to entities layer
-- [ ] Verify level3.tmx: same checks, add potion pickups
-- [ ] Convert main.ts to import TSX scene/entity files
-- [ ] `__tests__/flow.test.ts`: title scene loads
-- [ ] Test: level 1 loads and is playable
-- [ ] Test: determinism (same inputs = same state)
-- [ ] Test: full game completes without crash (3 levels)
-- [ ] Verify: `pnpm build` succeeds
-- [ ] Verify: `pnpm test:dungeon` — all tests pass
+- [x] Create `scenes/entity-mapping.ts` with static `ENTITY_MAPPING` object
+- [x] Replace `_spawnEntities()` switch with `map.spawnObjects("entities", ENTITY_MAPPING)`
+- [x] Set `map.ySortChildren = true` — remove separate Node2D entities container
+- [x] Add player as child of TileMap (for Y-sorting with other entities)
+- [x] Add post-spawn loop for `Door.nextScene` assignment
+- [x] Verify entity classes expose public properties matching Tiled custom properties
+- [ ] (Optional) Add `spawnFromTiles()` for tile-placed items if TMX uses an "items" layer
+- [x] Verify level1.tmx: door at wall gap, all walls form perimeter, correct entity types
+- [x] Verify level2.tmx: same checks, add potion pickups to entities layer
+- [x] Verify level3.tmx: same checks, add potion pickups
+- [x] Convert main.ts to import updated scene/entity files
+- [x] `__tests__/flow.test.ts`: title scene loads
+- [x] Test: level 1 loads and is playable
+- [x] Test: `spawnObjects` auto-applies Tiled properties (lootType, locked, etc.)
+- [x] Test: determinism (same inputs = same state)
+- [x] Test: full game completes without crash (3 levels)
+- [x] Verify: `pnpm build` succeeds
+- [x] Verify: `pnpm test:dungeon` — all tests pass
 - [ ] Verify: `pnpm dev` — game runs in browser
 - [ ] Visual verification: correct sprites show for all entities
 
@@ -2290,6 +2364,9 @@ describe("Dungeon — Scene Flow", () => {
 - [ ] All phases marked Done in status table
 - [ ] All TILE constants verified against `tile_description.csv`
 - [ ] All entities converted to TSX `build()` pattern
+- [ ] Level loading uses `spawnObjects()` pattern (no manual switch statements)
+- [ ] Entity properties auto-applied from Tiled custom properties
+- [ ] TileMap serves as Y-sorted entity container (`ySortChildren = true`)
 - [ ] Player carries visible weapon + shield as Node2D children
 - [ ] Enemies carry visible weapons that animate on attack
 - [ ] Weapon swing and shield raise animations work

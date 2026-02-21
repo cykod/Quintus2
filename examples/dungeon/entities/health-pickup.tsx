@@ -7,20 +7,24 @@ import { gameState } from "../state.js";
 export class HealthPickup extends Sensor {
 	override collisionGroup = "items";
 
-	private _sprite!: AnimatedSprite;
+	sprite?: AnimatedSprite;
+
+	override build() {
+		return (
+			<>
+				<CollisionShape shape={Shape.rect(8, 8)} />
+				<AnimatedSprite ref="sprite" spriteSheet={entitySheet} animation="potion_red" />
+			</>
+		);
+	}
 
 	override onReady() {
 		super.onReady();
-		this.add(CollisionShape).shape = Shape.rect(8, 8);
 		this.tag("health");
 
-		this._sprite = this.add(AnimatedSprite);
-		this._sprite.spriteSheet = entitySheet;
-		this._sprite.play("heart");
-
 		// Bobbing float animation (animate sprite offset, not node position)
-		this._sprite
-			.tween()
+		this.sprite
+			?.tween()
 			.to({ position: { y: -3 } }, 0.8, Ease.sineInOut)
 			.to({ position: { y: 0 } }, 0.8, Ease.sineInOut)
 			.repeat();
@@ -34,6 +38,7 @@ export class HealthPickup extends Sensor {
 
 	private _collect(): void {
 		gameState.health = Math.min(gameState.health + 1, gameState.maxHealth);
+		this.game.audio.play("pickup", { volume: 0.5 });
 
 		// Float up + fade effect
 		this.killTweens();
@@ -41,7 +46,9 @@ export class HealthPickup extends Sensor {
 			.to({ position: { y: this.position.y - 16 } }, 0.3, Ease.quadOut)
 			.onComplete(() => this.destroy());
 
-		this._sprite.killTweens();
-		this._sprite.tween().to({ alpha: 0 }, 0.3, Ease.quadOut);
+		if (this.sprite) {
+			this.sprite.killTweens();
+			this.sprite.tween().to({ alpha: 0 }, 0.3, Ease.quadOut);
+		}
 	}
 }

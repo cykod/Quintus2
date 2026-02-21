@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="20">
+ <tileset firstgid="1" name="dungeon" tilewidth="16" tileheight="16" spacing="1" tilecount="132" columns="12">
+  <image source="tileset.png" width="203" height="186"/>
+ </tileset>
+ <layer id="1" name="floor" width="15" height="12">
+  <data encoding="csv">
+49,50,49,50,49,50,49,50,49,50,49,50,49,50,49,
+49,50,49,50,49,50,49,50,49,50,49,50,49,50,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,49,50,49,50,49,50,49,50,49,50,49,50,49,49,
+49,50,49,50,49,50,49,50,49,50,49,50,49,50,49,
+49,50,49,50,49,50,49,50,49,50,49,50,49,50,49
+</data>
+ </layer>
+ <layer id="2" name="walls" width="15" height="12">
+  <data encoding="csv">
+2,3,3,3,3,3,3,3,3,3,3,3,3,3,4,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+14,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+26,27,27,27,27,27,27,27,27,27,27,27,27,27,28
+</data>
+ </layer>
+ <objectgroup id="3" name="entities">
+  <object id="1" name="player_start" type="Player" x="120" y="96">
+   <point/>
+  </object>
+  <!-- Sword chests: tiers 0, 1, 2 -->
+  <object id="2" name="chest_sword_0" type="Chest" x="32" y="32">
+   <properties>
+    <property name="lootType" value="sword"/>
+    <property name="lootTier" type="int" value="0"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="3" name="chest_sword_1" type="Chest" x="64" y="32">
+   <properties>
+    <property name="lootType" value="sword"/>
+    <property name="lootTier" type="int" value="1"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="4" name="chest_sword_2" type="Chest" x="96" y="32">
+   <properties>
+    <property name="lootType" value="sword"/>
+    <property name="lootTier" type="int" value="2"/>
+   </properties>
+   <point/>
+  </object>
+  <!-- Shield chests: tiers 0, 1 -->
+  <object id="5" name="chest_shield_0" type="Chest" x="128" y="32">
+   <properties>
+    <property name="lootType" value="shield"/>
+    <property name="lootTier" type="int" value="0"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="6" name="chest_shield_1" type="Chest" x="160" y="32">
+   <properties>
+    <property name="lootType" value="shield"/>
+    <property name="lootTier" type="int" value="1"/>
+   </properties>
+   <point/>
+  </object>
+  <!-- Health chest -->
+  <object id="7" name="chest_health" type="Chest" x="32" y="64">
+   <properties>
+    <property name="lootType" value="health"/>
+    <property name="lootTier" type="int" value="0"/>
+   </properties>
+   <point/>
+  </object>
+  <!-- Key chest -->
+  <object id="8" name="chest_key" type="Chest" x="64" y="64">
+   <properties>
+    <property name="lootType" value="key"/>
+    <property name="lootTier" type="int" value="0"/>
+   </properties>
+   <point/>
+  </object>
+  <!-- Potion chests: health, speed, attack -->
+  <object id="9" name="chest_potion_health" type="Chest" x="96" y="64">
+   <properties>
+    <property name="lootType" value="potion"/>
+    <property name="lootTier" type="int" value="0"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="10" name="chest_potion_speed" type="Chest" x="128" y="64">
+   <properties>
+    <property name="lootType" value="potion"/>
+    <property name="lootTier" type="int" value="1"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="11" name="chest_potion_attack" type="Chest" x="160" y="64">
+   <properties>
+    <property name="lootType" value="potion"/>
+    <property name="lootTier" type="int" value="2"/>
+   </properties>
+   <point/>
+  </object>
+  <!-- Floor potion pickups -->
+  <object id="12" name="potion_health" type="PotionPickup" x="64" y="144">
+   <properties>
+    <property name="potionType" value="health"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="13" name="potion_speed" type="PotionPickup" x="120" y="144">
+   <properties>
+    <property name="potionType" value="speed"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="14" name="potion_attack" type="PotionPickup" x="176" y="144">
+   <properties>
+    <property name="potionType" value="attack"/>
+   </properties>
+   <point/>
+  </object>
+ </objectgroup>
+</map>

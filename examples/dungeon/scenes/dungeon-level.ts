@@ -1,15 +1,13 @@
 import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
-import { Node2D, Scene } from "@quintus/core";
-import { Rect, Vec2 } from "@quintus/math";
+import { Scene } from "@quintus/core";
+import { Rect } from "@quintus/math";
 import { TileMap } from "@quintus/tilemap";
-import { Chest, type LootType } from "../entities/chest.js";
+import { BuffManager } from "../entities/buff-manager.js";
 import { Door } from "../entities/door.js";
-import { HealthPickup } from "../entities/health-pickup.js";
-import { Orc } from "../entities/orc.js";
 import { Player } from "../entities/player.js";
-import { Skeleton } from "../entities/skeleton.js";
 import { HUD } from "../hud/hud.js";
+import { ENTITY_MAPPING } from "./entity-mapping.js";
 
 /** Base scene for dungeon levels. Subclasses set levelAsset + nextScene. */
 export abstract class DungeonLevel extends Scene {
@@ -19,14 +17,13 @@ export abstract class DungeonLevel extends Scene {
 	protected player!: Player;
 	protected map!: TileMap;
 	protected camera!: Camera;
-	/** Y-sorted container for entities (player, enemies, items). */
-	protected entities!: Node2D;
 
 	override onReady() {
-		// Load tilemap
+		// Load tilemap — TileMap itself is the Y-sorted entity container
 		this.map = this.add(TileMap);
 		this.map.tilesetImage = "tileset";
 		this.map.asset = this.levelAsset;
+		this.map.ySortChildren = true;
 
 		// Generate collision from walls layer
 		this.map.generateCollision({
@@ -35,18 +32,20 @@ export abstract class DungeonLevel extends Scene {
 			collisionGroup: "world",
 		});
 
-		// Y-sorted entity container (renders above tilemap)
-		this.entities = this.add(Node2D);
-		this.entities.ySortChildren = true;
-		this.entities.zIndex = 1;
-
-		// Spawn player at designated spawn point
+		// Spawn player at designated spawn point (child of map for Y-sorting)
 		const spawnPos = this.map.getSpawnPoint("player_start");
-		this.player = this.entities.add(Player);
+		this.player = this.map.add(Player);
 		this.player.position = spawnPos;
 
-		// Spawn all entities from object layer
-		this._spawnEntities();
+		// Spawn all entities from object layer (auto-applies Tiled properties)
+		const spawned = this.map.spawnObjects("entities", ENTITY_MAPPING);
+
+		// Post-spawn: set Door.nextScene (comes from scene, not Tiled)
+		for (const node of spawned) {
+			if (node instanceof Door) {
+				node.nextScene = this.nextScene;
+			}
+		}
 
 		// Camera setup
 		this.camera = this.add(Camera);
@@ -60,53 +59,14 @@ export abstract class DungeonLevel extends Scene {
 			this.camera.shake(2, 0.2);
 		});
 
+		// Buff timer manager
+		this.add(BuffManager);
+
 		// HUD (fixed layer, stays on screen)
 		this.add(HUD);
 
 		// Handle player death
 		this.player.died.connect(() => this._onPlayerDied());
-	}
-
-	private _spawnEntities(): void {
-		const objects = this.map.getObjects("entities");
-		for (const obj of objects) {
-			const pos = new Vec2(obj.x, obj.y);
-			switch (obj.type) {
-				case "Skeleton": {
-					const skel = this.entities.add(Skeleton);
-					skel.position = pos;
-					break;
-				}
-				case "Orc": {
-					const orc = this.entities.add(Orc);
-					orc.position = pos;
-					break;
-				}
-				case "Chest": {
-					const chest = this.entities.add(Chest);
-					chest.position = pos;
-					const lt = obj.properties.get("lootType");
-					if (lt) chest.lootType = lt as LootType;
-					const tier = obj.properties.get("lootTier");
-					if (tier != null) chest.lootTier = Number(tier);
-					break;
-				}
-				case "HealthPickup": {
-					const hp = this.entities.add(HealthPickup);
-					hp.position = pos;
-					break;
-				}
-				case "Door": {
-					const door = this.entities.add(Door);
-					door.position = pos;
-					door.nextScene = this.nextScene;
-					if (obj.properties.get("locked") === true) {
-						door.locked = true;
-					}
-					break;
-				}
-			}
-		}
 	}
 
 	private _deathTriggered = false;

@@ -163,6 +163,8 @@ export class Canvas2DRenderer implements Renderer {
 	// Pre-allocated render list — reused between frames
 	private renderList: Node2D[] = [];
 	private _renderListDirty = true;
+	/** True when any node in the tree uses ySortChildren. Disables caching. */
+	private _hasYSort = false;
 
 	constructor(
 		canvas: HTMLCanvasElement,
@@ -208,9 +210,11 @@ export class Canvas2DRenderer implements Renderer {
 			ctx.fillRect(0, 0, this.gameWidth, this.gameHeight);
 		}
 
-		// 2. Rebuild render list only when dirty
-		if (this._renderListDirty) {
+		// 2. Rebuild render list when dirty or when Y-sorting is active
+		//    (Y-sort order changes every frame as entities move)
+		if (this._renderListDirty || this._hasYSort) {
 			this.renderList.length = 0;
+			this._hasYSort = false;
 			this.collectVisible(scene, this.renderList);
 			this.renderList.sort((a, b) => a.zIndex - b.zIndex);
 			this._renderListDirty = false;
@@ -280,6 +284,7 @@ export class Canvas2DRenderer implements Renderer {
 		}
 		let children = node.children;
 		if (node instanceof Node2D && node.ySortChildren) {
+			this._hasYSort = true;
 			children = [...children].sort((a, b) => {
 				if (a instanceof Node2D && b instanceof Node2D) {
 					const yDiff = a.globalPosition.y - b.globalPosition.y;

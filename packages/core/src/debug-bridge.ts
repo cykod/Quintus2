@@ -35,6 +35,10 @@ export interface DebugBridge {
 	click(x: number, y: number): boolean;
 	/** Find and click a UI button by node name or text label. */
 	clickButton(nameOrText: string): boolean;
+	/** Switch to a registered scene by name. */
+	switchScene(name: string): void;
+	/** List registered scene names. */
+	listScenes(): string[];
 }
 
 export interface DebugFormatters {
@@ -218,6 +222,18 @@ export function installDebugBridge(game: Game): DebugBridge {
 				}
 			}
 			return false;
+		},
+
+		switchScene(name: string) {
+			game._switchScene(name);
+			// Render the new scene so the initial state is visible
+			game.step();
+		},
+
+		listScenes(): string[] {
+			return Array.from(
+				(game as unknown as { _sceneRegistry: Map<string, unknown> })._sceneRegistry.keys(),
+			);
 		},
 	};
 

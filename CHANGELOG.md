@@ -1,3 +1,16 @@
+## Rebuild dungeon example with JSX entities, equipment system, and tests
+*Saturday, February 21st at 4pm*
+Major overhaul of the dungeon crawl example game. Migrated all entities and 
+scenes to JSX-based build() declarations, added a full equipment system 
+(weapons, shields, potions, buff manager), renamed enemies (orc to barbarian, 
+skeleton to dwarf), and added 12 sound effects. Built a comprehensive test 
+suite with 11 test files covering combat, enemies, equipment, HUD, 
+interactables, inventory, player, scene setup, and game flow. Also enhanced 
+@quintus/test InputScript with new capabilities, added actor-child-tween tests, 
+and updated the debug bridge and canvas2d renderer.
+
+---
+
 ## Fix all linting warnings across the codebase
 *Friday, February 20th at 4pm*
 Fixed all Biome linting warnings by replacing non-null assertion operators with 

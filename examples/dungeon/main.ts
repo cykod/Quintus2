@@ -1,3 +1,4 @@
+import { AudioPlugin } from "@quintus/audio";
 import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { Vec2 } from "@quintus/math";
@@ -8,6 +9,7 @@ import { GameOverScene } from "./scenes/game-over-scene.js";
 import { Level1 } from "./scenes/level1.js";
 import { Level2 } from "./scenes/level2.js";
 import { Level3 } from "./scenes/level3.js";
+import { TestItemsLevel } from "./scenes/test-items-level.js";
 import { TitleScene } from "./scenes/title-scene.js";
 import { VictoryScene } from "./scenes/victory-scene.js";
 
@@ -29,6 +31,7 @@ game.use(
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(TweenPlugin());
+game.use(AudioPlugin());
 
 // === Register TMX loader (fetch XML as text) ===
 game.assets.registerLoader("tmx", async (_name: string, path: string) => {
@@ -45,14 +48,29 @@ game.registerScenes({
 	level3: Level3,
 	"game-over": GameOverScene,
 	victory: VictoryScene,
+	"test-items": TestItemsLevel,
 });
 
 // === Load Assets & Start ===
 game.assets
 	.load({
 		images: ["assets/tileset.png"],
-		tmx: ["assets/level1.tmx", "assets/level2.tmx", "assets/level3.tmx"],
+		tmx: ["assets/level1.tmx", "assets/level2.tmx", "assets/level3.tmx", "assets/test-items.tmx"],
+		audio: [
+			"assets/sfx/swing.ogg",
+			"assets/sfx/hit.ogg",
+			"assets/sfx/enemy-swing.ogg",
+			"assets/sfx/player-hurt.ogg",
+			"assets/sfx/enemy-die.ogg",
+			"assets/sfx/shield-up.ogg",
+			"assets/sfx/shield-block.ogg",
+			"assets/sfx/pickup.ogg",
+			"assets/sfx/loot.ogg",
+			"assets/sfx/chest-open.ogg",
+			"assets/sfx/door-open.ogg",
+			"assets/sfx/use-potion.ogg",
+		],
 	})
 	.then(() => {
-		game.start("title");
+		game.start(location.hash === "#test-items" ? "test-items" : "title");
 	});

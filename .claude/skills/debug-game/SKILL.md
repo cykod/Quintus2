@@ -66,6 +66,14 @@ pnpm qdbg disconnect
 - Hold while stepping → `press right` then `step 30` then `release right`
 - Complex sequence → `run '[{"press":"right","frames":30},{"press":"jump","frames":10},{"wait":20}]'`
 
+**Want to switch scenes?**
+- List registered scenes → `scenes`
+- Jump to a scene → `scene level1`
+
+**Want to evaluate custom JS?**
+- Read a value → `eval 'd.frame'`
+- Inspect game state → `eval 'game.currentScene.name'`
+
 **Want to control time?**
 - Advance frames → `step 10`
 - Pause real-time → `pause`

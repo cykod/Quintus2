@@ -17,4 +17,5 @@ export const INPUT_BINDINGS: Record<string, string[]> = {
 	attack: ["KeyJ", "Space"],
 	defend: ["KeyK", "ShiftLeft"],
 	interact: ["KeyE", "Enter"],
+	use_potion: ["KeyQ", "KeyP"],
 };

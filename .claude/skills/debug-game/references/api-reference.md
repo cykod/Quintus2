@@ -93,6 +93,30 @@ pnpm qdbg physics Player
 
 ---
 
+## Scene
+
+### `scenes`
+List all registered scene names.
+
+```bash
+pnpm qdbg scenes
+# Registered scenes:
+#   - title
+#   - level1
+#   - level2
+#   - game-over
+```
+
+### `scene <name>`
+Switch to a registered scene by name. Destroys the current scene and loads the new one, stepping one frame to initialize.
+
+```bash
+pnpm qdbg scene level1      # switch to level1
+pnpm qdbg scene title       # go back to title screen
+```
+
+---
+
 ## Simulation Control
 
 ### `step [N]`
@@ -234,6 +258,18 @@ Nearby Player (100.0,202.0) within 100px:
 ---
 
 ## Scripting
+
+### `eval '<code>'`
+Evaluate a JavaScript expression in the browser and print the result. Has access to `d` (the debug bridge) and `game` (the Game instance) as shorthands.
+
+```bash
+pnpm qdbg eval 'd.frame'                    # current frame number
+pnpm qdbg eval 'game.currentScene.name'      # current scene name
+pnpm qdbg eval 'd.listScenes()'              # array of registered scenes
+pnpm qdbg eval 'document.title'              # any DOM expression
+```
+
+Objects and arrays are returned as formatted JSON. Primitives are returned as strings.
 
 ### `run '<json>'`
 Execute a `DebugAction[]` script. Each action is one of:

@@ -16,9 +16,12 @@ export class WeaponHitbox extends Sensor {
 	/** Prevent hitting the same target multiple times per swing. */
 	private _hitSet = new Set<CollisionObject>();
 
+	override build() {
+		return <CollisionShape shape={Shape.rect(12, 12)} />;
+	}
+
 	override onReady() {
 		super.onReady();
-		this.add(CollisionShape).shape = Shape.rect(12, 12);
 
 		// Auto-destroy after 0.15s
 		const timer = this.add(Timer, { duration: 0.15, autostart: true });
@@ -30,6 +33,7 @@ export class WeaponHitbox extends Sensor {
 			this._hitSet.add(body);
 
 			if (body.is(BaseEnemy)) {
+				this.game.audio.play("hit", { volume: 0.5 });
 				body.takeDamage(this.damage, this.attackDirection);
 			}
 		});

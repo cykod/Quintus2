@@ -15,6 +15,60 @@ function createMocks() {
 }
 
 describe("InputScriptPlayer", () => {
+	test("execute() handles hold (inject only, no frames)", () => {
+		const { game, input, calls } = createMocks();
+		const player = new InputScriptPlayer();
+		const script = InputScript.create().hold("right");
+
+		player.execute(game, input, script.steps);
+
+		expect(calls).toEqual(["inject:right:true"]);
+		expect(game.step).not.toHaveBeenCalled();
+		expect(player.frame).toBe(0);
+	});
+
+	test("hold + wait creates simultaneous input", () => {
+		const { game, input, calls } = createMocks();
+		const player = new InputScriptPlayer();
+		const script = InputScript.create()
+			.hold("right")
+			.hold("down")
+			.wait(2)
+			.release("right")
+			.release("down");
+
+		player.execute(game, input, script.steps);
+
+		expect(calls).toEqual([
+			"inject:right:true",
+			"inject:down:true",
+			"step",
+			"step",
+			"inject:right:false",
+			"inject:down:false",
+		]);
+		expect(player.frame).toBe(2);
+	});
+
+	test("hold persists across press of another action", () => {
+		const { game, input, calls } = createMocks();
+		const player = new InputScriptPlayer();
+		const script = InputScript.create().hold("down").press("right", 2).release("down");
+
+		player.execute(game, input, script.steps);
+
+		// down is held the entire time, right is pressed then released
+		expect(calls).toEqual([
+			"inject:down:true",
+			"inject:right:true",
+			"step",
+			"step",
+			"inject:right:false",
+			"inject:down:false",
+		]);
+		expect(player.frame).toBe(2);
+	});
+
 	test("execute() calls inject + step for press", () => {
 		const { game, input, calls } = createMocks();
 		const player = new InputScriptPlayer();

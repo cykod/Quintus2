@@ -29,6 +29,13 @@ describe("InputScript", () => {
 		expect(script.totalFrames).toBe(30);
 	});
 
+	test("hold() adds instant step (0 frames)", () => {
+		const script = InputScript.create().hold("right");
+		expect(script.steps).toHaveLength(1);
+		expect(script.steps[0]).toEqual({ type: "hold", action: "right" });
+		expect(script.totalFrames).toBe(0);
+	});
+
 	test("release() adds instant step (0 frames)", () => {
 		const script = InputScript.create().release("right");
 		expect(script.steps).toHaveLength(1);
@@ -51,6 +58,16 @@ describe("InputScript", () => {
 			.press("right", 60)
 			.release("right");
 		expect(script.totalFrames).toBe(30 + 120 + 1 + 60);
+	});
+
+	test("hold does not contribute to totalFrames", () => {
+		const script = InputScript.create()
+			.hold("right")
+			.hold("down")
+			.wait(20)
+			.release("right")
+			.release("down");
+		expect(script.totalFrames).toBe(20);
 	});
 
 	test("secondsToFrames() converts correctly", () => {

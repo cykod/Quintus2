@@ -1,13 +1,16 @@
-import type { SpriteSheet } from "@quintus/sprites";
-import { entitySheet } from "../sprites.js";
+import { CollisionShape, Shape } from "@quintus/physics";
+import { AnimatedSprite } from "@quintus/sprites";
+import { entitySheet, TILE } from "../sprites.js";
 import { BaseEnemy } from "./base-enemy.js";
 import { EnemyWeapon } from "./enemy-weapon.js";
+import { vec2ToDirection } from "./equipment-utils.js";
+import { EquippedWeapon } from "./equipped-weapon.js";
 
 /**
- * Orc: guard enemy. Stands still until player is close, then chases and attacks.
- * Slower but stronger than skeleton.
+ * Barbarian: guard enemy. Stands still until player is close, then chases and attacks.
+ * Slower but stronger than dwarf.
  */
-export class Orc extends BaseEnemy {
+export class Barbarian extends BaseEnemy {
 	override health = 4;
 	override maxHealth = 4;
 	override damage = 2;
@@ -18,13 +21,20 @@ export class Orc extends BaseEnemy {
 	override points = 100;
 
 	protected override get idleAnimation() {
-		return "orc_idle";
+		return "barbarian_idle";
 	}
 	protected override get walkAnimation() {
-		return "orc_walk";
+		return "barbarian_walk";
 	}
-	protected override get spriteSheet(): SpriteSheet {
-		return entitySheet;
+
+	override build() {
+		return (
+			<>
+				<CollisionShape shape={Shape.rect(10, 10)} />
+				<AnimatedSprite ref="sprite" spriteSheet={entitySheet} animation="barbarian_idle" />
+				<EquippedWeapon ref="weapon" weaponFrame={TILE.SWORD_BARBARIAN} />
+			</>
+		);
 	}
 
 	override onFixedUpdate(dt: number) {
@@ -35,7 +45,7 @@ export class Orc extends BaseEnemy {
 			this.velocity.y *= 0.9;
 			this.move(dt);
 			if (this._hurtTimer <= 0) {
-				this._sprite.alpha = 1;
+				if (this.sprite) this.sprite.alpha = 1;
 				this.state = "guard";
 			}
 			return;
@@ -63,8 +73,11 @@ export class Orc extends BaseEnemy {
 				this.velocity.y = 0;
 				if (dist < this.detectionRange * 1.5) {
 					const dir = this._directionToPlayer();
-					if (Math.abs(dir.x) > 0.1) {
-						this._sprite.flipH = dir.x < 0;
+					if (dir.length() > 0.1) {
+						this._facingDir = vec2ToDirection(dir);
+					}
+					if (this.sprite && Math.abs(dir.x) > 0.1) {
+						this.sprite.flipH = dir.x < 0;
 					}
 				}
 				break;
@@ -72,6 +85,7 @@ export class Orc extends BaseEnemy {
 			case "chase": {
 				const dir = this._directionToPlayer();
 				if (dir.length() > 1) {
+					this._facingDir = vec2ToDirection(dir);
 					const target = this.position.add(dir);
 					this._moveToward(target, this.enemySpeed, dt);
 					isMoving = true;
@@ -86,8 +100,14 @@ export class Orc extends BaseEnemy {
 			}
 		}
 
-		this._sprite.play(isMoving ? this.walkAnimation : this.idleAnimation);
+		if (this.sprite) {
+			this.sprite.play(isMoving ? this.walkAnimation : this.idleAnimation);
+		}
 		this._updateBob(dt, isMoving);
+
+		// Update weapon resting position
+		const flipH = this._facingDir === "left";
+		this.weapon?.updateResting(this._facingDir, flipH);
 	}
 
 	private _performAttack(): void {
@@ -97,6 +117,10 @@ export class Orc extends BaseEnemy {
 		const dir = this._directionToPlayer();
 		if (dir.length() < 1) return;
 		const norm = dir.normalize();
+
+		this._facingDir = vec2ToDirection(dir);
+		this.weapon?.swing(this._facingDir);
+		this.game.audio.play("enemy-swing", { volume: 0.35 });
 
 		if (!this.parent) return;
 		const weapon = this.parent.add(EnemyWeapon);

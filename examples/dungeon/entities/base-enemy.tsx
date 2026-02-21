@@ -1,10 +1,11 @@
 import { type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
-import { Actor, CollisionShape, Shape } from "@quintus/physics";
-import type { SpriteSheet } from "@quintus/sprites";
-import { AnimatedSprite } from "@quintus/sprites";
+import { Actor } from "@quintus/physics";
+import type { AnimatedSprite } from "@quintus/sprites";
 import { Ease } from "@quintus/tween";
 import { gameState } from "../state.js";
+import type { EquippedWeapon } from "./equipped-weapon.js";
+import type { Direction } from "./player.js";
 
 export type EnemyState = "patrol" | "chase" | "attack" | "hurt" | "guard";
 
@@ -25,29 +26,24 @@ export abstract class BaseEnemy extends Actor {
 	points = 50;
 
 	protected state: EnemyState = "patrol";
-	protected _sprite!: AnimatedSprite;
 	protected _attackTimer = 0;
 	protected _hurtTimer = 0;
 	protected _bobTimer = 0;
+	protected _facingDir: Direction = "right";
+
+	/** Populated by subclass build() via ref="sprite". */
+	sprite?: AnimatedSprite;
+	/** Populated by subclass build() via ref="weapon". */
+	weapon?: EquippedWeapon;
 
 	readonly died: Signal<void> = signal<void>();
 
 	protected abstract get idleAnimation(): string;
 	protected abstract get walkAnimation(): string;
-	protected abstract get spriteSheet(): SpriteSheet;
 
 	override onReady() {
 		super.onReady();
-		const shape = this.add(CollisionShape);
-		shape.shape = Shape.rect(10, 10);
 		this.tag("enemy");
-
-		this._sprite = this.add(AnimatedSprite);
-		this._sprite.spriteSheet = this.spriteSheet;
-		this._sprite.play(this.idleAnimation);
-
-		// Create an attack sensor (eWeapon) that overlaps with player
-		// Enemies will spawn their own weapon hitbox during attack state
 	}
 
 	takeDamage(amount: number, fromDirection?: Vec2): void {
@@ -56,7 +52,7 @@ export abstract class BaseEnemy extends Actor {
 		this._hurtTimer = 0.3;
 
 		// Flash effect
-		this._sprite.alpha = 0.5;
+		if (this.sprite) this.sprite.alpha = 0.5;
 
 		// Knockback
 		if (fromDirection) {
@@ -72,6 +68,7 @@ export abstract class BaseEnemy extends Actor {
 
 	private _die(): void {
 		gameState.score += this.points;
+		this.game.audio.play("enemy-die", { volume: 0.4 });
 		this.died.emit();
 
 		// Death animation: shrink + fade
@@ -79,8 +76,10 @@ export abstract class BaseEnemy extends Actor {
 		this.tween()
 			.to({ scale: { x: 0, y: 0 } }, 0.2, Ease.quadIn)
 			.onComplete(() => this.destroy());
-		this._sprite.killTweens();
-		this._sprite.tween().to({ alpha: 0 }, 0.2);
+		if (this.sprite) {
+			this.sprite.killTweens();
+			this.sprite.tween().to({ alpha: 0 }, 0.2);
+		}
 	}
 
 	protected _findPlayer(): Actor | null {
@@ -109,18 +108,19 @@ export abstract class BaseEnemy extends Actor {
 		this.move(dt);
 
 		// Flip sprite based on horizontal direction
-		if (Math.abs(norm.x) > 0.1) {
-			this._sprite.flipH = norm.x < 0;
+		if (this.sprite && Math.abs(norm.x) > 0.1) {
+			this.sprite.flipH = norm.x < 0;
 		}
 	}
 
 	protected _updateBob(dt: number, isMoving: boolean): void {
+		if (!this.sprite) return;
 		if (isMoving) {
 			this._bobTimer += dt * 6;
-			this._sprite.position.y = Math.sin(this._bobTimer) > 0 ? -1 : 0;
+			this.sprite.position.y = Math.sin(this._bobTimer) > 0 ? -1 : 0;
 		} else {
 			this._bobTimer = 0;
-			this._sprite.position.y = 0;
+			this.sprite.position.y = 0;
 		}
 	}
 }

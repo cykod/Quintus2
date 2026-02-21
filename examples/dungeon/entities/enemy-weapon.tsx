@@ -13,9 +13,12 @@ export class EnemyWeapon extends Sensor {
 	attackDirection = Vec2.ZERO;
 	private _hit = false;
 
+	override build() {
+		return <CollisionShape shape={Shape.rect(10, 10)} />;
+	}
+
 	override onReady() {
 		super.onReady();
-		this.add(CollisionShape).shape = Shape.rect(10, 10);
 
 		const timer = this.add(Timer, { duration: 0.15, autostart: true });
 		timer.timeout.connect(() => this.destroy());

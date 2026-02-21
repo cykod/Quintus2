@@ -1,6 +1,7 @@
 /** A single step in an input script timeline. */
 export type InputStep =
 	| { type: "press"; action: string; frames: number }
+	| { type: "hold"; action: string }
 	| { type: "tap"; action: string }
 	| { type: "release"; action: string }
 	| { type: "wait"; frames: number }
@@ -42,6 +43,23 @@ export class InputScript {
 	/** Wait for N seconds (converted to frames at 60fps). */
 	waitSeconds(seconds: number): this {
 		return this.wait(InputScript.secondsToFrames(seconds));
+	}
+
+	/**
+	 * Start holding an action without consuming frames or auto-releasing.
+	 * Stays held until an explicit `release()`. Use with `wait()` or `press()`
+	 * to hold multiple actions simultaneously.
+	 *
+	 * @example
+	 * // Diagonal movement: hold down while pressing right
+	 * InputScript.create()
+	 *   .hold("down")
+	 *   .press("right", 60)
+	 *   .release("down")
+	 */
+	hold(action: string): this {
+		this._steps.push({ type: "hold", action });
+		return this;
 	}
 
 	/** Hold an action for N frames. */
@@ -93,6 +111,7 @@ export class InputScript {
 				case "wait":
 					total += step.frames;
 					break;
+				case "hold":
 				case "release":
 					break;
 			}

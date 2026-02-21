@@ -11,7 +11,7 @@ export interface GameLike {
 
 /**
  * Plays an InputScript against a game instance.
- * Handles press/release/wait/tap/analog steps via inject() and step().
+ * Handles hold/press/release/wait/tap/analog steps via inject() and step().
  */
 export class InputScriptPlayer {
 	private _frame = 0;
@@ -32,6 +32,11 @@ export class InputScriptPlayer {
 	): void {
 		for (const step of steps) {
 			switch (step.type) {
+				case "hold":
+					input.inject(step.action, true);
+					this._held.add(step.action);
+					break;
+
 				case "press":
 					input.inject(step.action, true);
 					this._held.add(step.action);

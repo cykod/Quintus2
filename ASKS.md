@@ -310,6 +310,36 @@
 
 [MILE] fri 2/20 3pm - Consolidated tilemap layers with tile-based entity spawning and oneWayTileIds support
 
+<<<<<<< HEAD
 [MILE] fri 2/20 4pm - Fixed all Biome linting warnings with definite assignment assertions, formatting fixes, and worktree config exclusion
 
 [IMPL] fri 2/20 6pm - Review and fix patrolling enemy edge detection tolerance in platformer example — enemies turn around too early before reaching ledge edges
+=======
+[IMPL] fri 2/20 1pm - Implement Phase 1: Sprite audit & correction for dungeon crawler rebuild
+
+[IMPL] fri 2/20 2pm - Implement Phase 2: Test infrastructure & basic scene for dungeon crawler rebuild
+
+[IMPL] fri 2/20 4pm - Implement Phase 3: Player movement & collision with TSX conversion
+
+[IMPL] fri 2/20 4pm - Implement Phase 4: Equipment system (Weapon/Shield base classes) for dungeon crawler
+
+[IMPL] fri 2/20 5pm - Implement Phase 5: Combat system (attack, defend, hitboxes) for dungeon crawler
+
+[IMPL] fri 2/20 5pm - Implement Phase 6: Enemy AI (BaseEnemy, Dwarf, Barbarian) with TSX build(), visible equipment, and AI tests
+
+[IMPL] fri 2/20 5pm - Implement Phase 7: Interactables (Chest, Door, HealthPickup) for dungeon crawler rebuild
+
+[IMPL] fri 2/20 6pm - Implement Phase 8 inventory and potion system for dungeon crawler
+
+[ASKS] fri 2/20 6pm - Review dungeon rebuild design and update level approach to use single tilemap with object-to-node extraction like the platformer example
+
+[IMPL] fri 2/20 6pm - Implement Phase 9 HUD with TSX declarative patterns for dungeon crawler
+
+[IMPL] fri 2/20 6pm - Fix dungeon crawler weapon positioning and rotation so weapons attach to the player and rotate correctly by their base during attacks
+
+[IMPL] fri 2/20 7pm - Implement Phase 10: Level rebuild & scene flow for dungeon crawler
+
+[IMPL] sat 2/21 2pm - Review and fix dungeon game inventory/shield visibility, chest loot display, and potion effect descriptions, with a test level for debugging
+
+[IMPL] sat 2/21 3pm - Add RPG sound effects from Kenney audio pack to the dungeon example game at appropriate interaction points
+>>>>>>> dungeon-rebuild

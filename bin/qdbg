@@ -64,6 +64,10 @@ COMMANDS
     query <q>             Find nodes by type/name/tag
     physics <name>        Physics state summary for one node
 
+  Scene:
+    scene <name>          Switch to a registered scene by name
+    scenes                List all registered scene names
+
   Simulation:
     step [N]              Advance N frames (default: 1)
     pause                 Pause game loop
@@ -85,6 +89,7 @@ COMMANDS
     nearby <name> [rad]   Show nodes within radius (default: 100px)
 
   Scripting:
+    eval '<code>'         Evaluate a JS expression in the browser and print the result
     run '<json>'          Execute a DebugAction[] script
     track <name> [N]      Step N frames with tabular tracking (default: 30)
     jump-analysis <name>  Full jump arc analysis with metrics
@@ -344,6 +349,40 @@ cmd_pause() {
 cmd_resume() {
 	need_bridge
 	qblock "window.__quintusDebug.resume(); return 'Resumed from frame ' + window.__quintusDebug.frame;"
+}
+
+cmd_scene() {
+	local name="${1:?Usage: qdbg scene <name>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		d.switchScene('${name}');
+		return 'Switched to scene: ${name}. Frame: ' + d.frame;
+	"
+}
+
+cmd_scenes() {
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var names = d.listScenes();
+		if (names.length === 0) return '(no scenes registered)';
+		return 'Registered scenes:\n' + names.map(function(n) { return '  - ' + n; }).join('\n');
+	"
+}
+
+cmd_eval() {
+	local code="${1:?Usage: qdbg eval '<code>'}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var game = window.__quintusGame;
+		var result = (${code});
+		if (result === undefined) return '(undefined)';
+		if (result === null) return '(null)';
+		if (typeof result === 'object') return JSON.stringify(result, null, 2);
+		return String(result);
+	"
 }
 
 cmd_actions() {
@@ -720,9 +759,12 @@ case "$cmd" in
 	inspect)      check_playwright_cli; cmd_inspect "$@" ;;
 	query)        check_playwright_cli; cmd_query "$@" ;;
 	physics)      check_playwright_cli; cmd_physics "$@" ;;
+	scene)        check_playwright_cli; cmd_scene "$@" ;;
+	scenes)       check_playwright_cli; cmd_scenes ;;
 	step)         check_playwright_cli; cmd_step "$@" ;;
 	pause)        check_playwright_cli; cmd_pause ;;
 	resume)       check_playwright_cli; cmd_resume ;;
+	eval)         check_playwright_cli; cmd_eval "$@" ;;
 	actions)      check_playwright_cli; cmd_actions ;;
 	press)        check_playwright_cli; cmd_press "$@" ;;
 	release)      check_playwright_cli; cmd_release "$@" ;;

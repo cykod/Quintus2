@@ -68,13 +68,13 @@
   <object id="1" name="player_start" type="Player" x="42.6667" y="66.6667">
    <point/>
   </object>
-  <object id="2" name="skeleton1" type="Skeleton" x="56" y="136">
+  <object id="2" name="dwarf1" type="Dwarf" x="56" y="136">
    <point/>
   </object>
-  <object id="3" name="skeleton2" type="Skeleton" x="248" y="88">
+  <object id="3" name="dwarf2" type="Dwarf" x="181.438" y="110.691">
    <point/>
   </object>
-  <object id="4" name="chest" type="Chest" x="136" y="136">
+  <object id="4" name="chest" type="Chest" x="167.264" y="78.0107">
    <properties>
     <property name="lootTier" type="int" value="0"/>
     <property name="lootType" value="sword"/>
@@ -84,7 +84,7 @@
   <object id="5" name="health" type="HealthPickup" x="264" y="136">
    <point/>
   </object>
-  <object id="6" name="door" type="Door" x="280" y="184">
+  <object id="6" name="door" type="Door" x="248.735" y="75.36">
    <point/>
   </object>
  </objectgroup>
