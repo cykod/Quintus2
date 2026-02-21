@@ -176,7 +176,7 @@ export class Actor extends CollisionObject {
 
 		const actorWidth = aabb.max.x - aabb.min.x;
 		const actorHeight = aabb.max.y - aabb.min.y;
-		const probeDist = probeDistance ?? actorWidth / 2 + 4;
+		const probeDist = probeDistance ?? 2;
 		const dropThresh = dropThreshold ?? actorHeight;
 
 		// Normalize direction to horizontal

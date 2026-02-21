@@ -309,3 +309,7 @@
 [IMPL] fri 2/20 3pm - Update the platformer-jsx example to be at functional parity with the platformer example, using JSX syntax
 
 [MILE] fri 2/20 3pm - Consolidated tilemap layers with tile-based entity spawning and oneWayTileIds support
+
+[MILE] fri 2/20 4pm - Fixed all Biome linting warnings with definite assignment assertions, formatting fixes, and worktree config exclusion
+
+[IMPL] fri 2/20 6pm - Review and fix patrolling enemy edge detection tolerance in platformer example — enemies turn around too early before reaching ledge edges
