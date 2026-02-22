@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { AudioPlugin } from "@quintus/audio";
 import { _resetNodeIdCounter, type Plugin, type SceneConstructor } from "@quintus/core";
 import type { HeadlessGame } from "@quintus/headless";
 import { InputPlugin } from "@quintus/input";
@@ -23,6 +24,7 @@ export function dungeonPlugins(): Plugin[] {
 		}),
 		InputPlugin({ actions: INPUT_BINDINGS }),
 		TweenPlugin(),
+		AudioPlugin(),
 	];
 }
 

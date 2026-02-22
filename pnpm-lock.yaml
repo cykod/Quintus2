@@ -242,6 +242,10 @@ importers:
       '@quintus/math':
         specifier: workspace:*
         version: link:../math
+    devDependencies:
+      '@quintus/physics':
+        specifier: workspace:*
+        version: link:../physics
 
   packages/ui:
     dependencies:

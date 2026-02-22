@@ -1,3 +1,15 @@
+## Fix dungeon and tween test failures with missing dependencies
+*Sunday, February 22nd at 8am*
+Fixed all failing tests across the dungeon example and main test suite. The 
+tween package's actor-child-tween test was missing @quintus/physics as a 
+devDependency. The dungeon tests had two issues: a stale build of @quintus/test 
+that was missing the recently-added hold() method, and a missing AudioPlugin in 
+the test helper configuration that caused all game entities (Player, Dwarf, 
+Door) to crash when calling game.audio.play(). Also includes a minor level2.tmx 
+tweak repositioning a health pickup and adding a second one.
+
+---
+
 ## Fix isEdgeAhead probe distance so patrol enemies walk closer to edges
 *Sunday, February 22nd at 8am*
 Reduced the default probeDistance in Actor.isEdgeAhead() from actorWidth / 2 + 
