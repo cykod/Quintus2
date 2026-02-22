@@ -1,3 +1,15 @@
+## Fix isEdgeAhead probe distance so patrol enemies walk closer to edges
+*Sunday, February 22nd at 8am*
+Reduced the default probeDistance in Actor.isEdgeAhead() from actorWidth / 2 + 
+4 to just 2 pixels beyond the front edge. The old formula caused patrol enemies 
+to detect floor edges far too early — for a 7px wide enemy, the probe fired 
+7.5px past the front edge (more than the enemy's own width), making them turn 
+around well before reaching the actual ledge. The new default of 2px gives 
+natural-looking patrol behavior while still allowing custom values via the 
+probeDistance parameter.
+
+---
+
 ## Rebuild dungeon example with JSX entities, equipment system, and tests
 *Saturday, February 21st at 4pm*
 Major overhaul of the dungeon crawl example game. Migrated all entities and 
