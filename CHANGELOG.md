@@ -1,3 +1,15 @@
+## Add TextureAtlas XML parser to @quintus/sprites
+*Tuesday, February 24th at 3pm*
+Add a TextureAtlas class to @quintus/sprites that parses Kenney-style XML atlas 
+files and provides name-based frame lookup. This enables example games to 
+reference sprites by name (e.g., "paddle_01.png") instead of hardcoding pixel 
+coordinates. The class supports getFrame, getFrameOrThrow, hasFrame, 
+getFramesByPrefix, and fromXml static constructor. Includes 10 unit/integration 
+tests covering XML parsing, error handling, prefix grouping, and validation 
+against a real Kenney breakout atlas file.
+
+---
+
 ## Fix dungeon and tween test failures with missing dependencies
 *Sunday, February 22nd at 8am*
 Fixed all failing tests across the dungeon example and main test suite. The 
