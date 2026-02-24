@@ -1,3 +1,15 @@
+## Fix remaining dungeon lint warnings across all files
+*Tuesday, February 24th at 3pm*
+Eliminate all noNonNullAssertion lint warnings from the dungeon example. In 
+entity classes (player, chest, potion-pickup), replaced this.scene! and 
+this.sprite! patterns with guarded local variables. In HUD, wrapped signal 
+handler property accesses with null checks. In test files, added if (!x) return 
+guards after expect assertions and switched to optional chaining for nullable 
+values. Also fixed import ordering and formatting (spaces to tabs) in door.tsx 
+and toast.tsx. All 69 dungeon tests pass and pnpm lint reports zero warnings.
+
+---
+
 ## Prepare Phase 9 assets, designs, and fix non-null assertions
 *Tuesday, February 24th at 3pm*
 Downloaded Kenney asset packs (sprite sheets + XML atlases) for four upcoming 

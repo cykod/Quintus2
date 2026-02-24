@@ -2,9 +2,9 @@ import { type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
+import { showToast } from "../hud/toast.js";
 import { entitySheet, TILE } from "../sprites.js";
 import { gameState, type PotionDef } from "../state.js";
-import { showToast } from "../hud/toast.js";
 import { EquippedShield } from "./equipped-shield.js";
 import { EquippedWeapon } from "./equipped-weapon.js";
 import { WeaponHitbox } from "./weapon-hitbox.js";
@@ -70,20 +70,24 @@ export class Player extends Actor {
 
 		// React to equipment changes from chests
 		gameState.on("shield").connect(({ value }) => {
+			const shield = this.shield;
+			if (!shield) return;
 			if (value) {
-				this.shield!.visible = true;
-				this.shield!.setShield(value.spriteFrame);
+				shield.visible = true;
+				shield.setShield(value.spriteFrame);
 			} else {
-				this.shield!.visible = false;
+				shield.visible = false;
 			}
 		});
 
 		gameState.on("sword").connect(({ value }) => {
-			this.weapon!.setWeapon(value.spriteFrame);
+			this.weapon?.setWeapon(value.spriteFrame);
 		});
 	}
 
 	override onFixedUpdate(dt: number) {
+		const sprite = this.sprite;
+		if (!sprite) return;
 		const input = this.game.input;
 
 		// Attack cooldown
@@ -149,7 +153,7 @@ export class Player extends Actor {
 
 		// Flip sprite for left direction
 		const flipH = this.direction === "left";
-		this.sprite!.flipH = flipH;
+		sprite.flipH = flipH;
 
 		// Update equipment resting positions
 		this.weapon?.updateResting(this.direction, flipH);
@@ -158,25 +162,25 @@ export class Player extends Actor {
 		// Walk bob animation: offset sprite y by -1 when "stepping"
 		if (this._moving) {
 			this._bobTimer += dt * 8;
-			this.sprite!.position.y = Math.sin(this._bobTimer) > 0 ? -1 : 0;
+			sprite.position.y = Math.sin(this._bobTimer) > 0 ? -1 : 0;
 		} else {
 			this._bobTimer = 0;
-			this.sprite!.position.y = 0;
+			sprite.position.y = 0;
 		}
 
 		// Invincibility timer + blink effect
 		if (this._invincible) {
 			this._invincibleTimer -= dt;
-			this.sprite!.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
+			sprite.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
 			if (this._invincibleTimer <= 0) {
 				this._invincible = false;
-				this.sprite!.alpha = 1;
+				sprite.alpha = 1;
 			}
 		}
 
 		// Restore sprite alpha when buff expires
-		if (!this._invincible && !gameState.activeBuff && this.sprite!.alpha < 1) {
-			this.sprite!.alpha = 1;
+		if (!this._invincible && !gameState.activeBuff && sprite.alpha < 1) {
+			sprite.alpha = 1;
 		}
 	}
 
@@ -202,23 +206,25 @@ export class Player extends Actor {
 	}
 
 	private _usePotion(potion: PotionDef): void {
+		const scene = this.scene;
+		if (!scene) return;
 		this.game.audio.play("use-potion", { volume: 0.5 });
 		switch (potion.type) {
 			case "health":
 				gameState.health = Math.min(gameState.health + potion.value, gameState.maxHealth);
-				showToast(this.scene!, `Used ${potion.name}! (+${potion.value} HP)`);
+				showToast(scene, `Used ${potion.name}! (+${potion.value} HP)`);
 				break;
 			case "speed":
 				gameState.activeBuff = potion;
 				gameState.buffTimeRemaining = potion.duration;
-				this.sprite!.alpha = 0.8;
-				showToast(this.scene!, `Used ${potion.name}! (${potion.value}x speed, ${potion.duration}s)`);
+				if (this.sprite) this.sprite.alpha = 0.8;
+				showToast(scene, `Used ${potion.name}! (${potion.value}x speed, ${potion.duration}s)`);
 				break;
 			case "attack":
 				gameState.activeBuff = potion;
 				gameState.buffTimeRemaining = potion.duration;
-				this.sprite!.alpha = 0.8;
-				showToast(this.scene!, `Used ${potion.name}! (${potion.value}x damage, ${potion.duration}s)`);
+				if (this.sprite) this.sprite.alpha = 0.8;
+				showToast(scene, `Used ${potion.name}! (${potion.value}x damage, ${potion.duration}s)`);
 				break;
 		}
 	}

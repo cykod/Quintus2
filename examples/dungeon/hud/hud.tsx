@@ -98,34 +98,39 @@ export class HUD extends Layer {
 		});
 
 		gameState.on("score").connect(({ value }) => {
-			this.scoreLabel!.text = `Score: ${value}`;
+			if (this.scoreLabel) this.scoreLabel.text = `Score: ${value}`;
 		});
 
 		gameState.on("keys").connect(({ value }) => {
-			this.keyLabel!.text = value > 0 ? `Keys: ${value}` : "";
+			if (this.keyLabel) this.keyLabel.text = value > 0 ? `Keys: ${value}` : "";
 		});
 
 		gameState.on("sword").connect(({ value }) => {
-			this.swordSprite!.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
+			if (this.swordSprite)
+				this.swordSprite.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
 		});
 
 		gameState.on("shield").connect(({ value }) => {
+			const s = this.shieldSprite;
+			if (!s) return;
 			if (value) {
-				this.shieldSprite!.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
-				this.shieldSprite!.alpha = 1;
+				s.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
+				s.alpha = 1;
 			} else {
-				this.shieldSprite!.sourceRect = entitySheet.getFrameRect(TILE.SHIELD_WOODEN);
-				this.shieldSprite!.alpha = 0.3;
+				s.sourceRect = entitySheet.getFrameRect(TILE.SHIELD_WOODEN);
+				s.alpha = 0.3;
 			}
 		});
 
 		gameState.on("potion").connect(({ value }) => {
+			const p = this.potionSprite;
+			if (!p) return;
 			if (value) {
-				this.potionSprite!.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
-				this.potionSprite!.alpha = 1;
+				p.sourceRect = entitySheet.getFrameRect(value.spriteFrame);
+				p.alpha = 1;
 			} else {
-				this.potionSprite!.sourceRect = entitySheet.getFrameRect(TILE.POTION_GRAY);
-				this.potionSprite!.alpha = 0.3;
+				p.sourceRect = entitySheet.getFrameRect(TILE.POTION_GRAY);
+				p.alpha = 0.3;
 			}
 		});
 	}

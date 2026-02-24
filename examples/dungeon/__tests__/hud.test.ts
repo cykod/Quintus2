@@ -16,8 +16,9 @@ describe("Dungeon — HUD", () => {
 		const result = await runLevel1(undefined, 0.1);
 		const hud = result.timeline.findNode(0, "HUD");
 		expect(hud).not.toBeNull();
+		if (!hud) return;
 		// HUD should have at least maxHealth Sprite children (hearts + sword + potion)
-		const sprites = findAllInSnapshot(hud!, "Sprite");
+		const sprites = findAllInSnapshot(hud, "Sprite");
 		expect(sprites.length).toBeGreaterThanOrEqual(gameState.maxHealth);
 		result.game.stop();
 	});
@@ -26,7 +27,8 @@ describe("Dungeon — HUD", () => {
 		const result = await runLevel1(undefined, 0.1);
 		const hud = result.timeline.findNode(0, "HUD");
 		expect(hud).not.toBeNull();
-		const labels = findAllInSnapshot(hud!, "Label");
+		if (!hud) return;
+		const labels = findAllInSnapshot(hud, "Label");
 		expect(labels.length).toBeGreaterThanOrEqual(1);
 		result.game.stop();
 	});
@@ -72,7 +74,7 @@ describe("Dungeon — HUD", () => {
 		let notified = false;
 		const conn = gameState.on("potion").connect(({ value }) => {
 			expect(value).not.toBeNull();
-			expect(value!.spriteFrame).toBe(POTIONS[0].spriteFrame);
+			expect(value?.spriteFrame).toBe(POTIONS[0].spriteFrame);
 			notified = true;
 		});
 		gameState.potion = POTIONS[0];

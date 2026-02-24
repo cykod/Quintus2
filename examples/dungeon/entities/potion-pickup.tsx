@@ -1,8 +1,8 @@
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { Ease } from "@quintus/tween";
-import { entitySheet } from "../sprites.js";
 import { showToast } from "../hud/toast.js";
+import { entitySheet } from "../sprites.js";
 import { gameState, POTIONS } from "../state.js";
 
 export class PotionPickup extends Sensor {
@@ -42,9 +42,11 @@ export class PotionPickup extends Sensor {
 	private _collect(): void {
 		const potion = POTIONS.find((p) => p.type === this.potionType);
 		if (!potion) return;
+		const scene = this.scene;
+		if (!scene) return;
 		gameState.potion = potion;
 		this.game.audio.play("pickup", { volume: 0.5 });
-		showToast(this.scene!, `Got ${potion.name}! [Q to use]`);
+		showToast(scene, `Got ${potion.name}! [Q to use]`);
 
 		// Float up + fade effect
 		this.killTweens();

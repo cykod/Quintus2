@@ -19,18 +19,8 @@ class Toast extends Layer {
 	override build() {
 		return (
 			<>
-				<Panel
-					position={[-60, -6]}
-					size={new Vec2(120, 14)}
-					backgroundColor="#000000cc"
-				/>
-				<Label
-					text={this.message}
-					fontSize={7}
-					color="#ffffff"
-					align="center"
-					baseline="middle"
-				/>
+				<Panel position={[-60, -6]} size={new Vec2(120, 14)} backgroundColor="#000000cc" />
+				<Label text={this.message} fontSize={7} color="#ffffff" align="center" baseline="middle" />
 			</>
 		);
 	}
