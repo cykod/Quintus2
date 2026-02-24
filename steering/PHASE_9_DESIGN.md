@@ -10,7 +10,7 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Asset preparation (download packs, create tile CSVs) | Done |
-| 1.5 | XML Texture Atlas support in `@quintus/sprites` | Pending |
+| 1.5 | XML Texture Atlas support in `@quintus/sprites` | Done |
 | 2 | Breakout game | Pending |
 | 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Pending |
 | 4 | Space Shooter game (uses pooling) | Pending |

@@ -11,12 +11,7 @@ import { Level1 } from "../scenes/level1.js";
 import { Level2 } from "../scenes/level2.js";
 import { Level3 } from "../scenes/level3.js";
 import { TitleScene } from "../scenes/title-scene.js";
-import {
-	dungeonPlugins,
-	loadDungeonAssets,
-	resetDungeonState,
-	runScene,
-} from "./helpers.js";
+import { dungeonPlugins, loadDungeonAssets, resetDungeonState, runScene } from "./helpers.js";
 
 const PLUGINS_IMPORT = await import("./helpers.js").then((m) => m.dungeonPlugins());
 
@@ -53,8 +48,8 @@ describe("Dungeon — Scene Flow", () => {
 		// Level1 has a Chest with lootType="sword", lootTier=0
 		const chest = result.game.currentScene?.findByType(Chest);
 		expect(chest).not.toBeNull();
-		expect(chest!.lootType).toBe("sword");
-		expect(chest!.lootTier).toBe(0);
+		expect(chest?.lootType).toBe("sword");
+		expect(chest?.lootTier).toBe(0);
 		result.game.stop();
 	});
 
@@ -62,20 +57,23 @@ describe("Dungeon — Scene Flow", () => {
 		const result = await runScene(Level2, undefined, 0.5);
 		const potion = result.game.currentScene?.findByType(PotionPickup);
 		expect(potion).not.toBeNull();
-		expect(potion!.potionType).toBe("speed");
+		expect(potion?.potionType).toBe("speed");
 		result.game.stop();
 	});
 
 	test("door entity exists with correct nextScene", async () => {
 		const result = await runScene(Level1, undefined, 0.5);
-		const scene = result.game.currentScene!;
+		const scene = result.game.currentScene;
+		expect(scene).not.toBeNull();
+		if (!scene) return;
 		const door = scene.findByType(Door);
 		expect(door).not.toBeNull();
-		expect(door!.nextScene).toBe("level2");
-		expect(door!.locked).toBe(false);
+		if (!door) return;
+		expect(door.nextScene).toBe("level2");
+		expect(door.locked).toBe(false);
 		// Verify the door is in the tree and has a collision shape
-		expect(door!.isInsideTree).toBe(true);
-		expect(door!.getShapes().length).toBeGreaterThan(0);
+		expect(door.isInsideTree).toBe(true);
+		expect(door.getShapes().length).toBeGreaterThan(0);
 		result.game.stop();
 	});
 
@@ -92,13 +90,18 @@ describe("Dungeon — Scene Flow", () => {
 		game.registerScene("level2", Level2);
 		game.start(Level1);
 
-		const scene = game.currentScene!;
-		const player = scene.findByType(Player)!;
-		const door = scene.findByType(Door)!;
-		const input = getInput(game)!;
-
+		const scene = game.currentScene;
+		expect(scene).not.toBeNull();
+		if (!scene) return;
+		const player = scene.findByType(Player);
+		const door = scene.findByType(Door);
+		const input = getInput(game);
 		expect(player).not.toBeNull();
+		if (!player) return;
 		expect(door).not.toBeNull();
+		if (!door) return;
+		expect(input).not.toBeNull();
+		if (!input) return;
 		expect(door.nextScene).toBe("level2");
 
 		// Teleport player to door position

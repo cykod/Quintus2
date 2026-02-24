@@ -345,3 +345,31 @@
 >>>>>>> dungeon-rebuild
 
 [MILE] sat 2/21 4pm - Rebuilt dungeon example with JSX entity declarations, equipment system, sound effects, and comprehensive test suite
+
+[MILE] sun 2/22 8am - Fixed isEdgeAhead default probe distance from actorWidth/2+4 to 2px so patrol enemies walk closer to ledge edges before turning
+
+[MILE] sun 2/22 8am - Fixed dungeon and tween test failures with missing AudioPlugin and @quintus/physics dependencies
+
+[DSGN] sun 2/22 8am - Design Phase 9 — AI prefabs and example games with incremental game builds and prefabs proposal
+
+[DSGN] sun 2/22 8am - Design Phase 10 Three.js integration as optional plugin
+
+[DSGN] sun 2/22 6pm - Design Phase 9 AI prefabs & example games with incremental game-by-game approach and Kenney asset review
+
+[DSGN] sun 2/22 6pm - Design Phase 10 Three.js integration as optional plugin
+
+[DEVL] sun 2/22 6pm - Review Phase 9 AI Prefabs & Example Games design for potential issues and risks
+
+[DEVL] sun 2/22 6pm - Review Phase 10 Three.js integration design for potential issues and risks
+
+[DSGN] mon 2/23 10am - Design object pooling system to prevent GC pressure for bullet-hell style games
+
+[IMPL] mon 2/23 3pm - Implement Phase 9 Phase 1: Asset preparation (download Kenney packs, create tile CSVs)
+
+[IMPL] mon 2/23 3pm - Implement Phase 9 Phase 1: Asset preparation - download Kenney asset packs and create tile description CSVs
+
+[IMPL] tue 2/24 2pm - Update PHASE_9_DESIGN.md to add a Phase 1.5 for XML tileset support in the engine, replacing hardcoded rects/IDs with XML-based sprite definitions
+
+[IMPL] tue 2/24 2pm - Implement Phase 1.5 XML Texture Atlas support in @quintus/sprites
+
+[MILE] tue 2/24 3pm - Added TextureAtlas XML parser to @quintus/sprites with name-based frame lookup and 10 tests

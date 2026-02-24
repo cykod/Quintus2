@@ -78,6 +78,6 @@ describe("Dungeon — Potion System", () => {
 		expect(gameState.shield).toBeNull();
 		gameState.shield = SHIELDS[0]; // Wooden Shield
 		expect(gameState.shield).not.toBeNull();
-		expect(gameState.shield!.defense).toBe(1);
+		expect(gameState.shield?.defense).toBe(1);
 	});
 });

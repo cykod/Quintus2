@@ -1,7 +1,7 @@
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
-import { entitySheet } from "../sprites.js";
 import { showToast } from "../hud/toast.js";
+import { entitySheet } from "../sprites.js";
 import { gameState, POTIONS, SHIELDS, SWORDS } from "../state.js";
 
 export type LootType = "sword" | "shield" | "health" | "key" | "potion";
@@ -46,6 +46,8 @@ export class Chest extends Sensor {
 
 	private _open(): void {
 		this._opened = true;
+		const scene = this.scene;
+		if (!scene) return;
 		this.game.audio.play("chest-open", { volume: 0.5 });
 
 		// 3-frame opening animation: closed -> opening -> open
@@ -59,29 +61,29 @@ export class Chest extends Sensor {
 			case "sword": {
 				const sword = SWORDS[Math.min(this.lootTier, SWORDS.length - 1)];
 				gameState.sword = sword;
-				showToast(this.scene!, `Got ${sword.name}! (Damage ${sword.damage})`);
+				showToast(scene, `Got ${sword.name}! (Damage ${sword.damage})`);
 				break;
 			}
 			case "shield": {
 				const shield = SHIELDS[Math.min(this.lootTier, SHIELDS.length - 1)];
 				gameState.shield = shield;
-				showToast(this.scene!, `Got ${shield.name}! (Defense +${shield.defense})`);
+				showToast(scene, `Got ${shield.name}! (Defense +${shield.defense})`);
 				break;
 			}
 			case "health": {
 				gameState.health = Math.min(gameState.health + 2, gameState.maxHealth);
-				showToast(this.scene!, "Found health! (+2 HP)");
+				showToast(scene, "Found health! (+2 HP)");
 				break;
 			}
 			case "key": {
 				gameState.keys++;
-				showToast(this.scene!, "Got a key!");
+				showToast(scene, "Got a key!");
 				break;
 			}
 			case "potion": {
 				const potion = POTIONS[Math.min(this.lootTier, POTIONS.length - 1)];
 				gameState.potion = potion;
-				showToast(this.scene!, `Got ${potion.name}!`);
+				showToast(scene, `Got ${potion.name}!`);
 				break;
 			}
 		}

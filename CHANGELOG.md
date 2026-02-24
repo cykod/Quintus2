@@ -1,3 +1,15 @@
+## Prepare Phase 9 assets, designs, and fix non-null assertions
+*Tuesday, February 24th at 3pm*
+Downloaded Kenney asset packs (sprite sheets + XML atlases) for four upcoming 
+Phase 9 example games: Breakout, Space Shooter, Tower Defense, and Sokoban. 
+Added placeholder cards to the examples index page. Created Phase 10 Three.js 
+design and object pooling plan. Cleaned up non-null assertion warnings across 
+dungeon tests and chest entity by replacing ! with proper null checks and 
+optional chaining. Updated Phase 9 design to mark Phase 1.5 (TextureAtlas XML) 
+as Done.
+
+---
+
 ## Add TextureAtlas XML parser to @quintus/sprites
 *Tuesday, February 24th at 3pm*
 Add a TextureAtlas class to @quintus/sprites that parses Kenney-style XML atlas 

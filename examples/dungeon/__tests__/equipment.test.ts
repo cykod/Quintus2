@@ -9,7 +9,8 @@ describe("Dungeon — Equipment System", () => {
 		const result = await runLevel1(undefined, 0.1);
 		const player = result.timeline.findNode(0, "Player");
 		expect(player).not.toBeNull();
-		const weapon = findInSnapshot(player!, "EquippedWeapon");
+		if (!player) return;
+		const weapon = findInSnapshot(player, "EquippedWeapon");
 		expect(weapon).not.toBeNull();
 		result.game.stop();
 	});
@@ -28,7 +29,8 @@ describe("Dungeon — Equipment System", () => {
 		});
 		const player = result.timeline.findNode(0, "Player");
 		expect(player).not.toBeNull();
-		const shield = findInSnapshot(player!, "EquippedShield");
+		if (!player) return;
+		const shield = findInSnapshot(player, "EquippedShield");
 		expect(shield).not.toBeNull();
 		result.game.stop();
 	});
@@ -37,9 +39,10 @@ describe("Dungeon — Equipment System", () => {
 		const result = await runLevel1(undefined, 0.1);
 		const player = result.timeline.findNode(0, "Player");
 		expect(player).not.toBeNull();
-		const shield = findInSnapshot(player!, "EquippedShield");
+		if (!player) return;
+		const shield = findInSnapshot(player, "EquippedShield");
 		expect(shield).not.toBeNull();
-		expect(shield!.visible).toBe(false);
+		expect(shield?.visible).toBe(false);
 		result.game.stop();
 	});
 });

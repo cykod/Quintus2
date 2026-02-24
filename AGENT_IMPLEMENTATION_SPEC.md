@@ -22,6 +22,8 @@ All tests must pass with **zero warnings** before moving to the next phase. If t
 pnpm lint
 ```
 
+If there are any warnings please fix them. The project should have **zero warnings***.
+
 ### 3. Ask When Uncertain
 
 If something in the design is ambiguous, has multiple valid implementations, or doesn't match the current codebase, **stop and ask the user**. Don't guess. Common cases:
