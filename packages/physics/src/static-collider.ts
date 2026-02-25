@@ -34,7 +34,7 @@ export class StaticCollider extends CollisionObject {
 			...super.serialize(),
 			oneWay: this.oneWay,
 			constantVelocity: { x: this.constantVelocity.x, y: this.constantVelocity.y },
-			collisionGroup: this.collisionGroup,
+			collisionGroup: this.collisionGroup as string,
 			bodyType: "static" as const,
 		};
 	}

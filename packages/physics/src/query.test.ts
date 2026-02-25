@@ -10,6 +10,7 @@ import { Shape, type Shape2D } from "./shapes.js";
 
 class TestBody extends CollisionObject {
 	readonly bodyType: BodyType;
+	override collisionGroup = "default";
 	constructor(type: BodyType = "static") {
 		super();
 		this.bodyType = type;

@@ -12,6 +12,8 @@ import { StaticCollider } from "./static-collider.js";
 // === Test fixtures ===
 
 class PooledActor extends Actor implements Poolable {
+	override collisionGroup = "default";
+	override solid = false;
 	speed = 200;
 	reset(): void {
 		this.speed = 200;
@@ -25,6 +27,7 @@ class PooledActor extends Actor implements Poolable {
 }
 
 class PooledSensor extends Sensor implements Poolable {
+	override collisionGroup = "default";
 	triggered = false;
 	reset(): void {
 		this.triggered = false;
@@ -41,6 +44,7 @@ class PooledSensor extends Sensor implements Poolable {
 
 class CustomGroupActor extends Actor implements Poolable {
 	override collisionGroup = "bullets";
+	override solid = false;
 	speed = 300;
 	reset(): void {
 		this.speed = 300;
@@ -54,6 +58,8 @@ class CustomGroupActor extends Actor implements Poolable {
 }
 
 class TopDownActor extends Actor implements Poolable {
+	override collisionGroup = "default";
+	override solid = false;
 	override applyGravity = false;
 	override upDirection = new Vec2(0, 0);
 	speed = 150;
@@ -266,6 +272,7 @@ describe("Pool + Physics Integration", () => {
 
 		// Create a floor to collide with
 		const floor = new StaticCollider();
+		floor.collisionGroup = "default";
 		floor.position._set(50, 100);
 		const floorShape = new CollisionShape();
 		floorShape.shape = Shape.rect(200, 20);

@@ -30,6 +30,7 @@ export class Ball extends Actor {
 	speedMultiplier = 1;
 
 	override collisionGroup = "ball";
+	override solid = false;
 	override gravity = 0;
 	override applyGravity = false;
 

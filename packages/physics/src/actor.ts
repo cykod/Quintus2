@@ -21,9 +21,9 @@ export class Actor extends CollisionObject {
 	/**
 	 * When true, other actors' move() treats this actor as a physical obstacle.
 	 * Their castMotion() will detect this actor, slide against it, and fire onCollided.
-	 * Default: false (actors pass through each other).
+	 * Default: null — must be set before the body enters the scene tree.
 	 */
-	solid = false;
+	solid: boolean | null = null;
 
 	/** Current velocity in pixels/second. Modified by move(). */
 	velocity: Vec2 = new Vec2(0, 0);
@@ -121,7 +121,7 @@ export class Actor extends CollisionObject {
 			isOnFloor: this._onFloor,
 			isOnWall: this._onWall,
 			isOnCeiling: this._onCeiling,
-			collisionGroup: this.collisionGroup,
+			collisionGroup: this.collisionGroup as string,
 			bodyType: "actor" as const,
 		};
 	}
@@ -145,7 +145,7 @@ export class Actor extends CollisionObject {
 	/** @internal */
 	override _poolReset(): void {
 		super._poolReset();
-		this.solid = false;
+		this.solid = null;
 		this.velocity._set(0, 0);
 		this.gravity = 0;
 		this.applyGravity = true;

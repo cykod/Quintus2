@@ -17,6 +17,7 @@ function createGame(): Game {
 /** Concrete CollisionObject subclass for testing. */
 class TestBody extends CollisionObject {
 	readonly bodyType: BodyType;
+	override collisionGroup = "default";
 	constructor(type: BodyType = "actor") {
 		super();
 		this.bodyType = type;
@@ -26,6 +27,7 @@ class TestBody extends CollisionObject {
 /** Concrete sensor subclass for testing. */
 class TestSensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
+	override collisionGroup = "default";
 	override monitoring = true;
 	readonly enteredBodies: CollisionObject[] = [];
 	readonly exitedBodies: CollisionObject[] = [];
@@ -164,7 +166,18 @@ describe("CollisionObject", () => {
 	});
 
 	describe("collisionGroup default", () => {
-		it("defaults to 'default'", () => {
+		it("defaults to null on base CollisionObject", () => {
+			const body = new CollisionObject() as unknown as { collisionGroup: string | null; bodyType: BodyType };
+			// TestBody overrides to "default", so test on raw CollisionObject-like
+			// Actually just create a fresh TestBody without override:
+			class BareBody extends CollisionObject {
+				readonly bodyType: BodyType = "actor";
+			}
+			const bare = new BareBody();
+			expect(bare.collisionGroup).toBeNull();
+		});
+
+		it("TestBody defaults to 'default' via override", () => {
 			const body = new TestBody("actor");
 			expect(body.collisionGroup).toBe("default");
 		});

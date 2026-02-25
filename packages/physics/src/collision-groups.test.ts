@@ -151,13 +151,10 @@ describe("CollisionGroups", () => {
 	});
 });
 
-describe("PhysicsWorld default group warning", () => {
-	it("console.warn fires for bodies registered with auto-created default group", () => {
-		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
+describe("PhysicsWorld forced-choice validation", () => {
+	it("throws when registering body with null collisionGroup", () => {
 		class TestScene extends Scene {}
 		const game = new Game({ width: 100, height: 100 });
-		// Configure groups WITHOUT "default" — it gets auto-created with mask=0
 		game.use(
 			PhysicsPlugin({
 				collisionGroups: {
@@ -171,27 +168,84 @@ describe("PhysicsWorld default group warning", () => {
 
 		const scene = game.currentScene as Scene;
 
-		// Create an actor that uses the default group
+		// Create an actor without setting collisionGroup (defaults to null)
 		const actor = new Actor();
 		actor.name = "TestActor";
+		actor.solid = false;
 		const shape = new CollisionShape();
 		shape.shape = Shape.rect(10, 10);
 		actor.add(shape);
-		scene.add(actor);
 
-		expect(warnSpy).toHaveBeenCalledWith(
-			'[Physics] TestActor has collisionGroup "default". Set an explicit group or it won\'t collide with anything.',
-		);
-
-		warnSpy.mockRestore();
+		expect(() => scene.add(actor)).toThrow("must set collisionGroup");
 	});
 
-	it("console.warn does not fire when default group is explicitly configured", () => {
-		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
+	it("throws when registering Actor with null solid", () => {
 		class TestScene extends Scene {}
 		const game = new Game({ width: 100, height: 100 });
-		// Configure groups WITH "default" — mask will be non-zero
+		game.use(
+			PhysicsPlugin({
+				collisionGroups: {
+					player: { collidesWith: ["world"] },
+					world: { collidesWith: ["player"] },
+				},
+			}),
+		);
+		game.registerScenes({ test: TestScene });
+		game.start("test");
+
+		const scene = game.currentScene as Scene;
+
+		// Create an actor with collisionGroup but not solid
+		const actor = new Actor();
+		actor.name = "Enemy";
+		actor.collisionGroup = "player";
+		const shape = new CollisionShape();
+		shape.shape = Shape.rect(10, 10);
+		actor.add(shape);
+
+		expect(() => scene.add(actor)).toThrow("must set solid");
+	});
+
+	it("error message includes body name", () => {
+		class TestScene extends Scene {}
+		const game = new Game({ width: 100, height: 100 });
+		game.use(PhysicsPlugin());
+		game.registerScenes({ test: TestScene });
+		game.start("test");
+
+		const scene = game.currentScene as Scene;
+
+		const actor = new Actor();
+		actor.name = "MyPlayer";
+		actor.solid = false;
+		const shape = new CollisionShape();
+		shape.shape = Shape.rect(10, 10);
+		actor.add(shape);
+
+		expect(() => scene.add(actor)).toThrow("MyPlayer");
+	});
+
+	it("error message includes class name when body has no name", () => {
+		class TestScene extends Scene {}
+		const game = new Game({ width: 100, height: 100 });
+		game.use(PhysicsPlugin());
+		game.registerScenes({ test: TestScene });
+		game.start("test");
+
+		const scene = game.currentScene as Scene;
+
+		const actor = new Actor();
+		actor.solid = false;
+		const shape = new CollisionShape();
+		shape.shape = Shape.rect(10, 10);
+		actor.add(shape);
+
+		expect(() => scene.add(actor)).toThrow("Actor");
+	});
+
+	it("no error when collisionGroup and solid are explicitly set", () => {
+		class TestScene extends Scene {}
+		const game = new Game({ width: 100, height: 100 });
 		game.use(
 			PhysicsPlugin({
 				collisionGroups: {
@@ -206,17 +260,12 @@ describe("PhysicsWorld default group warning", () => {
 
 		const actor = new Actor();
 		actor.name = "TestActor";
+		actor.collisionGroup = "default";
+		actor.solid = false;
 		const shape = new CollisionShape();
 		shape.shape = Shape.rect(10, 10);
 		actor.add(shape);
-		scene.add(actor);
 
-		// Should NOT warn because default group has non-zero mask
-		const physicsWarns = warnSpy.mock.calls.filter(
-			(call) => typeof call[0] === "string" && call[0].includes("[Physics]"),
-		);
-		expect(physicsWarns.length).toBe(0);
-
-		warnSpy.mockRestore();
+		expect(() => scene.add(actor)).not.toThrow();
 	});
 });

@@ -132,14 +132,19 @@ export class PhysicsWorld {
 
 	// === Body Registration ===
 
-	/** Register a body in the spatial hash. Validates collision group. */
+	/** Register a body in the spatial hash. Validates collision group and solid. */
 	register(body: CollisionObject): void {
-		this.groups.validate(body.collisionGroup);
-		if (body.collisionGroup === "default" && this.groups.getMask("default") === 0) {
-			console.warn(
-				`[Physics] ${body.name} has collisionGroup "default". Set an explicit group or it won't collide with anything.`,
+		if (body.collisionGroup === null) {
+			throw new Error(
+				`${body.name || body.constructor.name} must set collisionGroup before entering the scene tree. Add 'override collisionGroup = "myGroup"' to your class.`,
 			);
 		}
+		if (body.bodyType === "actor" && (body as Actor).solid === null) {
+			throw new Error(
+				`${body.name || body.constructor.name} (Actor) must set solid = true or false. Set true if other actors should collide with it, or false to pass through.`,
+			);
+		}
+		this.groups.validate(body.collisionGroup);
 		const aabb = body.getWorldAABB();
 		if (aabb) {
 			this.hash.insert(body, aabb);
@@ -212,11 +217,13 @@ export class PhysicsWorld {
 		}
 
 		// Remove from group index
-		const group = this.groupIndex.get(body.collisionGroup);
-		if (group) {
-			group.delete(body);
-			if (group.size === 0) {
-				this.groupIndex.delete(body.collisionGroup);
+		if (body.collisionGroup !== null) {
+			const group = this.groupIndex.get(body.collisionGroup);
+			if (group) {
+				group.delete(body);
+				if (group.size === 0) {
+					this.groupIndex.delete(body.collisionGroup);
+				}
 			}
 		}
 
@@ -286,7 +293,7 @@ export class PhysicsWorld {
 		if (bodyShapes.length === 0) return [];
 
 		for (const candidate of candidates) {
-			if (!this.groups.shouldCollide(body.collisionGroup, candidate.collisionGroup)) {
+			if (!this.groups.shouldCollide(body.collisionGroup as string, candidate.collisionGroup as string)) {
 				continue;
 			}
 
@@ -369,7 +376,7 @@ export class PhysicsWorld {
 			const monitorShapes = monitor.getShapeTransforms();
 
 			for (const candidate of candidates) {
-				if (!this.groups.shouldCollide(monitor.collisionGroup, candidate.collisionGroup)) {
+				if (!this.groups.shouldCollide(monitor.collisionGroup as string, candidate.collisionGroup as string)) {
 					continue;
 				}
 
@@ -994,7 +1001,7 @@ export class PhysicsWorld {
 		let bestColliderShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
 
 		for (const candidate of candidates) {
-			if (!this.groups.shouldCollide(body.collisionGroup, candidate.collisionGroup)) {
+			if (!this.groups.shouldCollide(body.collisionGroup as string, candidate.collisionGroup as string)) {
 				continue;
 			}
 			if (candidate.bodyType === "sensor") continue;

@@ -24,10 +24,10 @@ type Vec2Write = { _set(x: number, y: number): void };
  */
 export interface ClassDefaultsSnapshot {
 	// CollisionObject
-	collisionGroup?: string;
+	collisionGroup?: string | null;
 	monitoring?: boolean;
 	// Actor
-	solid?: boolean;
+	solid?: boolean | null;
 	applyGravity?: boolean;
 	upDirection_x?: number;
 	upDirection_y?: number;
@@ -50,11 +50,11 @@ export function _captureClassDefaults(node: Node): ClassDefaultsSnapshot | null 
 	if (!("collisionGroup" in node)) return null;
 
 	const snap: ClassDefaultsSnapshot = {};
-	snap.collisionGroup = (node as unknown as { collisionGroup: string }).collisionGroup;
+	snap.collisionGroup = (node as unknown as { collisionGroup: string | null }).collisionGroup;
 	snap.monitoring = (node as unknown as { monitoring: boolean }).monitoring;
 
 	if ("solid" in node) {
-		snap.solid = (node as unknown as { solid: boolean }).solid;
+		snap.solid = (node as unknown as { solid: boolean | null }).solid;
 	}
 
 	if ("applyGravity" in node) {
@@ -84,13 +84,13 @@ export function _captureClassDefaults(node: Node): ClassDefaultsSnapshot | null 
  */
 export function _applyClassDefaults(node: Node, snap: ClassDefaultsSnapshot): void {
 	if (snap.collisionGroup !== undefined) {
-		(node as unknown as { collisionGroup: string }).collisionGroup = snap.collisionGroup;
+		(node as unknown as { collisionGroup: string | null }).collisionGroup = snap.collisionGroup;
 	}
 	if (snap.monitoring !== undefined) {
 		(node as unknown as { monitoring: boolean }).monitoring = snap.monitoring;
 	}
 	if (snap.solid !== undefined) {
-		(node as unknown as { solid: boolean }).solid = snap.solid;
+		(node as unknown as { solid: boolean | null }).solid = snap.solid;
 	}
 	if (snap.applyGravity !== undefined) {
 		(node as unknown as { applyGravity: boolean }).applyGravity = snap.applyGravity;

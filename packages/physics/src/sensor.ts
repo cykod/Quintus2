@@ -25,7 +25,7 @@ export class Sensor extends CollisionObject {
 			monitoring: this.monitoring,
 			overlappingBodyCount: this.getOverlappingBodies().length,
 			overlappingSensorCount: this.getOverlappingSensors().length,
-			collisionGroup: this.collisionGroup,
+			collisionGroup: this.collisionGroup as string,
 			bodyType: "sensor" as const,
 		};
 	}

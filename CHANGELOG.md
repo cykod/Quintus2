@@ -1,3 +1,15 @@
+## Make collisionGroup and solid forced-choice with clear errors
+*Wednesday, February 25th at 10pm*
+Changed CollisionObject.collisionGroup and Actor.solid defaults from 
+"default"/false to null. PhysicsWorld.register() now throws actionable errors 
+if either property is unset, preventing the common footgun where collision 
+silently doesn't work. Updated the pool system's ClassDefaultsSnapshot to 
+handle null types, added as-string casts in internal methods that operate on 
+registered bodies, and updated all 13 test files and 5 example games to 
+explicitly set both properties.
+
+---
+
 ## Add SFX, animated explosions, and convex hitboxes to space shooter
 *Wednesday, February 25th at 10pm*
 Added 7 CC0 sound effects (player/enemy shoot, hit, die, boss die, powerup) and 

@@ -27,6 +27,8 @@ function setupScene(
 
 function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 	const actor = new Actor();
+	actor.collisionGroup = "default";
+	actor.solid = false;
 	actor.position = pos;
 	const cs = actor.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -35,6 +37,7 @@ function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 
 function makeStatic(pos: Vec2, w = 200, h = 20): StaticCollider {
 	const sc = new StaticCollider();
+	sc.collisionGroup = "default";
 	sc.position = pos;
 	const cs = sc.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);

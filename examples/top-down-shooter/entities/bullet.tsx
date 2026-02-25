@@ -14,6 +14,7 @@ const _center = new Vec2(0, 0);
 
 export class PlayerBullet extends Actor implements Poolable {
 	override collisionGroup = "player_bullets";
+	override solid = false;
 	override gravity = 0;
 	override applyGravity = false;
 	override upDirection = new Vec2(0, 0);
@@ -70,6 +71,7 @@ export class PlayerBullet extends Actor implements Poolable {
 
 export class EnemyBullet extends Actor implements Poolable {
 	override collisionGroup = "enemy_bullets";
+	override solid = false;
 	override gravity = 0;
 	override applyGravity = false;
 	override upDirection = new Vec2(0, 0);

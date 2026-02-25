@@ -11,6 +11,7 @@ import { Shape, type Shape2D } from "./shapes.js";
 /** Concrete CollisionObject subclass for testing. */
 class TestBody extends CollisionObject {
 	readonly bodyType: BodyType;
+	override collisionGroup = "default";
 	constructor(type: BodyType = "actor") {
 		super();
 		this.bodyType = type;
@@ -20,6 +21,7 @@ class TestBody extends CollisionObject {
 /** Concrete sensor subclass for testing. */
 class TestSensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
+	override collisionGroup = "default";
 	override monitoring = true;
 	readonly enteredBodies: CollisionObject[] = [];
 	readonly exitedBodies: CollisionObject[] = [];

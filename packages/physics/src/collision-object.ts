@@ -30,8 +30,11 @@ export abstract class CollisionObject extends Node2D {
 	/** What type of physics body this is. Set by subclasses. */
 	abstract readonly bodyType: BodyType;
 
-	/** Collision group name. Must match a group in PhysicsPlugin config. Default: "default". */
-	collisionGroup = "default";
+	/**
+	 * Collision group name. Must match a group in PhysicsPlugin config.
+	 * Default: null — must be set before the body enters the scene tree.
+	 */
+	collisionGroup: string | null = null;
 
 	/**
 	 * Whether this body detects overlaps with other bodies.
@@ -156,7 +159,7 @@ export abstract class CollisionObject extends Node2D {
 	/** @internal */
 	override _poolReset(): void {
 		super._poolReset();
-		this.collisionGroup = "default";
+		this.collisionGroup = null;
 		this.monitoring = false;
 		this._registered = false;
 		this._suppressAutoRehash = false;

@@ -28,6 +28,8 @@ function startScene(game: Game, bodies: Node[]): void {
 
 function makeActor(pos: Vec2, w = 20, h = 20): Actor {
 	const actor = new Actor();
+	actor.collisionGroup = "default";
+	actor.solid = false;
 	actor.position = pos;
 	const cs = actor.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -36,6 +38,7 @@ function makeActor(pos: Vec2, w = 20, h = 20): Actor {
 
 function makeStatic(pos: Vec2, w = 200, h = 20): StaticCollider {
 	const sc = new StaticCollider();
+	sc.collisionGroup = "default";
 	sc.position = pos;
 	const cs = sc.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -103,6 +106,8 @@ describe("Actor.isEdgeAhead", () => {
 	it("returns false when actor has no collision shapes", () => {
 		const game = createGame();
 		const actor = new Actor();
+		actor.collisionGroup = "default";
+		actor.solid = false;
 		actor.position = new Vec2(0, 0);
 		const platform = makeStatic(new Vec2(0, 10), 200, 20);
 		startScene(game, [actor, platform]);

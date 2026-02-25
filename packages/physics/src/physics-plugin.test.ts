@@ -15,6 +15,7 @@ function createGame(): Game {
 
 class TestSensor extends CollisionObject {
 	readonly bodyType: BodyType = "sensor";
+	override collisionGroup = "default";
 	override monitoring = true;
 	readonly enteredBodies: CollisionObject[] = [];
 
@@ -25,6 +26,7 @@ class TestSensor extends CollisionObject {
 
 class TestActor extends CollisionObject {
 	readonly bodyType: BodyType = "actor";
+	override collisionGroup = "default";
 }
 
 // === Tests ===

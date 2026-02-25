@@ -42,6 +42,7 @@ class Player extends Actor {
 	speed = 120;
 	jumpForce = -300;
 	collisionGroup = "player";
+	solid = true;
 
 	onReady() {
 		super.onReady();

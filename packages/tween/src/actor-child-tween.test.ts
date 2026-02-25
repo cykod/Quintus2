@@ -6,6 +6,8 @@ import "./augment.js";
 import { TweenPlugin } from "./tween-plugin.js";
 
 class TestActor extends Actor {
+	override collisionGroup = "default";
+	override solid = false;
 	override gravity = 0;
 	override applyGravity = false;
 	override upDirection = Vec2.ZERO;

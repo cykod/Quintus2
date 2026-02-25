@@ -12,8 +12,10 @@ export function matchesQuery(body: CollisionObject, options?: QueryOptions): boo
 	if (!options) return true;
 
 	// Collision group filtering (OR — body's single group must be in the list)
-	if (options.groups && !options.groups.includes(body.collisionGroup)) return false;
-	if (options.excludeGroups?.includes(body.collisionGroup)) return false;
+	// collisionGroup is guaranteed non-null for registered bodies (validated in register())
+	const group = body.collisionGroup as string;
+	if (options.groups && !options.groups.includes(group)) return false;
+	if (options.excludeGroups?.includes(group)) return false;
 
 	// Tag filtering (AND — body must have ALL specified tags)
 	if (options.tags) {

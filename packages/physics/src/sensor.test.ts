@@ -29,6 +29,8 @@ function setupScene(bodies: import("@quintus/core").Node[]): {
 
 function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 	const actor = new Actor();
+	actor.collisionGroup = "default";
+	actor.solid = false;
 	actor.position = pos;
 	const cs = actor.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -37,6 +39,7 @@ function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 
 function makeSensor(pos: Vec2, w = 40, h = 40): Sensor {
 	const sensor = new Sensor();
+	sensor.collisionGroup = "default";
 	sensor.position = pos;
 	const cs = sensor.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -45,6 +48,7 @@ function makeSensor(pos: Vec2, w = 40, h = 40): Sensor {
 
 function makeStatic(pos: Vec2, w = 20, h = 20): StaticCollider {
 	const sc = new StaticCollider();
+	sc.collisionGroup = "default";
 	sc.position = pos;
 	const cs = sc.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -220,6 +224,7 @@ describe("Sensor", () => {
 
 		it("returns empty arrays when no shapes", () => {
 			const sensor = new Sensor(); // No CollisionShape children
+			sensor.collisionGroup = "default";
 			sensor.position = new Vec2(0, 0);
 			setupScene([sensor]);
 
@@ -308,6 +313,7 @@ describe("Sensor", () => {
 	describe("sensor with no shapes", () => {
 		it("no errors, no signals", () => {
 			const sensor = new Sensor();
+			sensor.collisionGroup = "default";
 			sensor.position = new Vec2(0, 0);
 			const actor = makeActor(new Vec2(5, 0));
 			const { game } = setupScene([sensor, actor]);
@@ -394,6 +400,7 @@ describe("Sensor", () => {
 				}
 			}
 			const custom = new CustomSensor();
+			custom.collisionGroup = "default";
 			custom.position = new Vec2(0, 0);
 			const cs = custom.addChild(CollisionShape);
 			cs.shape = Shape.rect(40, 40);

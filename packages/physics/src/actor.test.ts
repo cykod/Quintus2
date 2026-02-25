@@ -34,6 +34,8 @@ function setupScene(
 
 function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 	const actor = new Actor();
+	actor.collisionGroup = "default";
+	actor.solid = false;
 	actor.position = pos;
 	const cs = actor.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -42,6 +44,7 @@ function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 
 function makeStatic(pos: Vec2, w = 200, h = 20): StaticCollider {
 	const sc = new StaticCollider();
+	sc.collisionGroup = "default";
 	sc.position = pos;
 	const cs = sc.addChild(CollisionShape);
 	cs.shape = Shape.rect(w, h);
@@ -307,9 +310,9 @@ describe("Actor", () => {
 			expect(actor1.getSlideCollisions().length).toBe(0);
 		});
 
-		it("solid = false is the default", () => {
+		it("solid = null is the default", () => {
 			const actor = new Actor();
-			expect(actor.solid).toBe(false);
+			expect(actor.solid).toBeNull();
 		});
 
 		it("solid actor: another actor's move() collides with it", () => {
@@ -451,6 +454,8 @@ describe("Actor", () => {
 				}
 			}
 			const actor = new CustomActor();
+			actor.collisionGroup = "default";
+			actor.solid = false;
 			actor.position = new Vec2(100, 50);
 			const cs = actor.addChild(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
@@ -475,6 +480,8 @@ describe("Actor", () => {
 				}
 			}
 			const actor = new SilentActor();
+			actor.collisionGroup = "default";
+			actor.solid = false;
 			actor.position = new Vec2(100, 50);
 			const cs = actor.addChild(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
@@ -931,6 +938,8 @@ describe("Actor", () => {
 				}
 			}
 			const actor = new SelfRemovingActor();
+			actor.collisionGroup = "default";
+			actor.solid = false;
 			actor.position = new Vec2(100, 50);
 			const cs = actor.addChild(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
@@ -955,6 +964,8 @@ describe("Actor", () => {
 				}
 			}
 			const actor = new CountingRemoveActor();
+			actor.collisionGroup = "default";
+			actor.solid = false;
 			actor.position = new Vec2(100, 50);
 			const cs = actor.addChild(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
@@ -979,6 +990,8 @@ describe("Actor", () => {
 				}
 			}
 			const actor = new TrackingActor();
+			actor.collisionGroup = "default";
+			actor.solid = false;
 			actor.position = new Vec2(100, 50);
 			const cs = actor.addChild(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
