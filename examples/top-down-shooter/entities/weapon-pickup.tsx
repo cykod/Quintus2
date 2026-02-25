@@ -20,7 +20,6 @@ export class WeaponPickup extends Sensor implements Poolable {
 	override collisionGroup = "pickups";
 
 	weaponId = "pistol";
-	private _recycled = false;
 	private _lifetime = PICKUP_LIFETIME;
 
 	_onCollected: ((pickup: WeaponPickup) => void) | null = null;
@@ -33,11 +32,9 @@ export class WeaponPickup extends Sensor implements Poolable {
 
 	override onReady() {
 		super.onReady();
-		this._recycled = false;
 		this._lifetime = PICKUP_LIFETIME;
 		this.bodyEntered.connect((other: CollisionObject) => {
-			if (other.hasTag("player") && !this._recycled) {
-				this._recycled = true;
+			if (other.hasTag("player") && this.isInsideTree) {
 				this.collected.emit(this.weaponId);
 				this._onCollected?.(this);
 			}
@@ -46,8 +43,7 @@ export class WeaponPickup extends Sensor implements Poolable {
 
 	override onFixedUpdate(dt: number) {
 		this._lifetime -= dt;
-		if (this._lifetime <= 0 && !this._recycled) {
-			this._recycled = true;
+		if (this._lifetime <= 0 && this.isInsideTree) {
 			this._onCollected?.(this);
 		}
 	}
@@ -73,7 +69,6 @@ export class WeaponPickup extends Sensor implements Poolable {
 
 	reset(): void {
 		this.weaponId = "pistol";
-		this._recycled = false;
 		this._lifetime = PICKUP_LIFETIME;
 		this._onCollected = null;
 	}

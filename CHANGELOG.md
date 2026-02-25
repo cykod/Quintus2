@@ -1,3 +1,17 @@
+## Remove pool workarounds from top-down shooter example
+*Wednesday, February 25th at 8pm*
+With the engine-level NodePool class defaults snapshot (Phase 1) and 
+Actor.move() slide-loop re-entrancy guard (Phase 2) now in place, the top-down 
+shooter no longer needs manual workarounds. Removed _recycled and 
+_collisionConnected guard flags from PlayerBullet, EnemyBullet, WeaponPickup, 
+and MuzzleFlash. Removed override-restoration boilerplate from all reset() 
+methods (collisionGroup, solid, applyGravity, upDirection) — NodePool now 
+handles this automatically. Replaced _recycled double-release guards with 
+isInsideTree checks. Added 3 tests verifying pool properties survive 
+acquire/release cycles. All three SHOOTER_ISSUES.md phases are now marked Done.
+
+---
+
 ## Add slide-loop re-entrancy guard to Actor.move()
 *Wednesday, February 25th at 6pm*
 When Actor.move() fires onCollided() mid-slide-loop, collision handlers may 

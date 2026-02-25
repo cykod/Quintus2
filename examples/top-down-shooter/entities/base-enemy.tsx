@@ -69,12 +69,6 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 	}
 
 	reset(): void {
-		// Restore properties that _poolReset() overrides
-		this.collisionGroup = "enemies";
-		this.solid = true;
-		this.applyGravity = false;
-		this.upDirection._set(0, 0);
-
 		this._health = this.maxHealth;
 		this._playerRef = null;
 		this._bulletManager = null;

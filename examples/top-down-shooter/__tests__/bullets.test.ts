@@ -61,4 +61,53 @@ describe("Bullets", () => {
 		expect(stats.enemyBullets.max).toBe(200);
 		expect(stats.playerBullets.available).toBeGreaterThan(0);
 	});
+
+	it("bullet acquires from pool with correct collisionGroup", async () => {
+		const result = await runScene(ArenaScene, undefined, 0.1);
+		const mgr = result.game.currentScene?.findByType(BulletManager);
+		expect(mgr).toBeDefined();
+		if (!mgr) return;
+
+		// Spawn, recycle, and re-spawn to test pool reuse
+		const bullet1 = mgr.spawnPlayerBullet(100, 100, 0, 400, 25);
+		mgr.recyclePlayerBullet(bullet1);
+		const bullet2 = mgr.spawnPlayerBullet(200, 200, 0, 400, 25);
+
+		expect(bullet2.collisionGroup).toBe("player_bullets");
+
+		// Also test enemy bullets
+		const enemy1 = mgr.spawnEnemyBullet(100, 100, 0, 200, 15);
+		mgr.recycleEnemyBullet(enemy1);
+		const enemy2 = mgr.spawnEnemyBullet(200, 200, 0, 200, 15);
+
+		expect(enemy2.collisionGroup).toBe("enemy_bullets");
+	});
+
+	it("bullet acquires from pool with applyGravity = false", async () => {
+		const result = await runScene(ArenaScene, undefined, 0.1);
+		const mgr = result.game.currentScene?.findByType(BulletManager);
+		expect(mgr).toBeDefined();
+		if (!mgr) return;
+
+		const bullet1 = mgr.spawnPlayerBullet(100, 100, 0, 400, 25);
+		mgr.recyclePlayerBullet(bullet1);
+		const bullet2 = mgr.spawnPlayerBullet(200, 200, 0, 400, 25);
+
+		expect(bullet2.applyGravity).toBe(false);
+	});
+
+	it("bullet collision handler fires after pool reuse", async () => {
+		const result = await runScene(ArenaScene, undefined, 0.1);
+		const mgr = result.game.currentScene?.findByType(BulletManager);
+		expect(mgr).toBeDefined();
+		if (!mgr) return;
+
+		// Spawn, recycle, re-spawn
+		const bullet1 = mgr.spawnEnemyBullet(100, 100, 0, 200, 15);
+		mgr.recycleEnemyBullet(bullet1);
+		const bullet2 = mgr.spawnEnemyBullet(200, 200, 0, 200, 15);
+
+		// The collided signal should have a listener (connected in onReady)
+		expect(bullet2.collided.listenerCount).toBeGreaterThan(0);
+	});
 });

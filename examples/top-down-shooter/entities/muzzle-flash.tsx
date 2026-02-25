@@ -9,15 +9,13 @@ const _center = new Vec2(0, 0);
 
 export class MuzzleFlash extends Node2D implements Poolable {
 	private _elapsed = 0;
-	private _recycled = false;
 
 	_recycle: (() => void) | null = null;
 
 	override onFixedUpdate(dt: number) {
 		this._elapsed += dt;
 		if (this._elapsed >= FLASH_LIFETIME) {
-			if (!this._recycled) {
-				this._recycled = true;
+			if (this.isInsideTree) {
 				this._recycle?.();
 			}
 		}
@@ -33,6 +31,5 @@ export class MuzzleFlash extends Node2D implements Poolable {
 
 	reset(): void {
 		this._elapsed = 0;
-		this._recycled = false;
 	}
 }

@@ -22,8 +22,6 @@ export class PlayerBullet extends Actor implements Poolable {
 	damage = 25;
 	private _lifetime = BULLET_LIFETIME;
 	private _elapsed = 0;
-	private _recycled = false;
-	private _collisionConnected = false;
 
 	_manager: BulletManager | null = null;
 
@@ -33,21 +31,15 @@ export class PlayerBullet extends Actor implements Poolable {
 
 	override onReady() {
 		super.onReady();
-		this._recycled = false;
-		if (!this._collisionConnected) {
-			this._collisionConnected = true;
-			this.collided.connect((info: CollisionInfo) => {
-				if (info.collider.hasTag("enemy")) {
-					(info.collider as BaseEnemy).takeDamage(this.damage);
-				}
-				this._recycle();
-			});
-		}
+		this.collided.connect((info: CollisionInfo) => {
+			if (info.collider.hasTag("enemy")) {
+				(info.collider as BaseEnemy).takeDamage(this.damage);
+			}
+			this._recycle();
+		});
 	}
 
 	override onFixedUpdate(dt: number) {
-		if (this._recycled || !this.gameOrNull) return;
-
 		this._elapsed += dt;
 		if (this._elapsed >= this._lifetime) {
 			this._recycle();
@@ -64,22 +56,14 @@ export class PlayerBullet extends Actor implements Poolable {
 	}
 
 	reset(): void {
-		// Restore properties that _poolReset() overrides
-		this.collisionGroup = "player_bullets";
-		this.applyGravity = false;
-		this.upDirection._set(0, 0);
-		this._collisionConnected = false;
-
 		this.speed = 400;
 		this.damage = 25;
 		this._lifetime = BULLET_LIFETIME;
 		this._elapsed = 0;
-		this._recycled = false;
 	}
 
 	private _recycle(): void {
-		if (this._recycled) return;
-		this._recycled = true;
+		if (!this.isInsideTree) return;
 		this._manager?.recyclePlayerBullet(this);
 	}
 }
@@ -94,8 +78,6 @@ export class EnemyBullet extends Actor implements Poolable {
 	damage = 15;
 	private _lifetime = BULLET_LIFETIME;
 	private _elapsed = 0;
-	private _recycled = false;
-	private _collisionConnected = false;
 
 	_manager: BulletManager | null = null;
 
@@ -105,21 +87,15 @@ export class EnemyBullet extends Actor implements Poolable {
 
 	override onReady() {
 		super.onReady();
-		this._recycled = false;
-		if (!this._collisionConnected) {
-			this._collisionConnected = true;
-			this.collided.connect((info: CollisionInfo) => {
-				if (info.collider.hasTag("player")) {
-					(info.collider as Player).takeDamage(this.damage);
-				}
-				this._recycle();
-			});
-		}
+		this.collided.connect((info: CollisionInfo) => {
+			if (info.collider.hasTag("player")) {
+				(info.collider as Player).takeDamage(this.damage);
+			}
+			this._recycle();
+		});
 	}
 
 	override onFixedUpdate(dt: number) {
-		if (this._recycled || !this.gameOrNull) return;
-
 		this._elapsed += dt;
 		if (this._elapsed >= this._lifetime) {
 			this._recycle();
@@ -136,22 +112,14 @@ export class EnemyBullet extends Actor implements Poolable {
 	}
 
 	reset(): void {
-		// Restore properties that _poolReset() overrides
-		this.collisionGroup = "enemy_bullets";
-		this.applyGravity = false;
-		this.upDirection._set(0, 0);
-		this._collisionConnected = false;
-
 		this.speed = 200;
 		this.damage = 15;
 		this._lifetime = BULLET_LIFETIME;
 		this._elapsed = 0;
-		this._recycled = false;
 	}
 
 	private _recycle(): void {
-		if (this._recycled) return;
-		this._recycled = true;
+		if (!this.isInsideTree) return;
 		this._manager?.recycleEnemyBullet(this);
 	}
 }
