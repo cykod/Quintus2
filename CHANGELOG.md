@@ -1,3 +1,17 @@
+## Add slide-loop re-entrancy guard to Actor.move()
+*Wednesday, February 25th at 6pm*
+When Actor.move() fires onCollided() mid-slide-loop, collision handlers may 
+remove the node from the tree (e.g., via removeSelf() or pool release). 
+Previously the slide loop would continue executing on a detached node, 
+requiring users to work around this with manual _recycled flags. This adds 
+three isInsideTree checks in actor.ts: one after each of the two onCollided() 
+call sites to break from the loop, and an early return after the loop to skip 
+position writes, contact flag updates, platform carry, and rehash on detached 
+nodes. Three tests verify the guard works correctly, partial slides stop early, 
+and normal collisions are unaffected.
+
+---
+
 ## Add class defaults snapshot to NodePool
 *Wednesday, February 25th at 6pm*
 NodePool now automatically captures class-level property overrides 

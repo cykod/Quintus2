@@ -921,4 +921,77 @@ describe("Actor", () => {
 			expect(snap.collisionGroup).toBeDefined();
 		});
 	});
+
+	describe("slide-loop re-entrancy", () => {
+		it("actor removed from tree during onCollided — move() exits cleanly", () => {
+			class SelfRemovingActor extends Actor {
+				override onCollided(info: CollisionInfo): void {
+					super.onCollided(info);
+					this.removeSelf();
+				}
+			}
+			const actor = new SelfRemovingActor();
+			actor.position = new Vec2(100, 50);
+			const cs = actor.addChild(CollisionShape);
+			cs.shape = Shape.rect(10, 10);
+
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			actor.velocity = new Vec2(0, 300);
+			// Should not throw even though the actor leaves the tree mid-slide
+			expect(() => actor.move(0.5)).not.toThrow();
+			expect(actor.isInsideTree).toBe(false);
+		});
+
+		it("actor removed during slide iteration — only partial slides execute", () => {
+			let collisionCount = 0;
+			class CountingRemoveActor extends Actor {
+				override onCollided(info: CollisionInfo): void {
+					super.onCollided(info);
+					collisionCount++;
+					// Remove on first collision
+					this.removeSelf();
+				}
+			}
+			const actor = new CountingRemoveActor();
+			actor.position = new Vec2(100, 50);
+			const cs = actor.addChild(CollisionShape);
+			cs.shape = Shape.rect(10, 10);
+
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			// Only one collision should have been processed before the loop exited
+			expect(collisionCount).toBe(1);
+			expect(actor.getSlideCollisions()).toHaveLength(1);
+		});
+
+		it("actor NOT removed during onCollided — full slide loop completes", () => {
+			const collisions: CollisionInfo[] = [];
+			class TrackingActor extends Actor {
+				override onCollided(info: CollisionInfo): void {
+					super.onCollided(info);
+					collisions.push(info);
+				}
+			}
+			const actor = new TrackingActor();
+			actor.position = new Vec2(100, 50);
+			const cs = actor.addChild(CollisionShape);
+			cs.shape = Shape.rect(10, 10);
+
+			const floor = makeStatic(new Vec2(100, 100));
+			setupScene([actor, floor]);
+
+			actor.velocity = new Vec2(0, 300);
+			actor.move(0.5);
+
+			expect(actor.isInsideTree).toBe(true);
+			expect(collisions.length).toBeGreaterThanOrEqual(1);
+			expect(actor.isOnFloor()).toBe(true);
+		});
+	});
 });

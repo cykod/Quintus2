@@ -344,6 +344,7 @@ export class Actor extends CollisionObject {
 				// Fire contact signal so onContact callbacks work for depenetration too
 				this._slideCollisions.push(collision);
 				this.onCollided(collision);
+				if (!this.isInsideTree) break;
 
 				// Debug instrumentation (use gameOrNull — node may leave tree in onCollided)
 				const dGame = this.gameOrNull;
@@ -373,6 +374,7 @@ export class Actor extends CollisionObject {
 
 			this._slideCollisions.push(collision);
 			this.onCollided(collision);
+			if (!this.isInsideTree) break;
 
 			// Debug instrumentation (use gameOrNull — node may leave tree in onCollided)
 			const game = this.gameOrNull;
@@ -402,6 +404,12 @@ export class Actor extends CollisionObject {
 				this.velocity.x -= nx * velDotN;
 				this.velocity.y -= ny * velDotN;
 			}
+		}
+
+		// Bail out if the node was removed from the tree during onCollided
+		if (!this.isInsideTree) {
+			this._suppressAutoRehash = false;
+			return;
 		}
 
 		// 4. Apply displacement (single position write)
