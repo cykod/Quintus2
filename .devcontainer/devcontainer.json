@@ -1,0 +1,30 @@
+{
+    "name": "Quintus Dev (Playwright)",
+    "image": "mcr.microsoft.com/playwright:v1.58.2-noble",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "22",
+            "installYarnUsingApt": false
+        },
+        "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+    },
+    "postCreateCommand": "corepack enable && corepack prepare pnpm@10.28.1 --activate && pnpm install && npm install -g @playwright/cli@latest && playwright-cli install",
+    "remoteUser": "root",
+    "containerEnv": {
+        "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
+        "IS_SANDBOX": 1,
+        "DEVCONTAINER": "1"
+    },
+    "forwardPorts": [3050],
+    "portsAttributes": {
+        "3050": {
+            "label": "Vite Dev Server",
+            "onAutoForward": "notify"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": ["biomejs.biome", "ms-playwright.playwright"]
+        }
+    }
+}

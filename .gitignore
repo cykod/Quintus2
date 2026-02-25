@@ -33,3 +33,4 @@ old/
 .playwright-cli/
 
 worktrees/
+.pnpm-store

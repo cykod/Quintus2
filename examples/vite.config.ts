@@ -11,7 +11,8 @@ export default defineConfig({
 	root: ".",
 	server: {
 		port: 3050,
-		open: true,
+		open: !process.env.DEVCONTAINER,
+		host: process.env.DEVCONTAINER ? "0.0.0.0" : undefined,
 	},
 	resolve: {
 		alias: {
