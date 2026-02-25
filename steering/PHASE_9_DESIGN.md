@@ -14,7 +14,7 @@
 | 2 | Breakout game | Done |
 | 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Done |
 | 4 | Space Shooter game (uses pooling) | Done |
-| 5 | Tower Defense game | Pending |
+| 5 | Tower Defense game | Done |
 | 6 | Puzzle game (Sokoban) | Pending |
 | 7 | Cross-game review & prefabs proposal | Pending |
 
@@ -1623,20 +1623,20 @@ examples/tower-defense/
 
 ### 8.11 Deliverables
 
-- [ ] Create `examples/tower-defense/` directory structure
-- [ ] Implement path system with waypoint following (TSX build)
-- [ ] Implement 3 enemy types with path following (TSX build)
-- [ ] Implement 3 tower types with targeting and firing (TSX build)
-- [ ] Implement projectile system (homing arrows, splash cannonballs)
-- [ ] Implement grid-based placement system with `screenToWorld()` conversion
-- [ ] Implement wave manager with escalating difficulty
-- [ ] Implement economy (gold earned/spent)
-- [ ] Implement 2 levels with TMX maps
-- [ ] Implement HUD with tower selection panel (TSX build)
+- [x] Create `examples/tower-defense/` directory structure
+- [x] Implement path system with waypoint following (TSX build)
+- [x] Implement 3 enemy types with path following (TSX build)
+- [x] Implement 3 tower types with targeting and firing (TSX build)
+- [x] Implement projectile system (homing arrows, splash cannonballs)
+- [x] Implement grid-based placement system with grid coordinate conversion
+- [x] Implement wave manager with escalating difficulty
+- [x] Implement economy (gold earned/spent)
+- [x] Implement 2 levels with different path layouts
+- [x] Implement HUD with tower selection panel (TSX build)
 - [ ] Add sound effects and audio integration
-- [ ] Write integration tests (path, enemies, towers, placement, waves, flow)
+- [x] Write integration tests (path, enemies, towers, placement, waves, flow)
 - [ ] Verify game is playable via `pnpm dev`
-- [ ] Verify all tests pass
+- [x] Verify all tests pass
 - [ ] Verify `qdbg connect tower-defense` works for debugging
 
 ---

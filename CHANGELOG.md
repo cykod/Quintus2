@@ -1,3 +1,16 @@
+## Add tower defense example game with 29 tests
+*Wednesday, February 25th at 11pm*
+Implement the tower defense example game for Phase 9.5, featuring grid-based 
+tower placement, waypoint path following, three enemy types (basic, fast, 
+tank), three tower types (arrow, cannon with splash, slow), homing projectiles, 
+a 5-wave manager with escalating difficulty, reactive HUD, and two levels with 
+different path layouts. Includes 32 new files and 29 integration tests covering 
+path following, enemy behavior, tower targeting, placement validation, wave 
+progression, and deterministic replay. All 1774 tests pass with zero type 
+errors.
+
+---
+
 ## Make collisionGroup and solid forced-choice with clear errors
 *Wednesday, February 25th at 10pm*
 Changed CollisionObject.collisionGroup and Actor.solid defaults from 
