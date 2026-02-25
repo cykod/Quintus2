@@ -354,6 +354,64 @@ describe("CollisionObject", () => {
 		});
 	});
 
+	describe("auto-rehash on position change", () => {
+		it("spatial hash updates when position is set after add", () => {
+			const game = createGame();
+			game.use(PhysicsPlugin());
+
+			const body = makeBody("static", new Vec2(0, 0));
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			game.start(TestScene);
+
+			const world = getPhysicsWorld(game) as PhysicsWorld;
+
+			// Body was registered at (0, 0). Now move it to (200, 200).
+			body.position = new Vec2(200, 200);
+
+			// Probe at the NEW position should find the body
+			const probeNew = makeBody("static", new Vec2(202, 200));
+			world.register(probeNew);
+			expect(world.testOverlap(probeNew)).toContain(body);
+
+			// Probe at the OLD position should NOT find the body
+			const probeOld = makeBody("static", new Vec2(2, 0));
+			world.register(probeOld);
+			expect(world.testOverlap(probeOld)).not.toContain(body);
+		});
+
+		it("spatial hash updates when position._set() is called", () => {
+			const game = createGame();
+			game.use(PhysicsPlugin());
+
+			const body = makeBody("static", new Vec2(0, 0));
+			class TestScene extends Scene {
+				onReady() {
+					this.addChild(body);
+				}
+			}
+			game.start(TestScene);
+
+			const world = getPhysicsWorld(game) as PhysicsWorld;
+
+			// Use _set() instead of assignment
+			body.position._set(200, 200);
+
+			// Probe at the NEW position should find the body
+			const probeNew = makeBody("static", new Vec2(202, 200));
+			world.register(probeNew);
+			expect(world.testOverlap(probeNew)).toContain(body);
+
+			// Probe at the OLD position should NOT find the body
+			const probeOld = makeBody("static", new Vec2(2, 0));
+			world.register(probeOld);
+			expect(world.testOverlap(probeOld)).not.toContain(body);
+		});
+	});
+
 	describe("integration: full lifecycle", () => {
 		it("body registered on enter, unregistered on scene switch", () => {
 			const game = createGame();

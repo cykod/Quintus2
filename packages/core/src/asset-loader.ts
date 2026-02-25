@@ -7,6 +7,8 @@ export interface AssetManifest {
 	images?: string[];
 	/** JSON paths to load. */
 	json?: string[];
+	/** XML paths to load (fetched as text). Used for sprite atlas descriptors. */
+	xml?: string[];
 	/** Custom asset types registered via registerLoader(). */
 	[key: string]: string[] | undefined;
 }
@@ -40,10 +42,13 @@ export class AssetLoader {
 		for (const path of manifest.json ?? []) {
 			entries.push({ type: "json", path });
 		}
+		for (const path of manifest.xml ?? []) {
+			entries.push({ type: "xml", path });
+		}
 
 		// Custom types
 		for (const [key, paths] of Object.entries(manifest)) {
-			if (key === "images" || key === "json") continue;
+			if (key === "images" || key === "json" || key === "xml") continue;
 			if (!Array.isArray(paths)) continue;
 			if (!this._customLoaders.has(key)) {
 				console.warn(`No loader registered for asset type "${key}". Skipping.`);
@@ -75,6 +80,13 @@ export class AssetLoader {
 						}
 						const data = await response.json();
 						this.jsonData.set(this.nameFromPath(entry.path), data);
+					} else if (entry.type === "xml") {
+						const response = await fetch(entry.path);
+						if (!response.ok) {
+							throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+						}
+						const text = await response.text();
+						this._customAssets.set(this.nameFromPath(entry.path), text);
 					} else {
 						const loader = this._customLoaders.get(entry.type);
 						if (loader) {

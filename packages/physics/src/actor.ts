@@ -281,6 +281,8 @@ export class Actor extends CollisionObject {
 		const world = this._getWorld();
 		if (!world) return;
 
+		this._suppressAutoRehash = true;
+
 		// 1. Apply gravity
 		if (this.applyGravity) {
 			if (this._onFloor) {
@@ -476,6 +478,7 @@ export class Actor extends CollisionObject {
 
 		// 7. Re-hash
 		world.updatePosition(this);
+		this._suppressAutoRehash = false;
 	}
 
 	/**
@@ -488,6 +491,7 @@ export class Actor extends CollisionObject {
 		const world = this._getWorld();
 		if (!world) return null;
 
+		this._suppressAutoRehash = true;
 		const collision = world.castMotion(this, motion);
 		if (collision) {
 			this.position._set(
@@ -498,6 +502,7 @@ export class Actor extends CollisionObject {
 			this.position._set(this.position.x + motion.x, this.position.y + motion.y);
 		}
 		world.updatePosition(this);
+		this._suppressAutoRehash = false;
 		return collision;
 	}
 }

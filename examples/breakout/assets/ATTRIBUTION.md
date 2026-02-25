@@ -5,12 +5,12 @@
 - **Source**: https://kenney.nl/assets/puzzle-pack-2
 - **Author**: Kenney (kenney.nl)
 - **License**: CC0 1.0 Universal (Public Domain)
-- **Description**: Puzzle game sprites including paddles, balls, colored brick tiles, coins, particles, and background tiles. Multiple sprite sheets organized by category with XML atlas metadata.
+- **Description**: Puzzle game sprites including paddles, balls, colored brick tiles, and coins. Multiple sprite sheets organized by category with XML atlas metadata.
 
-## Planned SFX (to be sourced separately)
+## Sound Effects
 
-- `bounce.ogg` — Ball bounces off paddle or wall
-- `brick-break.ogg` — Brick destroyed
-- `powerup.ogg` — Power-up collected
-- `lose-life.ogg` — Ball falls past paddle
-- `level-clear.ogg` — All bricks cleared
+- `brick.wav` — Brick destroyed
+- `brick-strong.wav` — Hard/metal brick hit (survives)
+- `paddle.wav` — Ball bounces off paddle
+- `powerup.wav` — Power-up collected
+- `wall.wav` — Ball bounces off wall

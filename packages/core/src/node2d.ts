@@ -142,6 +142,10 @@ export class Node2D extends Node {
 	}
 
 	// === Internal ===
+
+	/** @internal Hook called after transform is marked dirty. Override in subclasses (e.g. CollisionObject) to react to transform changes. */
+	protected _onTransformDirty(): void {}
+
 	private _markTransformDirty(): void {
 		this._localTransformDirty = true;
 		this._globalTransformDirty = true;
@@ -150,6 +154,7 @@ export class Node2D extends Node {
 				child._markGlobalTransformDirty();
 			}
 		}
+		this._onTransformDirty();
 	}
 
 	/** @internal */

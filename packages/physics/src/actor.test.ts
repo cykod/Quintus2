@@ -508,6 +508,36 @@ describe("Actor", () => {
 		});
 	});
 
+	describe("auto-rehash suppression", () => {
+		it("move() does not double-rehash", () => {
+			const actor = makeActor(new Vec2(100, 50));
+			const floor = makeStatic(new Vec2(100, 100));
+			const { world } = setupScene([actor, floor]);
+
+			const updateSpy = vi.spyOn(world as NonNullable<typeof world>, "updatePosition");
+			actor.applyGravity = false;
+			actor.velocity = new Vec2(100, 0);
+			updateSpy.mockClear();
+			actor.move(0.1);
+
+			// move() should call updatePosition exactly once (the explicit call at the end)
+			const actorCalls = updateSpy.mock.calls.filter((c) => c[0] === actor);
+			expect(actorCalls).toHaveLength(1);
+		});
+
+		it("moveAndCollide() does not double-rehash", () => {
+			const actor = makeActor(new Vec2(0, 0));
+			const { world } = setupScene([actor]);
+
+			const updateSpy = vi.spyOn(world as NonNullable<typeof world>, "updatePosition");
+			updateSpy.mockClear();
+			actor.moveAndCollide(new Vec2(50, 0));
+
+			const actorCalls = updateSpy.mock.calls.filter((c) => c[0] === actor);
+			expect(actorCalls).toHaveLength(1);
+		});
+	});
+
 	describe("batched displacement", () => {
 		it("position is written once per move() (totalDisplacement pattern)", () => {
 			// Verify that move() works correctly with the batched displacement approach

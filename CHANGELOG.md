@@ -1,3 +1,31 @@
+## Add Breakout game, auto-rehash spatial hash, and built-in XML assets
+*Wednesday, February 25th at 1am*
+Adds the complete Breakout example game (3 levels, paddle/ball/brick/power-up 
+entities, HUD, title/game-over/victory scenes) using the JSX build() pattern 
+throughout. Fixes a critical engine bug where setting position on a 
+CollisionObject after add() did not update the spatial hash — StaticColliders 
+and Sensors were permanently registered at their initial position. The fix adds 
+a _onTransformDirty() hook in Node2D that CollisionObject overrides to 
+auto-rehash, with suppression in Actor.move() to avoid double-rehash. Also 
+promotes XML to a built-in asset type in AssetLoader alongside images and JSON, 
+eliminating per-game boilerplate for sprite atlas loading.
+
+---
+
+## Add Breakout game, auto-rehash spatial hash, and built-in XML assets
+*Wednesday, February 25th at 1am*
+Adds the complete Breakout example game (3 levels, paddle/ball/brick/power-up 
+entities, HUD, title/game-over/victory scenes) using the JSX build() pattern 
+throughout. Fixes a critical engine bug where setting position on a 
+CollisionObject after add() did not update the spatial hash — StaticColliders 
+and Sensors were permanently registered at their initial position. The fix adds 
+a _onTransformDirty() hook in Node2D that CollisionObject overrides to 
+auto-rehash, with suppression in Actor.move() to avoid double-rehash. Also 
+promotes XML to a built-in asset type in AssetLoader alongside images and JSON, 
+eliminating per-game boilerplate for sprite atlas loading.
+
+---
+
 ## Fix remaining dungeon lint warnings across all files
 *Tuesday, February 24th at 3pm*
 Eliminate all noNonNullAssertion lint warnings from the dungeon example. In 

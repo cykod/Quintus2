@@ -11,7 +11,7 @@
 |-------|-------------|--------|
 | 1 | Asset preparation (download packs, create tile CSVs) | Done |
 | 1.5 | XML Texture Atlas support in `@quintus/sprites` | Done |
-| 2 | Breakout game | Pending |
+| 2 | Breakout game | Done |
 | 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Pending |
 | 4 | Space Shooter game (uses pooling) | Pending |
 | 5 | Tower Defense game | Pending |
@@ -978,20 +978,20 @@ examples/breakout/
 
 ### 5.9 Deliverables
 
-- [ ] Create `examples/breakout/` directory structure
-- [ ] Implement Paddle entity (TSX build, left/right movement, screen clamping)
-- [ ] Implement Ball entity (TSX build, `moveAndCollide()`, reflection, paddle-angle mechanics)
-- [ ] Implement Brick entity (TSX build, health, points, destroy behavior)
-- [ ] Implement PowerUp entity (wide paddle, multi-ball, speed)
-- [ ] Implement wall and death zone setup
-- [ ] Implement 3 levels with brick grid generation
-- [ ] Implement title, game over, and victory scenes (pure TSX `build()`)
-- [ ] Implement HUD (score, lives, level)
+- [x] Create `examples/breakout/` directory structure
+- [x] Implement Paddle entity (TSX build, left/right movement, screen clamping)
+- [x] Implement Ball entity (TSX build, `moveAndCollide()`, reflection, paddle-angle mechanics)
+- [x] Implement Brick entity (TSX build, health, points, destroy behavior)
+- [x] Implement PowerUp entity (wide paddle, multi-ball, speed)
+- [x] Implement wall and death zone setup
+- [x] Implement 3 levels with brick grid generation
+- [x] Implement title, game over, and victory scenes (pure TSX `build()`)
+- [x] Implement HUD (score, lives, level)
 - [ ] Add sound effects and audio integration
-- [ ] Write integration tests (paddle, ball, bricks, power-ups, flow)
-- [ ] Add vitest config and tsconfig (with JSX settings)
+- [x] Write integration tests (paddle, ball, bricks, power-ups, flow)
+- [x] Add vitest config and tsconfig (with JSX settings)
 - [ ] Verify `pnpm dev` serves the game and it's playable
-- [ ] Verify `pnpm test examples/breakout` passes
+- [x] Verify `pnpm test examples/breakout` passes
 - [ ] Verify `qdbg connect breakout` works for debugging
 
 ---

@@ -35,6 +35,20 @@ describe("AssetLoader", () => {
 		expect(loader.getImage("hero")).toBe(mockImageBitmap);
 	});
 
+	it("loads XML as text", async () => {
+		const xmlContent =
+			'<TextureAtlas imagePath="sprites.png"><SubTexture name="ball" /></TextureAtlas>';
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			statusText: "OK",
+			text: () => Promise.resolve(xmlContent),
+		}) as typeof fetch;
+		const loader = new AssetLoader();
+		await loader.load({ xml: ["sprites.xml"] });
+		expect(loader.get<string>("sprites")).toBe(xmlContent);
+	});
+
 	it("loads JSON", async () => {
 		const jsonData = { name: "test", value: 42 };
 		globalThis.fetch = mockFetchSuccess(jsonData, "application/json") as typeof fetch;

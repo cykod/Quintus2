@@ -49,6 +49,9 @@ export abstract class CollisionObject extends Node2D {
 	/** Whether this body is currently registered in the PhysicsWorld. */
 	private _registered = false;
 
+	/** When true, _onTransformDirty() skips auto-rehash. Used by Actor.move()/moveAndCollide(). */
+	protected _suppressAutoRehash = false;
+
 	// === Shape Queries ===
 
 	/** Get all enabled CollisionShape children. */
@@ -78,6 +81,16 @@ export abstract class CollisionObject extends Node2D {
 			if (other) aabb = aabb.merge(other);
 		}
 		return aabb;
+	}
+
+	// === Auto-rehash on transform change ===
+
+	/** @internal Auto-update spatial hash when position/rotation/scale changes. */
+	protected override _onTransformDirty(): void {
+		if (this._registered && !this._suppressAutoRehash) {
+			const world = this._getWorld();
+			if (world) world.updatePosition(this);
+		}
 	}
 
 	// === PhysicsWorld Registration ===
