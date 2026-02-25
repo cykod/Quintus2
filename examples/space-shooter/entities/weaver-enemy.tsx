@@ -1,5 +1,7 @@
 import { type Signal, signal } from "@quintus/core";
+import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import type { Shape2D } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import {
 	GAME_HEIGHT,
@@ -10,6 +12,17 @@ import {
 	WEAVER_FREQUENCY,
 } from "../config.js";
 import { FRAME, tilesetAtlas, WEAVER_ENEMY_SCALE_X, WEAVER_ENEMY_SCALE_Y } from "../sprites.js";
+import { spawnFlash } from "./explosion.js";
+
+/** Hexagonal hull for weaver enemy (~36×28 visual). */
+const WEAVER_ENEMY_SHAPE: Shape2D = Shape.polygon([
+	new Vec2(-8, -13),
+	new Vec2(8, -13),
+	new Vec2(17, 0),
+	new Vec2(8, 13),
+	new Vec2(-8, 13),
+	new Vec2(-17, 0),
+]);
 
 export class WeaverEnemy extends Actor {
 	override collisionGroup = "enemies";
@@ -30,7 +43,7 @@ export class WeaverEnemy extends Actor {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(16, 14)} />
+				<CollisionShape shape={WEAVER_ENEMY_SHAPE} />
 				<Sprite
 					texture="tileset"
 					sourceRect={tilesetAtlas.getFrameOrThrow(FRAME.WEAVER_ENEMY)}
@@ -63,11 +76,15 @@ export class WeaverEnemy extends Actor {
 		}
 	}
 
-	takeDamage(amount: number): void {
+	takeDamage(amount: number, hitPoint?: Vec2): void {
 		this.hp -= amount;
 		if (this.hp <= 0) {
+			this.game.audio.play("enemy_die", { bus: "sfx" });
 			this.died.emit(this);
 			this.destroy();
+		} else {
+			this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
+			spawnFlash(this, hitPoint ?? this.position);
 		}
 	}
 

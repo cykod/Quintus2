@@ -1,3 +1,18 @@
+## Add SFX, animated explosions, and convex hitboxes to space shooter
+*Wednesday, February 25th at 10pm*
+Added 7 CC0 sound effects (player/enemy shoot, hit, die, boss die, powerup) and 
+animated particle explosions to the space shooter example. Built a particle 
+spritesheet (576x128, 9x2 grid) from Kenney smoke-particle PNGs using a sharp 
+build script, with flash animations for non-lethal hits and size-matched 
+explosions for kills. Replaced undersized rectangular collision shapes with 
+convex polygons (pentagons for the player ship, hexagons for enemies, circle 
+for the boss UFO) and widened bullet hitboxes to better match the visual 
+sprites. Hit flashes are attached as children of the struck enemy so they track 
+with movement, positioned at the bullet impact point via a lerp between bullet 
+position and enemy center.
+
+---
+
 ## Add space shooter example game with pooled bullets and wave spawning
 *Wednesday, February 25th at 8pm*
 Implement Phase 9.4 space shooter — a vertical-scrolling shmup with player 

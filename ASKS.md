@@ -406,3 +406,21 @@
 [IMPL] wed 2/25 4pm - Implement class defaults snapshot in NodePool (Phase 1 pool reset improvements)
 
 [MILE] wed 2/25 4pm - Polished top-down shooter with capsule collisions, mouse firing, weapon unlock/pickup system, contact damage fix, ammo tracking, and extended debug bridge API
+
+[MILE] wed 2/25 4pm - Added 9 CC0 sound effects to the top-down shooter with per-weapon firing sounds and game event audio
+
+[MILE] wed 2/25 6pm - Added class defaults snapshot to NodePool for automatic preservation of subclass override declarations through pool cycles
+
+[IMPL] wed 2/25 6pm - Implement Phase 2: Slide-loop re-entrancy guard for Actor.move()
+
+[MILE] wed 2/25 6pm - Added slide-loop re-entrancy guard to Actor.move() with isInsideTree checks and three tests
+
+[IMPL] wed 2/25 6pm - Implement Phase 3: Update shooter example to remove pool workarounds
+
+[MILE] wed 2/25 8pm - Removed pool workarounds from top-down shooter example after engine-level NodePool and Actor.move() fixes
+
+[ASKS] wed 2/25 8pm - Investigate the recurring collision detection footgun where nothing collides correctly on first implementation pass
+
+[MILE] wed 2/25 8pm - Added space shooter example game with pooled bullets, wave spawning, enemy recycling, and collision routing
+
+[IMPL] wed 2/25 9pm - Add sound effects and animated explosions to space shooter using CC0 SFX and Kenney smoke particles with size-matched hit/destroy effects

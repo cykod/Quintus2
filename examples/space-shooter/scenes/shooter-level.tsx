@@ -14,7 +14,7 @@ import {
 import { BasicEnemy } from "../entities/basic-enemy.js";
 import { BomberEnemy } from "../entities/bomber-enemy.js";
 import { Boss } from "../entities/boss.js";
-import { explosionPool } from "../entities/explosion.js";
+import { spawnExplosion } from "../entities/explosion.js";
 import { Player } from "../entities/player.js";
 import { PowerUp, type PowerUpType } from "../entities/power-up.js";
 import { Starfield } from "../entities/starfield.js";
@@ -176,7 +176,7 @@ export class ShooterLevel extends Scene {
 		enemy.died.connect((e) => {
 			this._activeEnemies--;
 			gameState.score += e.points;
-			this._spawnExplosion(e.position);
+			this._spawnExplosion(e.position, e.hasTag("boss"));
 
 			// Maybe drop power-up
 			if (this.game.random.next() < POWERUP_DROP_CHANCE) {
@@ -192,10 +192,9 @@ export class ShooterLevel extends Scene {
 		});
 	}
 
-	private _spawnExplosion(pos: Vec2): void {
-		const exp = explosionPool.acquire();
-		exp.position._set(pos.x, pos.y);
-		this.add(exp);
+	private _spawnExplosion(pos: Vec2, boss = false): void {
+		const scale = boss ? 1.5 : 0.6;
+		spawnExplosion(this, pos, scale);
 	}
 
 	private _spawnPowerUp(pos: Vec2): void {
@@ -209,6 +208,7 @@ export class ShooterLevel extends Scene {
 	}
 
 	private _activatePowerUp(type: PowerUpType): void {
+		this.game.audio.play("powerup", { bus: "sfx" });
 		switch (type) {
 			case "shield":
 				this._player.shieldActive = true;

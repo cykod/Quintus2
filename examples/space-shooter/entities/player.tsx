@@ -1,6 +1,7 @@
 import { type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import type { Shape2D } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import {
 	GAME_HEIGHT,
@@ -18,6 +19,15 @@ import { playerBulletPool } from "./player-bullet.js";
 const HALF_WIDTH = 20;
 const HALF_HEIGHT = 15;
 const SPREAD_ANGLE = Math.PI / 12; // ~15 degrees
+
+/** Convex hull approximating the player ship silhouette (~40×30 visual). */
+const PLAYER_SHAPE: Shape2D = Shape.polygon([
+	new Vec2(0, -14), // nose
+	new Vec2(18, 4), // right wing
+	new Vec2(10, 14), // right engine
+	new Vec2(-10, 14), // left engine
+	new Vec2(-18, 4), // left wing
+]);
 
 export class Player extends Actor {
 	override collisionGroup = "player";
@@ -41,7 +51,7 @@ export class Player extends Actor {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(16, 12)} />
+				<CollisionShape shape={PLAYER_SHAPE} />
 				<Sprite
 					ref="sprite"
 					texture="tileset"
@@ -93,6 +103,7 @@ export class Player extends Actor {
 		this.health--;
 		gameState.lives = this.health;
 		this._invincibleTimer = PLAYER_INVINCIBILITY_DURATION;
+		this.game.audio.play("player_hit", { bus: "sfx" });
 		this.playerHit.emit();
 
 		if (this.health <= 0) {
@@ -101,6 +112,7 @@ export class Player extends Actor {
 	}
 
 	private _fire(): void {
+		this.game.audio.play("player_shoot", { bus: "sfx" });
 		if (this.spreadShot) {
 			// Fire 3 bullets in a spread
 			for (const offset of [-SPREAD_ANGLE, 0, SPREAD_ANGLE]) {

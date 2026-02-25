@@ -7,6 +7,7 @@ import { FRAME, PLAYER_BULLET_SCALE_X, PLAYER_BULLET_SCALE_Y, tilesetAtlas } fro
 
 export class PlayerBullet extends Actor implements Poolable {
 	override collisionGroup = "pBullets";
+	override solid = false;
 	override gravity = 0;
 	override applyGravity = false;
 
@@ -19,7 +20,7 @@ export class PlayerBullet extends Actor implements Poolable {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(4, 10)} />
+				<CollisionShape shape={Shape.rect(5, 16)} />
 				<Sprite
 					ref="sprite"
 					texture="tileset"
@@ -37,8 +38,12 @@ export class PlayerBullet extends Actor implements Poolable {
 		// Bullet self-handles collision with enemies
 		this.collided.connect((info: CollisionInfo) => {
 			if (info.collider.hasTag("enemy")) {
-				const enemy = info.collider as { takeDamage(n: number): void };
-				enemy.takeDamage(1);
+				const enemy = info.collider as { takeDamage(n: number, hitPoint?: Vec2): void };
+				// Lerp bullet position slightly toward enemy center so flash sits just inside the edge
+				const ex = (info.collider as Actor).position.x;
+				const ey = (info.collider as Actor).position.y;
+				const t = 0.15;
+				enemy.takeDamage(1, new Vec2(this.position.x + (ex - this.position.x) * t, this.position.y + (ey - this.position.y) * t));
 			}
 			this._recycle();
 		});

@@ -1,8 +1,21 @@
 import { type Signal, signal } from "@quintus/core";
+import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import type { Shape2D } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import { BASIC_ENEMY_HP, BASIC_ENEMY_POINTS, BASIC_ENEMY_SPEED, GAME_HEIGHT } from "../config.js";
 import { BASIC_ENEMY_SCALE_X, BASIC_ENEMY_SCALE_Y, FRAME, tilesetAtlas } from "../sprites.js";
+import { spawnFlash } from "./explosion.js";
+
+/** Hexagonal hull for basic enemy (~36×32 visual). */
+const BASIC_ENEMY_SHAPE: Shape2D = Shape.polygon([
+	new Vec2(-8, -15),
+	new Vec2(8, -15),
+	new Vec2(17, 0),
+	new Vec2(8, 15),
+	new Vec2(-8, 15),
+	new Vec2(-17, 0),
+]);
 
 export class BasicEnemy extends Actor {
 	override collisionGroup = "enemies";
@@ -18,7 +31,7 @@ export class BasicEnemy extends Actor {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(16, 14)} />
+				<CollisionShape shape={BASIC_ENEMY_SHAPE} />
 				<Sprite
 					texture="tileset"
 					sourceRect={tilesetAtlas.getFrameOrThrow(FRAME.BASIC_ENEMY)}
@@ -45,11 +58,15 @@ export class BasicEnemy extends Actor {
 		}
 	}
 
-	takeDamage(amount: number): void {
+	takeDamage(amount: number, hitPoint?: Vec2): void {
 		this.hp -= amount;
 		if (this.hp <= 0) {
+			this.game.audio.play("enemy_die", { bus: "sfx" });
 			this.died.emit(this);
 			this.destroy();
+		} else {
+			this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
+			spawnFlash(this, hitPoint ?? this.position);
 		}
 	}
 

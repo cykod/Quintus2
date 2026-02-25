@@ -8,6 +8,7 @@ import type { Player } from "./player.js";
 
 export class EnemyBullet extends Actor implements Poolable {
 	override collisionGroup = "eBullets";
+	override solid = false;
 	override gravity = 0;
 	override applyGravity = false;
 
@@ -17,7 +18,7 @@ export class EnemyBullet extends Actor implements Poolable {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(4, 10)} />
+				<CollisionShape shape={Shape.rect(5, 16)} />
 				<Sprite
 					texture="tileset"
 					sourceRect={tilesetAtlas.getFrameOrThrow(FRAME.ENEMY_BULLET)}

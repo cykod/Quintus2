@@ -1,5 +1,5 @@
 import type { Game } from "@quintus/core";
-import { TextureAtlas } from "@quintus/sprites";
+import { SpriteSheet, TextureAtlas } from "@quintus/sprites";
 
 // === Atlas instance (populated by loadAtlas) ===
 export let tilesetAtlas: TextureAtlas;
@@ -64,6 +64,19 @@ export const FRAME = {
 	STAR2: "star2.png",
 	STAR3: "star3.png",
 } as const;
+
+// === Particle spritesheet (flash + explosion, 9 cols x 2 rows, 64x64 cells) ===
+export const particleSheet = new SpriteSheet({
+	texture: "particles",
+	frameWidth: 64,
+	frameHeight: 64,
+	columns: 9,
+	rows: 2,
+	animations: {
+		flash: { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8], fps: 30, loop: false },
+		explosion: { frames: [9, 10, 11, 12, 13, 14, 15, 16, 17], fps: 24, loop: false },
+	},
+});
 
 /**
  * Parse the XML atlas from loaded assets.

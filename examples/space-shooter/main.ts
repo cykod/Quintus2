@@ -40,8 +40,17 @@ game.registerScenes({
 // === Load Assets & Start ===
 game.assets
 	.load({
-		images: ["assets/tileset.png"],
+		images: ["assets/tileset.png", "assets/particles.png"],
 		xml: ["assets/tileset.xml"],
+		audio: [
+			"assets/player_shoot.ogg",
+			"assets/enemy_shoot.ogg",
+			"assets/enemy_hit.ogg",
+			"assets/enemy_die.ogg",
+			"assets/boss_die.ogg",
+			"assets/player_hit.ogg",
+			"assets/powerup.ogg",
+		],
 	})
 	.then(() => {
 		loadAtlas(game);
