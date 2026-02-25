@@ -13,7 +13,7 @@
 | 1.5 | XML Texture Atlas support in `@quintus/sprites` | Done |
 | 2 | Breakout game | Done |
 | 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Done |
-| 4 | Space Shooter game (uses pooling) | Pending |
+| 4 | Space Shooter game (uses pooling) | Done |
 | 5 | Tower Defense game | Pending |
 | 6 | Puzzle game (Sokoban) | Pending |
 | 7 | Cross-game review & prefabs proposal | Pending |
@@ -1332,21 +1332,21 @@ examples/space-shooter/
 
 ### 7.10 Deliverables
 
-- [ ] Create `examples/space-shooter/` directory structure
-- [ ] Implement Player with 4-directional movement and auto-fire (TSX build)
-- [ ] Implement 3 enemy types (basic, weaver, bomber) (TSX build)
-- [ ] Implement Boss enemy with multi-phase pattern
-- [ ] Implement bullet system with `NodePool<T>` pooling
-- [ ] Implement WaveManager with escalating difficulty
-- [ ] Implement power-up system (shield, rapid fire, spread shot)
-- [ ] Implement explosion animations (pooled)
-- [ ] Implement scrolling star background (parallax)
-- [ ] Implement title and game over scenes (pure TSX build)
-- [ ] Implement HUD (score, lives, wave, power-up indicator)
+- [x] Create `examples/space-shooter/` directory structure
+- [x] Implement Player with 4-directional movement and auto-fire (TSX build)
+- [x] Implement 3 enemy types (basic, weaver, bomber) (TSX build)
+- [x] Implement Boss enemy with multi-phase pattern
+- [x] Implement bullet system with `NodePool<T>` pooling
+- [x] Implement WaveManager with escalating difficulty
+- [x] Implement power-up system (shield, rapid fire, spread shot)
+- [x] Implement explosion animations (pooled)
+- [x] Implement scrolling star background (parallax)
+- [x] Implement title and game over scenes (pure TSX build)
+- [x] Implement HUD (score, lives, wave, power-up indicator)
 - [ ] Add sound effects and audio integration
-- [ ] Write integration tests (player, enemies, bullets, waves, power-ups, flow)
-- [ ] Verify game is playable via `pnpm dev`
-- [ ] Verify all tests pass
+- [x] Write integration tests (player, enemies, bullets, waves, power-ups, flow)
+- [x] Verify game is playable via `pnpm dev`
+- [x] Verify all tests pass
 - [ ] Verify `qdbg connect space-shooter` works for debugging
 
 ---

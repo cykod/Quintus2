@@ -1,3 +1,17 @@
+## Add space shooter example game with pooled bullets and wave spawning
+*Wednesday, February 25th at 8pm*
+Implement Phase 9.4 space shooter — a vertical-scrolling shmup with player 
+ship, three enemy types (basic, weaver, bomber), boss fights every 3 waves, 
+NodePool-based bullet recycling, power-ups (shield, rapid fire, spread shot), 
+parallax starfield, and full scene flow (title, gameplay, game over). All 
+entities use solid Actor collisions with self-contained bullet→enemy and 
+bullet→player routing via the collided signal. Enemies wrap to the top of the 
+screen when they pass the bottom, keeping waves persistent until cleared. Ships 
+with 24 integration tests covering player movement, enemy behavior, bullet 
+pooling, wave progression, power-ups, and deterministic replay.
+
+---
+
 ## Remove pool workarounds from top-down shooter example
 *Wednesday, February 25th at 8pm*
 With the engine-level NodePool class defaults snapshot (Phase 1) and 
