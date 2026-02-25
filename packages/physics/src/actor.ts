@@ -142,6 +142,26 @@ export class Actor extends CollisionObject {
 		super.onDestroy();
 	}
 
+	/** @internal */
+	override _poolReset(): void {
+		super._poolReset();
+		this.solid = false;
+		this.velocity._set(0, 0);
+		this.gravity = 0;
+		this.applyGravity = true;
+		this.upDirection._set(0, -1);
+		this.floorMaxAngle = Math.PI / 4;
+		this.maxSlides = 4;
+		this._onFloor = false;
+		this._onWall = false;
+		this._onCeiling = false;
+		this._floorNormal._set(0, 0);
+		this._wallNormal._set(0, 0);
+		this._floorCollider = null;
+		this._slideCollisions.length = 0;
+		this.collided.disconnectAll();
+	}
+
 	/** Override for self-handling of physics contacts. Default emits collided signal. */
 	onCollided(info: CollisionInfo): void {
 		this.collided.emit(info);
@@ -306,9 +326,7 @@ export class Actor extends CollisionObject {
 		for (let i = 0; i < this.maxSlides; i++) {
 			if (motionX * motionX + motionY * motionY < EPSILON_SQ) break;
 
-			const motion = new Vec2(motionX, motionY);
-			const offset = totalDx !== 0 || totalDy !== 0 ? new Vec2(totalDx, totalDy) : undefined;
-			const collision = world.castMotion(this, motion, offset);
+			const collision = world._castMotionScalar(this, motionX, motionY, totalDx, totalDy);
 
 			if (!collision) {
 				totalDx += motionX;
@@ -398,8 +416,8 @@ export class Actor extends CollisionObject {
 		this._onWall = false;
 		this._onCeiling = false;
 		this._floorCollider = null;
-		this._floorNormal = new Vec2(0, 0);
-		this._wallNormal = new Vec2(0, 0);
+		this._floorNormal._set(0, 0);
+		this._wallNormal._set(0, 0);
 
 		const upLen = this.upDirection.length();
 		if (upLen > 0) {
@@ -409,13 +427,13 @@ export class Actor extends CollisionObject {
 
 				if (angle <= this.floorMaxAngle) {
 					this._onFloor = true;
-					this._floorNormal = col.normal;
+					this._floorNormal._set(col.normal.x, col.normal.y);
 					this._floorCollider = col.collider;
 				} else if (angle >= Math.PI - this.floorMaxAngle) {
 					this._onCeiling = true;
 				} else {
 					this._onWall = true;
-					this._wallNormal = col.normal;
+					this._wallNormal._set(col.normal.x, col.normal.y);
 				}
 			}
 		}
@@ -463,8 +481,7 @@ export class Actor extends CollisionObject {
 			if (platform.constantVelocity.lengthSquared() > 0) {
 				const carryX = platform.constantVelocity.x * dt;
 				const carryY = platform.constantVelocity.y * dt;
-				const carryMotion = new Vec2(carryX, carryY);
-				const carryCollision = world.castMotion(this, carryMotion);
+				const carryCollision = world._castMotionScalar(this, carryX, carryY);
 				if (carryCollision) {
 					this.position._set(
 						this.position.x + carryCollision.travel.x,

@@ -153,6 +153,17 @@ export abstract class CollisionObject extends Node2D {
 		super.onDestroy();
 	}
 
+	/** @internal */
+	override _poolReset(): void {
+		super._poolReset();
+		this.collisionGroup = "default";
+		this.monitoring = false;
+		this._registered = false;
+		this._suppressAutoRehash = false;
+		this.bodyEntered.disconnectAll();
+		this.bodyExited.disconnectAll();
+	}
+
 	/** @internal Filter collision by normal direction. Override in StaticCollider for one-way. */
 	_shouldSkipCollision(_normal: Vec2): boolean {
 		return false;

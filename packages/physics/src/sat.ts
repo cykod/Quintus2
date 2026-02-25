@@ -1,8 +1,18 @@
-import { clamp, EPSILON, Matrix2D, Vec2 } from "@quintus/math";
+import { clamp, EPSILON, type Matrix2D, type Matrix2DLike, Vec2 } from "@quintus/math";
 import type { CapsuleShape, CircleShape, RectShape, Shape2D } from "./shapes.js";
 
 /** Point-like type for intermediate calculations. */
 type XY = { x: number; y: number };
+
+/** Inline translation-only check for Matrix2DLike (avoids requiring Matrix2D instance). */
+function isTranslationOnly(m: Matrix2DLike): boolean {
+	return (
+		Math.abs(m.a - 1) <= EPSILON &&
+		Math.abs(m.b) <= EPSILON &&
+		Math.abs(m.c) <= EPSILON &&
+		Math.abs(m.d - 1) <= EPSILON
+	);
+}
 
 /** Result of a SAT overlap test. */
 export interface SATResult {
@@ -23,16 +33,17 @@ export function flip(result: SATResult | null): SATResult | null {
 /**
  * Test overlap between two shapes with given world-space transforms.
  * Returns null if no overlap. Normal points from A toward B.
+ * Accepts Matrix2DLike (plain {a,b,c,d,e,f} objects) to avoid Matrix2D allocations.
  */
 export function testOverlap(
 	shapeA: Shape2D,
-	transformA: Matrix2D,
+	transformA: Matrix2DLike,
 	shapeB: Shape2D,
-	transformB: Matrix2D,
+	transformB: Matrix2DLike,
 ): SATResult | null {
 	const a = shapeA.type;
 	const b = shapeB.type;
-	const bothAxisAligned = transformA.isTranslationOnly() && transformB.isTranslationOnly();
+	const bothAxisAligned = isTranslationOnly(transformA) && isTranslationOnly(transformB);
 
 	// Fast path: axis-aligned rect vs rect (most common in platformers)
 	if (a === "rect" && b === "rect" && bothAxisAligned) {
@@ -52,7 +63,7 @@ export function testOverlap(
 	}
 
 	// Fast path: axis-aligned rect vs circle
-	if (a === "rect" && b === "circle" && transformA.isTranslationOnly()) {
+	if (a === "rect" && b === "circle" && isTranslationOnly(transformA)) {
 		const sxB = Math.sqrt(transformB.a * transformB.a + transformB.b * transformB.b);
 		const syB = Math.sqrt(transformB.c * transformB.c + transformB.d * transformB.d);
 		const radiusB = Math.max(sxB, syB) * (shapeB as CircleShape).radius;
@@ -65,7 +76,7 @@ export function testOverlap(
 			transformB.f,
 		);
 	}
-	if (a === "circle" && b === "rect" && transformB.isTranslationOnly()) {
+	if (a === "circle" && b === "rect" && isTranslationOnly(transformB)) {
 		const sxA = Math.sqrt(transformA.a * transformA.a + transformA.b * transformA.b);
 		const syA = Math.sqrt(transformA.c * transformA.c + transformA.d * transformA.d);
 		const radiusA = Math.max(sxA, syA) * (shapeA as CircleShape).radius;
@@ -120,9 +131,9 @@ function rectVsRect(
 /** Circle vs circle overlap. Normal points from A toward B. */
 function circleVsCircle(
 	a: CircleShape,
-	transformA: Matrix2D,
+	transformA: Matrix2DLike,
 	b: CircleShape,
-	transformB: Matrix2D,
+	transformB: Matrix2DLike,
 ): SATResult | null {
 	const ax = transformA.e;
 	const ay = transformA.f;
@@ -209,14 +220,14 @@ function rectVsCircle(
 // ── General SAT ──────────────────────────────────────────────────
 
 /** Compute effective radius for circle/capsule under a transform. */
-function getEffectiveRadius(shape: CircleShape | CapsuleShape, transform: Matrix2D): number {
+function getEffectiveRadius(shape: CircleShape | CapsuleShape, transform: Matrix2DLike): number {
 	const sx = Math.sqrt(transform.a * transform.a + transform.b * transform.b);
 	const sy = Math.sqrt(transform.c * transform.c + transform.d * transform.d);
 	return Math.max(sx, sy) * shape.radius;
 }
 
 /** Transform shape vertices to world space. */
-function getWorldVertices(shape: Shape2D, transform: Matrix2D): XY[] {
+function getWorldVertices(shape: Shape2D, transform: Matrix2DLike): XY[] {
 	const { a, b, c, d, e, f } = transform;
 	switch (shape.type) {
 		case "rect": {
@@ -262,7 +273,7 @@ function addEdgeNormals(verts: XY[], axes: XY[]): void {
 }
 
 /** Add axes from circle center to each vertex of the other shape. */
-function addCircleAxes(transform: Matrix2D, otherVerts: XY[], axes: XY[]): void {
+function addCircleAxes(transform: Matrix2DLike, otherVerts: XY[], axes: XY[]): void {
 	const cx = transform.e;
 	const cy = transform.f;
 	for (const v of otherVerts) {
@@ -276,7 +287,12 @@ function addCircleAxes(transform: Matrix2D, otherVerts: XY[], axes: XY[]): void 
 }
 
 /** Add capsule separation axes: basis vectors + segment-to-vertex axes. */
-function addCapsuleAxes(transform: Matrix2D, endpoints: XY[], otherVerts: XY[], axes: XY[]): void {
+function addCapsuleAxes(
+	transform: Matrix2DLike,
+	endpoints: XY[],
+	otherVerts: XY[],
+	axes: XY[],
+): void {
 	// Basis vectors (perpendicular and parallel to capsule orientation)
 	const bxLen = Math.sqrt(transform.a * transform.a + transform.b * transform.b);
 	if (bxLen > EPSILON) {
@@ -355,7 +371,7 @@ function closestPointsSegments(p0: XY, p1: XY, q0: XY, q1: XY): { a: XY; b: XY }
 /** Project a shape onto a separation axis, returning the min/max interval. */
 function projectOntoAxis(
 	shape: Shape2D,
-	transform: Matrix2D,
+	transform: Matrix2DLike,
 	verts: XY[],
 	axis: XY,
 ): { min: number; max: number } {
@@ -393,10 +409,10 @@ function projectOntoAxis(
 /** Collect all separation axes for a shape pair. */
 function getSeparationAxes(
 	shapeA: Shape2D,
-	transformA: Matrix2D,
+	transformA: Matrix2DLike,
 	vertsA: XY[],
 	shapeB: Shape2D,
-	transformB: Matrix2D,
+	transformB: Matrix2DLike,
 	vertsB: XY[],
 ): XY[] {
 	const axes: XY[] = [];
@@ -451,9 +467,9 @@ function getSeparationAxes(
 /** General SAT for any shape pair with world-space transforms. */
 function generalSAT(
 	shapeA: Shape2D,
-	transformA: Matrix2D,
+	transformA: Matrix2DLike,
 	shapeB: Shape2D,
-	transformB: Matrix2D,
+	transformB: Matrix2DLike,
 ): SATResult | null {
 	const vertsA = getWorldVertices(shapeA, transformA);
 	const vertsB = getWorldVertices(shapeB, transformB);
@@ -514,19 +530,20 @@ export function findTOI(
 	const motionLenSq = motion.x * motion.x + motion.y * motion.y;
 	if (motionLenSq < EPSILON * EPSILON) return null;
 
-	const txAtTime = (t: number): Matrix2D => {
-		return new Matrix2D(
-			bodyTransform.a,
-			bodyTransform.b,
-			bodyTransform.c,
-			bodyTransform.d,
-			bodyTransform.e + motion.x * t,
-			bodyTransform.f + motion.y * t,
-		);
+	// Mutable scratch object reused for all binary search iterations
+	const scratch: { a: number; b: number; c: number; d: number; e: number; f: number } = {
+		a: bodyTransform.a,
+		b: bodyTransform.b,
+		c: bodyTransform.c,
+		d: bodyTransform.d,
+		e: 0,
+		f: 0,
 	};
 
 	// Check full motion endpoint
-	const endResult = testOverlap(bodyShape, txAtTime(1), otherShape, otherTransform);
+	scratch.e = bodyTransform.e + motion.x;
+	scratch.f = bodyTransform.f + motion.y;
+	const endResult = testOverlap(bodyShape, scratch, otherShape, otherTransform);
 	if (!endResult) return null;
 
 	// Check start: already overlapping?
@@ -542,7 +559,9 @@ export function findTOI(
 
 	for (let i = 0; i < maxIterations; i++) {
 		const mid = (lo + hi) / 2;
-		const midResult = testOverlap(bodyShape, txAtTime(mid), otherShape, otherTransform);
+		scratch.e = bodyTransform.e + motion.x * mid;
+		scratch.f = bodyTransform.f + motion.y * mid;
+		const midResult = testOverlap(bodyShape, scratch, otherShape, otherTransform);
 		if (midResult) {
 			hi = mid;
 			lastOverlap = midResult;

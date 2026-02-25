@@ -12,7 +12,7 @@
 | 1 | Asset preparation (download packs, create tile CSVs) | Done |
 | 1.5 | XML Texture Atlas support in `@quintus/sprites` | Done |
 | 2 | Breakout game | Done |
-| 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Pending |
+| 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Done |
 | 4 | Space Shooter game (uses pooling) | Pending |
 | 5 | Tower Defense game | Pending |
 | 6 | Puzzle game (Sokoban) | Pending |
@@ -1017,13 +1017,13 @@ See `steering/POOLING_PLAN.md` for full implementation details, API sketches, an
 
 ### 6.3 Deliverables
 
-- [ ] Implement physics pipeline temporary pool optimizations (POOLING_PLAN Phase 1)
-- [ ] Implement `NodePool<T>` with `Poolable` interface (POOLING_PLAN Phase 2)
-- [ ] Implement `_poolReset()` chain across Node hierarchy
-- [ ] All existing physics tests pass (zero regressions)
-- [ ] Pool unit tests pass (acquire, release, reset, lifecycle)
-- [ ] Pool determinism tests pass
-- [ ] `pnpm build` and `pnpm lint` clean
+- [x] Implement physics pipeline temporary pool optimizations (POOLING_PLAN Phase 1)
+- [x] Implement `NodePool<T>` with `Poolable` interface (POOLING_PLAN Phase 2)
+- [x] Implement `_poolReset()` chain across Node hierarchy
+- [x] All existing physics tests pass (zero regressions)
+- [x] Pool unit tests pass (acquire, release, reset, lifecycle)
+- [x] Pool determinism tests pass
+- [x] `pnpm build` and `pnpm lint` clean
 
 ---
 

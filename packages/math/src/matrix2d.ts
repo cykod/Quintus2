@@ -1,6 +1,16 @@
 import { EPSILON } from "./utils.js";
 import { Vec2 } from "./vec2.js";
 
+/** Structural type for anything that provides the six affine transform components. */
+export interface Matrix2DLike {
+	readonly a: number;
+	readonly b: number;
+	readonly c: number;
+	readonly d: number;
+	readonly e: number;
+	readonly f: number;
+}
+
 /**
  * 3x3 affine transform matrix (2D):
  * | a  c  e |
@@ -9,7 +19,7 @@ import { Vec2 } from "./vec2.js";
  *
  * Maps directly to Canvas2D's setTransform(a, b, c, d, e, f).
  */
-export class Matrix2D {
+export class Matrix2D implements Matrix2DLike {
 	readonly a: number;
 	readonly b: number;
 	readonly c: number;

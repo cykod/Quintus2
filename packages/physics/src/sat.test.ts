@@ -1133,3 +1133,31 @@ describe("SAT: Normal direction (general)", () => {
 		expect(result2?.normal.y).toBeLessThan(0);
 	});
 });
+
+// ── Matrix2DLike ─────────────────────────────────────────────────
+
+describe("SAT: Matrix2DLike plain objects", () => {
+	const r10 = Shape.rect(10, 10);
+
+	it("testOverlap with plain {a,b,c,d,e,f} produces same result as Matrix2D", () => {
+		const matA = Matrix2D.translate(0, 0);
+		const matB = Matrix2D.translate(8, 0);
+		const objA = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+		const objB = { a: 1, b: 0, c: 0, d: 1, e: 8, f: 0 };
+
+		const resultMat = testOverlap(r10, matA, r10, matB);
+		const resultObj = testOverlap(r10, objA, r10, objB);
+
+		expect(resultMat).not.toBeNull();
+		expect(resultObj).not.toBeNull();
+		expect(resultObj?.depth).toBeCloseTo(resultMat?.depth);
+		expect(resultObj?.normal.x).toBeCloseTo(resultMat?.normal.x);
+		expect(resultObj?.normal.y).toBeCloseTo(resultMat?.normal.y);
+	});
+
+	it("testOverlap with non-overlapping plain objects returns null", () => {
+		const objA = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+		const objB = { a: 1, b: 0, c: 0, d: 1, e: 100, f: 0 };
+		expect(testOverlap(r10, objA, r10, objB)).toBeNull();
+	});
+});

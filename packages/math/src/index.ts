@@ -1,5 +1,6 @@
 export { AABB } from "./aabb.js";
 export { Color } from "./color.js";
+export type { Matrix2DLike } from "./matrix2d.js";
 export { Matrix2D } from "./matrix2d.js";
 export { Rect } from "./rect.js";
 export { SeededRandom } from "./seeded-random.js";

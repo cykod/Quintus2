@@ -448,6 +448,46 @@ export class Node {
 		};
 	}
 
+	// === Pool Reset ===
+
+	/**
+	 * @internal Reset engine-level state for object pool reuse.
+	 * Called by NodePool.acquire() before user reset().
+	 * Subclasses must call super._poolReset().
+	 */
+	_poolReset(): void {
+		// Fresh ID so the node looks "new" to the physics world and tree
+		(this as { id: number }).id = nextNodeId++;
+
+		// Reset lifecycle flags so build() + onReady() re-run on next tree entry
+		this._isReady = false;
+		this._isInsideTree = false;
+		this._isDestroyed = false;
+		this._pendingDestroy = false;
+
+		// Clear tags
+		this._tags.clear();
+
+		// Reset pause mode
+		this.pauseMode = "inherit";
+
+		// Reset name to class name
+		this.name = this.constructor.name;
+
+		// Detach all children (they may be stale build() children from previous use)
+		for (const child of [...this._children]) {
+			child._parent = null;
+		}
+		this._children.length = 0;
+		this._parent = null;
+
+		// Disconnect all signal listeners
+		this.treeEntered.disconnectAll();
+		this.treeExited.disconnectAll();
+		this.readySignal.disconnectAll();
+		this.destroying.disconnectAll();
+	}
+
 	// === Lifecycle Methods (override in subclasses) ===
 	onReady(): void {}
 	onEnterTree(): void {}

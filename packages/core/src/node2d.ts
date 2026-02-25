@@ -141,6 +141,25 @@ export class Node2D extends Node {
 		return this.globalTransform.transformPoint(localPoint);
 	}
 
+	// === Pool Reset ===
+
+	/** @internal */
+	override _poolReset(): void {
+		super._poolReset();
+		this._position._set(0, 0);
+		this._rotation = 0;
+		this._scale._set(1, 1);
+		this.zIndex = 0;
+		this.visible = true;
+		this.alpha = 1;
+		this.renderFixed = false;
+		this.ySortChildren = false;
+		this._localTransformDirty = true;
+		this._globalTransformDirty = true;
+		this._cachedLocalTransform = Matrix2D.IDENTITY;
+		this._cachedGlobalTransform = Matrix2D.IDENTITY;
+	}
+
 	// === Internal ===
 
 	/** @internal Hook called after transform is marked dirty. Override in subclasses (e.g. CollisionObject) to react to transform changes. */

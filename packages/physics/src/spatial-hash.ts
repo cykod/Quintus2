@@ -127,11 +127,16 @@ export class SpatialHash<T> {
 
 	/** Query all items that might overlap the given AABB. */
 	query(aabb: AABB): Set<T> {
+		return this.queryRect(aabb.min.x, aabb.min.y, aabb.max.x, aabb.max.y);
+	}
+
+	/** Query all items that might overlap the given rect (scalar coords, avoids AABB allocation). */
+	queryRect(minX: number, minY: number, maxX: number, maxY: number): Set<T> {
 		const result = new Set<T>();
-		const minCX = Math.floor(aabb.min.x / this.cellSize);
-		const minCY = Math.floor(aabb.min.y / this.cellSize);
-		const maxCX = Math.floor(aabb.max.x / this.cellSize);
-		const maxCY = Math.floor(aabb.max.y / this.cellSize);
+		const minCX = Math.floor(minX / this.cellSize);
+		const minCY = Math.floor(minY / this.cellSize);
+		const maxCX = Math.floor(maxX / this.cellSize);
+		const maxCY = Math.floor(maxY / this.cellSize);
 
 		for (let cx = minCX; cx <= maxCX; cx++) {
 			for (let cy = minCY; cy <= maxCY; cy++) {

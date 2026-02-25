@@ -65,15 +65,15 @@ export function findShapePairTOI(
 		// sweptAABB normal points from mover toward obstacle — flip for our convention
 		// (normal should point away from collider into mover)
 		const normal = result.normal.negate();
-		// Estimate depth from SAT at collision point
-		const hitTransform = new Matrix2D(
-			bodyTransform.a,
-			bodyTransform.b,
-			bodyTransform.c,
-			bodyTransform.d,
-			bodyTransform.e + motion.x * result.toi,
-			bodyTransform.f + motion.y * result.toi,
-		);
+		// Estimate depth from SAT at collision point (plain object avoids Matrix2D allocation)
+		const hitTransform = {
+			a: bodyTransform.a,
+			b: bodyTransform.b,
+			c: bodyTransform.c,
+			d: bodyTransform.d,
+			e: bodyTransform.e + motion.x * result.toi,
+			f: bodyTransform.f + motion.y * result.toi,
+		};
 		const satResult = testOverlap(bodyShape, hitTransform, otherShape, otherTransform);
 		return { toi: result.toi, normal, depth: satResult?.depth ?? 0 };
 	}
@@ -110,6 +110,12 @@ export class PhysicsWorld {
 
 	/** Registered onContact() callbacks. */
 	private readonly contactRegistrations: ContactRegistration[] = [];
+
+	/** @internal Scratch set reused per monitored body per frame. */
+	private readonly _scratchOverlapSet = new Set<CollisionObject>();
+
+	/** @internal Scratch map reused per overlap registration per frame. */
+	private readonly _scratchOverlapMap = new Map<string, [CollisionObject, CollisionObject]>();
 
 	/** Signal connections for actor collided signals (for onContact dispatching). */
 	private readonly contactConnections = new Map<CollisionObject, { disconnect(): void }>();
@@ -256,119 +262,7 @@ export class PhysicsWorld {
 	 * 5. Build CollisionInfo with travel, remainder, contact point
 	 */
 	castMotion(body: CollisionObject, motion: Vec2, bodyOffset?: Vec2): CollisionInfo | null {
-		let bodyAABB = body.getWorldAABB();
-		if (!bodyAABB) return null;
-
-		// Apply body offset (used by Actor slide loop for batched displacement)
-		let bodyShapes = body.getShapeTransforms();
-		if (bodyShapes.length === 0) return null;
-
-		if (bodyOffset) {
-			bodyAABB = new AABB(
-				new Vec2(bodyAABB.min.x + bodyOffset.x, bodyAABB.min.y + bodyOffset.y),
-				new Vec2(bodyAABB.max.x + bodyOffset.x, bodyAABB.max.y + bodyOffset.y),
-			);
-			bodyShapes = bodyShapes.map((s) => ({
-				shape: s.shape,
-				transform: this._translateTransform(s.transform, bodyOffset),
-			}));
-		}
-
-		// 1. Compute swept AABB
-		const sweptMin = new Vec2(
-			Math.min(bodyAABB.min.x, bodyAABB.min.x + motion.x),
-			Math.min(bodyAABB.min.y, bodyAABB.min.y + motion.y),
-		);
-		const sweptMax = new Vec2(
-			Math.max(bodyAABB.max.x, bodyAABB.max.x + motion.x),
-			Math.max(bodyAABB.max.y, bodyAABB.max.y + motion.y),
-		);
-		const sweptRegion = new AABB(sweptMin, sweptMax);
-
-		// 2. Broad phase
-		const candidates = this.hash.query(sweptRegion);
-		candidates.delete(body); // Don't collide with self
-
-		// Track best (earliest) collision across all candidates and shape pairs
-		let bestTOI = Infinity;
-		let bestNormal: Vec2 | null = null;
-		let bestDepth = 0;
-		let bestCollider: CollisionObject | null = null;
-		let bestBodyShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
-		let bestColliderShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
-
-		for (const candidate of candidates) {
-			// 3. Filter by collision groups
-			if (!this.groups.shouldCollide(body.collisionGroup, candidate.collisionGroup)) {
-				continue;
-			}
-			// Don't collide actor with sensors (sensors handle their own overlap)
-			if (candidate.bodyType === "sensor") continue;
-			// Skip non-solid actors (solid actors are treated as obstacles)
-			if (candidate.bodyType === "actor" && !(candidate as Actor).solid) continue;
-
-			const candidateShapes = candidate.getShapeTransforms();
-
-			// 4. For each shape pair, find TOI
-			for (const bodyShapeInfo of bodyShapes) {
-				for (const candidateShapeInfo of candidateShapes) {
-					const hit = this._findShapePairTOI(
-						bodyShapeInfo.shape,
-						bodyShapeInfo.transform,
-						motion,
-						candidateShapeInfo.shape,
-						candidateShapeInfo.transform,
-					);
-
-					if (hit && hit.toi < bestTOI) {
-						// One-way platform filtering
-						if (candidate._shouldSkipCollision(hit.normal)) continue;
-
-						bestTOI = hit.toi;
-						bestNormal = hit.normal;
-						bestDepth = hit.depth;
-						bestCollider = candidate;
-						bestBodyShapeData = bodyShapeInfo;
-						bestColliderShapeData = candidateShapeInfo;
-					}
-				}
-			}
-		}
-
-		if (!bestCollider || !bestNormal || !bestBodyShapeData || !bestColliderShapeData) {
-			return null;
-		}
-
-		// 5. Compute travel, remainder, and contact point
-		const travel = new Vec2(motion.x * bestTOI, motion.y * bestTOI);
-		const remainder = new Vec2(motion.x - travel.x, motion.y - travel.y);
-
-		// Find the CollisionShape node that matched the hit shape.
-		// bestCollider is guaranteed to have shapes since we found a collision.
-		const colliderShapes = bestCollider.getShapes();
-		const matchedShape = bestColliderShapeData.shape;
-		const colliderShapeNode = colliderShapes.find((s) => s.shape === matchedShape);
-		if (!colliderShapeNode) return null;
-
-		// Compute contact point at the collision position
-		const bodyTransformAtHit = this._translateTransform(bestBodyShapeData.transform, travel);
-		const point = computeContactPoint(
-			bestBodyShapeData.shape,
-			bodyTransformAtHit,
-			bestColliderShapeData.shape,
-			bestColliderShapeData.transform,
-			bestNormal,
-		);
-
-		return {
-			collider: bestCollider,
-			colliderShape: colliderShapeNode,
-			normal: bestNormal,
-			depth: bestDepth,
-			point,
-			travel,
-			remainder,
-		};
+		return this._castMotionScalar(body, motion.x, motion.y, bodyOffset?.x ?? 0, bodyOffset?.y ?? 0);
 	}
 
 	/**
@@ -461,11 +355,12 @@ export class PhysicsWorld {
 			const bodyAABB = monitor.getWorldAABB();
 			if (!bodyAABB) continue;
 
-			// Compute current overlaps
+			// Compute current overlaps using scratch set
 			const candidates = this.hash.query(bodyAABB);
 			candidates.delete(monitor);
 
-			const currentOverlaps = new Set<CollisionObject>();
+			const scratch = this._scratchOverlapSet;
+			scratch.clear();
 			const monitorShapes = monitor.getShapeTransforms();
 
 			for (const candidate of candidates) {
@@ -487,12 +382,12 @@ export class PhysicsWorld {
 				}
 
 				if (overlaps) {
-					currentOverlaps.add(candidate);
+					scratch.add(candidate);
 				}
 			}
 
 			// Diff: fire entered for new overlaps
-			for (const body of currentOverlaps) {
+			for (const body of scratch) {
 				if (!prevOverlaps.has(body)) {
 					monitor.onBodyEntered(body);
 
@@ -513,7 +408,7 @@ export class PhysicsWorld {
 
 			// Diff: fire exited for removed overlaps
 			for (const body of prevOverlaps) {
-				if (!currentOverlaps.has(body)) {
+				if (!scratch.has(body)) {
 					monitor.onBodyExited(body);
 
 					// Debug instrumentation
@@ -531,8 +426,11 @@ export class PhysicsWorld {
 				}
 			}
 
-			// Update stored overlaps
-			this.monitoredOverlaps.set(monitor, currentOverlaps);
+			// Swap: clear prevOverlaps and copy scratch into it (reuses the Set object)
+			prevOverlaps.clear();
+			for (const body of scratch) {
+				prevOverlaps.add(body);
+			}
 		}
 	}
 
@@ -545,8 +443,9 @@ export class PhysicsWorld {
 			const bodiesB = this.groupIndex.get(reg.groupB);
 			if (!bodiesA || !bodiesB) continue;
 
-			// Track current overlaps this frame
-			const currentOverlaps = new Map<string, [CollisionObject, CollisionObject]>();
+			// Track current overlaps this frame using scratch map
+			const scratch = this._scratchOverlapMap;
+			scratch.clear();
 
 			for (const a of bodiesA) {
 				const aAABB = a.getWorldAABB();
@@ -580,7 +479,7 @@ export class PhysicsWorld {
 
 					if (overlaps) {
 						const key = `${a.id}:${b.id}`;
-						currentOverlaps.set(key, [a, b]);
+						scratch.set(key, [a, b]);
 
 						// Fire callback on first frame of overlap
 						if (!reg.overlaps.has(key)) {
@@ -593,14 +492,17 @@ export class PhysicsWorld {
 			// Fire exit callbacks for pairs that are no longer overlapping
 			if (reg.onExit) {
 				for (const [key, [a, b]] of reg.overlaps) {
-					if (!currentOverlaps.has(key)) {
+					if (!scratch.has(key)) {
 						reg.onExit(a, b);
 					}
 				}
 			}
 
-			// Replace overlap map with current frame's overlaps
-			reg.overlaps = currentOverlaps;
+			// Swap: clear reg.overlaps and copy scratch into it (reuses the Map object)
+			reg.overlaps.clear();
+			for (const [key, pair] of scratch) {
+				reg.overlaps.set(key, pair);
+			}
 		}
 	}
 
@@ -1018,5 +920,140 @@ export class PhysicsWorld {
 			transform.e + delta.x,
 			transform.f + delta.y,
 		);
+	}
+
+	/** Create a new transform translated by scalar dx, dy. */
+	private _translateTransformScalar(transform: Matrix2D, dx: number, dy: number): Matrix2D {
+		return new Matrix2D(
+			transform.a,
+			transform.b,
+			transform.c,
+			transform.d,
+			transform.e + dx,
+			transform.f + dy,
+		);
+	}
+
+	/**
+	 * @internal Scalar version of castMotion — avoids Vec2/AABB allocations in hot path.
+	 * Used by Actor.move() for slide loop iterations.
+	 */
+	_castMotionScalar(
+		body: CollisionObject,
+		motionX: number,
+		motionY: number,
+		offsetX = 0,
+		offsetY = 0,
+	): CollisionInfo | null {
+		const bodyAABB = body.getWorldAABB();
+		if (!bodyAABB) return null;
+
+		let bodyShapes = body.getShapeTransforms();
+		if (bodyShapes.length === 0) return null;
+
+		// Apply body offset using scalars (no Vec2/AABB allocation)
+		const hasOffset = offsetX !== 0 || offsetY !== 0;
+		let bodyMinX = bodyAABB.min.x;
+		let bodyMinY = bodyAABB.min.y;
+		let bodyMaxX = bodyAABB.max.x;
+		let bodyMaxY = bodyAABB.max.y;
+
+		if (hasOffset) {
+			bodyMinX += offsetX;
+			bodyMinY += offsetY;
+			bodyMaxX += offsetX;
+			bodyMaxY += offsetY;
+			bodyShapes = bodyShapes.map((s) => ({
+				shape: s.shape,
+				transform: this._translateTransformScalar(s.transform, offsetX, offsetY),
+			}));
+		}
+
+		// Compute swept region as scalars → pass to hash.queryRect()
+		const sweptMinX = Math.min(bodyMinX, bodyMinX + motionX);
+		const sweptMinY = Math.min(bodyMinY, bodyMinY + motionY);
+		const sweptMaxX = Math.max(bodyMaxX, bodyMaxX + motionX);
+		const sweptMaxY = Math.max(bodyMaxY, bodyMaxY + motionY);
+
+		const candidates = this.hash.queryRect(sweptMinX, sweptMinY, sweptMaxX, sweptMaxY);
+		candidates.delete(body);
+
+		// Construct motion Vec2 for findShapePairTOI (it needs Vec2 for swept tests)
+		const motion = new Vec2(motionX, motionY);
+
+		let bestTOI = Infinity;
+		let bestNormal: Vec2 | null = null;
+		let bestDepth = 0;
+		let bestCollider: CollisionObject | null = null;
+		let bestBodyShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
+		let bestColliderShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
+
+		for (const candidate of candidates) {
+			if (!this.groups.shouldCollide(body.collisionGroup, candidate.collisionGroup)) {
+				continue;
+			}
+			if (candidate.bodyType === "sensor") continue;
+			if (candidate.bodyType === "actor" && !(candidate as Actor).solid) continue;
+
+			const candidateShapes = candidate.getShapeTransforms();
+
+			for (const bodyShapeInfo of bodyShapes) {
+				for (const candidateShapeInfo of candidateShapes) {
+					const hit = this._findShapePairTOI(
+						bodyShapeInfo.shape,
+						bodyShapeInfo.transform,
+						motion,
+						candidateShapeInfo.shape,
+						candidateShapeInfo.transform,
+					);
+
+					if (hit && hit.toi < bestTOI) {
+						if (candidate._shouldSkipCollision(hit.normal)) continue;
+
+						bestTOI = hit.toi;
+						bestNormal = hit.normal;
+						bestDepth = hit.depth;
+						bestCollider = candidate;
+						bestBodyShapeData = bodyShapeInfo;
+						bestColliderShapeData = candidateShapeInfo;
+					}
+				}
+			}
+		}
+
+		if (!bestCollider || !bestNormal || !bestBodyShapeData || !bestColliderShapeData) {
+			return null;
+		}
+
+		const travel = new Vec2(motionX * bestTOI, motionY * bestTOI);
+		const remainder = new Vec2(motionX - travel.x, motionY - travel.y);
+
+		const colliderShapes = bestCollider.getShapes();
+		const matchedShape = bestColliderShapeData.shape;
+		const colliderShapeNode = colliderShapes.find((s) => s.shape === matchedShape);
+		if (!colliderShapeNode) return null;
+
+		const bodyTransformAtHit = this._translateTransformScalar(
+			bestBodyShapeData.transform,
+			travel.x,
+			travel.y,
+		);
+		const point = computeContactPoint(
+			bestBodyShapeData.shape,
+			bodyTransformAtHit,
+			bestColliderShapeData.shape,
+			bestColliderShapeData.transform,
+			bestNormal,
+		);
+
+		return {
+			collider: bestCollider,
+			colliderShape: colliderShapeNode,
+			normal: bestNormal,
+			depth: bestDepth,
+			point,
+			travel,
+			remainder,
+		};
 	}
 }

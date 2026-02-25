@@ -225,4 +225,20 @@ describe("SpatialHash", () => {
 		// Should complete well under 100ms (typically <10ms)
 		expect(elapsed).toBeLessThan(100);
 	});
+
+	it("queryRect returns same results as query(AABB)", () => {
+		const hash = new SpatialHash<string>(64);
+		hash.insert("a", aabb(50, 50, 10, 10));
+		hash.insert("b", aabb(200, 200, 10, 10));
+		hash.insert("c", aabb(100, 100, 30, 30));
+
+		const region = aabb(75, 75, 50, 50);
+		const fromAABB = hash.query(region);
+		const fromScalar = hash.queryRect(region.min.x, region.min.y, region.max.x, region.max.y);
+
+		expect(fromScalar.size).toBe(fromAABB.size);
+		for (const item of fromAABB) {
+			expect(fromScalar.has(item)).toBe(true);
+		}
+	});
 });

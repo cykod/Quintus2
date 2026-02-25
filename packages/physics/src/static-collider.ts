@@ -39,6 +39,14 @@ export class StaticCollider extends CollisionObject {
 		};
 	}
 
+	/** @internal */
+	override _poolReset(): void {
+		super._poolReset();
+		this.constantVelocity._set(0, 0);
+		this.oneWay = false;
+		this.oneWayDirection._set(0, -1);
+	}
+
 	/** @internal One-way collision filtering for castMotion. */
 	override _shouldSkipCollision(normal: Vec2): boolean {
 		if (!this.oneWay) return false;

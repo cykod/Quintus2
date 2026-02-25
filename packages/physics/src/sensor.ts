@@ -65,4 +65,13 @@ export class Sensor extends CollisionObject {
 		this.sensorExited.disconnectAll();
 		super.onDestroy();
 	}
+
+	/** @internal */
+	override _poolReset(): void {
+		super._poolReset();
+		// Sensors default to monitoring = true (override CollisionObject default of false)
+		this.monitoring = true;
+		this.sensorEntered.disconnectAll();
+		this.sensorExited.disconnectAll();
+	}
 }

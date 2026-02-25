@@ -34,6 +34,9 @@ export { Node2D } from "./node2d.js";
 export type { Plugin } from "./plugin.js";
 // Plugins
 export { definePlugin } from "./plugin.js";
+// Pool
+export type { Poolable } from "./pool.js";
+export { NodePool } from "./pool.js";
 // Reactive state
 export type { ChangePayload, ReactiveState, ReactiveStateAPI } from "./reactive-state.js";
 export { reactiveState } from "./reactive-state.js";

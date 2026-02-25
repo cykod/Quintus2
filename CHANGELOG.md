@@ -1,3 +1,19 @@
+## Implement object pooling system (Phase 9.3)
+*Wednesday, February 25th at 1pm*
+Implements the two-tier object pooling system from POOLING_PLAN.md. Phase 1 
+eliminates per-frame garbage in physics hot paths: Actor.move() and 
+castMotion() now use scalar math instead of allocating Vec2/AABB objects, SAT 
+functions accept Matrix2DLike plain objects instead of requiring Matrix2D 
+instances, and stepMonitoring() reuses scratch Set/Map instead of allocating 
+per frame. Phase 2 adds NodePool<T> with the Poolable interface and a 
+_poolReset() chain across the full Node hierarchy (Node, Node2D, 
+CollisionObject, Actor, Sensor, StaticCollider), enabling zero-GC entity 
+recycling for bullet-hell scenarios. All 1747 tests pass including 21 new pool 
+unit tests and integration tests verifying acquire/release lifecycle, physics 
+re-registration, and deterministic ID assignment.
+
+---
+
 ## Add Breakout game, auto-rehash spatial hash, and built-in XML assets
 *Wednesday, February 25th at 1am*
 Adds the complete Breakout example game (3 levels, paddle/ball/brick/power-up 
