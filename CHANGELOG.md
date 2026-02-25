@@ -1,3 +1,16 @@
+## Add class defaults snapshot to NodePool
+*Wednesday, February 25th at 6pm*
+NodePool now automatically captures class-level property overrides 
+(collisionGroup, applyGravity, upDirection, solid, etc.) from a 
+freshly-constructed exemplar and restores them after _poolReset() on every 
+acquire. This eliminates the need for users to manually restore subclass 
+override declarations in their reset() method. Also changes the auto-created 
+default collision group to mask=0 (collides with nothing) to encourage explicit 
+group configuration, with a console.warn when bodies use the unconfigured 
+default group.
+
+---
+
 ## Add sound effects to the top-down shooter
 *Wednesday, February 25th at 4pm*
 Added 9 CC0-licensed sound effects to the top-down shooter: per-weapon firing 

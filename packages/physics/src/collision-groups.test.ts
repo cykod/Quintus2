@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { Game, Scene } from "@quintus/core";
+import { describe, expect, it, vi } from "vitest";
+import { Actor } from "./actor.js";
 import { CollisionGroups } from "./collision-groups.js";
+import { CollisionShape } from "./collision-shape.js";
+import { PhysicsPlugin } from "./physics-plugin.js";
+import { Shape } from "./shapes.js";
 
 describe("CollisionGroups", () => {
 	const config = {
@@ -51,15 +56,15 @@ describe("CollisionGroups", () => {
 		expect(groups.shouldCollide("b", "a")).toBe(false);
 	});
 
-	it("default group collides with everything when not explicitly configured", () => {
+	it("default group collides with nothing when not explicitly configured", () => {
 		const groups = new CollisionGroups({
 			player: { collidesWith: ["world"] },
 			world: { collidesWith: ["player"] },
 		});
-		// "default" was auto-added and collides with all groups
-		expect(groups.shouldCollide("default", "player")).toBe(true);
-		expect(groups.shouldCollide("default", "world")).toBe(true);
-		expect(groups.shouldCollide("default", "default")).toBe(true);
+		// "default" was auto-added with mask = 0 (collides with nothing)
+		expect(groups.shouldCollide("default", "player")).toBe(false);
+		expect(groups.shouldCollide("default", "world")).toBe(false);
+		expect(groups.shouldCollide("default", "default")).toBe(false);
 	});
 
 	it("allows explicit default group configuration", () => {
@@ -135,5 +140,83 @@ describe("CollisionGroups", () => {
 		expect(groups.shouldCollide("nonexistent", "player")).toBe(false);
 		// Unknown groupB → layerB = 0, so (maskA & 0) = 0 → false
 		expect(groups.shouldCollide("player", "nonexistent")).toBe(false);
+	});
+
+	it("auto-created default group has mask = 0", () => {
+		const groups = new CollisionGroups({
+			player: { collidesWith: ["world"] },
+			world: { collidesWith: ["player"] },
+		});
+		expect(groups.getMask("default")).toBe(0);
+	});
+});
+
+describe("PhysicsWorld default group warning", () => {
+	it("console.warn fires for bodies registered with auto-created default group", () => {
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		class TestScene extends Scene {}
+		const game = new Game({ width: 100, height: 100 });
+		// Configure groups WITHOUT "default" — it gets auto-created with mask=0
+		game.use(
+			PhysicsPlugin({
+				collisionGroups: {
+					player: { collidesWith: ["world"] },
+					world: { collidesWith: ["player"] },
+				},
+			}),
+		);
+		game.registerScenes({ test: TestScene });
+		game.start("test");
+
+		const scene = game.currentScene as Scene;
+
+		// Create an actor that uses the default group
+		const actor = new Actor();
+		actor.name = "TestActor";
+		const shape = new CollisionShape();
+		shape.shape = Shape.rect(10, 10);
+		actor.add(shape);
+		scene.add(actor);
+
+		expect(warnSpy).toHaveBeenCalledWith(
+			'[Physics] TestActor has collisionGroup "default". Set an explicit group or it won\'t collide with anything.',
+		);
+
+		warnSpy.mockRestore();
+	});
+
+	it("console.warn does not fire when default group is explicitly configured", () => {
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		class TestScene extends Scene {}
+		const game = new Game({ width: 100, height: 100 });
+		// Configure groups WITH "default" — mask will be non-zero
+		game.use(
+			PhysicsPlugin({
+				collisionGroups: {
+					default: { collidesWith: ["default"] },
+				},
+			}),
+		);
+		game.registerScenes({ test: TestScene });
+		game.start("test");
+
+		const scene = game.currentScene as Scene;
+
+		const actor = new Actor();
+		actor.name = "TestActor";
+		const shape = new CollisionShape();
+		shape.shape = Shape.rect(10, 10);
+		actor.add(shape);
+		scene.add(actor);
+
+		// Should NOT warn because default group has non-zero mask
+		const physicsWarns = warnSpy.mock.calls.filter(
+			(call) => typeof call[0] === "string" && call[0].includes("[Physics]"),
+		);
+		expect(physicsWarns.length).toBe(0);
+
+		warnSpy.mockRestore();
 	});
 });

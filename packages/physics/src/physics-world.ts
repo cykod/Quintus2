@@ -135,6 +135,11 @@ export class PhysicsWorld {
 	/** Register a body in the spatial hash. Validates collision group. */
 	register(body: CollisionObject): void {
 		this.groups.validate(body.collisionGroup);
+		if (body.collisionGroup === "default" && this.groups.getMask("default") === 0) {
+			console.warn(
+				`[Physics] ${body.name} has collisionGroup "default". Set an explicit group or it won't collide with anything.`,
+			);
+		}
 		const aabb = body.getWorldAABB();
 		if (aabb) {
 			this.hash.insert(body, aabb);

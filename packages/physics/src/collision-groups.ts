@@ -50,9 +50,10 @@ export class CollisionGroups {
 			}
 			this.maskMap.set(name, mask);
 		}
-		// Default group collides with everything if not explicitly configured
+		// Default group collides with nothing if not explicitly configured.
+		// Users should define explicit groups; "default" is a fallback placeholder.
 		if (!this.maskMap.has("default")) {
-			this.maskMap.set("default", (1 << bit) - 1);
+			this.maskMap.set("default", 0);
 		}
 	}
 

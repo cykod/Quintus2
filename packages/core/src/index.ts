@@ -35,8 +35,8 @@ export type { Plugin } from "./plugin.js";
 // Plugins
 export { definePlugin } from "./plugin.js";
 // Pool
-export type { Poolable } from "./pool.js";
-export { NodePool } from "./pool.js";
+export type { ClassDefaultsSnapshot, Poolable } from "./pool.js";
+export { _applyClassDefaults, _captureClassDefaults, NodePool } from "./pool.js";
 // Reactive state
 export type { ChangePayload, ReactiveState, ReactiveStateAPI } from "./reactive-state.js";
 export { reactiveState } from "./reactive-state.js";
