@@ -47,6 +47,17 @@ game.assets
 			"assets/weapon_silencer.png",
 		],
 		xml: ["assets/spritesheet_characters.xml"],
+		audio: [
+			"assets/shoot_pistol.ogg",
+			"assets/shoot_machine.ogg",
+			"assets/shoot_silencer.ogg",
+			"assets/player_hit.ogg",
+			"assets/enemy_hit.ogg",
+			"assets/enemy_die.ogg",
+			"assets/pickup.ogg",
+			"assets/wave_start.ogg",
+			"assets/weapon_switch.ogg",
+		],
 	})
 	.then(() => {
 		loadAtlases(game);

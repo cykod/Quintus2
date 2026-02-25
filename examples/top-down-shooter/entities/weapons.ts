@@ -10,6 +10,7 @@ export interface WeaponDef {
 	reloadTime: number;
 	spread: number;
 	playerFrame: string;
+	sound: string;
 }
 
 export const WEAPONS: Record<string, WeaponDef> = {
@@ -23,6 +24,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
 		reloadTime: 0,
 		spread: 0,
 		playerFrame: FRAME.PLAYER_GUN,
+		sound: "shoot_pistol",
 	},
 	machine: {
 		name: "Machine Gun",
@@ -34,6 +36,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
 		reloadTime: 1.5,
 		spread: 0.1,
 		playerFrame: FRAME.PLAYER_MACHINE,
+		sound: "shoot_machine",
 	},
 	silencer: {
 		name: "Silencer",
@@ -45,5 +48,6 @@ export const WEAPONS: Record<string, WeaponDef> = {
 		reloadTime: 2.0,
 		spread: 0,
 		playerFrame: FRAME.PLAYER_SILENCER,
+		sound: "shoot_silencer",
 	},
 };

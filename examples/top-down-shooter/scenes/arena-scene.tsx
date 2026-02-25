@@ -53,11 +53,13 @@ export class ArenaScene extends Scene {
 		// Wave completion
 		this.enemyManager.waveComplete.connect((wave) => {
 			this.after(WAVE_DELAY, () => {
+				this.game.audio.play("wave_start", { bus: "sfx" });
 				this.enemyManager.startWave(wave + 1);
 			});
 		});
 
 		// Start wave 1
+		this.game.audio.play("wave_start", { bus: "sfx" });
 		this.enemyManager.startWave(1);
 	}
 }

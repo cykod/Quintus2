@@ -1,3 +1,13 @@
+## Add sound effects to the top-down shooter
+*Wednesday, February 25th at 4pm*
+Added 9 CC0-licensed sound effects to the top-down shooter: per-weapon firing 
+sounds (pistol, machine gun, silencer), player hit, enemy hit and death, weapon 
+pickup, weapon switch, and wave start. Each WeaponDef now includes a sound 
+field so the correct firing sound plays automatically. Sounds are loaded via 
+the asset pipeline and played through the sfx audio bus.
+
+---
+
 ## Polish top-down shooter and extend debug bridge API
 *Wednesday, February 25th at 4pm*
 Overhauled the top-down shooter example: replaced circular collision shapes 

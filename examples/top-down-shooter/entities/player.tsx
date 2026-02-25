@@ -152,6 +152,9 @@ export class Player extends Actor {
 
 		this._fireCooldown = this._weapon.fireRate;
 
+		// Play weapon sound
+		this.game.audio.play(this._weapon.sound, { bus: "sfx" });
+
 		// Consume ammo
 		if (this._ammo !== Infinity) {
 			this._ammo--;
@@ -184,6 +187,7 @@ export class Player extends Actor {
 		const weapon = WEAPONS[weaponId];
 		if (!weapon) return;
 		this._unlockedWeapons.add(weaponId);
+		this.game.audio.play("pickup", { bus: "sfx" });
 		// Save current weapon's ammo, give a full clip of the new one
 		this._weaponAmmo.set(this._currentWeaponId, this._ammo);
 		this._currentWeaponId = weaponId;
@@ -214,6 +218,7 @@ export class Player extends Actor {
 		this._weapon = weapon;
 		this._ammo = this._weaponAmmo.get(weaponId) ?? weapon.ammo;
 		this._fireCooldown = 0;
+		this.game.audio.play("weapon_switch", { bus: "sfx" });
 
 		// Update sprite frame
 		if (this.sprite) {
@@ -240,6 +245,7 @@ export class Player extends Actor {
 		this._health -= amount;
 		this._invincible = true;
 		this._invincibleTimer = PLAYER_INVINCIBILITY_DURATION;
+		this.game.audio.play("player_hit", { bus: "sfx" });
 
 		gameState.health = Math.max(0, this._health);
 		this.damaged.emit(this._health);

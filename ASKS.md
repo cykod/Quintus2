@@ -404,3 +404,5 @@
 [IMPL] wed 2/25 4pm - Fix top-down-shooter collision shapes to capsules and add mouse-click firing alongside spacebar
 
 [IMPL] wed 2/25 4pm - Implement class defaults snapshot in NodePool (Phase 1 pool reset improvements)
+
+[MILE] wed 2/25 4pm - Polished top-down shooter with capsule collisions, mouse firing, weapon unlock/pickup system, contact damage fix, ammo tracking, and extended debug bridge API

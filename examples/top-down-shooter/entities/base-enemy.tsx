@@ -60,8 +60,11 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 	takeDamage(amount: number): void {
 		this._health -= amount;
 		if (this._health <= 0) {
+			this.game.audio.play("enemy_die", { bus: "sfx" });
 			this.died.emit(this);
 			this._onDied?.(this);
+		} else {
+			this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
 		}
 	}
 
