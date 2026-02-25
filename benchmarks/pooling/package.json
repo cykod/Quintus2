@@ -1,0 +1,5 @@
+{
+	"name": "@quintus/benchmark-pooling",
+	"private": true,
+	"type": "module"
+}

@@ -1,3 +1,18 @@
+## Add top-down shooter game with pooled bullets and enemies
+*Wednesday, February 25th at 3pm*
+Implement Phase 3 of the object pooling system: a twin-stick top-down arena 
+shooter in examples/top-down-shooter/ that validates NodePool at scale. The 
+game features a WASD+mouse player, 3 weapon types (pistol, machine gun, 
+silencer), 3 pooled enemy types (zombie, robot, soldier) with distinct AI, wave 
+spawning, weapon pickups, muzzle flash effects, and a HUD with real-time pool 
+stats. Includes 19 tests covering game flow, player movement/damage, bullet 
+pool reuse across 100 spawn/recycle cycles, enemy waves, and weapon switching. 
+Also adds a headless benchmark (3600 frames) and updates the examples index 
+page. Discovered that poolable actors must use new Vec2(0, 0) instead of frozen 
+Vec2.ZERO for upDirection to avoid crashes in _poolReset().
+
+---
+
 ## Implement object pooling system (Phase 9.3)
 *Wednesday, February 25th at 1pm*
 Implements the two-tier object pooling system from POOLING_PLAN.md. Phase 1 

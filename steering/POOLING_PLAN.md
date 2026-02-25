@@ -11,7 +11,7 @@
 |-------|-------------|--------|
 | 1 | Physics pipeline temporary pools | Done |
 | 2 | Node pool (acquire/release lifecycle) | Done |
-| 3 | Integration & benchmarks | Pending |
+| 3 | Integration & benchmarks | Done |
 
 ---
 
