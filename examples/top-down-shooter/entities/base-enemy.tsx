@@ -1,8 +1,8 @@
 import { type Poolable, type Signal, signal } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
-import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Actor, type CollisionInfo, CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
-import { ENEMY_RADIUS } from "../config.js";
+import { ENEMY_CAPSULE_HEIGHT, ENEMY_RADIUS } from "../config.js";
 import { CHARACTER_SCALE, charactersAtlas } from "../sprites.js";
 import type { BulletManager } from "./bullet-manager.js";
 import type { Player } from "./player.js";
@@ -33,7 +33,7 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.circle(ENEMY_RADIUS)} />
+				<CollisionShape shape={Shape.capsule(ENEMY_RADIUS, ENEMY_CAPSULE_HEIGHT)} />
 				<Sprite
 					ref="sprite"
 					texture="spritesheet_characters"
@@ -48,6 +48,13 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 		super.onReady();
 		this.tag("enemy");
 		this._health = this.maxHealth;
+
+		// Deal contact damage to the player when THIS enemy's move() collides
+		this.collided.connect((info: CollisionInfo) => {
+			if (info.collider.hasTag("player") && this._playerRef) {
+				this._playerRef.takeDamage(this.contactDamage);
+			}
+		});
 	}
 
 	takeDamage(amount: number): void {
@@ -59,6 +66,12 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 	}
 
 	reset(): void {
+		// Restore properties that _poolReset() overrides
+		this.collisionGroup = "enemies";
+		this.solid = true;
+		this.applyGravity = false;
+		this.upDirection._set(0, 0);
+
 		this._health = this.maxHealth;
 		this._playerRef = null;
 		this._bulletManager = null;
@@ -69,7 +82,7 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 		if (!this._playerRef) return;
 		const dx = this._playerRef.position.x - this.position.x;
 		const dy = this._playerRef.position.y - this.position.y;
-		this.rotation = Math.atan2(dy, dx) + Math.PI / 2;
+		this.rotation = Math.atan2(dy, dx);
 	}
 
 	protected _distToPlayer(): number {

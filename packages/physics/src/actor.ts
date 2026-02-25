@@ -345,8 +345,8 @@ export class Actor extends CollisionObject {
 				this._slideCollisions.push(collision);
 				this.onCollided(collision);
 
-				// Debug instrumentation
-				const dGame = this.game;
+				// Debug instrumentation (use gameOrNull — node may leave tree in onCollided)
+				const dGame = this.gameOrNull;
 				if (dGame?.debug) {
 					dGame.debugLog.write(
 						{
@@ -374,8 +374,8 @@ export class Actor extends CollisionObject {
 			this._slideCollisions.push(collision);
 			this.onCollided(collision);
 
-			// Debug instrumentation: log collision
-			const game = this.game;
+			// Debug instrumentation (use gameOrNull — node may leave tree in onCollided)
+			const game = this.gameOrNull;
 			if (game?.debug) {
 				game.debugLog.write(
 					{
@@ -438,9 +438,9 @@ export class Actor extends CollisionObject {
 			}
 		}
 
-		// Debug instrumentation: log contact flag changes
+		// Debug instrumentation: log contact flag changes (use gameOrNull — node may leave tree in onCollided)
 		{
-			const game = this.game;
+			const game = this.gameOrNull;
 			if (game?.debug) {
 				if (wasOnFloor !== this._onFloor) {
 					game.debugLog.write(

@@ -255,6 +255,41 @@ Nearby Player (100.0,202.0) within 100px:
   DrawableStatic  pos=(100.0,220.0)  dist=18.0  delta=(0.0,18.0)  group=world  shape=rect 80x12  [static]
 ```
 
+### `mouse <x> <y>`
+Set the mouse/pointer position in game-space coordinates. Useful for testing aim-at-cursor mechanics, crosshairs, or any game logic that reads `game.input.mousePosition`.
+
+```bash
+pnpm qdbg mouse 150 200     # set pointer to (150, 200)
+pnpm qdbg step 1            # advance a frame so game code sees the new position
+```
+
+### `mouse-get`
+Get the current mouse/pointer position.
+
+```bash
+pnpm qdbg mouse-get
+# Mouse position: (150.00, 200.00)
+```
+
+---
+
+## Scene Modification
+
+### `destroy <name|id|type|tag>`
+Remove one or more nodes from the scene tree. Matches by node name (exact), numeric id, constructor type name, or tag. Useful for isolating behavior by removing distractions (e.g., removing all enemies to test player movement alone).
+
+```bash
+pnpm qdbg destroy EnemySpawner     # destroy node named "EnemySpawner"
+pnpm qdbg destroy Bat              # destroy all Bat-type nodes
+pnpm qdbg destroy enemy            # destroy all nodes tagged "enemy"
+pnpm qdbg destroy 42               # destroy node with id 42
+```
+
+Output reports how many nodes were destroyed:
+```
+Destroyed 3 node(s) matching: enemy
+```
+
 ---
 
 ## Scripting

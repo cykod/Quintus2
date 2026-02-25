@@ -70,6 +70,16 @@ pnpm qdbg disconnect
 - List registered scenes → `scenes`
 - Jump to a scene → `scene level1`
 
+**Want to remove nodes to test in isolation?**
+- Destroy by name → `destroy EnemySpawner`
+- Destroy by type → `destroy Bat` (removes all Bat instances)
+- Destroy by tag → `destroy enemy` (removes all nodes tagged "enemy")
+- Destroy by id → `destroy 42`
+
+**Want to control or read the mouse position?**
+- Set mouse position → `mouse 150 200`
+- Read mouse position → `mouse-get`
+
 **Want to evaluate custom JS?**
 - Read a value → `eval 'd.frame'`
 - Inspect game state → `eval 'game.currentScene.name'`

@@ -87,6 +87,13 @@ COMMANDS
                           Hold action(s) until node reaches threshold
                           Use "-" for x or y to ignore that axis
     nearby <name> [rad]   Show nodes within radius (default: 100px)
+    mouse <x> <y>         Set the mouse/pointer position (game-space coords)
+    mouse-get             Get the current mouse/pointer position
+
+  Scene modification:
+    destroy <name|id|type|tag>
+                          Remove node(s) from the scene tree. Matches by
+                          node name, numeric id, constructor type, or tag.
 
   Scripting:
     eval '<code>'         Evaluate a JS expression in the browser and print the result
@@ -721,6 +728,38 @@ cmd_nearby() {
 	"
 }
 
+cmd_destroy() {
+	local target="${1:?Usage: qdbg destroy <name|id|type|tag>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var key = Number('${target}');
+		var count = isNaN(key) ? d.destroy('${target}') : d.destroy(key);
+		if (count === 0) return 'No nodes matched: ${target}';
+		return 'Destroyed ' + count + ' node(s) matching: ${target}';
+	"
+}
+
+cmd_mouse() {
+	local x="${1:?Usage: qdbg mouse <x> <y>}"
+	local y="${2:?Usage: qdbg mouse <x> <y>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		d.setMousePosition(${x}, ${y});
+		return 'Mouse position set to (${x}, ${y})';
+	"
+}
+
+cmd_mouse_get() {
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var pos = d.getMousePosition();
+		return 'Mouse position: (' + pos.x.toFixed(2) + ', ' + pos.y.toFixed(2) + ')';
+	"
+}
+
 cmd_screenshot() {
 	local file="${1:-/tmp/quintus-screenshot.png}"
 	need_bridge
@@ -780,6 +819,9 @@ case "$cmd" in
 	jump-analysis) check_playwright_cli; cmd_jump_analysis "$@" ;;
 	move-to)      check_playwright_cli; cmd_move_to "$@" ;;
 	nearby)       check_playwright_cli; cmd_nearby "$@" ;;
+	destroy)      check_playwright_cli; cmd_destroy "$@" ;;
+	mouse)        check_playwright_cli; cmd_mouse "$@" ;;
+	mouse-get)    check_playwright_cli; cmd_mouse_get ;;
 	screenshot)   check_playwright_cli; cmd_screenshot "$@" ;;
 	*)
 		echo "Error: Unknown command '$cmd'" >&2

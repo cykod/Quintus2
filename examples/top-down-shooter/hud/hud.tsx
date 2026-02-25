@@ -1,6 +1,6 @@
 import { Color } from "@quintus/math";
 import { Label, Layer } from "@quintus/ui";
-import { GAME_WIDTH } from "../config.js";
+import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import type { BulletManager } from "../entities/bullet-manager.js";
 import { gameState } from "../state.js";
 
@@ -60,6 +60,13 @@ export class HUD extends Layer {
 					align="left"
 				/>
 				<Label
+					position={[GAME_WIDTH / 2, GAME_HEIGHT - 10]}
+					text="[1/2/3] or scroll wheel to switch weapons"
+					fontSize={10}
+					color="#666666"
+					align="center"
+				/>
+				<Label
 					ref="poolLabel"
 					position={[GAME_WIDTH - 10, 24]}
 					text=""
@@ -93,17 +100,12 @@ export class HUD extends Layer {
 			}
 		});
 
-		gameState.on("ammo").connect(() => {
+		const updateAmmo = () => {
 			if (this.ammoLabel) this.ammoLabel.text = this._formatAmmo();
-		});
-
-		gameState.on("currentWeapon").connect(() => {
-			if (this.ammoLabel) this.ammoLabel.text = this._formatAmmo();
-		});
-
-		gameState.on("isReloading").connect(() => {
-			if (this.ammoLabel) this.ammoLabel.text = this._formatAmmo();
-		});
+		};
+		gameState.on("ammo").connect(updateAmmo);
+		gameState.on("maxAmmo").connect(updateAmmo);
+		gameState.on("currentWeapon").connect(updateAmmo);
 	}
 
 	override onUpdate(_dt: number) {
@@ -117,8 +119,7 @@ export class HUD extends Layer {
 
 	private _formatAmmo(): string {
 		const weapon = gameState.currentWeapon;
-		if (gameState.isReloading) return `${weapon.toUpperCase()} [RELOADING]`;
-		if (gameState.ammo === Infinity) return `${weapon.toUpperCase()} INF`;
+		if (gameState.ammo === Infinity) return `${weapon.toUpperCase()} \u221E`;
 		return `${weapon.toUpperCase()} ${gameState.ammo}/${gameState.maxAmmo}`;
 	}
 }

@@ -39,6 +39,12 @@ export interface DebugBridge {
 	switchScene(name: string): void;
 	/** List registered scene names. */
 	listScenes(): string[];
+	/** Destroy one or more nodes by name, id, type, or tag. Returns count of destroyed nodes. */
+	destroy(nameOrId: string | number): number;
+	/** Override the mouse/pointer position in game-space coordinates. */
+	setMousePosition(x: number, y: number): void;
+	/** Get the current mouse/pointer position. */
+	getMousePosition(): { x: number; y: number };
 }
 
 export interface DebugFormatters {
@@ -56,6 +62,8 @@ declare global {
 interface InputLike {
 	actionNames: string[];
 	inject(action: string, pressed: boolean): void;
+	_setMousePosition(x: number, y: number): void;
+	mousePosition: { x: number; y: number };
 }
 
 /** Get the Input instance from game via module augmentation (if InputPlugin installed). */
@@ -235,6 +243,29 @@ export function installDebugBridge(game: Game): DebugBridge {
 				(game as unknown as { _sceneRegistry: Map<string, unknown> })._sceneRegistry.keys(),
 			);
 		},
+
+		destroy(nameOrId: string | number): number {
+			const scene = game.currentScene;
+			if (!scene) return 0;
+			const nodes =
+				typeof nameOrId === "number"
+					? collectById(scene, nameOrId)
+					: collectByNameOrTag(scene, nameOrId);
+			for (const node of nodes) {
+				node.destroy();
+			}
+			return nodes.length;
+		},
+
+		setMousePosition(x: number, y: number) {
+			getGameInput(game)?._setMousePosition(x, y);
+		},
+
+		getMousePosition(): { x: number; y: number } {
+			const input = getGameInput(game);
+			if (!input) return { x: 0, y: 0 };
+			return { x: input.mousePosition.x, y: input.mousePosition.y };
+		},
 	};
 
 	if (typeof window !== "undefined") {
@@ -317,5 +348,27 @@ function walkAndMatch(node: Node, q: string, results: NodeSnapshot[]): void {
 	}
 	for (const child of node.children) {
 		walkAndMatch(child, q, results);
+	}
+}
+
+/** Collect a single node by numeric id (returns 0-or-1 element array). */
+function collectById(root: Node, id: number): Node[] {
+	const node = findNodeById(root, id);
+	return node ? [node] : [];
+}
+
+/** Collect all nodes matching name, constructor name, or tag. */
+function collectByNameOrTag(root: Node, q: string): Node[] {
+	const results: Node[] = [];
+	walkAndCollect(root, q, results);
+	return results;
+}
+
+function walkAndCollect(node: Node, q: string, results: Node[]): void {
+	if (node.constructor.name === q || node.name === q || node.hasTag(q)) {
+		results.push(node);
+	}
+	for (const child of node.children) {
+		walkAndCollect(child, q, results);
 	}
 }

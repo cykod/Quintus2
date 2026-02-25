@@ -12,7 +12,7 @@
     "remoteUser": "root",
     "containerEnv": {
         "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
-        "IS_SANDBOX": 1,
+        "IS_SANDBOX": "1",
         "DEVCONTAINER": "1"
     },
     "forwardPorts": [3050],

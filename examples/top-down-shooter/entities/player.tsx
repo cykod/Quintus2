@@ -4,6 +4,7 @@ import type { CollisionInfo } from "@quintus/physics";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import {
+	PLAYER_CAPSULE_HEIGHT,
 	PLAYER_INVINCIBILITY_DURATION,
 	PLAYER_MAX_HEALTH,
 	PLAYER_RADIUS,
@@ -14,13 +15,14 @@ import { gameState } from "../state.js";
 import type { BulletManager } from "./bullet-manager.js";
 import { WEAPONS, type WeaponDef } from "./weapons.js";
 
+const WEAPON_IDS = Object.keys(WEAPONS);
+
 export class Player extends Actor {
 	override collisionGroup = "player";
 	override solid = true;
 	override gravity = 0;
 	override applyGravity = false;
 	override upDirection = new Vec2(0, 0);
-
 	bulletManager: BulletManager | null = null;
 
 	private _speed = PLAYER_SPEED;
@@ -33,8 +35,13 @@ export class Player extends Actor {
 	private _weapon: WeaponDef = WEAPONS.pistol as WeaponDef;
 	private _ammo = Infinity;
 	private _fireCooldown = 0;
-	private _reloadTimer = 0;
-	private _isReloading = false;
+
+	// Tracks which weapons the player has unlocked, and their remaining ammo
+	private _unlockedWeapons = new Set<string>(["pistol"]);
+	private _weaponAmmo = new Map<string, number>([["pistol", Infinity]]);
+
+	// Scroll wheel weapon cycling
+	private _onWheel: ((e: WheelEvent) => void) | null = null;
 
 	sprite?: Sprite;
 
@@ -44,7 +51,7 @@ export class Player extends Actor {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.circle(PLAYER_RADIUS)} />
+				<CollisionShape shape={Shape.capsule(PLAYER_RADIUS, PLAYER_CAPSULE_HEIGHT)} />
 				<Sprite
 					ref="sprite"
 					texture="spritesheet_characters"
@@ -59,12 +66,25 @@ export class Player extends Actor {
 		super.onReady();
 		this.tag("player");
 
+		// Damage when the player moves into an enemy
 		this.collided.connect((info: CollisionInfo) => {
 			const other = info.collider;
 			if (other.hasTag("enemy")) {
 				this.takeDamage(10);
 			}
 		});
+
+		// Mouse wheel weapon cycling (only cycles unlocked weapons)
+		this._onWheel = (e: WheelEvent) => {
+			e.preventDefault();
+			const unlocked = WEAPON_IDS.filter((id) => this._unlockedWeapons.has(id));
+			if (unlocked.length <= 1) return;
+			const idx = unlocked.indexOf(this._currentWeaponId);
+			const dir = e.deltaY > 0 ? 1 : -1;
+			const next = (idx + dir + unlocked.length) % unlocked.length;
+			this.switchWeapon(unlocked[next] as string);
+		};
+		this.game.canvas.addEventListener("wheel", this._onWheel);
 	}
 
 	override onFixedUpdate(dt: number) {
@@ -88,37 +108,21 @@ export class Player extends Actor {
 		this.velocity.y = vy * this._speed;
 		this.move(dt);
 
-		// Mouse aim
+		// Mouse aim — sprites face RIGHT at rotation=0
 		const mouse = input.mousePosition;
-		this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x) + Math.PI / 2;
+		this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x);
 
 		// Fire cooldown
 		if (this._fireCooldown > 0) {
 			this._fireCooldown -= dt;
 		}
 
-		// Reload timer
-		if (this._isReloading) {
-			this._reloadTimer -= dt;
-			if (this._reloadTimer <= 0) {
-				this._isReloading = false;
-				this._ammo = this._weapon.maxAmmo;
-				gameState.ammo = this._ammo;
-				gameState.isReloading = false;
-			}
-		}
-
 		// Fire (held)
-		if (input.isPressed("fire") && !this._isReloading) {
+		if (input.isPressed("fire")) {
 			this._tryFire();
 		}
 
-		// Reload
-		if (input.isJustPressed("reload")) {
-			this._startReload();
-		}
-
-		// Weapon switching
+		// Weapon switching (only unlocked weapons)
 		if (input.isJustPressed("weapon1")) this.switchWeapon("pistol");
 		if (input.isJustPressed("weapon2")) this.switchWeapon("machine");
 		if (input.isJustPressed("weapon3")) this.switchWeapon("silencer");
@@ -139,7 +143,10 @@ export class Player extends Actor {
 	private _tryFire(): void {
 		if (this._fireCooldown > 0) return;
 		if (this._ammo <= 0) {
-			this._startReload();
+			// Out of ammo — switch back to pistol (infinite ammo)
+			if (this._currentWeaponId !== "pistol") {
+				this.switchWeapon("pistol");
+			}
 			return;
 		}
 
@@ -148,12 +155,13 @@ export class Player extends Actor {
 		// Consume ammo
 		if (this._ammo !== Infinity) {
 			this._ammo--;
+			this._weaponAmmo.set(this._currentWeaponId, this._ammo);
 			gameState.ammo = this._ammo;
 		}
 
 		// Spawn bullet
 		if (this.bulletManager) {
-			const aimAngle = this.rotation - Math.PI / 2;
+			const aimAngle = this.rotation;
 			const spread = (Math.random() - 0.5) * this._weapon.spread;
 			const fireAngle = aimAngle + spread;
 
@@ -171,38 +179,59 @@ export class Player extends Actor {
 		}
 	}
 
-	private _startReload(): void {
-		if (this._isReloading) return;
-		if (this._weapon.reloadTime <= 0) return;
-		if (this._ammo === this._weapon.maxAmmo) return;
+	/** Unlock a weapon (e.g. from a pickup) and switch to it with a full clip. */
+	unlockWeapon(weaponId: string): void {
+		const weapon = WEAPONS[weaponId];
+		if (!weapon) return;
+		this._unlockedWeapons.add(weaponId);
+		// Save current weapon's ammo, give a full clip of the new one
+		this._weaponAmmo.set(this._currentWeaponId, this._ammo);
+		this._currentWeaponId = weaponId;
+		this._weapon = weapon;
+		this._ammo = weapon.maxAmmo;
+		this._weaponAmmo.set(weaponId, this._ammo);
+		this._fireCooldown = 0;
 
-		this._isReloading = true;
-		this._reloadTimer = this._weapon.reloadTime;
-		gameState.isReloading = true;
+		if (this.sprite) {
+			this.sprite.sourceRect = charactersAtlas.getFrameOrThrow(weapon.playerFrame);
+		}
+
+		// Update state — set maxAmmo BEFORE currentWeapon so the HUD reads correct values
+		gameState.maxAmmo = weapon.maxAmmo;
+		gameState.ammo = this._ammo;
+		gameState.currentWeapon = weaponId;
 	}
 
 	switchWeapon(weaponId: string): void {
 		const weapon = WEAPONS[weaponId];
 		if (!weapon) return;
 		if (weaponId === this._currentWeaponId) return;
+		if (!this._unlockedWeapons.has(weaponId)) return;
 
+		// Save current weapon's ammo, restore target weapon's ammo
+		this._weaponAmmo.set(this._currentWeaponId, this._ammo);
 		this._currentWeaponId = weaponId;
 		this._weapon = weapon;
-		this._ammo = weapon.ammo;
+		this._ammo = this._weaponAmmo.get(weaponId) ?? weapon.ammo;
 		this._fireCooldown = 0;
-		this._isReloading = false;
-		this._reloadTimer = 0;
 
 		// Update sprite frame
 		if (this.sprite) {
 			this.sprite.sourceRect = charactersAtlas.getFrameOrThrow(weapon.playerFrame);
 		}
 
-		// Update state
-		gameState.currentWeapon = weaponId;
-		gameState.ammo = this._ammo;
+		// Update state — set maxAmmo BEFORE currentWeapon so the HUD reads correct values
 		gameState.maxAmmo = weapon.maxAmmo;
-		gameState.isReloading = false;
+		gameState.ammo = this._ammo;
+		gameState.currentWeapon = weaponId;
+	}
+
+	override onDestroy(): void {
+		if (this._onWheel) {
+			this.game.canvas.removeEventListener("wheel", this._onWheel);
+			this._onWheel = null;
+		}
+		super.onDestroy();
 	}
 
 	takeDamage(amount: number): void {

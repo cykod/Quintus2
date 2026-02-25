@@ -31,7 +31,7 @@ export class BulletManager extends Node {
 		bullet.damage = damage;
 		bullet.position.x = x;
 		bullet.position.y = y;
-		bullet.rotation = angle + Math.PI / 2;
+		bullet.rotation = angle;
 		bullet.velocity.x = Math.cos(angle) * speed;
 		bullet.velocity.y = Math.sin(angle) * speed;
 		this.add(bullet);
@@ -54,7 +54,7 @@ export class BulletManager extends Node {
 		bullet.damage = damage;
 		bullet.position.x = x;
 		bullet.position.y = y;
-		bullet.rotation = angle + Math.PI / 2;
+		bullet.rotation = angle;
 		bullet.velocity.x = Math.cos(angle) * speed;
 		bullet.velocity.y = Math.sin(angle) * speed;
 		this.add(bullet);

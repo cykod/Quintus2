@@ -181,10 +181,16 @@ export class EnemyManager extends Node {
 
 	private _spawnPickup(x: number, y: number): void {
 		const pickup = this._pickupPool.acquire();
-		pickup.weaponId = WEAPON_IDS[Math.floor(Math.random() * WEAPON_IDS.length)] ?? "pistol";
+		// Only drop non-pistol weapons (pistol is always available)
+		const dropWeapons = WEAPON_IDS.filter((id) => id !== "pistol");
+		pickup.weaponId = dropWeapons[Math.floor(Math.random() * dropWeapons.length)] ?? "machine";
 		pickup.position.x = x;
 		pickup.position.y = y;
 		pickup._onCollected = (p) => this._pickupPool.release(p);
+		// Wire pickup to unlock weapon on the player
+		pickup.collected.connect((weaponId: string) => {
+			this.playerRef?.unlockWeapon(weaponId);
+		});
 		this.add(pickup);
 	}
 

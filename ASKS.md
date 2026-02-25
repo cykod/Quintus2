@@ -342,7 +342,6 @@
 [IMPL] sat 2/21 2pm - Review and fix dungeon game inventory/shield visibility, chest loot display, and potion effect descriptions, with a test level for debugging
 
 [IMPL] sat 2/21 3pm - Add RPG sound effects from Kenney audio pack to the dungeon example game at appropriate interaction points
->>>>>>> dungeon-rebuild
 
 [MILE] sat 2/21 4pm - Rebuilt dungeon example with JSX entity declarations, equipment system, sound effects, and comprehensive test suite
 
@@ -383,3 +382,25 @@
 [IMPL] tue 2/24 9pm - Implement Phase 2 Breakout example game
 
 [MILE] wed 2/25 1am - Added Breakout game with JSX build pattern, fixed spatial hash auto-rehash on position change, and promoted XML to built-in asset type
+
+[IMPL] wed 2/25 1am - Implement object pooling system (Phase 3 of Phase 9) — physics pipeline temp pools, NodePool<T>, and _poolReset chain
+
+[IMPL] wed 2/25 2am - Implement Phase 3 of pooling plan - top-down shooter example game with object pooling integration
+
+[MILE] wed 2/25 1pm - Implemented object pooling system (Phase 9.3) with physics pipeline scalar optimizations and NodePool<T> acquire/release lifecycle
+
+[IMPL] wed 2/25 1pm - Implement Phase 3 pooling integration: top-down shooter example and benchmarks
+
+[IMPL] wed 2/25 2pm - Implement Phase 4 Space Shooter example game with pooled bullets, wave system, and 3 enemy types
+
+[MILE] wed 2/25 3pm - Added top-down shooter game with pooled bullets, enemies, wave spawning, and 19 tests validating NodePool at scale
+
+[IMPL] wed 2/25 3pm - Debug top-down shooter example using qdbg — fix player rotation, bullet-enemy collision, and stray collision rects; document engine gotchas
+
+[IMPL] wed 2/25 4pm - Debug top-down shooter using qdbg: fix rotation, bullet pool reset for collision groups and signal handlers, and document engine gotchas
+
+[DSGN] wed 2/25 4pm - Design pool reset improvements to prevent _poolReset() from clobbering subclass overrides
+
+[IMPL] wed 2/25 4pm - Fix top-down-shooter collision shapes to capsules and add mouse-click firing alongside spacebar
+
+[IMPL] wed 2/25 4pm - Implement class defaults snapshot in NodePool (Phase 1 pool reset improvements)

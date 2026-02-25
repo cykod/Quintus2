@@ -15,12 +15,14 @@ export const ARENA_HEIGHT = ARENA_BOTTOM - ARENA_TOP;
 
 // === Player ===
 export const PLAYER_SPEED = 150;
-export const PLAYER_RADIUS = 12;
+export const PLAYER_RADIUS = 8;
+export const PLAYER_CAPSULE_HEIGHT = 24;
 export const PLAYER_MAX_HEALTH = 100;
 export const PLAYER_INVINCIBILITY_DURATION = 1.0;
 
 // === Enemies ===
-export const ENEMY_RADIUS = 12;
+export const ENEMY_RADIUS = 8;
+export const ENEMY_CAPSULE_HEIGHT = 24;
 export const ENEMY_SPAWN_MIN_DISTANCE = 150;
 
 // === Collision groups ===
@@ -39,8 +41,7 @@ export const INPUT_BINDINGS: Record<string, string[]> = {
 	move_down: ["KeyS", "ArrowDown"],
 	move_left: ["KeyA", "ArrowLeft"],
 	move_right: ["KeyD", "ArrowRight"],
-	fire: ["Space"],
-	reload: ["KeyR"],
+	fire: ["Space", "mouse:left"],
 	weapon1: ["Digit1"],
 	weapon2: ["Digit2"],
 	weapon3: ["Digit3"],

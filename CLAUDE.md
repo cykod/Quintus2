@@ -80,19 +80,80 @@ class Player extends Actor {
 
 ## qdbg — CLI Game Debugger
 
-`bin/qdbg` is a Playwright-based CLI for real-time debugging of running Quintus games. Invoked via `pnpm qdbg <command>`.
+`bin/qdbg` is the **primary tool for debugging Quintus games at runtime**. It wraps `playwright-cli` with 30+ ergonomic commands that talk to the engine's debug bridge. **Always use `pnpm qdbg <command>` — never fall back to raw `playwright-cli` calls or `eval` with hand-written JS when a dedicated qdbg command exists.**
 
-**Key commands:**
-- `connect <demo>` — open game in browser, paused at first frame
-- `tree` / `layout` / `physics <name>` — inspect scene tree and physics state
-- `step [N]` — advance N frames
-- `press` / `release` / `tap` / `move-to` — simulate input
-- `track <name> [N]` / `jump-analysis <name>` — analyze motion over frames
-- `eval '<code>'` — execute JS in the browser context
-- `screenshot` — capture the canvas to PNG
-- `scene <name>` / `scenes` — switch or list scenes
+### How to Debug a Game
 
-The engine exposes `window.__quintusDebug` (bridge) and `window.__quintusFormatters` for the debugger. Debug mode activates via `?debug` URL parameter or `Game({ debug: true })`.
+```bash
+# 1. Connect (starts dev server if needed, opens browser paused at frame 0)
+pnpm qdbg connect platformer
+
+# 2. Inspect the scene
+pnpm qdbg tree                          # ASCII scene tree
+pnpm qdbg physics Player                # physics state of one node
+pnpm qdbg nearby Player 150             # what's around the player
+
+# 3. Simulate input and advance time
+pnpm qdbg tap jump 1                    # press jump for 1 frame
+pnpm qdbg step 30                       # advance 30 frames
+pnpm qdbg move-to Player move_right 250 -  # walk until x≥250
+
+# 4. Observe results
+pnpm qdbg physics Player                # check landing
+pnpm qdbg events --category=physics     # see collision events
+pnpm qdbg screenshot                    # capture canvas
+
+# 5. Cleanup
+pnpm qdbg disconnect
+```
+
+### Command Reference
+
+| Category | Command | Purpose |
+|----------|---------|---------|
+| **Connect** | `connect [demo\|url]` | Open game in browser, paused at first frame |
+| | `disconnect` | Close browser session |
+| **Inspect** | `tree` | Formatted ASCII scene tree |
+| | `layout` | Spatial overview with physics info |
+| | `inspect <name\|id>` | Full JSON snapshot of one node |
+| | `query <type\|name\|tag>` | Find matching nodes |
+| | `physics <name>` | Physics summary (pos, vel, gravity, contacts) |
+| | `nearby <name> [radius]` | Nodes within radius, sorted by distance |
+| **Scene** | `scenes` | List registered scene names |
+| | `scene <name>` | Switch to a different scene |
+| | `destroy <name\|id\|type\|tag>` | Remove node(s) from the scene |
+| **Time** | `step [N]` | Advance N frames (default: 1) |
+| | `pause` / `resume` | Pause or resume real-time loop |
+| | `status` | Show frame, elapsed time, paused state |
+| **Input** | `actions` | List available input actions |
+| | `press <action>` | Press and hold (persists until release) |
+| | `release <action>` | Release a held action |
+| | `release-all` | Release all held actions |
+| | `tap <action> [N]` | Press for N frames then release |
+| | `click <x> <y>` | Pointer click at game coordinates |
+| | `click-button <name\|text>` | Click a UI button by name or label |
+| | `mouse <x> <y>` | Set the mouse/pointer position |
+| | `mouse-get` | Get current mouse/pointer position |
+| **Movement** | `move-to <node> <actions> <x> <y> [--max=N]` | Hold action(s) until node reaches threshold |
+| **Analysis** | `track <name> [N]` | Tabular position/velocity over N frames |
+| | `jump-analysis <name>` | Full jump arc metrics |
+| **Script** | `run '<json>'` | Execute a DebugAction[] sequence |
+| | `eval '<code>'` | Evaluate JS expression (last resort) |
+| **Events** | `events [--category= --search= --limit=]` | Drain events since last call |
+| | `peek [flags]` | View events without draining |
+| | `clear-events` | Reset event log |
+| **Capture** | `screenshot [file]` | Save canvas to PNG |
+
+### Critical Rules for Debugging
+
+1. **Use qdbg commands, not raw JS.** Every common operation has a dedicated command. `eval` is a last resort for one-off queries not covered by the command set.
+2. **`connect` first.** Every other command requires an active debug session.
+3. **Input persists.** `press` stays held until `release` or `release-all`. Forgetting to release causes actions to persist across steps.
+4. **`jump` uses `isJustPressed`.** Don't use `move-to Player jump ...` — it only fires frame 1. Instead: `tap jump 1` then `move-to` for drift.
+5. **`destroy` for isolation.** Remove enemies, spawners, or hazards to test one system at a time: `destroy enemy` removes all nodes tagged "enemy".
+6. **Positions are center-based.** A platform at (200, 280) with rect 400×20 has its top edge at y=270.
+7. **`events` drains.** Subsequent calls only return new events. Use `peek` to re-read, or `clear-events` to reset.
+8. **Use the `/debug-game` skill** when asked to debug a game. It loads the full qdbg reference and recipes.
 
 ## Scene Query API
 

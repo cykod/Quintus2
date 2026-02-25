@@ -32,14 +32,14 @@ export class TitleScene extends Scene {
 				/>
 				<Label
 					position={[cx, 300]}
-					text="Space to fire, R to reload"
+					text="Click or Space to fire"
 					fontSize={11}
 					color="#aaaaaa"
 					align="center"
 				/>
 				<Label
 					position={[cx, 320]}
-					text="1/2/3 to switch weapons"
+					text="Kill enemies to find weapon pickups!"
 					fontSize={11}
 					color="#aaaaaa"
 					align="center"

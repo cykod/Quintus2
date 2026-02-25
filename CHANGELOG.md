@@ -1,3 +1,17 @@
+## Polish top-down shooter and extend debug bridge API
+*Wednesday, February 25th at 4pm*
+Overhauled the top-down shooter example: replaced circular collision shapes 
+with capsules for better character fit, added mouse-click and scroll-wheel 
+firing/weapon-switching, fixed contact damage so enemies hurt a stationary 
+player (enemy-side collided signal), introduced a weapon unlock system where 
+only the pistol is available at start and other weapons drop from killed 
+enemies as timed pickups with labels, fixed the ammo HUD display ordering bug, 
+and added per-weapon ammo tracking across switches. Extended the debug bridge 
+with destroy, mouse, and mouse-get commands, and fixed a crash in Actor where 
+game.debugLog could throw if a node was destroyed during onCollided.
+
+---
+
 ## Add top-down shooter game with pooled bullets and enemies
 *Wednesday, February 25th at 3pm*
 Implement Phase 3 of the object pooling system: a twin-stick top-down arena 

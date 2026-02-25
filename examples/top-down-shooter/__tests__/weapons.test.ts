@@ -13,23 +13,23 @@ describe("Weapons", () => {
 		expect(gameState.currentWeapon).toBe("pistol");
 	});
 
-	it("switching weapon updates state", async () => {
+	it("unlocking weapon updates state and switches to it", async () => {
 		const result = await runScene(ArenaScene, undefined, 0.1);
 		const player = result.game.currentScene?.findByType(Player);
 		expect(player).toBeDefined();
 
-		player?.switchWeapon("machine");
+		player?.unlockWeapon("machine");
 		expect(player?.currentWeaponId).toBe("machine");
 		expect(gameState.currentWeapon).toBe("machine");
 		expect(gameState.ammo).toBe(60);
 		expect(gameState.maxAmmo).toBe(60);
 	});
 
-	it("switching to silencer sets correct ammo", async () => {
+	it("unlocking silencer sets correct ammo", async () => {
 		const result = await runScene(ArenaScene, undefined, 0.1);
 		const player = result.game.currentScene?.findByType(Player);
 
-		player?.switchWeapon("silencer");
+		player?.unlockWeapon("silencer");
 		expect(gameState.ammo).toBe(12);
 		expect(gameState.maxAmmo).toBe(12);
 	});
