@@ -1,3 +1,16 @@
+## Add core game utilities to @quintus/ai-prefabs
+*Thursday, February 26th at 7pm*
+Implement 4 focused utilities in @quintus/ai-prefabs that extract common 
+cross-game patterns identified during Phase 9: Damageable (mixin for health, 
+damage, invincibility, death effects), Bullet (headless poolable Actor with 
+fire/lifetime/off-screen recycling), WaveSpawner (signal-driven wave system 
+with configurable intervals and per-entry delays), and Pickup (Sensor with 
+tag-filtered collection, bob animation, and pop effect). All utilities 
+gracefully degrade without @quintus/tween installed. Ships with 50 tests across 
+4 test files, zero lint warnings, and full .d.ts generation.
+
+---
+
 ## Add TMX maps, sound effects, and visual polish to tower defense
 *Thursday, February 26th at 7pm*
 Converted tower defense from programmatic map rendering to Tiled TMX files, 

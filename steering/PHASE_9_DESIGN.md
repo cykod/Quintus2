@@ -16,7 +16,16 @@
 | 4 | Space Shooter game (uses pooling) | Done |
 | 5 | Tower Defense game | Done |
 | 6 | Puzzle game (Sokoban) | Done |
-| 7 | Cross-game review & prefabs proposal | Pending |
+| 7 | Cross-game review & prefabs proposal | Done |
+| 7.5 | Top-Down Shooter game | Done |
+| 8 | Core game utilities: Damageable, Bullet, WaveSpawner, Pickup (`steering/PREFABS_PROPOSAL.md`) | Done |
+| 8A | Platformer polish (integrate utilities, edge-case tests, comments) | — |
+| 8B | Dungeon polish | — |
+| 8C | Breakout polish | — |
+| 8D | Space Shooter polish | — |
+| 8E | Sokoban polish (tests + comments only, no utilities) | — |
+| 8F | Top-Down Shooter polish | — |
+| 8G | Tower Defense polish (last — separate overhaul) | — |
 
 ---
 
@@ -2026,13 +2035,13 @@ Write `steering/PREFABS_PROPOSAL.md` containing:
 
 ### 10.6 Deliverables
 
-- [ ] Inventory all entities across 6 example games
-- [ ] Identify shared patterns and categorize by abstraction level
-- [ ] Draft proposed prefab list (~30 prefabs)
-- [ ] Write API sketches with `static schema` for each proposed prefab
-- [ ] Estimate size budget for `@quintus/ai-prefabs` package
-- [ ] Write `steering/PREFABS_PROPOSAL.md` for human review
-- [ ] Include recommendations for which patterns are NOT worth abstracting
+- [x] Inventory all entities across 7 example games (67 gameplay entities + shared infrastructure)
+- [x] Identify shared patterns and categorize by abstraction level
+- [x] Draft proposed prefab list (31 prefabs in 7 categories)
+- [x] Write API sketches with `static schema` for each proposed prefab
+- [x] Estimate size budget for `@quintus/ai-prefabs` package (~5.6KB gzipped, well within 15KB)
+- [x] Write `steering/PREFABS_PROPOSAL.md` for human review
+- [x] Include recommendations for which patterns are NOT worth abstracting (~15 entities excluded)
 
 ---
 
