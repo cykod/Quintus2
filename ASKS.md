@@ -442,3 +442,5 @@
 [MILE] thu 2/26 1pm - Added Sokoban puzzle game with pure grid logic, 5 levels, undo/reset, level select, and 39 tests
 
 [IMPL] thu 2/26 1pm - Debug and fix the qdbg screenshot command which is not working correctly
+
+[MILE] thu 2/26 1pm - Fixed qdbg screenshot command by replacing broken require('fs') with Playwright native canvas capture

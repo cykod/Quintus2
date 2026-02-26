@@ -10,20 +10,20 @@ export const tileSheet = new SpriteSheet({
 	rows: 8,
 });
 
-// === Frame indices (0-based from tile_description.csv) ===
+// === Frame indices (0-based, verified against tileset.png) ===
 
 // Crates
-export const FRAME_CRATE_BLUE = 14; // blue crate front — primary game crate
-export const FRAME_CRATE_ON_TARGET = 28; // blue small crate — solved state
+export const FRAME_CRATE_BLUE = 14; // brown wooden crate front (standard)
+export const FRAME_CRATE_ON_TARGET = 17; // green crate front (solved state)
 
 // Walls
-export const FRAME_WALL = 8; // grey stone wall
+export const FRAME_WALL = 11; // dark grey/charcoal wall block
 
 // Targets
-export const FRAME_TARGET = 11; // orange diamond target marker
+export const FRAME_TARGET = 50; // blue diamond on dark background
 
 // Floors
-export const FRAME_FLOOR = 72; // red brick floor
+export const FRAME_FLOOR = 89; // grey stone mosaic floor
 
 // Player — direction frames
 export const FRAME_PLAYER_DOWN = 52;

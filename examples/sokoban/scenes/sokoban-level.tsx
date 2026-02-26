@@ -1,5 +1,5 @@
 import { Camera } from "@quintus/camera";
-import { Scene } from "@quintus/core";
+import { Node2D, Scene } from "@quintus/core";
 import { CELL_SIZE, GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import { CrateSprite } from "../entities/crate-sprite.js";
 import { GridRenderer } from "../entities/grid-renderer.js";
@@ -39,33 +39,36 @@ export class SokobanLevel extends Scene {
 		this._grid = SokobanGrid.parse(levelStr);
 		gameState.moves = 0;
 
-		// Center the grid on screen
+		// Center the grid on screen using a container node.
+		// All game entities are children of this container so their local
+		// grid positions automatically translate to correct world positions.
 		const gridPixelW = this._grid.width * CELL_SIZE;
 		const gridPixelH = this._grid.height * CELL_SIZE;
 		const offsetX = (GAME_WIDTH - gridPixelW) / 2;
 		const offsetY = (GAME_HEIGHT - gridPixelH) / 2;
 
+		const container = new Node2D();
+		container.position._set(offsetX, offsetY);
+		this.addChild(container);
+
 		// Grid renderer (floor/walls/targets)
 		this._gridRenderer = new GridRenderer();
-		this._gridRenderer.position._set(offsetX, offsetY);
 		this._gridRenderer.setGrid(this._grid);
-		this.addChild(this._gridRenderer);
+		container.addChild(this._gridRenderer);
 
 		// Player sprite
 		this._playerSprite = new PlayerSprite();
-		this._playerSprite.position._set(offsetX, offsetY);
 		this._playerSprite.snapTo(this._grid.player.x, this._grid.player.y);
 		this._playerSprite.zIndex = 2;
-		this.addChild(this._playerSprite);
+		container.addChild(this._playerSprite);
 
 		// Crate sprites
 		this._crateSprites = [];
 		for (const crate of this._grid.crates) {
 			const cs = new CrateSprite();
-			cs.position._set(offsetX, offsetY);
 			cs.snapTo(crate.x, crate.y);
 			cs.zIndex = 1;
-			this.addChild(cs);
+			container.addChild(cs);
 			this._crateSprites.push(cs);
 		}
 

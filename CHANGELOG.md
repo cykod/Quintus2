@@ -1,3 +1,17 @@
+## Fix Sokoban visual bugs and replace unsolvable levels
+*Thursday, February 26th at 3pm*
+Fixed three bugs in the Sokoban example game: wrong tile frame indices in 
+sprites.ts caused walls to render as blue crates and floors as player sprites 
+(fixed by visually identifying correct frames in the Kenney tileset using qdbg 
+overlays), a position offset bug where snapTo() overwrote the grid centering 
+offset (fixed by parenting all game entities to a Node2D container), and 
+unsolvable levels 3 and 5 confirmed via exhaustive BFS search (replaced with 
+verified-solvable designs requiring 16 and 19 optimal moves respectively). All 
+39 sokoban tests pass. Includes debugging documentation with screenshots and 
+Claude Code skill definitions.
+
+---
+
 ## Fix qdbg screenshot command: use Playwright native canvas capture
 *Thursday, February 26th at 1pm*
 The qdbg screenshot command was broken because it used require('fs') inside a 
