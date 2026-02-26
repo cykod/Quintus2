@@ -15,7 +15,7 @@
 | 3 | Object pooling system (`steering/POOLING_PLAN.md`) | Done |
 | 4 | Space Shooter game (uses pooling) | Done |
 | 5 | Tower Defense game | Done |
-| 6 | Puzzle game (Sokoban) | Pending |
+| 6 | Puzzle game (Sokoban) | Done |
 | 7 | Cross-game review & prefabs proposal | Pending |
 
 ---
@@ -1920,19 +1920,19 @@ examples/sokoban/
 
 ### 9.10 Deliverables
 
-- [ ] Create `examples/sokoban/` directory structure
-- [ ] Implement SokobanGrid pure logic class (move, push, delta-based undo, solve detection)
-- [ ] Implement grid renderer (TSX build, Node2D children for tiles, crates, player)
-- [ ] Implement discrete grid movement with tweened animation
-- [ ] Implement undo system with lightweight delta records
-- [ ] Implement 5+ levels of increasing difficulty
-- [ ] Implement level select scene with completion tracking (TSX build)
-- [ ] Implement HUD with moves counter, undo/reset buttons (TSX build)
+- [x] Create `examples/sokoban/` directory structure
+- [x] Implement SokobanGrid pure logic class (move, push, delta-based undo, solve detection)
+- [x] Implement grid renderer (TSX build, Node2D children for tiles, crates, player)
+- [x] Implement discrete grid movement with tweened animation
+- [x] Implement undo system with lightweight delta records
+- [x] Implement 5+ levels of increasing difficulty
+- [x] Implement level select scene with completion tracking (TSX build)
+- [x] Implement HUD with moves counter, undo/reset buttons (TSX build)
 - [ ] Add sound effects and audio integration
-- [ ] Write pure logic tests (grid.test.ts — no engine dependency)
-- [ ] Write integration tests (movement, push, undo, levels, flow)
-- [ ] Verify game is playable via `pnpm dev`
-- [ ] Verify all tests pass
+- [x] Write pure logic tests (grid.test.ts — no engine dependency)
+- [x] Write integration tests (movement, push, undo, levels, flow)
+- [x] Verify game is playable via `pnpm dev`
+- [x] Verify all tests pass (39 tests across 6 test files)
 - [ ] Verify `qdbg connect sokoban` works for debugging
 
 ---

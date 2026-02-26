@@ -1,3 +1,15 @@
+## Add Sokoban puzzle game with 39 tests
+*Thursday, February 26th at 1pm*
+Implement a classic Sokoban box-pushing puzzle as a Phase 9 example game. This 
+is the only example that uses no physics engine — purely grid-based logic 
+with Node2D, tweened movement, and a pure TypeScript SokobanGrid class for 
+puzzle state. Features 5 levels of increasing difficulty, undo/reset, level 
+select with completion tracking, and a reactive HUD. Includes 39 tests across 6 
+files covering pure grid logic, movement, crate pushing, undo, level 
+validation, and game flow determinism.
+
+---
+
 ## Fix tower defense UI: click placement, visual buttons, enemy sprite
 *Thursday, February 26th at 1am*
 Fix three tower defense UI issues: mouse click placement was broken because the 
