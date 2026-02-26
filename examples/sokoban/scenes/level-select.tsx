@@ -36,6 +36,7 @@ export class LevelSelectScene extends Scene {
 					pressedColor={completed ? "#4a6e2e" : "#4a3a2a"}
 					textColor="#e8c170"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						gameState.currentLevel = i;
 						this.switchTo("level");
 					}}
@@ -65,6 +66,7 @@ export class LevelSelectScene extends Scene {
 					pressedColor="#4a3a2a"
 					textColor="#e8c170"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						this.switchTo("title");
 					}}
 				/>

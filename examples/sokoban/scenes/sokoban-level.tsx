@@ -80,11 +80,19 @@ export class SokobanLevel extends Scene {
 
 		const input = this.game.input;
 
+		// Menu
+		if (input.isJustPressed("menu")) {
+			this.game.audio.play("click", { bus: "ui" });
+			this.switchTo("level-select");
+			return;
+		}
+
 		// Undo
 		if (input.isJustPressed("undo")) {
 			if (this._grid.undo()) {
 				gameState.moves = this._grid.moveCount;
 				this._syncSprites();
+				this.game.audio.play("undo");
 			}
 			return;
 		}
@@ -94,6 +102,7 @@ export class SokobanLevel extends Scene {
 			this._grid.reset();
 			gameState.moves = 0;
 			this._syncSprites();
+			this.game.audio.play("reset");
 			return;
 		}
 
@@ -118,7 +127,17 @@ export class SokobanLevel extends Scene {
 		if (result.pushedCrate >= 0) {
 			const crate = this._grid.crates[result.pushedCrate];
 			const cs = this._crateSprites[result.pushedCrate];
-			if (crate && cs) cs.moveTo(crate.x, crate.y);
+			if (crate && cs) {
+				cs.moveTo(crate.x, crate.y);
+				// Play "place" if crate landed on target, otherwise "push"
+				if (this._grid.isTarget(crate)) {
+					this.game.audio.play("place");
+				} else {
+					this.game.audio.play("push");
+				}
+			}
+		} else {
+			this.game.audio.play("step");
 		}
 
 		this._updateCrateTargetState();
@@ -148,6 +167,8 @@ export class SokobanLevel extends Scene {
 	}
 
 	private _onLevelComplete(): void {
+		this.game.audio.play("win");
+
 		// Mark level as completed
 		const completed = [...gameState.completedLevels];
 		if (!completed.includes(gameState.currentLevel)) {

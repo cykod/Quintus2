@@ -73,6 +73,7 @@ export class HUD extends Layer {
 					pressedColor="#4a3a2a"
 					textColor="#e8c170"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						this.game.currentScene?.switchTo("level-select");
 					}}
 				/>

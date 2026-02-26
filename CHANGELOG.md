@@ -1,3 +1,15 @@
+## Add gamepad support and audio effects to Sokoban
+*Thursday, February 26th at 3pm*
+Add full gamepad support to the Sokoban game with D-pad and left stick for 
+movement, B for undo, Y for reset, and Start for menu navigation. Add seven CC0 
+sound effects covering all gameplay actions: step (player move), push (crate 
+push), place (crate on target), win (level complete), undo, reset, and click 
+(UI buttons). A new menu input action allows returning to level select via 
+Escape or gamepad Start. The title scene now displays gamepad control 
+instructions.
+
+---
+
 ## Fix Sokoban visual bugs and replace unsolvable levels
 *Thursday, February 26th at 3pm*
 Fixed three bugs in the Sokoban example game: wrong tile frame indices in 

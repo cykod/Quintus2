@@ -38,8 +38,15 @@ export class TitleScene extends Scene {
 					color="#aaaaaa"
 					align="center"
 				/>
+				<Label
+					position={[cx, 370]}
+					text="Gamepad: D-pad / stick, B undo, Y reset"
+					fontSize={11}
+					color="#aaaaaa"
+					align="center"
+				/>
 				<Button
-					position={[cx - 60, 400]}
+					position={[cx - 60, 420]}
 					width={120}
 					height={40}
 					text="Start"
@@ -49,6 +56,7 @@ export class TitleScene extends Scene {
 					pressedColor="#c0a050"
 					textColor="#3b2d1f"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						gameState.reset();
 						this.switchTo("level-select");
 					}}

@@ -444,3 +444,9 @@
 [IMPL] thu 2/26 1pm - Debug and fix the qdbg screenshot command which is not working correctly
 
 [MILE] thu 2/26 1pm - Fixed qdbg screenshot command by replacing broken require('fs') with Playwright native canvas capture
+
+[MILE] thu 2/26 3pm - Fixed Sokoban visual bugs (wrong tile frames, position offset) and replaced unsolvable levels 3 and 5 with BFS-verified solvable designs
+
+[IMPL] thu 2/26 3pm - Implement Phase 7: Cross-game review and prefabs proposal
+
+[IMPL] thu 2/26 3pm - Add gamepad support and audio effects to the Sokoban game using CC0 sound effects

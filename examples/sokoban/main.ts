@@ -34,6 +34,15 @@ game.registerScenes({
 game.assets
 	.load({
 		images: ["assets/tileset.png"],
+		audio: [
+			"assets/sfx/step.ogg",
+			"assets/sfx/push.ogg",
+			"assets/sfx/place.ogg",
+			"assets/sfx/win.ogg",
+			"assets/sfx/undo.ogg",
+			"assets/sfx/reset.ogg",
+			"assets/sfx/click.ogg",
+		],
 	})
 	.then(() => {
 		game.start("title");

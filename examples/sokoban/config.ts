@@ -10,10 +10,11 @@ export const MOVE_DURATION = 0.1; // seconds for tween animation
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	move_up: ["ArrowUp", "KeyW"],
-	move_down: ["ArrowDown", "KeyS"],
-	move_left: ["ArrowLeft", "KeyA"],
-	move_right: ["ArrowRight", "KeyD"],
-	undo: ["KeyZ", "KeyU"],
-	reset: ["KeyR"],
+	move_up: ["ArrowUp", "KeyW", "gamepad:dpad-up", "gamepad:left-stick-up"],
+	move_down: ["ArrowDown", "KeyS", "gamepad:dpad-down", "gamepad:left-stick-down"],
+	move_left: ["ArrowLeft", "KeyA", "gamepad:dpad-left", "gamepad:left-stick-left"],
+	move_right: ["ArrowRight", "KeyD", "gamepad:dpad-right", "gamepad:left-stick-right"],
+	undo: ["KeyZ", "KeyU", "gamepad:b"],
+	reset: ["KeyR", "gamepad:y"],
+	menu: ["Escape", "gamepad:start"],
 };
