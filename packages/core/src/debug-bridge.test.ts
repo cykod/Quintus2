@@ -44,7 +44,7 @@ describe("DebugBridge", () => {
 			onReady() {
 				const n = new Node2D();
 				n.name = "Player";
-				this.addChild(n);
+				this.add(n);
 			}
 		}
 		const bridge = startWithBridge(game, TestScene);
@@ -62,8 +62,8 @@ describe("DebugBridge", () => {
 				a.name = "NodeA";
 				const b = new Node2D();
 				b.name = "NodeB";
-				this.addChild(a);
-				this.addChild(b);
+				this.add(a);
+				this.add(b);
 			}
 		}
 		const bridge = startWithBridge(game, TestScene);
@@ -81,10 +81,10 @@ describe("DebugBridge", () => {
 				const a = new Node2D();
 				a.name = "Player";
 				a.tag("hero");
-				this.addChild(a);
+				this.add(a);
 				const b = new Node2D();
 				b.name = "Enemy";
-				this.addChild(b);
+				this.add(b);
 			}
 		}
 		const bridge = startWithBridge(game, TestScene);
@@ -104,7 +104,7 @@ describe("DebugBridge", () => {
 				const a = new Node2D();
 				a.name = "Player";
 				a.position._set(100, 200);
-				this.addChild(a);
+				this.add(a);
 			}
 		}
 		const bridge = startWithBridge(game, TestScene);
@@ -121,7 +121,7 @@ describe("DebugBridge", () => {
 			onReady() {
 				const a = new Node2D();
 				a.name = "Target";
-				this.addChild(a);
+				this.add(a);
 				nodeId = a.id;
 			}
 		}
@@ -269,7 +269,7 @@ describe("DebugBridge", () => {
 				onReady() {
 					const node = new ClickableNode();
 					node.position._set(10, 10);
-					this.addChild(node);
+					this.add(node);
 				}
 			}
 			const bridge = startWithBridge(game, TestScene);
@@ -322,12 +322,12 @@ describe("DebugBridge", () => {
 					const a = new ClickableNode();
 					a.label = "A";
 					a.zIndex = 0;
-					this.addChild(a);
+					this.add(a);
 
 					const b = new ClickableNode();
 					b.label = "B";
 					b.zIndex = 10;
-					this.addChild(b);
+					this.add(b);
 				}
 			}
 			const bridge = startWithBridge(game, TestScene);
@@ -363,7 +363,7 @@ describe("DebugBridge", () => {
 				onReady() {
 					const node = new ClickableNode();
 					node.name = "startButton";
-					this.addChild(node);
+					this.add(node);
 				}
 			}
 			const bridge = startWithBridge(game, TestScene);
@@ -398,7 +398,7 @@ describe("DebugBridge", () => {
 			class TestScene extends Scene {
 				onReady() {
 					const node = new TextButton();
-					this.addChild(node);
+					this.add(node);
 				}
 			}
 			const bridge = startWithBridge(game, TestScene);
@@ -431,7 +431,7 @@ describe("DebugBridge", () => {
 					for (let i = 0; i < 5; i++) {
 						const n = new Node2D();
 						n.tag("enemy");
-						this.addChild(n);
+						this.add(n);
 					}
 				}
 			}
@@ -446,15 +446,15 @@ describe("DebugBridge", () => {
 				onReady() {
 					const parent = new Node2D();
 					parent.name = "parent";
-					this.addChild(parent);
+					this.add(parent);
 
 					const child = new Node2D();
 					child.name = "child";
-					parent.addChild(child);
+					parent.add(child);
 
 					const grandchild = new Node2D();
 					grandchild.name = "grandchild";
-					child.addChild(grandchild);
+					child.add(grandchild);
 				}
 			}
 			const bridge = startWithBridge(game, TestScene);

@@ -43,12 +43,12 @@ export abstract class TDLevel extends Scene {
 		// Set up placement manager
 		this._placementManager = new PlacementManager();
 		this._placementManager.validCells = mapData.placementCells;
-		this.addChild(this._placementManager);
+		this.add(this._placementManager);
 
 		// Set up wave manager
 		this._waveManager = new WaveManager();
 		this._waveManager.pathDef = { waypoints: mapData.waypoints };
-		this.addChild(this._waveManager);
+		this.add(this._waveManager);
 
 		this._waveManager.waveStarted.connect((wave) => {
 			gameState.wave = wave;

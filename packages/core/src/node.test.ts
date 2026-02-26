@@ -80,39 +80,39 @@ describe("Node", () => {
 		expect(child.name).toBe("nested");
 	});
 
-	// === Tree Manipulation (legacy addChild) ===
-	it("addChild adds to children array and sets parent", () => {
+	// === Tree Manipulation ===
+	it("add() adds to children array and sets parent", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const child = new Node();
-		scene.addChild(child);
+		scene.add(child);
 		expect(scene.children).toContain(child);
 		expect(child.parent).toBe(scene);
 	});
 
-	it("addChild(Class) constructs and adds to tree", () => {
+	it("add(Class) constructs and adds to tree", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
-		const child = scene.addChild(Node);
+		const child = scene.add(Node);
 		expect(child).toBeInstanceOf(Node);
 		expect(child.parent).toBe(scene);
 		expect(child.isReady).toBe(true);
 	});
 
-	it("properties are set via direct assignment after addChild", () => {
+	it("properties are set via direct assignment after add", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
-		const child = scene.addChild(Node);
+		const child = scene.add(Node);
 		child.name = "myNode";
 		child.pauseMode = "independent";
 		expect(child.name).toBe("myNode");
 		expect(child.pauseMode).toBe("independent");
 	});
 
-	it("addChild(Class, props) sets properties on the new node", () => {
+	it("add(Class, props) sets properties on the new node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
-		const child = scene.addChild(Node, {
+		const child = scene.add(Node, {
 			name: "bulk",
 			pauseMode: "independent",
 		});
@@ -130,10 +130,10 @@ describe("Node", () => {
 		expect(node.pauseMode).toBe("independent");
 	});
 
-	it("set() chains with addChild", () => {
+	it("set() chains with add", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
-		const child = scene.addChild(Node).set({
+		const child = scene.add(Node).set({
 			name: "chained",
 			pauseMode: "independent",
 		});
@@ -145,7 +145,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const child = new Node();
-		scene.addChild(child);
+		scene.add(child);
 		scene.removeChild(child);
 		expect(scene.children).not.toContain(child);
 		expect(child.parent).toBeNull();
@@ -155,23 +155,23 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const child = new Node();
-		scene.addChild(child);
+		scene.add(child);
 		child.removeSelf();
 		expect(scene.children).not.toContain(child);
 	});
 
 	it("cannot add node to itself", () => {
 		const node = new Node();
-		expect(() => node.addChild(node)).toThrow("Cannot add a node to itself");
+		expect(() => node.add(node)).toThrow("Cannot add a node to itself");
 	});
 
 	it("cannot add node that already has a parent", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const child = new Node();
-		scene.addChild(child);
+		scene.add(child);
 		const otherParent = new Node();
-		expect(() => otherParent.addChild(child)).toThrow("already has a parent");
+		expect(() => otherParent.add(child)).toThrow("already has a parent");
 	});
 
 	it("adding multiple children preserves order", () => {
@@ -183,9 +183,9 @@ describe("Node", () => {
 		b.name = "b";
 		const c = new Node();
 		c.name = "c";
-		scene.addChild(a);
-		scene.addChild(b);
-		scene.addChild(c);
+		scene.add(a);
+		scene.add(b);
+		scene.add(c);
 		expect(scene.children.map((ch) => ch.name)).toEqual(["a", "b", "c"]);
 	});
 
@@ -194,7 +194,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new TestNode();
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.readyCalled).toBe(true);
 		expect(node.isReady).toBe(true);
 	});
@@ -216,8 +216,8 @@ describe("Node", () => {
 
 		const parent = new Parent();
 		const child = new Child();
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(order).toEqual(["child", "parent"]);
 	});
 
@@ -225,9 +225,9 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new TestNode();
-		scene.addChild(node);
+		scene.add(node);
 		node.removeSelf();
-		scene.addChild(node);
+		scene.add(node);
 		// onEnterTree fires twice, but onReady fires once
 		expect(node.enterTreeCount).toBe(2);
 		expect(node.readyCalled).toBe(true);
@@ -237,10 +237,10 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new TestNode();
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.enterTreeCount).toBe(1);
 		node.removeSelf();
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.enterTreeCount).toBe(2);
 	});
 
@@ -248,7 +248,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new TestNode();
-		scene.addChild(node);
+		scene.add(node);
 		scene.removeChild(node);
 		expect(node.exitTreeCount).toBe(1);
 	});
@@ -259,7 +259,7 @@ describe("Node", () => {
 		const node = new TestNode();
 		expect(node.isReady).toBe(false);
 		expect(node.isInsideTree).toBe(false);
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.isReady).toBe(true);
 		expect(node.isInsideTree).toBe(true);
 		scene.removeChild(node);
@@ -271,7 +271,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new TestNode();
-		scene.addChild(node);
+		scene.add(node);
 		node.destroy();
 		node._processDestroy();
 		expect(node.destroyedCalled).toBe(true);
@@ -282,8 +282,8 @@ describe("Node", () => {
 		const scene = createTestScene(game);
 		const parent = new TestNode();
 		const child = new TestNode();
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		parent.destroy();
 		parent._processDestroy();
 		expect(child.destroyedCalled).toBe(true);
@@ -294,7 +294,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new TestNode();
-		scene.addChild(node);
+		scene.add(node);
 		const handler = vi.fn();
 		node.treeExited.connect(handler);
 		node.destroy();
@@ -312,7 +312,7 @@ describe("Node", () => {
 			}
 		}
 		const node = new TrackNode();
-		scene.addChild(node);
+		scene.add(node);
 		node.destroying.connect(() => order.push("destroying"));
 		node.destroy();
 		node._processDestroy();
@@ -339,9 +339,9 @@ describe("Node", () => {
 		b.tag("enemy");
 		const c = new Node();
 		c.tag("player");
-		scene.addChild(a);
-		scene.addChild(b);
-		scene.addChild(c);
+		scene.add(a);
+		scene.add(b);
+		scene.add(c);
 		expect(scene.findAll("enemy")).toHaveLength(2);
 	});
 
@@ -435,8 +435,8 @@ describe("Node", () => {
 		parent.name = "parent";
 		const child = new Node();
 		child.name = "target";
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(scene.find("target")).toBe(child);
 	});
 
@@ -445,8 +445,8 @@ describe("Node", () => {
 		const scene = createTestScene(game);
 		class SpecialNode extends Node {}
 		const special = new SpecialNode();
-		scene.addChild(new Node());
-		scene.addChild(special);
+		scene.add(new Node());
+		scene.add(special);
 		expect(scene.getChild(SpecialNode)).toBe(special);
 	});
 
@@ -454,9 +454,9 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		class SpecialNode extends Node {}
-		scene.addChild(new SpecialNode());
-		scene.addChild(new Node());
-		scene.addChild(new SpecialNode());
+		scene.add(new SpecialNode());
+		scene.add(new Node());
+		scene.add(new SpecialNode());
 		expect(scene.getChildren(SpecialNode)).toHaveLength(2);
 	});
 
@@ -466,8 +466,8 @@ describe("Node", () => {
 		class SpecialNode extends Node {}
 		const parent = new Node();
 		const deep = new SpecialNode();
-		parent.addChild(deep);
-		scene.addChild(parent);
+		parent.add(deep);
+		scene.add(parent);
 		expect(scene.findByType(SpecialNode)).toBe(deep);
 	});
 
@@ -476,9 +476,9 @@ describe("Node", () => {
 		const scene = createTestScene(game);
 		class SpecialNode extends Node {}
 		const parent = new Node();
-		parent.addChild(new SpecialNode());
-		scene.addChild(parent);
-		scene.addChild(new SpecialNode());
+		parent.add(new SpecialNode());
+		scene.add(parent);
+		scene.add(new SpecialNode());
 		expect(scene.findAllByType(SpecialNode)).toHaveLength(2);
 	});
 
@@ -504,8 +504,8 @@ describe("Node", () => {
 		parent.pauseMode = "independent";
 		const child = new Node();
 		child.pauseMode = "inherit";
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(child._shouldProcess(true)).toBe(true);
 	});
 
@@ -516,7 +516,7 @@ describe("Node", () => {
 		const node = new Node();
 		const handler = vi.fn();
 		node.treeEntered.connect(handler);
-		scene.addChild(node);
+		scene.add(node);
 		expect(handler).toHaveBeenCalled();
 	});
 
@@ -524,7 +524,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new Node();
-		scene.addChild(node);
+		scene.add(node);
 		const handler = vi.fn();
 		node.treeExited.connect(handler);
 		scene.removeChild(node);
@@ -537,7 +537,7 @@ describe("Node", () => {
 		const node = new Node();
 		const handler = vi.fn();
 		node.readySignal.connect(handler);
-		scene.addChild(node);
+		scene.add(node);
 		expect(handler).toHaveBeenCalled();
 	});
 
@@ -546,7 +546,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new Node();
-		scene.addChild(node);
+		scene.add(node);
 		node.destroy();
 		expect(node.isDestroyed).toBe(true);
 		expect(scene.children).toContain(node); // Still in tree until cleanup
@@ -556,7 +556,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new Node();
-		scene.addChild(node);
+		scene.add(node);
 		node.destroy();
 		node._processDestroy();
 		expect(scene.children).not.toContain(node);
@@ -567,7 +567,7 @@ describe("Node", () => {
 		class TestSceneDeferred extends Scene {
 			onReady() {
 				const node = new TestNode();
-				this.addChild(node);
+				this.add(node);
 				node.destroy();
 				// Node is still in tree before cleanup
 				expect(this.children).toContain(node);
@@ -581,7 +581,7 @@ describe("Node", () => {
 		// The node destroyed in setup was already processed during the first step
 		// Add a fresh node, destroy it, step, and verify removal
 		const node = new TestNode();
-		scene?.addChild(node);
+		scene?.add(node);
 		expect(scene?.children).toContain(node);
 		node.destroy();
 		expect(scene?.children).toContain(node); // Still in tree
@@ -603,7 +603,7 @@ describe("Node", () => {
 		const scene = createTestScene(game);
 		const child = new Node();
 		child.name = "exists";
-		scene.addChild(child);
+		scene.add(child);
 		expect(scene.find("nonexistent")).toBeNull();
 	});
 
@@ -611,7 +611,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		class SpecialNode extends Node {}
-		scene.addChild(new Node());
+		scene.add(new Node());
 		expect(scene.findByType(SpecialNode)).toBeNull();
 	});
 
@@ -622,9 +622,9 @@ describe("Node", () => {
 		const parent = new TestNode();
 		const child = new TestNode();
 		const grandchild = new TestNode();
-		parent.addChild(child);
-		child.addChild(grandchild);
-		scene.addChild(parent);
+		parent.add(child);
+		child.add(grandchild);
+		scene.add(parent);
 
 		expect(grandchild.isInsideTree).toBe(true);
 		scene.removeChild(parent);
@@ -639,8 +639,8 @@ describe("Node", () => {
 		const scene = createTestScene(game);
 		const parent = new Node();
 		const child = new Node();
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(child.scene).toBe(scene);
 	});
 
@@ -648,7 +648,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new Node();
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.game).toBe(game);
 	});
 
@@ -676,7 +676,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new Node();
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.sceneOrNull).toBe(scene);
 	});
 
@@ -684,7 +684,7 @@ describe("Node", () => {
 		const game = createTestGame();
 		const scene = createTestScene(game);
 		const node = new Node();
-		scene.addChild(node);
+		scene.add(node);
 		expect(node.gameOrNull).toBe(game);
 	});
 

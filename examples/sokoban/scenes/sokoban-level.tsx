@@ -49,18 +49,18 @@ export class SokobanLevel extends Scene {
 
 		const container = new Node2D();
 		container.position._set(offsetX, offsetY);
-		this.addChild(container);
+		this.add(container);
 
 		// Grid renderer (floor/walls/targets)
 		this._gridRenderer = new GridRenderer();
 		this._gridRenderer.setGrid(this._grid);
-		container.addChild(this._gridRenderer);
+		container.add(this._gridRenderer);
 
 		// Player sprite
 		this._playerSprite = new PlayerSprite();
 		this._playerSprite.snapTo(this._grid.player.x, this._grid.player.y);
 		this._playerSprite.zIndex = 2;
-		container.addChild(this._playerSprite);
+		container.add(this._playerSprite);
 
 		// Crate sprites
 		this._crateSprites = [];
@@ -68,7 +68,7 @@ export class SokobanLevel extends Scene {
 			const cs = new CrateSprite();
 			cs.snapTo(crate.x, crate.y);
 			cs.zIndex = 1;
-			container.addChild(cs);
+			container.add(cs);
 			this._crateSprites.push(cs);
 		}
 

@@ -16,7 +16,7 @@ export class CrateSprite extends Node2D {
 		const sprite = new Sprite();
 		sprite.texture = "tileset";
 		sprite.sourceRect = tileSheet.getFrameRect(FRAME_CRATE_BLUE);
-		this.addChild(sprite);
+		this.add(sprite);
 		this._sprite = sprite;
 	}
 

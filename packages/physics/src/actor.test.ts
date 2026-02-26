@@ -25,7 +25,7 @@ function setupScene(
 	game.use(PhysicsPlugin({ gravity }));
 	class TestScene extends Scene {
 		onReady() {
-			for (const body of bodies) this.addChild(body);
+			for (const body of bodies) this.add(body);
 		}
 	}
 	game.start(TestScene);
@@ -37,7 +37,7 @@ function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 	actor.collisionGroup = "default";
 	actor.solid = false;
 	actor.position = pos;
-	const cs = actor.addChild(CollisionShape);
+	const cs = actor.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return actor;
 }
@@ -46,7 +46,7 @@ function makeStatic(pos: Vec2, w = 200, h = 20): StaticCollider {
 	const sc = new StaticCollider();
 	sc.collisionGroup = "default";
 	sc.position = pos;
-	const cs = sc.addChild(CollisionShape);
+	const cs = sc.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return sc;
 }
@@ -387,8 +387,8 @@ describe("Actor", () => {
 			);
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(actor1);
-					this.addChild(actor2);
+					this.add(actor1);
+					this.add(actor2);
 				}
 			}
 			game.start(TestScene);
@@ -457,7 +457,7 @@ describe("Actor", () => {
 			actor.collisionGroup = "default";
 			actor.solid = false;
 			actor.position = new Vec2(100, 50);
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const floor = makeStatic(new Vec2(100, 100));
@@ -483,7 +483,7 @@ describe("Actor", () => {
 			actor.collisionGroup = "default";
 			actor.solid = false;
 			actor.position = new Vec2(100, 50);
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const floor = makeStatic(new Vec2(100, 100));
@@ -873,8 +873,8 @@ describe("Actor", () => {
 			game.use(PhysicsPlugin());
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(actor);
-					this.addChild(floor);
+					this.add(actor);
+					this.add(floor);
 				}
 			}
 			game.start(TestScene);
@@ -895,8 +895,8 @@ describe("Actor", () => {
 			game.use(PhysicsPlugin());
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(actor);
-					this.addChild(floor);
+					this.add(actor);
+					this.add(floor);
 				}
 			}
 			game.start(TestScene);
@@ -941,7 +941,7 @@ describe("Actor", () => {
 			actor.collisionGroup = "default";
 			actor.solid = false;
 			actor.position = new Vec2(100, 50);
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const floor = makeStatic(new Vec2(100, 100));
@@ -967,7 +967,7 @@ describe("Actor", () => {
 			actor.collisionGroup = "default";
 			actor.solid = false;
 			actor.position = new Vec2(100, 50);
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const floor = makeStatic(new Vec2(100, 100));
@@ -993,7 +993,7 @@ describe("Actor", () => {
 			actor.collisionGroup = "default";
 			actor.solid = false;
 			actor.position = new Vec2(100, 50);
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const floor = makeStatic(new Vec2(100, 100));

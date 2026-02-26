@@ -64,7 +64,7 @@ function createGame(pluginConfig?: Parameters<typeof PhysicsPlugin>[0]): Game {
 function startScene(game: Game, bodies: import("@quintus/core").Node[]): void {
 	class TestScene extends Scene {
 		onReady() {
-			for (const body of bodies) this.addChild(body);
+			for (const body of bodies) this.add(body);
 		}
 	}
 	game.start(TestScene);
@@ -75,7 +75,7 @@ function makeActor(ActorClass: typeof Actor, pos: Vec2, w = 10, h = 10): Actor {
 	actor.collisionGroup = "default";
 	actor.solid = false;
 	actor.position = pos;
-	const cs = actor.addChild(CollisionShape);
+	const cs = actor.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return actor;
 }
@@ -84,7 +84,7 @@ function makeStatic(pos: Vec2, w = 200, h = 20): StaticCollider {
 	const sc = new StaticCollider();
 	sc.collisionGroup = "default";
 	sc.position = pos;
-	const cs = sc.addChild(CollisionShape);
+	const cs = sc.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return sc;
 }
@@ -93,7 +93,7 @@ function makeSensor(pos: Vec2, w = 16, h = 16): Sensor {
 	const sensor = new Sensor();
 	sensor.collisionGroup = "default";
 	sensor.position = pos;
-	const cs = sensor.addChild(CollisionShape);
+	const cs = sensor.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return sensor;
 }
@@ -179,7 +179,7 @@ describe("Integration: physics full-loop", () => {
 			platform.collisionGroup = "default";
 			platform.position = new Vec2(100, 200);
 			platform.constantVelocity = new Vec2(100, 0);
-			const pcs = platform.addChild(CollisionShape);
+			const pcs = platform.add(CollisionShape);
 			pcs.shape = Shape.rect(80, 12);
 
 			const actor = makeActor(GravityActor, new Vec2(100, 170));
@@ -269,7 +269,7 @@ describe("Integration: physics full-loop", () => {
 			const slope = new StaticCollider();
 			slope.collisionGroup = "default";
 			slope.position = new Vec2(200, 300);
-			const scs = slope.addChild(CollisionShape);
+			const scs = slope.add(CollisionShape);
 			// Right triangle: flat base at bottom, slopes up to the right
 			// height = 200 * tan(30°) ≈ 115.5
 			scs.shape = Shape.polygon([new Vec2(-100, 0), new Vec2(100, 0), new Vec2(100, -115.5)]);
@@ -371,7 +371,7 @@ describe("Integration: physics full-loop", () => {
 			const actor = new Actor();
 			actor.position = new Vec2(0, 0);
 			actor.solid = false;
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 			actor.collisionGroup = "nonexistent";
 
@@ -389,7 +389,7 @@ describe("Integration: physics full-loop", () => {
 			platform.collisionGroup = "default";
 			platform.position = new Vec2(200, 300);
 			platform.rotation = Math.PI / 4; // 45°
-			const pcs = platform.addChild(CollisionShape);
+			const pcs = platform.add(CollisionShape);
 			pcs.shape = Shape.rect(100, 12);
 
 			const actor = makeActor(GravityActor, new Vec2(200, 200));
@@ -416,7 +416,7 @@ describe("Integration: physics full-loop", () => {
 			actor.collisionGroup = "default";
 			actor.solid = false;
 			actor.position = new Vec2(200, 100);
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.capsule(8, 24);
 			cs.rotation = Math.PI / 2; // Horizontal capsule
 
@@ -440,7 +440,7 @@ describe("Integration: physics full-loop", () => {
 			actor.solid = false;
 			actor.position = new Vec2(100, 100);
 			actor.speed = 100;
-			const cs = actor.addChild(CollisionShape);
+			const cs = actor.add(CollisionShape);
 			cs.shape = Shape.capsule(8, 24);
 
 			const floor = makeStatic(new Vec2(200, 300), 400, 20);
@@ -472,7 +472,7 @@ describe("Integration: physics full-loop", () => {
 			const sensor = new Sensor();
 			sensor.collisionGroup = "default";
 			sensor.position = new Vec2(200, 200);
-			const scs = sensor.addChild(CollisionShape);
+			const scs = sensor.add(CollisionShape);
 			scs.shape = Shape.rect(100, 10);
 			sensor.rotation = Math.PI / 4;
 
@@ -508,7 +508,7 @@ describe("Integration: physics full-loop", () => {
 				platform.collisionGroup = "default";
 				platform.position = new Vec2(200, 300);
 				platform.rotation = Math.PI / 6; // 30°
-				const pcs = platform.addChild(CollisionShape);
+				const pcs = platform.add(CollisionShape);
 				pcs.shape = Shape.rect(100, 12);
 
 				const floor = makeStatic(new Vec2(200, 400), 400, 20);
@@ -517,7 +517,7 @@ describe("Integration: physics full-loop", () => {
 				actor.collisionGroup = "default";
 				actor.solid = false;
 				actor.position = new Vec2(180, 100);
-				const acs = actor.addChild(CollisionShape);
+				const acs = actor.add(CollisionShape);
 				acs.shape = Shape.capsule(6, 20);
 
 				startScene(game, [platform, floor, actor]);
@@ -571,14 +571,14 @@ describe("Integration: physics full-loop", () => {
 				actor.targetVelocity = new Vec2(80, 0);
 				actor.collisionGroup = "player";
 				actor.solid = false;
-				const acs = actor.addChild(CollisionShape);
+				const acs = actor.add(CollisionShape);
 				acs.shape = Shape.rect(14, 24);
 
 				// Sensor (coin)
 				const coin = new Sensor();
 				coin.position = new Vec2(300, 480);
 				coin.collisionGroup = "coins";
-				const ccs = coin.addChild(CollisionShape);
+				const ccs = coin.add(CollisionShape);
 				ccs.shape = Shape.circle(8);
 
 				startScene(game, [floor, plat1, plat2, wall, actor, coin]);
@@ -1184,7 +1184,7 @@ describe("Integration: physics full-loop", () => {
 				player.solid = false;
 				player.monitoring = true;
 				player.targetVelocity = new Vec2(50, 0);
-				const pcs = player.addChild(CollisionShape);
+				const pcs = player.add(CollisionShape);
 				pcs.shape = Shape.rect(14, 24);
 
 				const enemy = new VelocityActor();
@@ -1192,7 +1192,7 @@ describe("Integration: physics full-loop", () => {
 				enemy.collisionGroup = "enemies";
 				enemy.solid = false;
 				enemy.targetVelocity = new Vec2(-30, 0);
-				const ecs = enemy.addChild(CollisionShape);
+				const ecs = enemy.add(CollisionShape);
 				ecs.shape = Shape.rect(14, 14);
 
 				startScene(game, [floor, player, enemy]);

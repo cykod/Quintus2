@@ -18,7 +18,7 @@ function setupWithBodies(bodies: import("@quintus/core").Node[]): Game {
 	game.use(PhysicsPlugin());
 	class TestScene extends Scene {
 		onReady() {
-			for (const body of bodies) this.addChild(body);
+			for (const body of bodies) this.add(body);
 		}
 	}
 	game.start(TestScene);
@@ -34,7 +34,7 @@ describe("Actor.serialize()", () => {
 		actor.tag("hero");
 		actor.position = new Vec2(100, 200);
 		actor.velocity = new Vec2(50, -100);
-		const cs = actor.addChild(CollisionShape);
+		const cs = actor.add(CollisionShape);
 		cs.shape = Shape.rect(16, 16);
 
 		setupWithBodies([actor]);
@@ -60,7 +60,7 @@ describe("StaticCollider.serialize()", () => {
 		sc.name = "Platform";
 		sc.oneWay = true;
 		sc.constantVelocity = new Vec2(50, 0);
-		const cs = sc.addChild(CollisionShape);
+		const cs = sc.add(CollisionShape);
 		cs.shape = Shape.rect(100, 20);
 
 		setupWithBodies([sc]);
@@ -79,7 +79,7 @@ describe("Sensor.serialize()", () => {
 		sensor.collisionGroup = "default";
 		sensor.name = "Coin";
 		sensor.monitoring = true;
-		const cs = sensor.addChild(CollisionShape);
+		const cs = sensor.add(CollisionShape);
 		cs.shape = Shape.rect(16, 16);
 
 		setupWithBodies([sensor]);

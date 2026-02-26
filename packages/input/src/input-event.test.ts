@@ -78,7 +78,7 @@ describe("InputEvent propagation", () => {
 			class TestScene extends Scene {
 				onReady() {
 					const parent = this.add(ParentNode);
-					parent.addChild(ChildNode);
+					parent.add(ChildNode);
 				}
 			},
 		);
@@ -118,7 +118,7 @@ describe("InputEvent propagation", () => {
 			class TestScene extends Scene {
 				onReady() {
 					const parent = this.add(ParentNode);
-					parent.addChild(ChildNode);
+					parent.add(ChildNode);
 				}
 			},
 		);
@@ -154,7 +154,7 @@ describe("InputEvent propagation", () => {
 			class TestScene extends Scene {
 				onReady() {
 					const plain = this.add(PlainNode);
-					plain.addChild(ReceiverNode);
+					plain.add(ReceiverNode);
 				}
 			},
 		);

@@ -1,3 +1,14 @@
+## Remove deprecated addChild method in favor of add
+*Thursday, February 26th at 9pm*
+Fully removed the deprecated addChild() method from Node, replacing all 334 
+call sites across 43 files with the canonical add() method. The two methods 
+were identical — both delegated to the private _addChildNode() implementation 
+— so this is a pure cleanup with no behavioral change. Updated test names, 
+comments, and source code across all packages and example games. All 1824 tests 
+pass.
+
+---
+
 ## Add core game utilities to @quintus/ai-prefabs
 *Thursday, February 26th at 7pm*
 Implement 4 focused utilities in @quintus/ai-prefabs that extract common 

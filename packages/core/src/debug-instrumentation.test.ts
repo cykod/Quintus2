@@ -18,7 +18,7 @@ describe("Debug Instrumentation", () => {
 				onReady() {
 					const n = new Player();
 					n.tag("hero");
-					this.addChild(n);
+					this.add(n);
 				}
 			}
 			game.start(TestScene);
@@ -39,7 +39,7 @@ describe("Debug Instrumentation", () => {
 			class TestScene extends Scene {
 				onReady() {
 					node = new Ephemeral();
-					this.addChild(node);
+					this.add(node);
 				}
 			}
 			game.start(TestScene);
@@ -69,7 +69,7 @@ describe("Debug Instrumentation", () => {
 							throw new Error("test error");
 						}
 					}
-					this.addChild(new Buggy());
+					this.add(new Buggy());
 				}
 			}
 			game.start(TestScene);
@@ -110,7 +110,7 @@ describe("Debug Instrumentation", () => {
 				onReady() {
 					const n = new Node2D();
 					n.name = "Player";
-					this.addChild(n);
+					this.add(n);
 				}
 			}
 			game.start(TestScene);

@@ -27,7 +27,7 @@ export class CollisionShape extends Node2D {
 
 	/**
 	 * @internal Notify parent CollisionObject when this shape enters the tree
-	 * with a pre-set shape (e.g. shape was set before addChild).
+	 * with a pre-set shape (e.g. shape was set before add).
 	 */
 	override onReady(): void {
 		super.onReady();

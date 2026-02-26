@@ -70,7 +70,7 @@ function renderAndCapture(setup: ReturnType<typeof createTestSetup>): DrawContex
 		}
 	}
 	const node = new Capturer();
-	setup.scene.addChild(node);
+	setup.scene.add(node);
 	setup.renderer.markRenderDirty();
 	setup.renderer.render(setup.scene);
 	if (!captured) throw new Error("DrawContext was not captured");
@@ -92,7 +92,7 @@ describe("Canvas2DRenderer", () => {
 		const { scene, renderer } = createTestSetup();
 		const node = new VisualNode();
 		node.visible = false;
-		scene.addChild(node);
+		scene.add(node);
 		renderer.markRenderDirty();
 		renderer.render(scene);
 		expect(node.drawCalled).toBe(false);
@@ -119,9 +119,9 @@ describe("Canvas2DRenderer", () => {
 		b.zIndex = 1;
 		const c = new OrderedNode("c");
 		c.zIndex = 3;
-		scene.addChild(a);
-		scene.addChild(b);
-		scene.addChild(c);
+		scene.add(a);
+		scene.add(b);
+		scene.add(c);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -146,9 +146,9 @@ describe("Canvas2DRenderer", () => {
 		const a = new OrderedNode("first");
 		const b = new OrderedNode("second");
 		const c = new OrderedNode("third");
-		scene.addChild(a);
-		scene.addChild(b);
-		scene.addChild(c);
+		scene.add(a);
+		scene.add(b);
+		scene.add(c);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -160,8 +160,8 @@ describe("Canvas2DRenderer", () => {
 		const parent = new Node2D();
 		parent.visible = false;
 		const child = new VisualNode();
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -171,7 +171,7 @@ describe("Canvas2DRenderer", () => {
 	it("nodes without onDraw override are not in render list", () => {
 		const { scene, renderer } = createTestSetup();
 		const logicNode = new Node2D(); // no onDraw override
-		scene.addChild(logicNode);
+		scene.add(logicNode);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -181,7 +181,7 @@ describe("Canvas2DRenderer", () => {
 	it("nodes with onDraw override ARE in render list", () => {
 		const { scene, renderer } = createTestSetup();
 		const visual = new VisualNode();
-		scene.addChild(visual);
+		scene.add(visual);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -191,7 +191,7 @@ describe("Canvas2DRenderer", () => {
 	it("render list is reused between frames", () => {
 		const { scene, renderer } = createTestSetup();
 		const node = new VisualNode();
-		scene.addChild(node);
+		scene.add(node);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -222,8 +222,8 @@ describe("Canvas2DRenderer", () => {
 		a.zIndex = 1;
 		const b = new OrderedNode("b");
 		b.zIndex = 2;
-		scene.addChild(a);
-		scene.addChild(b);
+		scene.add(a);
+		scene.add(b);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -652,7 +652,7 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 		}
 		const node = new Positioned();
 		node.position = new Vec2(100, 200);
-		scene.addChild(node);
+		scene.add(node);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -688,9 +688,9 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 		crash.zIndex = 1;
 		const b = new Good("after");
 		b.zIndex = 2;
-		scene.addChild(a);
-		scene.addChild(crash);
-		scene.addChild(b);
+		scene.add(a);
+		scene.add(crash);
+		scene.add(b);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -722,7 +722,7 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 		}
 		const node = new Positioned();
 		node.position = new Vec2(10.7, 20.3);
-		scene.addChild(node);
+		scene.add(node);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -756,7 +756,7 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 		}
 		const node = new Positioned();
 		node.position = new Vec2(10.7, 20.3);
-		scene.addChild(node);
+		scene.add(node);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -785,7 +785,7 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 
 		const parent = new Node2D();
 		parent.ySortChildren = true;
-		scene.addChild(parent);
+		scene.add(parent);
 
 		// Add in tree order: A, B, C but Y positions reversed
 		const a = new TrackedNode("a");
@@ -795,9 +795,9 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 		const c = new TrackedNode("c");
 		c.position = new Vec2(0, 10); // top
 
-		parent.addChild(a);
-		parent.addChild(b);
-		parent.addChild(c);
+		parent.add(a);
+		parent.add(b);
+		parent.add(c);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -823,7 +823,7 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 
 		const parent = new Node2D();
 		parent.ySortChildren = true;
-		scene.addChild(parent);
+		scene.add(parent);
 
 		const a = new TrackedNode("a");
 		a.position = new Vec2(0, 50);
@@ -832,8 +832,8 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 		b.position = new Vec2(0, 50);
 		b.zIndex = 1;
 
-		parent.addChild(a);
-		parent.addChild(b);
+		parent.add(a);
+		parent.add(b);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -859,15 +859,15 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 
 		const parent = new Node2D();
 		// ySortChildren defaults to false
-		scene.addChild(parent);
+		scene.add(parent);
 
 		const a = new TrackedNode("a");
 		a.position = new Vec2(0, 100);
 		const b = new TrackedNode("b");
 		b.position = new Vec2(0, 10);
 
-		parent.addChild(a);
-		parent.addChild(b);
+		parent.add(a);
+		parent.add(b);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -893,26 +893,26 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 
 		const outer = new Node2D();
 		outer.ySortChildren = true;
-		scene.addChild(outer);
+		scene.add(outer);
 
 		// Inner container at Y=100, with its own y-sorted children
 		const inner = new Node2D();
 		inner.ySortChildren = true;
 		inner.position = new Vec2(0, 100);
-		outer.addChild(inner);
+		outer.add(inner);
 
 		const c1 = new TrackedNode("inner-bottom");
 		c1.position = new Vec2(0, 50); // globalY = 150
 		const c2 = new TrackedNode("inner-top");
 		c2.position = new Vec2(0, 10); // globalY = 110
 
-		inner.addChild(c1);
-		inner.addChild(c2);
+		inner.add(c1);
+		inner.add(c2);
 
 		// Direct child of outer at Y=50 — should be visited before inner (Y=100)
 		const sibling = new TrackedNode("sibling");
 		sibling.position = new Vec2(0, 50);
-		outer.addChild(sibling);
+		outer.add(sibling);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);
@@ -939,19 +939,19 @@ describe("Canvas2DRenderer (Y-Sort)", () => {
 
 		const parent = new Node2D();
 		parent.ySortChildren = true;
-		scene.addChild(parent);
+		scene.add(parent);
 
 		const a = new TrackedNode("a");
 		a.position = new Vec2(0, 100);
-		parent.addChild(a);
+		parent.add(a);
 
 		// Plain Node (not Node2D) — should not cause errors
 		const logic = new Node();
-		parent.addChild(logic);
+		parent.add(logic);
 
 		const b = new TrackedNode("b");
 		b.position = new Vec2(0, 10);
-		parent.addChild(b);
+		parent.add(b);
 
 		renderer.markRenderDirty();
 		renderer.render(scene);

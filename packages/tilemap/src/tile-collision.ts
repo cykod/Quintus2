@@ -166,9 +166,9 @@ export function createColliders(
 
 		const shape = new factories.CollisionShape();
 		shape.shape = factories.shapeRect(pixelW, pixelH);
-		collider.addChild(shape);
+		collider.add(shape);
 
-		parent.addChild(collider);
+		parent.add(collider);
 		colliders.push(collider);
 	}
 

@@ -21,7 +21,7 @@ function createBody(type: BodyType, shape: Shape2D, pos: Vec2, group = "default"
 	const body = new TestBody(type);
 	body.position = pos;
 	body.collisionGroup = group;
-	const cs = body.addChild(CollisionShape);
+	const cs = body.add(CollisionShape);
 	cs.shape = shape;
 	return body;
 }
@@ -61,7 +61,7 @@ describe("PhysicsWorld.queryPoint", () => {
 		body.collisionGroup = "default";
 		body.rotation = Math.PI / 4; // Rotate 45 degrees
 
-		const cs = body.addChild(CollisionShape);
+		const cs = body.add(CollisionShape);
 		cs.shape = Shape.rect(20, 20);
 		world.register(body);
 
@@ -116,11 +116,11 @@ describe("PhysicsWorld.queryPoint", () => {
 		body.position = new Vec2(0, 0);
 		body.collisionGroup = "default";
 
-		const cs1 = body.addChild(CollisionShape);
+		const cs1 = body.add(CollisionShape);
 		cs1.shape = Shape.rect(10, 10);
 		cs1.position = new Vec2(-20, 0);
 
-		const cs2 = body.addChild(CollisionShape);
+		const cs2 = body.add(CollisionShape);
 		cs2.shape = Shape.rect(10, 10);
 		cs2.position = new Vec2(20, 0);
 

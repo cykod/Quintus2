@@ -20,7 +20,7 @@ function setupScene(bodies: import("@quintus/core").Node[]): {
 	game.use(PhysicsPlugin());
 	class TestScene extends Scene {
 		onReady() {
-			for (const body of bodies) this.addChild(body);
+			for (const body of bodies) this.add(body);
 		}
 	}
 	game.start(TestScene);
@@ -32,7 +32,7 @@ function makeActor(pos: Vec2, w = 10, h = 10): Actor {
 	actor.collisionGroup = "default";
 	actor.solid = false;
 	actor.position = pos;
-	const cs = actor.addChild(CollisionShape);
+	const cs = actor.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return actor;
 }
@@ -41,7 +41,7 @@ function makeSensor(pos: Vec2, w = 40, h = 40): Sensor {
 	const sensor = new Sensor();
 	sensor.collisionGroup = "default";
 	sensor.position = pos;
-	const cs = sensor.addChild(CollisionShape);
+	const cs = sensor.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return sensor;
 }
@@ -50,7 +50,7 @@ function makeStatic(pos: Vec2, w = 20, h = 20): StaticCollider {
 	const sc = new StaticCollider();
 	sc.collisionGroup = "default";
 	sc.position = pos;
-	const cs = sc.addChild(CollisionShape);
+	const cs = sc.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return sc;
 }
@@ -402,7 +402,7 @@ describe("Sensor", () => {
 			const custom = new CustomSensor();
 			custom.collisionGroup = "default";
 			custom.position = new Vec2(0, 0);
-			const cs = custom.addChild(CollisionShape);
+			const cs = custom.add(CollisionShape);
 			cs.shape = Shape.rect(40, 40);
 
 			const other = makeSensor(new Vec2(10, 0));

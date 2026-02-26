@@ -26,9 +26,9 @@ describe("Node.serialize()", () => {
 		const grandchild = new Node();
 		grandchild.name = "Grandchild";
 
-		parent.addChild(child1);
-		parent.addChild(child2);
-		child1.addChild(grandchild);
+		parent.add(child1);
+		parent.add(child2);
+		child1.add(grandchild);
 
 		const snap = parent.serialize();
 		expect(snap.children.length).toBe(2);
@@ -69,7 +69,7 @@ describe("Node2D.serialize()", () => {
 		parent.position._set(50, 50);
 		const child = new Node2D();
 		child.position._set(10, 20);
-		parent.addChild(child);
+		parent.add(child);
 
 		const snap = child.serialize();
 		expect(snap.position).toEqual({ x: 10, y: 20 });

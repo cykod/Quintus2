@@ -42,8 +42,8 @@ describe("Node2D", () => {
 		parent.position = new Vec2(100, 0);
 		const child = new Node2D();
 		child.position = new Vec2(10, 0);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(child.globalPosition.approxEquals(new Vec2(110, 0))).toBe(true);
 	});
 
@@ -52,8 +52,8 @@ describe("Node2D", () => {
 		const parent = new Node2D();
 		const child = new Node2D();
 		child.position = new Vec2(10, 0);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		parent.position = new Vec2(50, 0);
 		expect(child.globalPosition.approxEquals(new Vec2(60, 0))).toBe(true);
 	});
@@ -64,8 +64,8 @@ describe("Node2D", () => {
 		parent.rotation = Math.PI / 2;
 		const child = new Node2D();
 		child.position = new Vec2(10, 0);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(child.globalPosition.approxEquals(new Vec2(0, 10))).toBe(true);
 	});
 
@@ -75,8 +75,8 @@ describe("Node2D", () => {
 		parent.scale = new Vec2(2, 2);
 		const child = new Node2D();
 		child.position = new Vec2(10, 5);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(child.globalPosition.approxEquals(new Vec2(20, 10))).toBe(true);
 	});
 
@@ -88,9 +88,9 @@ describe("Node2D", () => {
 		parent.position = new Vec2(50, 0);
 		const child = new Node2D();
 		child.position = new Vec2(10, 0);
-		gp.addChild(parent);
-		parent.addChild(child);
-		scene.addChild(gp);
+		gp.add(parent);
+		parent.add(child);
+		scene.add(gp);
 		expect(child.globalPosition.approxEquals(new Vec2(160, 0))).toBe(true);
 	});
 
@@ -100,8 +100,8 @@ describe("Node2D", () => {
 		const parent = new Node2D();
 		const child = new Node2D();
 		child.position = new Vec2(10, 0);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		// Access to compute + cache
 		child.globalTransform;
 		// Change parent
@@ -115,8 +115,8 @@ describe("Node2D", () => {
 		const parent = new Node2D();
 		const child = new Node2D();
 		child.position = new Vec2(10, 0);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		// Force compute + cache
 		child.globalTransform;
 		// Mutate parent position field
@@ -129,7 +129,7 @@ describe("Node2D", () => {
 		const scene = createTestScene();
 		const node = new Node2D();
 		node.position = new Vec2(10, 5);
-		scene.addChild(node);
+		scene.add(node);
 		node.localTransform; // Force compute
 		node.scale.x = 2;
 		node.scale.y = 3;
@@ -144,8 +144,8 @@ describe("Node2D", () => {
 		const parent = new Node2D();
 		parent.position = new Vec2(100, 50);
 		const child = new Node2D();
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		child.globalPosition = new Vec2(150, 75);
 		expect(child.position.approxEquals(new Vec2(50, 25))).toBe(true);
 	});
@@ -154,8 +154,8 @@ describe("Node2D", () => {
 		const scene = createTestScene();
 		const parent = new Node(); // plain Node, not Node2D
 		const child = new Node2D();
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		child.globalPosition = new Vec2(42, 99);
 		expect(child.position.approxEquals(new Vec2(42, 99))).toBe(true);
 	});
@@ -165,7 +165,7 @@ describe("Node2D", () => {
 		const scene = createTestScene();
 		const node = new Node2D();
 		node.position = new Vec2(100, 200);
-		scene.addChild(node);
+		scene.add(node);
 		const local = node.toLocal(new Vec2(110, 210));
 		expect(local.approxEquals(new Vec2(10, 10))).toBe(true);
 	});
@@ -174,7 +174,7 @@ describe("Node2D", () => {
 		const scene = createTestScene();
 		const node = new Node2D();
 		node.position = new Vec2(100, 200);
-		scene.addChild(node);
+		scene.add(node);
 		const global = node.toGlobal(new Vec2(10, 10));
 		expect(global.approxEquals(new Vec2(110, 210))).toBe(true);
 	});
@@ -192,8 +192,8 @@ describe("Node2D", () => {
 		parent.rotation = Math.PI / 4;
 		const child = new Node2D();
 		child.rotation = Math.PI / 4;
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		expect(child.globalRotation).toBeCloseTo(Math.PI / 2);
 	});
 
@@ -203,8 +203,8 @@ describe("Node2D", () => {
 		parent.scale = new Vec2(2, 3);
 		const child = new Node2D();
 		child.scale = new Vec2(4, 5);
-		parent.addChild(child);
-		scene.addChild(parent);
+		parent.add(child);
+		scene.add(parent);
 		const gs = child.globalScale;
 		expect(gs.x).toBeCloseTo(8);
 		expect(gs.y).toBeCloseTo(15);
@@ -214,7 +214,7 @@ describe("Node2D", () => {
 	it("lookAt() sets rotation toward target point", () => {
 		const scene = createTestScene();
 		const node = new Node2D();
-		scene.addChild(node);
+		scene.add(node);
 		node.position = new Vec2(0, 0);
 		node.lookAt(new Vec2(10, 0)); // target to the right
 		expect(node.rotation).toBeCloseTo(0);
@@ -243,9 +243,9 @@ describe("Node2D", () => {
 		const scene = createTestScene();
 		const parent = new Node2D();
 		const child = new Node2D();
-		parent.addChild(child);
-		scene.addChild(parent);
-		// Don't access globalTransform so it stays dirty from addChild
+		parent.add(child);
+		scene.add(parent);
+		// Don't access globalTransform so it stays dirty from add
 		// Calling _markGlobalTransformDirty again should be a no-op (early return)
 		child._markGlobalTransformDirty();
 		// Still works correctly after
@@ -259,9 +259,9 @@ describe("Node2D", () => {
 		const grandparent = new Node2D();
 		const parent = new Node2D();
 		const child = new Node2D();
-		grandparent.addChild(parent);
-		parent.addChild(child);
-		scene.addChild(grandparent);
+		grandparent.add(parent);
+		parent.add(child);
+		scene.add(grandparent);
 
 		grandparent.position = new Vec2(100, 0);
 		parent.position = new Vec2(50, 0);
@@ -281,9 +281,9 @@ describe("Node2D", () => {
 		const childB = new Node2D();
 		childA.position = new Vec2(10, 0);
 		childB.position = new Vec2(0, 10);
-		parent.addChild(childA);
-		parent.addChild(childB);
-		scene.addChild(parent);
+		parent.add(childA);
+		parent.add(childB);
+		scene.add(parent);
 
 		// Cache
 		childA.globalTransform;

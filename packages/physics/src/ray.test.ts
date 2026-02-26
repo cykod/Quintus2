@@ -21,7 +21,7 @@ function createBody(type: BodyType, shape: Shape2D, pos: Vec2, group = "default"
 	const body = new TestBody(type);
 	body.position = pos;
 	body.collisionGroup = group;
-	const cs = body.addChild(CollisionShape);
+	const cs = body.add(CollisionShape);
 	cs.shape = shape;
 	return body;
 }
@@ -269,11 +269,11 @@ describe("PhysicsWorld.raycast", () => {
 		body.position = new Vec2(50, 0);
 		body.collisionGroup = "default";
 
-		const cs1 = body.addChild(CollisionShape);
+		const cs1 = body.add(CollisionShape);
 		cs1.shape = Shape.rect(10, 10);
 		cs1.position = new Vec2(-10, 0); // shape at x=40
 
-		const cs2 = body.addChild(CollisionShape);
+		const cs2 = body.add(CollisionShape);
 		cs2.shape = Shape.rect(10, 10);
 		cs2.position = new Vec2(10, 0); // shape at x=60
 

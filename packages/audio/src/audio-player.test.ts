@@ -36,7 +36,7 @@ describe("AudioPlayer", () => {
 		const player = new AudioPlayer();
 		player.stream = "bgm";
 		player.autoplay = true;
-		game.currentScene.addChild(player);
+		game.currentScene.add(player);
 
 		expect(player.playing).toBe(true);
 
@@ -54,7 +54,7 @@ describe("AudioPlayer", () => {
 
 		const player = new AudioPlayer();
 		player.stream = "bgm2";
-		game.currentScene.addChild(player);
+		game.currentScene.add(player);
 
 		player.play();
 		expect(player.playing).toBe(true);
@@ -77,7 +77,7 @@ describe("AudioPlayer", () => {
 
 		const player = new AudioPlayer();
 		player.stream = "sfx1";
-		game.currentScene.addChild(player);
+		game.currentScene.add(player);
 
 		const fn = vi.fn();
 		player.finished.connect(fn);
@@ -95,7 +95,7 @@ describe("AudioPlayer", () => {
 		game.start(TestScene);
 
 		const player = new AudioPlayer();
-		game.currentScene.addChild(player);
+		game.currentScene.add(player);
 
 		player.play(); // No stream set
 		expect(player.playing).toBe(false);

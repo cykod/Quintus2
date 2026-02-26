@@ -93,7 +93,7 @@ describe("CollisionShape", () => {
 		it("inherits parent Node2D transform", () => {
 			const parent = new Node2D();
 			parent.position = new Vec2(100, 200);
-			const cs = parent.addChild(CollisionShape);
+			const cs = parent.add(CollisionShape);
 			cs.shape = Shape.rect(20, 10);
 			cs.position = new Vec2(10, 0);
 

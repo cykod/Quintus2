@@ -7,7 +7,7 @@ class TestScene extends Scene {
 	onReady() {
 		const node = new Node2D();
 		node.name = "target";
-		this.addChild(node);
+		this.add(node);
 	}
 }
 

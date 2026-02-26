@@ -49,7 +49,7 @@ function createBody(
 	body.position = pos;
 	body.collisionGroup = group;
 
-	const cs = body.addChild(CollisionShape);
+	const cs = body.add(CollisionShape);
 	cs.shape = shape;
 
 	return body;

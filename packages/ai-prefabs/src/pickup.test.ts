@@ -22,7 +22,7 @@ function makePlayer(pos: Vec2): Actor {
 	a.tag("player");
 	const cs = new CollisionShape();
 	cs.shape = Shape.rect(8, 8);
-	a.addChild(cs);
+	a.add(cs);
 	return a;
 }
 
@@ -31,7 +31,7 @@ function makePickup(pos: Vec2, opts?: { bobAmount?: number }): TestPickup {
 	p.position = pos;
 	const cs = new CollisionShape();
 	cs.shape = Shape.rect(16, 16);
-	p.addChild(cs);
+	p.add(cs);
 	if (opts?.bobAmount !== undefined) p.bobAmount = opts.bobAmount;
 	return p;
 }
@@ -54,8 +54,8 @@ function setup(opts?: { bobAmount?: number }) {
 
 	class TestScene extends Scene {
 		override onReady() {
-			this.addChild(pickup);
-			this.addChild(player);
+			this.add(pickup);
+			this.add(player);
 		}
 	}
 	game.registerScenes({ test: TestScene });
@@ -136,12 +136,12 @@ describe("Pickup", () => {
 		enemy.tag("enemy");
 		const cs = new CollisionShape();
 		cs.shape = Shape.rect(8, 8);
-		enemy.addChild(cs);
+		enemy.add(cs);
 
 		class TestScene extends Scene {
 			override onReady() {
-				this.addChild(pickup);
-				this.addChild(enemy);
+				this.add(pickup);
+				this.add(enemy);
 			}
 		}
 		game.start(TestScene);

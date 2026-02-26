@@ -20,7 +20,7 @@ function createGame(): Game {
 function startScene(game: Game, bodies: Node[]): void {
 	class TestScene extends Scene {
 		onReady() {
-			for (const body of bodies) this.addChild(body);
+			for (const body of bodies) this.add(body);
 		}
 	}
 	game.start(TestScene);
@@ -31,7 +31,7 @@ function makeActor(pos: Vec2, w = 20, h = 20): Actor {
 	actor.collisionGroup = "default";
 	actor.solid = false;
 	actor.position = pos;
-	const cs = actor.addChild(CollisionShape);
+	const cs = actor.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return actor;
 }
@@ -40,7 +40,7 @@ function makeStatic(pos: Vec2, w = 200, h = 20): StaticCollider {
 	const sc = new StaticCollider();
 	sc.collisionGroup = "default";
 	sc.position = pos;
-	const cs = sc.addChild(CollisionShape);
+	const cs = sc.add(CollisionShape);
 	cs.shape = Shape.rect(w, h);
 	return sc;
 }

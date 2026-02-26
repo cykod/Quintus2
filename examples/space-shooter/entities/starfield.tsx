@@ -45,9 +45,9 @@ export class Starfield extends Node {
 				sprite.texture = "tileset";
 				sprite.sourceRect = tilesetAtlas.getFrameOrThrow(frame);
 				sprite.scale = new Vec2(sc, sc);
-				star.addChild(sprite);
+				star.add(sprite);
 
-				this.addChild(star);
+				this.add(star);
 			}
 		}
 	}

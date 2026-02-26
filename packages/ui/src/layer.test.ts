@@ -6,7 +6,7 @@ describe("Layer", () => {
 	it("fixed getter/setter propagates to children", () => {
 		const layer = new Layer();
 		const child = new Node2D();
-		layer.addChild(child);
+		layer.add(child);
 
 		layer.fixed = true;
 		expect(layer.renderFixed).toBe(true);
@@ -22,7 +22,7 @@ describe("Layer", () => {
 		layer.fixed = true;
 
 		const child = new Node2D();
-		layer.addChild(child);
+		layer.add(child);
 		expect(child.renderFixed).toBe(true);
 	});
 
@@ -30,8 +30,8 @@ describe("Layer", () => {
 		const layer = new Layer();
 		const child = new Node2D();
 		const grandchild = new Node2D();
-		child.addChild(grandchild);
-		layer.addChild(child);
+		child.add(grandchild);
+		layer.add(child);
 
 		layer.fixed = true;
 		expect(grandchild.renderFixed).toBe(true);
@@ -42,8 +42,8 @@ describe("Layer", () => {
 		const inner = new Layer();
 		const innerChild = new Node2D();
 
-		inner.addChild(innerChild);
-		outer.addChild(inner);
+		inner.add(innerChild);
+		outer.add(inner);
 
 		// Inner layer has its own fixed = false
 		inner.fixed = false;
@@ -66,10 +66,10 @@ describe("Layer", () => {
 		expect(layer.fixed).toBe(false);
 	});
 
-	it("addChild with class constructor works", () => {
+	it("add with class constructor works", () => {
 		const layer = new Layer();
 		layer.fixed = true;
-		const child = layer.addChild(Node2D);
+		const child = layer.add(Node2D);
 		expect(child).toBeInstanceOf(Node2D);
 		expect(child.renderFixed).toBe(true);
 	});

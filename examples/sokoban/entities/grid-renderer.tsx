@@ -50,6 +50,6 @@ export class GridRenderer extends Node2D {
 		sprite.texture = "tileset";
 		sprite.sourceRect = tileSheet.getFrameRect(frame);
 		sprite.position._set(x, y);
-		this.addChild(sprite);
+		this.add(sprite);
 	}
 }

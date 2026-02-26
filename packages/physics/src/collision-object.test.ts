@@ -45,7 +45,7 @@ class TestSensor extends CollisionObject {
 function makeBody(type: BodyType, pos: Vec2, shape = Shape.rect(10, 10)): TestBody | TestSensor {
 	const body = type === "sensor" ? new TestSensor() : new TestBody(type);
 	body.position = pos;
-	const cs = body.addChild(CollisionShape);
+	const cs = body.add(CollisionShape);
 	cs.shape = shape;
 	return body;
 }
@@ -56,7 +56,7 @@ describe("CollisionObject", () => {
 	describe("getShapes()", () => {
 		it("returns enabled CollisionShape children", () => {
 			const body = new TestBody("actor");
-			const cs = body.addChild(CollisionShape);
+			const cs = body.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const shapes = body.getShapes();
@@ -66,9 +66,9 @@ describe("CollisionObject", () => {
 
 		it("excludes disabled shapes", () => {
 			const body = new TestBody("actor");
-			const cs1 = body.addChild(CollisionShape);
+			const cs1 = body.add(CollisionShape);
 			cs1.shape = Shape.rect(10, 10);
-			const cs2 = body.addChild(CollisionShape);
+			const cs2 = body.add(CollisionShape);
 			cs2.shape = Shape.rect(20, 20);
 			cs2.disabled = true;
 
@@ -79,9 +79,9 @@ describe("CollisionObject", () => {
 
 		it("excludes shapes with null shape property", () => {
 			const body = new TestBody("actor");
-			const cs1 = body.addChild(CollisionShape);
+			const cs1 = body.add(CollisionShape);
 			cs1.shape = Shape.rect(10, 10);
-			body.addChild(CollisionShape);
+			body.add(CollisionShape);
 			// cs2.shape remains null
 
 			const shapes = body.getShapes();
@@ -96,9 +96,9 @@ describe("CollisionObject", () => {
 
 		it("returns multiple enabled shapes", () => {
 			const body = new TestBody("actor");
-			const cs1 = body.addChild(CollisionShape);
+			const cs1 = body.add(CollisionShape);
 			cs1.shape = Shape.rect(10, 10);
-			const cs2 = body.addChild(CollisionShape);
+			const cs2 = body.add(CollisionShape);
 			cs2.shape = Shape.circle(5);
 
 			const shapes = body.getShapes();
@@ -110,7 +110,7 @@ describe("CollisionObject", () => {
 		it("returns shape + world transform pairs", () => {
 			const body = new TestBody("actor");
 			body.position = new Vec2(50, 100);
-			const cs = body.addChild(CollisionShape);
+			const cs = body.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 
 			const transforms = body.getShapeTransforms();
@@ -134,7 +134,7 @@ describe("CollisionObject", () => {
 		it("computes AABB for a single shape", () => {
 			const body = new TestBody("actor");
 			body.position = new Vec2(100, 200);
-			const cs = body.addChild(CollisionShape);
+			const cs = body.add(CollisionShape);
 			cs.shape = Shape.rect(20, 10);
 
 			const aabb = body.getWorldAABB();
@@ -149,11 +149,11 @@ describe("CollisionObject", () => {
 		it("merges AABB across multiple shapes", () => {
 			const body = new TestBody("actor");
 			body.position = new Vec2(0, 0);
-			const cs1 = body.addChild(CollisionShape);
+			const cs1 = body.add(CollisionShape);
 			cs1.shape = Shape.rect(10, 10);
 			cs1.position = new Vec2(-50, 0);
 
-			const cs2 = body.addChild(CollisionShape);
+			const cs2 = body.add(CollisionShape);
 			cs2.shape = Shape.rect(10, 10);
 			cs2.position = new Vec2(50, 0);
 
@@ -257,11 +257,11 @@ describe("CollisionObject", () => {
 			game.use(PhysicsPlugin());
 
 			// Build body with children FIRST, then add to scene
-			// (onReady fires immediately on addChild if parent is in tree)
+			// (onReady fires immediately on add if parent is in tree)
 			const body = makeBody("actor", new Vec2(50, 50));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			game.start(TestScene);
@@ -285,7 +285,7 @@ describe("CollisionObject", () => {
 			const body = makeBody("actor", new Vec2(50, 50));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			game.start(TestScene);
@@ -316,7 +316,7 @@ describe("CollisionObject", () => {
 			const body = makeBody("actor", new Vec2(50, 50));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			game.start(TestScene);
@@ -338,7 +338,7 @@ describe("CollisionObject", () => {
 			const body = makeBody("actor", new Vec2(0, 0));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			game.start(TestScene);
@@ -375,7 +375,7 @@ describe("CollisionObject", () => {
 			const body = makeBody("static", new Vec2(0, 0));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			game.start(TestScene);
@@ -403,7 +403,7 @@ describe("CollisionObject", () => {
 			const body = makeBody("static", new Vec2(0, 0));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			game.start(TestScene);
@@ -433,7 +433,7 @@ describe("CollisionObject", () => {
 			const body = makeBody("actor", new Vec2(0, 0));
 			class SceneA extends Scene {
 				onReady() {
-					this.addChild(body);
+					this.add(body);
 				}
 			}
 			class SceneB extends Scene {}
@@ -459,8 +459,8 @@ describe("CollisionObject", () => {
 			const actor = makeBody("actor", new Vec2(5, 0));
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(sensor);
-					this.addChild(actor);
+					this.add(sensor);
+					this.add(actor);
 				}
 			}
 			game.start(TestScene);

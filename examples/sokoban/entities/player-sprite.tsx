@@ -22,7 +22,7 @@ export class PlayerSprite extends Node2D {
 		const sprite = new Sprite();
 		sprite.texture = "tileset";
 		sprite.sourceRect = tileSheet.getFrameRect(FRAME_PLAYER_DOWN);
-		this.addChild(sprite);
+		this.add(sprite);
 		this._sprite = sprite;
 	}
 

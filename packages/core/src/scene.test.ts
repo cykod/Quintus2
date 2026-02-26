@@ -38,9 +38,9 @@ describe("Scene", () => {
 		const parent = new Node();
 		const b = new Node();
 		b.tag("enemy");
-		parent.addChild(b);
-		scene.addChild(a);
-		scene.addChild(parent);
+		parent.add(b);
+		scene.add(a);
+		scene.add(parent);
 		expect(scene.findAll("enemy")).toHaveLength(2);
 	});
 
@@ -49,9 +49,9 @@ describe("Scene", () => {
 		const scene = new Scene(game);
 		class SpecialNode extends Node {}
 		const parent = new Node();
-		parent.addChild(new SpecialNode());
-		scene.addChild(parent);
-		scene.addChild(new SpecialNode());
+		parent.add(new SpecialNode());
+		scene.add(parent);
+		scene.add(new SpecialNode());
 		expect(scene.findAllByType(SpecialNode)).toHaveLength(2);
 	});
 
@@ -64,9 +64,9 @@ describe("Scene", () => {
 		n2.tag("a");
 		const n3 = new Node();
 		n3.tag("b");
-		scene.addChild(n1);
-		scene.addChild(n2);
-		scene.addChild(n3);
+		scene.add(n1);
+		scene.add(n2);
+		scene.add(n3);
 		expect(scene.count("a")).toBe(2);
 	});
 
@@ -89,7 +89,7 @@ describe("Scene", () => {
 						throw new Error("fixedUpdate oops");
 					}
 				}
-				this.addChild(new BuggyNode());
+				this.add(new BuggyNode());
 			}
 		}
 		game.start(TestScene);
@@ -108,7 +108,7 @@ describe("Scene", () => {
 						throw new Error("fixedUpdate oops");
 					}
 				}
-				this.addChild(new BuggyNode());
+				this.add(new BuggyNode());
 			}
 		}
 		game.start(TestScene);
@@ -125,7 +125,7 @@ describe("Scene", () => {
 			onReady() {
 				const node = new Node();
 				node.onDestroy = destroyed;
-				this.addChild(node);
+				this.add(node);
 			}
 		}
 		class SceneB extends Scene {}

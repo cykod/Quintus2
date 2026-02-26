@@ -216,7 +216,7 @@ export class TileMap extends Node2D {
 				}
 			}
 
-			this.addChild(node);
+			this.add(node);
 			spawned.push(node);
 		}
 
@@ -260,7 +260,7 @@ export class TileMap extends Node2D {
 					node.position.y = row * parsed.tileHeight + parsed.tileHeight / 2;
 				}
 
-				this.addChild(node);
+				this.add(node);
 				spawned.push(node);
 
 				if (clearTiles) {

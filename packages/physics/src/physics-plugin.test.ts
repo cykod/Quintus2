@@ -91,7 +91,7 @@ describe("PhysicsPlugin", () => {
 			// If cellSize is wrong, spatial hash queries may fail — basic smoke test
 			const body = new TestActor();
 			body.position = new Vec2(0, 0);
-			const cs = body.addChild(CollisionShape);
+			const cs = body.add(CollisionShape);
 			cs.shape = Shape.rect(10, 10);
 			world?.register(body);
 
@@ -137,18 +137,18 @@ describe("PhysicsPlugin", () => {
 			// Build bodies with children FIRST, then add to scene
 			const sensor = new TestSensor();
 			sensor.position = new Vec2(0, 0);
-			const scs = sensor.addChild(CollisionShape);
+			const scs = sensor.add(CollisionShape);
 			scs.shape = Shape.rect(40, 40);
 
 			const actor = new TestActor();
 			actor.position = new Vec2(5, 0);
-			const acs = actor.addChild(CollisionShape);
+			const acs = actor.add(CollisionShape);
 			acs.shape = Shape.rect(10, 10);
 
 			class TestScene extends Scene {
 				onReady() {
-					this.addChild(sensor);
-					this.addChild(actor);
+					this.add(sensor);
+					this.add(actor);
 				}
 			}
 			game.start(TestScene);

@@ -125,21 +125,6 @@ export class Node {
 		return this;
 	}
 
-	/** @deprecated Use add() instead. */
-	addChild(node: Node): this;
-	/** @deprecated Use add() instead. */
-	addChild<T extends Node>(NodeClass: NodeConstructor<T>, props?: Partial<T>): T;
-	addChild(nodeOrClass: Node | NodeConstructor<Node>, props?: Partial<Node>): Node | this {
-		if (typeof nodeOrClass === "function") {
-			const node = new nodeOrClass();
-			if (props) Object.assign(node, props);
-			this._addChildNode(node);
-			return node;
-		}
-		this._addChildNode(nodeOrClass);
-		return this;
-	}
-
 	private _addChildNode(node: Node): void {
 		if (node === this) {
 			throw new Error("Cannot add a node to itself.");

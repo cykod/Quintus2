@@ -62,7 +62,7 @@ describe("InputPlugin", () => {
 			class TestScene extends Scene {
 				onReady() {
 					const parent = this.add(Parent);
-					parent.addChild(new Child());
+					parent.add(new Child());
 				}
 			}
 			game.start(TestScene);
@@ -98,7 +98,7 @@ describe("InputPlugin", () => {
 			class TestScene extends Scene {
 				onReady() {
 					const parent = this.add(Parent);
-					parent.addChild(new Child());
+					parent.add(new Child());
 				}
 			}
 			game.start(TestScene);

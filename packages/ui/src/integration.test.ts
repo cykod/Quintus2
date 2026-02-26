@@ -30,14 +30,14 @@ describe("UI integration", () => {
 		const hud = new Layer();
 		hud.fixed = true;
 		hud.zIndex = 100;
-		scene.addChild(hud);
+		scene.add(hud);
 
 		// Panel background
 		const panel = new Panel();
 		panel.width = 300;
 		panel.height = 50;
 		panel.position = new Vec2(10, 10);
-		hud.addChild(panel);
+		hud.add(panel);
 
 		// Container inside panel
 		const container = new Container();
@@ -46,14 +46,14 @@ describe("UI integration", () => {
 		container.width = 280;
 		container.height = 40;
 		container.position = new Vec2(10, 5);
-		panel.addChild(container);
+		panel.add(container);
 
 		// Score label
 		const score = new Label();
 		score.text = "Score: 0";
 		score.width = 80;
 		score.height = 20;
-		container.addChild(score);
+		container.add(score);
 
 		// Health bar
 		const health = new ProgressBar();
@@ -61,7 +61,7 @@ describe("UI integration", () => {
 		health.height = 20;
 		health.maxValue = 100;
 		health.value = 75;
-		container.addChild(health);
+		container.add(health);
 
 		// All children should be renderFixed
 		expect(panel.renderFixed).toBe(true);
@@ -92,7 +92,7 @@ describe("UI integration", () => {
 		btn.width = 120;
 		btn.height = 40;
 		btn.position = new Vec2(100, 100);
-		scene.addChild(btn);
+		scene.add(btn);
 
 		let clicked = false;
 		btn.onPressed.connect(() => {

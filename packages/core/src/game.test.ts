@@ -35,7 +35,7 @@ describe("Game", () => {
 						updateFn();
 					}
 				}
-				this.addChild(new TestNode());
+				this.add(new TestNode());
 			}
 		}
 		game.start(TestScene);
@@ -57,7 +57,7 @@ describe("Game", () => {
 						updateDts.push(dt);
 					}
 				}
-				this.addChild(new TestNode());
+				this.add(new TestNode());
 			}
 		}
 		game.start(TestScene);
@@ -139,7 +139,7 @@ describe("Game", () => {
 						throw new Error("oops");
 					}
 				}
-				this.addChild(new BuggyNode());
+				this.add(new BuggyNode());
 			}
 		}
 		game.start(TestScene);
@@ -159,7 +159,7 @@ describe("Game", () => {
 						throw new Error("oops");
 					}
 				}
-				this.addChild(new BuggyNode());
+				this.add(new BuggyNode());
 			}
 		}
 		game.start(TestScene);
@@ -211,7 +211,7 @@ describe("Game", () => {
 						destroySpy();
 					}
 				}
-				this.addChild(new TrackedNode());
+				this.add(new TrackedNode());
 			}
 		}
 		class SceneB extends Scene {}

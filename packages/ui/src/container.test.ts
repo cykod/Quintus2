@@ -23,8 +23,8 @@ describe("Container", () => {
 		b.width = 100;
 		b.height = 40;
 
-		c.addChild(a);
-		c.addChild(b);
+		c.add(a);
+		c.add(b);
 		c.layout();
 
 		expect(a.position.x).toBe(0);
@@ -47,8 +47,8 @@ describe("Container", () => {
 		b.width = 80;
 		b.height = 30;
 
-		c.addChild(a);
-		c.addChild(b);
+		c.add(a);
+		c.add(b);
 		c.layout();
 
 		expect(a.position.x).toBe(0);
@@ -67,7 +67,7 @@ describe("Container", () => {
 		const a = new UINode();
 		a.width = 50;
 		a.height = 20;
-		c.addChild(a);
+		c.add(a);
 		c.layout();
 
 		expect(a.position.x).toBe(10);
@@ -83,7 +83,7 @@ describe("Container", () => {
 		const a = new UINode();
 		a.width = 100;
 		a.height = 30;
-		c.addChild(a);
+		c.add(a);
 		c.layout();
 
 		expect(a.position.x).toBe(50); // (200 - 100) / 2
@@ -98,7 +98,7 @@ describe("Container", () => {
 		const a = new UINode();
 		a.width = 100;
 		a.height = 30;
-		c.addChild(a);
+		c.add(a);
 		c.layout();
 
 		expect(a.position.x).toBe(100); // 200 - 100 - 0 padding
@@ -121,9 +121,9 @@ describe("Container", () => {
 		d.width = 100;
 		d.height = 30;
 
-		c.addChild(a);
-		c.addChild(b);
-		c.addChild(d);
+		c.add(a);
+		c.add(b);
+		c.add(d);
 		c.layout();
 
 		expect(d.position.y).toBe(40); // 30 + 10, skipping invisible b
@@ -143,9 +143,9 @@ describe("Container", () => {
 		b.width = 100;
 		b.height = 30;
 
-		c.addChild(a);
-		c.addChild(plain);
-		c.addChild(b);
+		c.add(a);
+		c.add(plain);
+		c.add(b);
 		c.layout();
 
 		expect(b.position.y).toBe(40); // 30 + 10, skipping plain Node

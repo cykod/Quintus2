@@ -5,7 +5,7 @@ import { InputScript } from "./input-script.js";
 
 class SimpleScene extends Scene {
 	onReady(): void {
-		const child = this.addChild(Node2D);
+		const child = this.add(Node2D);
 		child.name = "Mover";
 		child.position.x = 0;
 		child.position.y = 0;
@@ -14,7 +14,7 @@ class SimpleScene extends Scene {
 
 class DeterministicScene extends Scene {
 	onReady(): void {
-		const child = this.addChild(Node2D);
+		const child = this.add(Node2D);
 		child.name = "Mover";
 		child.position.x = 0;
 	}

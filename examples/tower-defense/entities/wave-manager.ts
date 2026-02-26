@@ -155,7 +155,7 @@ export class WaveManager extends Node {
 		}
 
 		enemy.pathDef = this.pathDef;
-		this.scene?.addChild(enemy);
+		this.scene?.add(enemy);
 		this._activeEnemies++;
 
 		enemy.died.connect(() => {

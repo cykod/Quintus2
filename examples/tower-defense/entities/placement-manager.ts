@@ -62,7 +62,7 @@ export class PlacementManager extends Node {
 		const tower = this._createTower(towerType);
 		const worldPos = gridToWorld(col, row);
 		tower.position = new Vec2(worldPos.x, worldPos.y);
-		this.scene?.addChild(tower);
+		this.scene?.add(tower);
 
 		this.occupiedCells.add(key);
 		gameState.gold -= cost;

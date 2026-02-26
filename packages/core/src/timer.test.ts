@@ -17,7 +17,7 @@ describe("Timer", () => {
 		const { scene } = createTestSetup();
 		const timer = new Timer();
 		timer.duration = 0.5;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		const handler = vi.fn();
 		timer.timeout.connect(handler);
@@ -34,7 +34,7 @@ describe("Timer", () => {
 		const { scene } = createTestSetup();
 		const timer = new Timer();
 		timer.duration = 0.5;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		const handler = vi.fn();
 		timer.timeout.connect(handler);
@@ -49,7 +49,7 @@ describe("Timer", () => {
 		const timer = new Timer();
 		timer.duration = 0.5;
 		timer.repeat = true;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		const handler = vi.fn();
 		timer.timeout.connect(handler);
@@ -73,7 +73,7 @@ describe("Timer", () => {
 		timer.autostart = true;
 
 		expect(timer.running).toBe(false);
-		scene.addChild(timer); // triggers onReady
+		scene.add(timer); // triggers onReady
 		expect(timer.running).toBe(true);
 	});
 
@@ -81,7 +81,7 @@ describe("Timer", () => {
 		const { scene } = createTestSetup();
 		const timer = new Timer();
 		timer.duration = 1;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		const handler = vi.fn();
 		timer.timeout.connect(handler);
@@ -99,7 +99,7 @@ describe("Timer", () => {
 		const { scene } = createTestSetup();
 		const timer = new Timer();
 		timer.duration = 1;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		timer.start();
 		expect(timer.timeLeft).toBe(1);
@@ -115,7 +115,7 @@ describe("Timer", () => {
 		const { scene } = createTestSetup();
 		const timer = new Timer();
 		timer.duration = 2;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		const handler = vi.fn();
 		timer.timeout.connect(handler);
@@ -132,7 +132,7 @@ describe("Timer", () => {
 		const timer = new Timer();
 		timer.duration = 0.5;
 		timer.repeat = true;
-		scene.addChild(timer);
+		scene.add(timer);
 
 		const handler = vi.fn();
 		timer.timeout.connect(handler);

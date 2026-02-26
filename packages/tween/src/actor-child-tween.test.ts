@@ -17,11 +17,11 @@ class TestScene extends Scene {
 	onReady() {
 		const actor = new TestActor();
 		actor.name = "actor";
-		this.addChild(actor);
+		this.add(actor);
 
 		const child = new Node2D();
 		child.name = "child";
-		actor.addChild(child);
+		actor.add(child);
 	}
 }
 

@@ -57,8 +57,8 @@ export abstract class TowerBase extends Node2D {
 		this._rangeSensor.monitoring = true;
 		const shape = new CollisionShape();
 		shape.shape = Shape.circle(this.range);
-		this._rangeSensor.addChild(shape);
-		this.addChild(this._rangeSensor);
+		this._rangeSensor.add(shape);
+		this.add(this._rangeSensor);
 
 		this._rangeSensor.bodyEntered.connect((body) => {
 			if (body.collisionGroup === "enemies") {
@@ -120,7 +120,7 @@ export abstract class TowerBase extends Node2D {
 		projectile.slowDuration = this.slowDuration;
 		projectile.frameIndex = this.projectileFrame;
 		projectile.position = new Vec2(this.position.x, this.position.y);
-		this.scene?.addChild(projectile);
+		this.scene?.add(projectile);
 
 		this.game.audio.play(this.fireSound, { volume: 0.3 });
 		this.fired.emit();
