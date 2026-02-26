@@ -2,8 +2,8 @@ import { Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
 import { BASIC_CREEP_SPEED } from "../config.js";
 import { BasicCreep } from "../entities/basic-creep.js";
-import { gridToWorld, LEVEL1_PATH } from "../path.js";
-import { runScene } from "./helpers.js";
+import { gridToWorld } from "../path.js";
+import { runScene, TEST_PATH } from "./helpers.js";
 
 class PathTestScene extends Scene {}
 
@@ -13,11 +13,11 @@ describe("Path following", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 		result.game.step();
 
-		const start = gridToWorld(LEVEL1_PATH.waypoints[0]?.x, LEVEL1_PATH.waypoints[0]?.y);
+		const start = gridToWorld(TEST_PATH.waypoints[0]!.x, TEST_PATH.waypoints[0]!.y);
 		expect(Math.abs(creep.position.x - start.x)).toBeLessThan(5);
 		expect(Math.abs(creep.position.y - start.y)).toBeLessThan(5);
 	});
@@ -27,7 +27,7 @@ describe("Path following", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 		result.game.step();
 
@@ -47,7 +47,7 @@ describe("Path following", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		// Give it a very high speed to traverse quickly
 		creep.speed = 5000;
 		scene.add(creep);
@@ -71,12 +71,12 @@ describe("Path following", () => {
 
 		// Normal speed creep
 		const slow = new BasicCreep();
-		slow.pathDef = LEVEL1_PATH;
+		slow.pathDef = TEST_PATH;
 		scene.add(slow);
 
 		// Fast creep
 		const fast = new BasicCreep();
-		fast.pathDef = LEVEL1_PATH;
+		fast.pathDef = TEST_PATH;
 		fast.speed = BASIC_CREEP_SPEED * 3;
 		scene.add(fast);
 

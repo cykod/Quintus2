@@ -7,6 +7,7 @@ import type { PathFollower } from "./path-follower.js";
 /**
  * A homing projectile that moves toward its target enemy.
  * Not physics-driven — purely positional movement.
+ * Rotates to face its direction of travel.
  */
 export class Projectile extends Node2D {
 	target!: PathFollower;
@@ -24,6 +25,7 @@ export class Projectile extends Node2D {
 
 	override onReady() {
 		this.tag("projectile");
+		this.zIndex = -1;
 	}
 
 	override onFixedUpdate(dt: number) {
@@ -37,6 +39,9 @@ export class Projectile extends Node2D {
 		const dy = this.target.position.y - this.position.y;
 		const dist = Math.sqrt(dx * dx + dy * dy);
 		const step = PROJECTILE_SPEED * dt;
+
+		// Rotate to face movement direction (sprites face up by default)
+		this.rotation = Math.atan2(dy, dx) + Math.PI / 2;
 
 		if (dist <= step) {
 			// Hit the target

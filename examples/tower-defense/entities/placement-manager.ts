@@ -1,10 +1,7 @@
 import { Node } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import {
-	CELL_SIZE,
 	GRID_COLS,
-	GRID_OFFSET_X,
-	GRID_OFFSET_Y,
 	GRID_ROWS,
 	TOWER_ARROW_COST,
 	TOWER_CANNON_COST,
@@ -24,8 +21,8 @@ const TOWER_COSTS: Record<TowerType, number> = {
 };
 
 export class PlacementManager extends Node {
-	/** Grid cells occupied by the path. */
-	pathCells: Set<string> = new Set();
+	/** Grid cells where towers can be placed (whitelist). */
+	validCells: Set<string> = new Set();
 	/** Grid cells occupied by placed towers. */
 	occupiedCells: Set<string> = new Set();
 
@@ -36,8 +33,8 @@ export class PlacementManager extends Node {
 		if (!mousePos) return;
 
 		// Convert screen position to grid coordinates
-		const col = Math.floor((mousePos.x - GRID_OFFSET_X) / CELL_SIZE);
-		const row = Math.floor((mousePos.y - GRID_OFFSET_Y) / CELL_SIZE);
+		const col = Math.floor((mousePos.x - 16) / 64);
+		const row = Math.floor((mousePos.y - 16) / 64);
 
 		this._tryPlace(col, row);
 	}
@@ -48,8 +45,8 @@ export class PlacementManager extends Node {
 
 		const key = `${col},${row}`;
 
-		// Cannot place on path
-		if (this.pathCells.has(key)) return false;
+		// Can only place on designated placement cells
+		if (!this.validCells.has(key)) return false;
 
 		// Cannot place on occupied cell
 		if (this.occupiedCells.has(key)) return false;
@@ -69,6 +66,8 @@ export class PlacementManager extends Node {
 
 		this.occupiedCells.add(key);
 		gameState.gold -= cost;
+
+		this.game.audio.play("place", { volume: 0.5 });
 
 		return true;
 	}

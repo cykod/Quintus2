@@ -1,22 +1,21 @@
 import { Camera } from "@quintus/camera";
-import { Node2D, Scene } from "@quintus/core";
+import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
-import { Sprite } from "@quintus/sprites";
-import { GAME_HEIGHT, GAME_WIDTH, GRID_COLS, GRID_ROWS } from "../config.js";
+import { TileMap } from "@quintus/tilemap";
+import { GAME_HEIGHT, GAME_WIDTH, GRID_OFFSET_X, GRID_OFFSET_Y } from "../config.js";
 import type { PathFollower } from "../entities/path-follower.js";
 import { PlacementManager } from "../entities/placement-manager.js";
 import { WaveManager } from "../entities/wave-manager.js";
 import { HUD } from "../hud/hud.js";
-import { getPathCells, gridToWorld, type PathDef } from "../path.js";
-import { FRAME_GRASS, tileSheet } from "../sprites.js";
+import { readPathFromMap } from "../path.js";
 import { gameState } from "../state.js";
 
 /**
  * Base class for tower defense levels.
- * Subclasses provide the path definition.
+ * Path, placement, and terrain are all driven by the TMX map.
  */
 export abstract class TDLevel extends Scene {
-	abstract getPath(): PathDef;
+	abstract getMapAsset(): string;
 
 	private _waveManager!: WaveManager;
 	private _placementManager!: PlacementManager;
@@ -31,24 +30,29 @@ export abstract class TDLevel extends Scene {
 	}
 
 	override onReady() {
-		const path = this.getPath();
+		// Load tilemap from TMX
+		const map = this.add(TileMap);
+		map.tilesetImage = "tileset";
+		map.asset = this.getMapAsset();
+		map.position = new Vec2(GRID_OFFSET_X, GRID_OFFSET_Y);
+		map.zIndex = -2;
 
-		// Draw terrain grid
-		this._drawTerrain();
-		this._drawPath(path);
+		// Read path data from the TMX path layer
+		const mapData = readPathFromMap(map);
 
 		// Set up placement manager
 		this._placementManager = new PlacementManager();
-		this._placementManager.pathCells = getPathCells(path);
+		this._placementManager.validCells = mapData.placementCells;
 		this.addChild(this._placementManager);
 
 		// Set up wave manager
 		this._waveManager = new WaveManager();
-		this._waveManager.pathDef = path;
+		this._waveManager.pathDef = { waypoints: mapData.waypoints };
 		this.addChild(this._waveManager);
 
 		this._waveManager.waveStarted.connect((wave) => {
 			gameState.wave = wave;
+			this.game.audio.play("wave-start", { volume: 0.5 });
 		});
 
 		this._waveManager.enemySpawned.connect((enemy) => {
@@ -56,6 +60,7 @@ export abstract class TDLevel extends Scene {
 		});
 
 		this._waveManager.allWavesCleared.connect(() => {
+			this.game.audio.play("victory", { volume: 0.7 });
 			this.after(1.0, () => this.switchTo("game-over"));
 		});
 
@@ -67,44 +72,17 @@ export abstract class TDLevel extends Scene {
 		enemy.died.connect((e) => {
 			gameState.gold += e.goldReward;
 			gameState.score += e.goldReward;
+			this.game.audio.play("enemy-die", { volume: 0.4 });
 		});
 
 		enemy.reachedExit.connect(() => {
 			gameState.lives--;
+			this.game.audio.play("life-lost", { volume: 0.5 });
 			if (gameState.lives <= 0) {
+				this.game.audio.play("gameover", { volume: 0.7 });
 				this.after(0.5, () => this.switchTo("game-over"));
 			}
 		});
-	}
-
-	private _drawTerrain(): void {
-		for (let row = 0; row < GRID_ROWS; row++) {
-			for (let col = 0; col < GRID_COLS; col++) {
-				const pos = gridToWorld(col, row);
-				const tile = new Node2D();
-				tile.position = new Vec2(pos.x, pos.y);
-				tile.zIndex = -2;
-				const sprite = new Sprite();
-				sprite.texture = "tileset";
-				sprite.sourceRect = tileSheet.getFrameRect(FRAME_GRASS);
-				tile.addChild(sprite);
-				this.addChild(tile);
-			}
-		}
-	}
-
-	private _drawPath(path: PathDef): void {
-		for (const tile of path.tiles) {
-			const pos = gridToWorld(tile.col, tile.row);
-			const node = new Node2D();
-			node.position = new Vec2(pos.x, pos.y);
-			node.zIndex = -1;
-			const sprite = new Sprite();
-			sprite.texture = "tileset";
-			sprite.sourceRect = tileSheet.getFrameRect(tile.frame);
-			node.addChild(sprite);
-			this.addChild(node);
-		}
 	}
 
 	getWaveManager(): WaveManager {

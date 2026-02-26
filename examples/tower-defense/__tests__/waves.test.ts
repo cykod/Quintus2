@@ -1,8 +1,7 @@
 import { Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
 import { WaveManager } from "../entities/wave-manager.js";
-import { LEVEL1_PATH } from "../path.js";
-import { runScene } from "./helpers.js";
+import { runScene, TEST_PATH } from "./helpers.js";
 
 class WaveTestScene extends Scene {}
 
@@ -12,7 +11,7 @@ describe("Waves", () => {
 		const scene = result.game.currentScene!;
 
 		const wm = new WaveManager();
-		wm.pathDef = LEVEL1_PATH;
+		wm.pathDef = TEST_PATH;
 		scene.add(wm);
 		result.game.step();
 
@@ -32,7 +31,7 @@ describe("Waves", () => {
 		const scene = result.game.currentScene!;
 
 		const wm = new WaveManager();
-		wm.pathDef = LEVEL1_PATH;
+		wm.pathDef = TEST_PATH;
 		scene.add(wm);
 		result.game.step();
 
@@ -56,7 +55,7 @@ describe("Waves", () => {
 		const scene = result.game.currentScene!;
 
 		const wm = new WaveManager();
-		wm.pathDef = LEVEL1_PATH;
+		wm.pathDef = TEST_PATH;
 		scene.add(wm);
 		result.game.step();
 
@@ -85,7 +84,7 @@ describe("Waves", () => {
 		const scene = result.game.currentScene!;
 
 		const wm = new WaveManager();
-		wm.pathDef = LEVEL1_PATH;
+		wm.pathDef = TEST_PATH;
 		scene.add(wm);
 		result.game.step();
 

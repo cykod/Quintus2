@@ -42,8 +42,8 @@ export const FRAME_TOWER_BASE_PENTAGON = 228; // csv 229
 
 // Turrets
 export const FRAME_TURRET_ARROW = 203; // csv 204
-export const FRAME_TURRET_CANNON = 204; // csv 205
-export const FRAME_TURRET_SLOW = 248; // csv 249
+export const FRAME_TURRET_CANNON = 249; // csv 250 — missile launcher
+export const FRAME_TURRET_SLOW = 226; // csv 227
 
 // Enemies
 export const FRAME_ENEMY_BASIC = 245; // csv 246 — green UFO
@@ -52,8 +52,8 @@ export const FRAME_ENEMY_TANK = 247; // csv 248
 
 // Projectiles
 export const FRAME_ARROW = 296; // csv 297
-export const FRAME_CANNONBALL = 250; // csv 251
-export const FRAME_SLOW_EFFECT = 294; // csv 295
+export const FRAME_CANNONBALL = 251; // csv 252 — missile
+export const FRAME_SLOW_EFFECT = 273; // csv 274
 
 // UI
 export const FRAME_COIN = 271; // csv 272

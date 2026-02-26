@@ -2,11 +2,13 @@ import { Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
 import { GRID_COLS, GRID_ROWS, STARTING_GOLD, TOWER_ARROW_COST } from "../config.js";
 import { PlacementManager } from "../entities/placement-manager.js";
-import { getPathCells, LEVEL1_PATH } from "../path.js";
 import { gameState } from "../state.js";
 import { runScene } from "./helpers.js";
 
 class PlacementTestScene extends Scene {}
+
+/** A few valid placement cells for testing. */
+const TEST_VALID_CELLS = new Set(["0,4", "2,2", "5,1", "6,6"]);
 
 describe("Placement", () => {
 	it("can place tower on valid cell", async () => {
@@ -14,28 +16,28 @@ describe("Placement", () => {
 		const scene = result.game.currentScene!;
 
 		const pm = new PlacementManager();
-		pm.pathCells = getPathCells(LEVEL1_PATH);
+		pm.validCells = TEST_VALID_CELLS;
 		scene.add(pm);
 		result.game.step();
 
 		gameState.selectedTower = "arrow";
-		const placed = pm.placeAt(0, 4); // a cell not on the path
+		const placed = pm.placeAt(0, 4);
 
 		expect(placed).toBe(true);
 		expect(gameState.gold).toBe(STARTING_GOLD - TOWER_ARROW_COST);
 	});
 
-	it("cannot place on path", async () => {
+	it("cannot place on non-placement cell", async () => {
 		const result = await runScene(PlacementTestScene, undefined, 0.01);
 		const scene = result.game.currentScene!;
 
 		const pm = new PlacementManager();
-		pm.pathCells = getPathCells(LEVEL1_PATH);
+		pm.validCells = TEST_VALID_CELLS;
 		scene.add(pm);
 		result.game.step();
 
 		gameState.selectedTower = "arrow";
-		// col=1, row=0 is on the path in level 1
+		// (1,0) is not in the valid set
 		const placed = pm.placeAt(1, 0);
 
 		expect(placed).toBe(false);
@@ -47,7 +49,7 @@ describe("Placement", () => {
 		const scene = result.game.currentScene!;
 
 		const pm = new PlacementManager();
-		pm.pathCells = getPathCells(LEVEL1_PATH);
+		pm.validCells = TEST_VALID_CELLS;
 		scene.add(pm);
 		result.game.step();
 
@@ -64,7 +66,7 @@ describe("Placement", () => {
 		const scene = result.game.currentScene!;
 
 		const pm = new PlacementManager();
-		pm.pathCells = getPathCells(LEVEL1_PATH);
+		pm.validCells = TEST_VALID_CELLS;
 		scene.add(pm);
 		result.game.step();
 
@@ -80,7 +82,7 @@ describe("Placement", () => {
 		const scene = result.game.currentScene!;
 
 		const pm = new PlacementManager();
-		pm.pathCells = getPathCells(LEVEL1_PATH);
+		pm.validCells = TEST_VALID_CELLS;
 		scene.add(pm);
 		result.game.step();
 
@@ -96,7 +98,7 @@ describe("Placement", () => {
 		const scene = result.game.currentScene!;
 
 		const pm = new PlacementManager();
-		pm.pathCells = getPathCells(LEVEL1_PATH);
+		pm.validCells = TEST_VALID_CELLS;
 		scene.add(pm);
 		result.game.step();
 

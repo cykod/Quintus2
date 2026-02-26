@@ -1,3 +1,17 @@
+## Add TMX maps, sound effects, and visual polish to tower defense
+*Thursday, February 26th at 7pm*
+Converted tower defense from programmatic map rendering to Tiled TMX files, 
+with path/placement data read directly from the map's path layer (tile 
+18=start, 17=end, 15=road, 16=placement). Added 10 CC0 sound effects for tower 
+firing, enemy death, wave start, placement, UI clicks, victory, and game over. 
+Visual improvements include turret rotation toward targets, enemies facing 
+their movement direction with a walking shimmy animation, projectile rotation, 
+correct sprite frames for all tower types (arrow 203, cannon 249, slow 226, 
+missile 251, slow projectile 274), projectile z-ordering under towers, and the 
+slow tower using the round base matching other weapons.
+
+---
+
 ## Add gamepad support and audio effects to Sokoban
 *Thursday, February 26th at 3pm*
 Add full gamepad support to the Sokoban game with D-pad and left stick for 

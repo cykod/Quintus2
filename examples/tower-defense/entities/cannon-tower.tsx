@@ -15,4 +15,5 @@ export class CannonTower extends TowerBase {
 	turretFrame = FRAME_TURRET_CANNON;
 	projectileFrame = FRAME_CANNONBALL;
 	override splashRadius = TOWER_CANNON_SPLASH_RADIUS;
+	override fireSound = "cannon";
 }

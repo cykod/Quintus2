@@ -6,8 +6,8 @@ import { ArrowTower } from "../entities/arrow-tower.js";
 import { BasicCreep } from "../entities/basic-creep.js";
 import { CannonTower } from "../entities/cannon-tower.js";
 import { SlowTower } from "../entities/slow-tower.js";
-import { gridToWorld, LEVEL1_PATH } from "../path.js";
-import { runScene } from "./helpers.js";
+import { gridToWorld } from "../path.js";
+import { runScene, TEST_PATH } from "./helpers.js";
 
 class TowerTestScene extends Scene {}
 
@@ -24,7 +24,7 @@ describe("Towers", () => {
 
 		// Place enemy near the tower (within range)
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 
 		// Step to initialize
@@ -84,11 +84,11 @@ describe("Towers", () => {
 
 		// Two creeps at different waypoint indices
 		const farCreep = new BasicCreep();
-		farCreep.pathDef = LEVEL1_PATH;
+		farCreep.pathDef = TEST_PATH;
 		scene.add(farCreep);
 
 		const closeCreep = new BasicCreep();
-		closeCreep.pathDef = LEVEL1_PATH;
+		closeCreep.pathDef = TEST_PATH;
 		scene.add(closeCreep);
 
 		result.game.step();

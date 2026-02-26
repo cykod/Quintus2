@@ -30,6 +30,13 @@ game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 
+// === TMX Loader ===
+game.assets.registerLoader("tmx", async (_name: string, path: string) => {
+	const response = await fetch(path);
+	if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	return response.text();
+});
+
 // === Register Scenes ===
 game.registerScenes({
 	title: TitleScene,
@@ -42,6 +49,19 @@ game.registerScenes({
 game.assets
 	.load({
 		images: ["assets/tileset.png"],
+		tmx: ["assets/level1.tmx", "assets/level2.tmx"],
+		audio: [
+			"assets/sfx/arrow.ogg",
+			"assets/sfx/cannon.ogg",
+			"assets/sfx/slow.ogg",
+			"assets/sfx/enemy-die.ogg",
+			"assets/sfx/place.ogg",
+			"assets/sfx/wave-start.ogg",
+			"assets/sfx/life-lost.ogg",
+			"assets/sfx/click.ogg",
+			"assets/sfx/victory.ogg",
+			"assets/sfx/gameover.ogg",
+		],
 	})
 	.then(() => {
 		game.start("title");

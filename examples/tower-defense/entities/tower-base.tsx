@@ -24,18 +24,22 @@ export abstract class TowerBase extends Node2D {
 	slowEffect = 0;
 	/** Duration of slow effect in seconds. */
 	slowDuration = 0;
+	/** Sound to play when this tower fires. Subclasses can override. */
+	fireSound = "arrow";
 
 	readonly fired: Signal<void> = signal<void>();
 
 	private _fireTimer = 0;
 	private _enemiesInRange: Set<PathFollower> = new Set();
 	private _rangeSensor!: Sensor;
+	turretSprite!: Sprite;
 
 	override build() {
 		return (
 			<>
 				<Sprite texture="tileset" sourceRect={tileSheet.getFrameRect(this.baseFrame)} scale={0.9} />
 				<Sprite
+					ref="turretSprite"
 					texture="tileset"
 					sourceRect={tileSheet.getFrameRect(this.turretFrame)}
 					scale={0.7}
@@ -75,11 +79,16 @@ export abstract class TowerBase extends Node2D {
 			}
 		}
 
+		// Find current target and rotate turret toward it
+		const target = this._pickTarget();
+		if (target && this.turretSprite) {
+			const dx = target.position.x - this.position.x;
+			const dy = target.position.y - this.position.y;
+			this.turretSprite.rotation = Math.atan2(dy, dx) + Math.PI / 2;
+		}
+
 		this._fireTimer -= dt;
 		if (this._fireTimer > 0) return;
-		if (this._enemiesInRange.size === 0) return;
-
-		const target = this._pickTarget();
 		if (!target) return;
 
 		this._fire(target);
@@ -113,6 +122,7 @@ export abstract class TowerBase extends Node2D {
 		projectile.position = new Vec2(this.position.x, this.position.y);
 		this.scene?.addChild(projectile);
 
+		this.game.audio.play(this.fireSound, { volume: 0.3 });
 		this.fired.emit();
 	}
 

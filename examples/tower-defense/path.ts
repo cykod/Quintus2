@@ -1,11 +1,10 @@
 import { Vec2 } from "@quintus/math";
+import type { TileMap } from "@quintus/tilemap";
 import { CELL_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from "./config.js";
 
 export interface PathDef {
 	/** Waypoints in grid coordinates (col, row). */
 	waypoints: Vec2[];
-	/** Tile frame indices for drawing path segments. */
-	tiles: Array<{ col: number; row: number; frame: number }>;
 }
 
 /** Convert grid coordinates to world-space center of that cell. */
@@ -24,114 +23,110 @@ export function worldToGrid(x: number, y: number): { col: number; row: number } 
 	};
 }
 
-// Path tile frame indices (0-based)
-const H = 16; // horizontal
-const V = 17; // vertical
-const CTL = 18; // corner top-left
-const CTR = 19; // corner top-right
-const CBL = 20; // corner bottom-left
-const CBR = 21; // corner bottom-right
-const ET = 43; // end-cap top
-const EB = 44; // end-cap bottom
-const EL = 45; // end-cap left
+// === TMX path layer tile IDs (0-based local) ===
+/** Road tile — enemies walk here. */
+const ROAD_TILE = 15;
+/** Placement tile — towers can be built here. */
+const PLACEMENT_TILE = 16;
+/** Start tile — enemy spawn point. */
+const START_TILE = 18;
+/** End tile — enemy exit point. */
+const END_TILE = 17;
 
 /**
- * Level 1: Simple S-curve from top-left to bottom-right.
- *
- * Path shape (grid coords):
- *   (0,0) → (4,0) → (4,2) → (1,2) → (1,5) → (5,5) → (5,7)
+ * Data extracted from a TMX path layer.
  */
-export const LEVEL1_PATH: PathDef = {
-	waypoints: [
-		new Vec2(0, 0),
-		new Vec2(4, 0),
-		new Vec2(4, 2),
-		new Vec2(1, 2),
-		new Vec2(1, 5),
-		new Vec2(5, 5),
-		new Vec2(5, 7),
-	],
-	tiles: [
-		// Entry → right along row 0
-		{ col: 0, row: 0, frame: EL }, // entry point
-		{ col: 1, row: 0, frame: H },
-		{ col: 2, row: 0, frame: H },
-		{ col: 3, row: 0, frame: H },
-		{ col: 4, row: 0, frame: CTL }, // turn down
-		// Down column 4
-		{ col: 4, row: 1, frame: V },
-		{ col: 4, row: 2, frame: CBR }, // turn left
-		// Left along row 2
-		{ col: 3, row: 2, frame: H },
-		{ col: 2, row: 2, frame: H },
-		{ col: 1, row: 2, frame: CTR }, // turn down
-		// Down column 1
-		{ col: 1, row: 3, frame: V },
-		{ col: 1, row: 4, frame: V },
-		{ col: 1, row: 5, frame: CBL }, // turn right
-		// Right along row 5
-		{ col: 2, row: 5, frame: H },
-		{ col: 3, row: 5, frame: H },
-		{ col: 4, row: 5, frame: H },
-		{ col: 5, row: 5, frame: CTL }, // turn down
-		// Down column 5
-		{ col: 5, row: 6, frame: V },
-		{ col: 5, row: 7, frame: EB }, // exit
-	],
-};
+export interface MapPathData {
+	/** Waypoints in grid coordinates, derived by tracing road tiles from start → end. */
+	waypoints: Vec2[];
+	/** Grid cells valid for tower placement. */
+	placementCells: Set<string>;
+}
 
 /**
- * Level 2: Longer winding path with more turns.
+ * Read the "path" layer from a loaded TileMap and extract:
+ * - enemy waypoints (traced from start tile through road tiles to end tile)
+ * - valid tower placement cells
  *
- * Path shape:
- *   (3,0) → (3,1) → (0,1) → (0,3) → (5,3) → (5,5) → (2,5) → (2,7)
+ * Path layer tile convention:
+ *   tile 18 (TMX GID 19) = start
+ *   tile 17 (TMX GID 18) = end
+ *   tile 15 (TMX GID 16) = road
+ *   tile 16 (TMX GID 17) = placement
  */
-export const LEVEL2_PATH: PathDef = {
-	waypoints: [
-		new Vec2(3, 0),
-		new Vec2(3, 1),
-		new Vec2(0, 1),
-		new Vec2(0, 3),
-		new Vec2(5, 3),
-		new Vec2(5, 5),
-		new Vec2(2, 5),
-		new Vec2(2, 7),
-	],
-	tiles: [
-		// Entry column 3 down
-		{ col: 3, row: 0, frame: ET },
-		{ col: 3, row: 1, frame: CBR }, // turn left
-		// Left along row 1
-		{ col: 2, row: 1, frame: H },
-		{ col: 1, row: 1, frame: H },
-		{ col: 0, row: 1, frame: CTR }, // turn down
-		// Down column 0
-		{ col: 0, row: 2, frame: V },
-		{ col: 0, row: 3, frame: CBL }, // turn right
-		// Right along row 3
-		{ col: 1, row: 3, frame: H },
-		{ col: 2, row: 3, frame: H },
-		{ col: 3, row: 3, frame: H },
-		{ col: 4, row: 3, frame: H },
-		{ col: 5, row: 3, frame: CTL }, // turn down
-		// Down column 5
-		{ col: 5, row: 4, frame: V },
-		{ col: 5, row: 5, frame: CBR }, // turn left
-		// Left along row 5
-		{ col: 4, row: 5, frame: H },
-		{ col: 3, row: 5, frame: H },
-		{ col: 2, row: 5, frame: CTR }, // turn down
-		// Down column 2
-		{ col: 2, row: 6, frame: V },
-		{ col: 2, row: 7, frame: EB }, // exit
-	],
-};
+export function readPathFromMap(map: TileMap): MapPathData {
+	let start: { col: number; row: number } | null = null;
+	let end: { col: number; row: number } | null = null;
+	const roadCells = new Set<string>();
+	const placementCells = new Set<string>();
 
-/** Get the set of occupied grid cells for a path (for placement validation). */
-export function getPathCells(path: PathDef): Set<string> {
-	const cells = new Set<string>();
-	for (const tile of path.tiles) {
-		cells.add(`${tile.col},${tile.row}`);
+	// Scan the path layer
+	for (let row = 0; row < map.mapHeight; row++) {
+		for (let col = 0; col < map.mapWidth; col++) {
+			const tile = map.getTileAt(col, row, "path");
+			const key = `${col},${row}`;
+			if (tile === ROAD_TILE) {
+				roadCells.add(key);
+			} else if (tile === PLACEMENT_TILE) {
+				placementCells.add(key);
+			} else if (tile === START_TILE) {
+				start = { col, row };
+			} else if (tile === END_TILE) {
+				end = { col, row };
+			}
+		}
 	}
-	return cells;
+
+	if (!start) throw new Error("TMX path layer missing start tile (tile 18 / GID 19)");
+	if (!end) throw new Error("TMX path layer missing end tile (tile 17 / GID 18)");
+
+	// Trace path from start to end through road tiles
+	const path: Array<{ col: number; row: number }> = [start];
+	const visited = new Set<string>();
+	visited.add(`${start.col},${start.row}`);
+
+	let current = start;
+	while (current.col !== end.col || current.row !== end.row) {
+		const neighbors = [
+			{ col: current.col + 1, row: current.row },
+			{ col: current.col - 1, row: current.row },
+			{ col: current.col, row: current.row + 1 },
+			{ col: current.col, row: current.row - 1 },
+		];
+
+		let found = false;
+		for (const n of neighbors) {
+			const key = `${n.col},${n.row}`;
+			if (visited.has(key)) continue;
+			if (roadCells.has(key) || (n.col === end.col && n.row === end.row)) {
+				visited.add(key);
+				path.push(n);
+				current = n;
+				found = true;
+				break;
+			}
+		}
+		if (!found) break;
+	}
+
+	// Extract waypoints at direction changes
+	const waypoints: Vec2[] = [new Vec2(path[0]!.col, path[0]!.row)];
+	for (let i = 1; i < path.length - 1; i++) {
+		const prev = path[i - 1]!;
+		const curr = path[i]!;
+		const next = path[i + 1]!;
+		const dx1 = curr.col - prev.col;
+		const dy1 = curr.row - prev.row;
+		const dx2 = next.col - curr.col;
+		const dy2 = next.row - curr.row;
+		if (dx1 !== dx2 || dy1 !== dy2) {
+			waypoints.push(new Vec2(curr.col, curr.row));
+		}
+	}
+	if (path.length > 1) {
+		const last = path[path.length - 1]!;
+		waypoints.push(new Vec2(last.col, last.row));
+	}
+
+	return { waypoints, placementCells };
 }

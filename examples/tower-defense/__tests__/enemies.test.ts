@@ -11,8 +11,7 @@ import {
 import { BasicCreep } from "../entities/basic-creep.js";
 import { FastCreep } from "../entities/fast-creep.js";
 import { TankCreep } from "../entities/tank-creep.js";
-import { LEVEL1_PATH } from "../path.js";
-import { runScene } from "./helpers.js";
+import { runScene, TEST_PATH } from "./helpers.js";
 
 class EnemyTestScene extends Scene {}
 
@@ -22,7 +21,7 @@ describe("Enemies", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 		result.game.step();
 
@@ -36,7 +35,7 @@ describe("Enemies", () => {
 		const scene = result.game.currentScene!;
 
 		const fast = new FastCreep();
-		fast.pathDef = LEVEL1_PATH;
+		fast.pathDef = TEST_PATH;
 		scene.add(fast);
 		result.game.step();
 
@@ -49,7 +48,7 @@ describe("Enemies", () => {
 		const scene = result.game.currentScene!;
 
 		const tank = new TankCreep();
-		tank.pathDef = LEVEL1_PATH;
+		tank.pathDef = TEST_PATH;
 		scene.add(tank);
 		result.game.step();
 
@@ -63,7 +62,7 @@ describe("Enemies", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 		result.game.step();
 
@@ -81,7 +80,7 @@ describe("Enemies", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 		result.game.step();
 
@@ -94,7 +93,7 @@ describe("Enemies", () => {
 		const scene = result.game.currentScene!;
 
 		const creep = new BasicCreep();
-		creep.pathDef = LEVEL1_PATH;
+		creep.pathDef = TEST_PATH;
 		scene.add(creep);
 		result.game.step();
 

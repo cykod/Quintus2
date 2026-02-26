@@ -173,12 +173,15 @@ export class HUD extends Layer {
 
 		// Click handlers for tower buttons
 		this.arrowBtn?.onPressed.connect(() => {
+			this.game.audio.play("click", { bus: "ui" });
 			gameState.selectedTower = "arrow";
 		});
 		this.cannonBtn?.onPressed.connect(() => {
+			this.game.audio.play("click", { bus: "ui" });
 			gameState.selectedTower = "cannon";
 		});
 		this.slowBtn?.onPressed.connect(() => {
+			this.game.audio.play("click", { bus: "ui" });
 			gameState.selectedTower = "slow";
 		});
 

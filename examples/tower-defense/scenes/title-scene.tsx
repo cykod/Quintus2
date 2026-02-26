@@ -48,6 +48,7 @@ export class TitleScene extends Scene {
 					pressedColor="#558b2f"
 					textColor="#1a3a0e"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						gameState.reset();
 						this.switchTo("level1");
 					}}
@@ -63,6 +64,7 @@ export class TitleScene extends Scene {
 					pressedColor="#388e3c"
 					textColor="#1a3a0e"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						gameState.reset();
 						this.switchTo("level2");
 					}}

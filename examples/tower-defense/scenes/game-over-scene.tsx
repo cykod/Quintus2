@@ -42,6 +42,7 @@ export class GameOverScene extends Scene {
 					pressedColor="#222222"
 					textColor="#ffffff"
 					onPressed={() => {
+						this.game.audio.play("click", { bus: "ui" });
 						gameState.reset();
 						this.switchTo("title");
 					}}

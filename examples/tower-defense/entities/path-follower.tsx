@@ -29,6 +29,9 @@ export abstract class PathFollower extends Actor {
 	waypointIndex = 0;
 	private _worldWaypoints: Vec2[] = [];
 
+	/** Timer for walking shimmy animation. */
+	private _shimmyTime = 0;
+
 	readonly reachedExit: Signal<PathFollower> = signal<PathFollower>();
 	readonly died: Signal<PathFollower> = signal<PathFollower>();
 
@@ -96,6 +99,12 @@ export abstract class PathFollower extends Actor {
 				this.position.x + (dx / dist) * step,
 				this.position.y + (dy / dist) * step,
 			);
+
+			// Face movement direction with walking shimmy
+			const baseAngle = Math.atan2(dy, dx);
+			this._shimmyTime += dt;
+			const shimmy = Math.sin(this._shimmyTime * 14) * 0.12;
+			this.rotation = baseAngle + shimmy;
 		}
 
 		// Update physics world position
