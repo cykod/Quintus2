@@ -424,3 +424,21 @@
 [MILE] wed 2/25 8pm - Added space shooter example game with pooled bullets, wave spawning, enemy recycling, and collision routing
 
 [IMPL] wed 2/25 9pm - Add sound effects and animated explosions to space shooter using CC0 SFX and Kenney smoke particles with size-matched hit/destroy effects
+
+[MILE] wed 2/25 10pm - Added SFX, animated explosions, and convex polygon hitboxes to the space shooter example
+
+[MILE] wed 2/25 10pm - Made collisionGroup and solid forced-choice with clear registration errors to prevent silent collision failures
+
+[IMPL] wed 2/25 10pm - Implement Phase 5 Tower Defense example game from PHASE_9_DESIGN.md
+
+[MILE] wed 2/25 11pm - Added tower defense example game with grid-based placement, waypoint enemies, three tower types, wave manager, and 29 integration tests
+
+[IMPL] wed 2/25 11pm - Add the tower defense game to the examples page
+
+[MILE] thu 2/26 12pm - Fixed tower defense UI with click-to-place, visual tower selection buttons, and corrected basic creep sprite
+
+[IMPL] thu 2/26 12pm - Implement Phase 6 Sokoban puzzle game with grid-based movement, undo system, and level progression
+
+[MILE] thu 2/26 1pm - Added Sokoban puzzle game with pure grid logic, 5 levels, undo/reset, level select, and 39 tests
+
+[IMPL] thu 2/26 1pm - Debug and fix the qdbg screenshot command which is not working correctly

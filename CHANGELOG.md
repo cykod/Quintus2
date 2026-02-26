@@ -1,3 +1,13 @@
+## Fix qdbg screenshot command: use Playwright native canvas capture
+*Thursday, February 26th at 1pm*
+The qdbg screenshot command was broken because it used require('fs') inside a 
+Playwright run-code snippet, which runs in an ESM context where require is not 
+defined. Replaced the manual base64-decode-and-write approach with Playwright's 
+native page.locator('canvas').screenshot({ path }), which handles file I/O 
+internally and is both simpler and more robust.
+
+---
+
 ## Add Sokoban puzzle game with 39 tests
 *Thursday, February 26th at 1pm*
 Implement a classic Sokoban box-pushing puzzle as a Phase 9 example game. This 

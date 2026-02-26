@@ -764,10 +764,8 @@ cmd_screenshot() {
 	local file="${1:-/tmp/quintus-screenshot.png}"
 	need_bridge
 	qrun "async page => {
-		const dataUrl = await page.evaluate(() => window.__quintusDebug.screenshot());
-		const base64 = dataUrl.replace(/^data:image\\/png;base64,/, '');
-		const fs = require('fs');
-		fs.writeFileSync('${file}', Buffer.from(base64, 'base64'));
+		const canvas = page.locator('canvas');
+		await canvas.screenshot({ path: '${file}' });
 		return 'Screenshot saved to ${file}';
 	}"
 }
