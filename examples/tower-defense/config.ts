@@ -63,7 +63,7 @@ export const COLLISION_GROUPS: CollisionGroupsConfig = {
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	select: ["PointerButton1", "Space"],
+	select: ["mouse:left", "Space"],
 	tower_arrow: ["Digit1", "Numpad1"],
 	tower_cannon: ["Digit2", "Numpad2"],
 	tower_slow: ["Digit3", "Numpad3"],

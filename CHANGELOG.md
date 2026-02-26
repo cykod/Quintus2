@@ -1,3 +1,16 @@
+## Fix tower defense UI: click placement, visual buttons, enemy sprite
+*Thursday, February 26th at 1am*
+Fix three tower defense UI issues: mouse click placement was broken because the 
+input binding used the invalid name "PointerButton1" instead of "mouse:left"; 
+the tower selection bar was plain text labels with no icons or click support, 
+now replaced with styled TowerSelectButton components showing turret sprites, 
+costs, keyboard shortcuts, and gold selection borders with hover/press states; 
+and the basic creep used wrong tileset frame 244 (a terrain tile) instead of 
+the correct enemy sprite at frame 245. Also enables the tower defense card on 
+the examples index page.
+
+---
+
 ## Add tower defense example game with 29 tests
 *Wednesday, February 25th at 11pm*
 Implement the tower defense example game for Phase 9.5, featuring grid-based 

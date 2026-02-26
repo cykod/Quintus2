@@ -46,7 +46,7 @@ export const FRAME_TURRET_CANNON = 204; // csv 205
 export const FRAME_TURRET_SLOW = 248; // csv 249
 
 // Enemies
-export const FRAME_ENEMY_BASIC = 244; // csv 245
+export const FRAME_ENEMY_BASIC = 245; // csv 246 — green UFO
 export const FRAME_ENEMY_FAST = 246; // csv 247
 export const FRAME_ENEMY_TANK = 247; // csv 248
 
