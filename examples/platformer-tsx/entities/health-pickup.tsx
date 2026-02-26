@@ -4,6 +4,11 @@ import { Ease } from "@quintus/tween";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
+// HealthPickup does NOT use the Pickup base class because it has conditional
+// collection: the pickup should only be consumed when health < maxHealth.
+// Pickup's _playPopEffect runs unconditionally after onCollect, destroying the
+// entity even if the heal should be skipped. Keeping a standalone Sensor avoids
+// that mismatch.
 export class HealthPickup extends Sensor {
 	override collisionGroup = "items";
 

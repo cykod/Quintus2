@@ -1,3 +1,17 @@
+## Integrate ai-prefabs into platformer and add 24 edge-case tests
+*Thursday, February 26th at 11pm*
+Refactors the platformer-tsx example to use @quintus/ai-prefabs utilities: 
+Player now uses the Damageable mixin for health/invincibility management, and 
+Coin extends Pickup for bob animation and collection. Adds 24 integration tests 
+across 5 test files covering player movement, enemy behavior, pickups, level 
+flow, and 7 edge cases from the PREFABS_PROPOSAL. Also fixes a double-jump bug 
+where _canDoubleJump was immediately reset on the jump frame because the 
+isOnFloor() check ran after the jump assignment but before move(). 
+Architectural decision comments explain why PatrolEnemy, FlyingEnemy, and 
+HealthPickup intentionally do not use the prefab utilities.
+
+---
+
 ## Remove deprecated addChild method in favor of add
 *Thursday, February 26th at 9pm*
 Fully removed the deprecated addChild() method from Node, replacing all 334 

@@ -3,6 +3,9 @@ import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
 import type { Player } from "./player.js";
 
+// Spike is a static hazard sensor. Damage is applied through the Player's
+// Damageable-provided takeDamage(1). The Damageable mixin's invincibility
+// window naturally prevents repeated spike damage within the i-frame duration.
 export class Spike extends Sensor {
 	override collisionGroup = "items";
 
@@ -21,7 +24,7 @@ export class Spike extends Sensor {
 
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
-				(body as Player).takeDamage();
+				(body as Player).takeDamage(1);
 			}
 		});
 	}

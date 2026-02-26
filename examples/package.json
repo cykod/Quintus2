@@ -6,6 +6,7 @@
 		"dev": "vite"
 	},
 	"dependencies": {
+		"@quintus/ai-prefabs": "workspace:*",
 		"@quintus/audio": "workspace:*",
 		"@quintus/camera": "workspace:*",
 		"@quintus/core": "workspace:*",

@@ -470,3 +470,5 @@
 [DEVL] thu 2/26 7pm - Review MOBILE_UI.md design for potential issues and risks
 
 [IMPL] thu 2/26 9pm - Find and remove all mentions of addChild, replacing with add — addChild should be fully removed, not just deprecated
+
+[MILE] thu 2/26 9pm - Removed deprecated addChild method entirely, replacing all call sites with add across 43 files

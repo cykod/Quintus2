@@ -5,6 +5,9 @@ import { Ease } from "@quintus/tween";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
+// FlyingEnemy does NOT use the Damageable mixin for the same reasons as
+// PatrolEnemy — 1 HP, custom death animation, incompatible with
+// Damageable's private _playDeathEffect.
 export class FlyingEnemy extends Actor {
 	speed = 50;
 	amplitude = 30;
@@ -37,6 +40,9 @@ export class FlyingEnemy extends Actor {
 	override onFixedUpdate(dt: number) {
 		this._time += dt;
 		this.velocity.x = this.speed * this.direction;
+		// Vertical velocity is the derivative of a sine position function:
+		//   position(t) = A · sin(ωt)  →  velocity(t) = A · ω · cos(ωt)
+		// where ω = 2π·frequency. This produces smooth up-down oscillation.
 		this.velocity.y =
 			this.amplitude *
 			this.frequency *

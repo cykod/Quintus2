@@ -6,6 +6,12 @@ import { Ease } from "@quintus/tween";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
+// PatrolEnemy does NOT use the Damageable mixin because:
+// 1. It has 1 HP — there is no health to track or invincibility to manage.
+// 2. It uses a custom squash+fade death animation in stomp() that conflicts
+//    with Damageable's private _playDeathEffect (cannot be overridden).
+// 3. With deathTween:false, Damageable calls destroy() immediately,
+//    preventing the custom animation from playing.
 export class PatrolEnemy extends Actor {
 	speed = 40;
 	direction = 1;
@@ -33,7 +39,9 @@ export class PatrolEnemy extends Actor {
 	override onFixedUpdate(dt: number) {
 		const dir = this.direction > 0 ? Vec2.RIGHT : Vec2.LEFT;
 
-		// Reverse at edges or walls before moving
+		// Edge detection: isEdgeAhead(dir) casts a short ray downward from the
+		// leading edge of the collision shape. If no floor tile is found within
+		// a few pixels, the enemy is at a platform edge and should reverse.
 		if (this.isOnFloor() && this.isEdgeAhead(dir)) {
 			this.direction *= -1;
 		}

@@ -19,7 +19,7 @@
 | 7 | Cross-game review & prefabs proposal | Done |
 | 7.5 | Top-Down Shooter game | Done |
 | 8 | Core game utilities: Damageable, Bullet, WaveSpawner, Pickup (`steering/PREFABS_PROPOSAL.md`) | Done |
-| 8A | Platformer polish (integrate utilities, edge-case tests, comments) | — |
+| 8A | Platformer polish (integrate utilities, edge-case tests, comments) | Done |
 | 8B | Dungeon polish | — |
 | 8C | Breakout polish | — |
 | 8D | Space Shooter polish | — |

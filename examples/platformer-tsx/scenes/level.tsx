@@ -67,17 +67,19 @@ export abstract class Level extends Scene {
 			}
 		}
 
-		// Setup enemy-player collision (contact-based via physics)
+		// Setup enemy-player collision (contact-based via physics).
+		// The contact normal points into the player. When normal.y < 0 the
+		// player is above the enemy (landed on top) → stomp. Otherwise the
+		// enemy touched the player from the side or below → take 1 damage.
 		this.game.physics.onContact("player", "enemies", (player, enemy, info) => {
 			const p = player as Player;
 			const e = enemy as PatrolEnemy | FlyingEnemy;
 
-			// Normal points into the player. y < 0 means player landed on enemy from above.
 			if (info.normal.y < 0) {
 				e.stomp();
 				p.velocity.y = -200; // Bounce up after stomp
 			} else {
-				p.takeDamage();
+				p.takeDamage(1);
 			}
 		});
 
