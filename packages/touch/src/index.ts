@@ -5,7 +5,25 @@ export {
 	onFullscreenChange,
 	requestFullscreen,
 } from "./fullscreen.js";
+export type {
+	BreakoutLayoutConfig,
+	DualStickLayoutConfig,
+	PlatformerLayoutConfig,
+	PointClickLayoutConfig,
+	PuzzleLayoutConfig,
+	TopDownLayoutConfig,
+} from "./layouts/index.js";
+export {
+	breakoutLayout,
+	dualStickLayout,
+	platformerLayout,
+	pointClickLayout,
+	puzzleLayout,
+	topDownLayout,
+} from "./layouts/index.js";
 export { lockScroll } from "./scroll-lock.js";
+export type { TouchFollowZoneConfig } from "./touch-follow-zone.js";
+export { TouchFollowZone } from "./touch-follow-zone.js";
 export { TouchOverlay } from "./touch-overlay.js";
 export type {
 	TouchLayout,

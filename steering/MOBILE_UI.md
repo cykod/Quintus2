@@ -9,7 +9,7 @@
 |-------|-------------|--------|
 | 1 | Core touch infrastructure (scaling, fullscreen, scroll prevention, multi-touch) | Done |
 | 2 | Virtual control widgets (joystick, D-pad, button, overlay) | Done |
-| 3 | Preset layouts for common game types | Pending |
+| 3 | Preset layouts for common game types | Done |
 | 4 | Example game integration | Pending |
 
 ---
@@ -792,10 +792,10 @@ Each layout factory function returns an array of virtual controls positioned app
 
 ### 3.1 platformerLayout
 
-- [ ] Factory: `platformerLayout(config)` → `TouchLayout`
-- [ ] Left/right D-pad buttons on lower-left
-- [ ] Jump button (large, "A") on lower-right
-- [ ] Used by: Platformer, Platformer-TSX
+- [x] Factory: `platformerLayout(config)` → `TouchLayout`
+- [x] Left/right D-pad buttons on lower-left
+- [x] Jump button (large, "A") on lower-right
+- [x] Used by: Platformer, Platformer-TSX
 
 ```typescript
 export function platformerLayout(config?: {
@@ -850,10 +850,10 @@ export function platformerLayout(config?: {
 
 ### 3.2 topDownLayout
 
-- [ ] Factory: `topDownLayout(config)` → `TouchLayout`
-- [ ] 8-way joystick on lower-left
-- [ ] 1-3 action buttons on lower-right
-- [ ] Used by: Dungeon, Space Shooter
+- [x] Factory: `topDownLayout(config)` → `TouchLayout`
+- [x] 8-way joystick on lower-left
+- [x] 1-3 action buttons on lower-right
+- [x] Used by: Dungeon, Space Shooter
 
 ```typescript
 export function topDownLayout(config?: {
@@ -875,11 +875,11 @@ export function topDownLayout(config?: {
 
 ### 3.3 dualStickLayout
 
-- [ ] Factory: `dualStickLayout(config)` → `TouchLayout`
-- [ ] Movement joystick on lower-left
-- [ ] Aim joystick (VirtualAimStick) on lower-right
-- [ ] Optional fire button (or auto-fire when aim stick active)
-- [ ] Used by: Top-Down Shooter
+- [x] Factory: `dualStickLayout(config)` → `TouchLayout`
+- [x] Movement joystick on lower-left
+- [x] Aim joystick (VirtualAimStick) on lower-right
+- [x] Optional fire button (or auto-fire when aim stick active)
+- [x] Used by: Top-Down Shooter
 
 ```typescript
 export function dualStickLayout(config?: {
@@ -904,10 +904,10 @@ export function dualStickLayout(config?: {
 
 ### 3.4 puzzleLayout
 
-- [ ] Factory: `puzzleLayout(config)` → `TouchLayout`
-- [ ] 4-way D-pad centered at bottom
-- [ ] Undo/Reset buttons along the top or side
-- [ ] Used by: Sokoban
+- [x] Factory: `puzzleLayout(config)` → `TouchLayout`
+- [x] 4-way D-pad centered at bottom
+- [x] Undo/Reset buttons along the top or side
+- [x] Used by: Sokoban
 
 ```
 ┌─────────────────────────────────────────┐
@@ -923,10 +923,10 @@ export function dualStickLayout(config?: {
 
 ### 3.5 pointClickLayout
 
-- [ ] Factory: `pointClickLayout(config)` → `TouchLayout`
-- [ ] No virtual controls — touch passes through as mouse clicks
-- [ ] Optional toolbar buttons along an edge
-- [ ] Used by: Tower Defense, Breakout
+- [x] Factory: `pointClickLayout(config)` → `TouchLayout`
+- [x] No virtual controls — touch passes through as mouse clicks
+- [x] Optional toolbar buttons along an edge
+- [x] Used by: Tower Defense, Breakout
 
 For **Tower Defense**: Touch already works for placement since the PointerDispatcher handles pointer events. Tower selection uses the existing UI buttons. This layout adds optional shortcut buttons if needed, but the default is no virtual controls — just pass-through touch.
 
@@ -941,10 +941,10 @@ export function pointClickLayout(config?: {
 
 ### 3.6 breakoutLayout
 
-- [ ] Factory: `breakoutLayout(config)` → `TouchLayout`
-- [ ] Left/right buttons at bottom (alternative to touch-follow)
-- [ ] Launch button
-- [ ] Touch-follow mode via `TouchFollowZone` control
+- [x] Factory: `breakoutLayout(config)` → `TouchLayout`
+- [x] Left/right buttons at bottom (alternative to touch-follow)
+- [x] Launch button
+- [x] Touch-follow mode via `TouchFollowZone` control
 
 **Touch-follow behavior:** A transparent full-screen `TouchFollowZone` control (extends `VirtualControl`) captures any touch that misses the discrete buttons. On `_onTouchMove`, it calls `input.setMousePosition(touchX, paddleY)` to move the paddle to the finger's X position. This leverages the existing paddle-follows-mouse logic already in the breakout game. The `containsPoint()` returns `true` for the entire game area, but it is added *last* to the controls array so discrete buttons (left, right, launch) get priority in the overlay's hit-test loop.
 

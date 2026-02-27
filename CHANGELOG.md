@@ -1,3 +1,15 @@
+## Add preset touch layouts to @quintus/touch
+*Friday, February 27th at 2pm*
+Implement Phase 3 of the mobile touch UI: 6 preset layout factory functions 
+(platformer, topDown, dualStick, puzzle, pointClick, breakout) that compose 
+existing virtual control widgets into ready-to-use control schemes for each 
+game genre. Also adds a new TouchFollowZone widget for breakout-style paddle 
+tracking via full-screen touch-to-mouse-position mapping. All layouts use 
+proportional sizing based on game dimensions and are exported from the package 
+index. 116 touch package tests pass with clean lint.
+
+---
+
 ## Eliminate all noNonNullAssertion warnings and promote to error
 *Friday, February 27th at 2pm*
 Fix all 37 noNonNullAssertion lint warnings across example games and promote 
