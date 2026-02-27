@@ -93,30 +93,29 @@ export class Player extends DamageableActor {
 
 		const input = this.game.input;
 
-		// Movement
-		let vx = 0;
-		let vy = 0;
-		if (input.isPressed("move_left")) vx -= 1;
-		if (input.isPressed("move_right")) vx += 1;
-		if (input.isPressed("move_up")) vy -= 1;
-		if (input.isPressed("move_down")) vy += 1;
+		// Movement (getAxis returns analog values from gamepad sticks, -1/0/1 from keyboard)
+		let vx = input.getAxis("move_left", "move_right");
+		let vy = input.getAxis("move_up", "move_down");
 
-		if (vx !== 0 && vy !== 0) {
-			const inv = 1 / Math.SQRT2;
-			vx *= inv;
-			vy *= inv;
+		const mag = Math.sqrt(vx * vx + vy * vy);
+		if (mag > 1) {
+			vx /= mag;
+			vy /= mag;
 		}
 
 		this.velocity.x = vx * this._speed;
 		this.velocity.y = vy * this._speed;
 		this.move(dt);
 
-		// Design decision -- Mouse aim rotation:
-		// atan2(dy, dx) returns radians where 0 = right. Quintus sprites face RIGHT
-		// at rotation=0, so the result maps directly without offset. When mouse is at
-		// the exact player center, atan2(0,0) returns 0 (valid, no NaN).
-		const mouse = input.mousePosition;
-		this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x);
+		// Aiming: prefer right stick if active, otherwise fall back to mouse
+		const aimX = input.getAxis("aim_left", "aim_right");
+		const aimY = input.getAxis("aim_up", "aim_down");
+		if (Math.abs(aimX) > 0.1 || Math.abs(aimY) > 0.1) {
+			this.rotation = Math.atan2(aimY, aimX);
+		} else {
+			const mouse = input.mousePosition;
+			this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x);
+		}
 
 		// Fire cooldown
 		if (this._fireCooldown > 0) {

@@ -37,12 +37,16 @@ export const COLLISION_GROUPS: CollisionGroupsConfig = {
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	move_up: ["KeyW", "ArrowUp"],
-	move_down: ["KeyS", "ArrowDown"],
-	move_left: ["KeyA", "ArrowLeft"],
-	move_right: ["KeyD", "ArrowRight"],
-	fire: ["Space", "mouse:left"],
-	weapon1: ["Digit1"],
-	weapon2: ["Digit2"],
-	weapon3: ["Digit3"],
+	move_up: ["KeyW", "ArrowUp", "gamepad:left-stick-up", "gamepad:dpad-up"],
+	move_down: ["KeyS", "ArrowDown", "gamepad:left-stick-down", "gamepad:dpad-down"],
+	move_left: ["KeyA", "ArrowLeft", "gamepad:left-stick-left", "gamepad:dpad-left"],
+	move_right: ["KeyD", "ArrowRight", "gamepad:left-stick-right", "gamepad:dpad-right"],
+	aim_up: ["gamepad:right-stick-up"],
+	aim_down: ["gamepad:right-stick-down"],
+	aim_left: ["gamepad:right-stick-left"],
+	aim_right: ["gamepad:right-stick-right"],
+	fire: ["Space", "mouse:left", "gamepad:rt"],
+	weapon1: ["Digit1", "gamepad:x"],
+	weapon2: ["Digit2", "gamepad:y"],
+	weapon3: ["Digit3", "gamepad:b"],
 };

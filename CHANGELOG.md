@@ -1,3 +1,14 @@
+## Add gamepad support to both shooter examples
+*Friday, February 27th at 8pm*
+Added full gamepad bindings to the space shooter and top-down shooter examples. 
+The space shooter gets left stick, D-pad, and A/RT for fire. The top-down 
+shooter gets left stick for movement, right stick for twin-stick aiming, RT for 
+fire, and X/Y/B for weapon switching. The player controller was updated to use 
+getAxis() for analog movement and to prefer right-stick aim over mouse when the 
+stick is deflected.
+
+---
+
 ## Fix mobile touch controls, audio gate, and fullscreen activation
 *Friday, February 27th at 6pm*
 Fix several mobile touch issues discovered during review. Sokoban controls now 

@@ -55,9 +55,9 @@ export const COLLISION_GROUPS: CollisionGroupsConfig = {
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	left: ["ArrowLeft", "KeyA"],
-	right: ["ArrowRight", "KeyD"],
-	up: ["ArrowUp", "KeyW"],
-	down: ["ArrowDown", "KeyS"],
-	fire: ["Space"],
+	left: ["ArrowLeft", "KeyA", "gamepad:left-stick-left", "gamepad:dpad-left"],
+	right: ["ArrowRight", "KeyD", "gamepad:left-stick-right", "gamepad:dpad-right"],
+	up: ["ArrowUp", "KeyW", "gamepad:left-stick-up", "gamepad:dpad-up"],
+	down: ["ArrowDown", "KeyS", "gamepad:left-stick-down", "gamepad:dpad-down"],
+	fire: ["Space", "gamepad:a", "gamepad:rt"],
 };
