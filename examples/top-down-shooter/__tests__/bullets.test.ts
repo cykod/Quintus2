@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PlayerBullet } from "../entities/bullet.js";
+import type { ShooterBullet } from "../entities/bullet.js";
 import { BulletManager } from "../entities/bullet-manager.js";
 import { ArenaScene } from "../scenes/arena-scene.js";
 import { runScene } from "./helpers.js";
@@ -39,7 +39,7 @@ describe("Bullets", () => {
 		expect(mgr).toBeDefined();
 		if (!mgr) return;
 
-		const seen = new Set<PlayerBullet>();
+		const seen = new Set<ShooterBullet>();
 		for (let i = 0; i < 100; i++) {
 			const bullet = mgr.spawnPlayerBullet(200, 300, 0, 400, 25);
 			seen.add(bullet);

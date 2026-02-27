@@ -1,20 +1,23 @@
-import { type Signal, signal } from "@quintus/core";
+import { Damageable } from "@quintus/ai-prefabs";
 import { Vec2 } from "@quintus/math";
-import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import type { Shape2D } from "@quintus/physics";
+import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import {
 	BOMBER_ENEMY_HP,
 	BOMBER_ENEMY_POINTS,
 	BOMBER_ENEMY_SPEED,
 	BOMBER_FIRE_INTERVAL,
+	ENEMY_BULLET_SPEED,
 	GAME_HEIGHT,
 } from "../config.js";
 import { BOMBER_ENEMY_SCALE_X, BOMBER_ENEMY_SCALE_Y, FRAME, tilesetAtlas } from "../sprites.js";
 import { enemyBulletPool } from "./enemy-bullet.js";
 import { spawnFlash } from "./explosion.js";
 
-/** Hexagonal hull for bomber enemy (~36×28 visual). */
+const DamageableActor = Damageable(Actor, { invincibilityDuration: 0, deathTween: false });
+
+/** Hexagonal hull for bomber enemy (~36x28 visual). */
 const BOMBER_ENEMY_SHAPE: Shape2D = Shape.polygon([
 	new Vec2(-8, -13),
 	new Vec2(8, -13),
@@ -24,16 +27,14 @@ const BOMBER_ENEMY_SHAPE: Shape2D = Shape.polygon([
 	new Vec2(-17, 0),
 ]);
 
-export class BomberEnemy extends Actor {
+export class BomberEnemy extends DamageableActor {
 	override collisionGroup = "enemies";
 	override solid = true;
 	override gravity = 0;
 	override applyGravity = false;
 
-	hp = BOMBER_ENEMY_HP;
+	override maxHealth = BOMBER_ENEMY_HP;
 	points = BOMBER_ENEMY_POINTS;
-
-	readonly died: Signal<BomberEnemy> = signal<BomberEnemy>();
 
 	private _fireTimer = 0;
 
@@ -74,27 +75,27 @@ export class BomberEnemy extends Actor {
 		}
 	}
 
-	takeDamage(amount: number, hitPoint?: Vec2): void {
-		this.hp -= amount;
-		if (this.hp <= 0) {
+	override takeDamage(amount: number, hitPoint?: Vec2): void {
+		if (this.isDead() || this.isInvincible()) return;
+		const willDie = this.health <= amount;
+		if (willDie) {
 			this.game.audio.play("enemy_die", { bus: "sfx" });
-			this.died.emit(this);
-			this.destroy();
 		} else {
 			this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
 			spawnFlash(this, hitPoint ?? this.position);
 		}
+		super.takeDamage(amount);
 	}
 
 	private _dropBomb(): void {
 		if (!this.isInsideTree) return;
 		this.game.audio.play("enemy_shoot", { bus: "sfx" });
 		const bullet = enemyBulletPool.acquire();
-		bullet.position._set(this.position.x, this.position.y + 16);
+		bullet.fire(new Vec2(this.position.x, this.position.y + 16), Math.PI / 2, {
+			speed: ENEMY_BULLET_SPEED,
+			damage: 1,
+			lifetime: 0,
+		});
 		this.scene!.add(bullet);
-	}
-
-	serialize(): Record<string, unknown> {
-		return { hp: this.hp, x: this.position.x, y: this.position.y };
 	}
 }

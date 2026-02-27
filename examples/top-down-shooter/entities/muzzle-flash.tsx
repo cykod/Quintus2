@@ -1,6 +1,12 @@
 import { type DrawContext, Node2D, type Poolable } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 
+// Design decision -- Muzzle flash lifecycle:
+// Flash is a pooled visual effect with a ~50ms lifetime (3 frames at 60fps).
+// It uses a fire-and-forget pattern: BulletManager acquires from pool, places at
+// bullet spawn position, and sets a _recycle callback. The flash auto-recycles
+// via _recycle when its timer expires, returning to the pool without explicit
+// tracking by the manager. This avoids per-flash bookkeeping overhead.
 const FLASH_LIFETIME = 0.05;
 const FLASH_RADIUS = 6;
 const FLASH_OUTER = Color.fromHex("#ffffaa");

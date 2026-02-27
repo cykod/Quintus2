@@ -1,3 +1,4 @@
+import { type WaveEntry, WaveSpawner } from "@quintus/ai-prefabs";
 import { Node, NodePool, type Signal, signal } from "@quintus/core";
 import {
 	ARENA_BOTTOM,
@@ -32,6 +33,9 @@ const WAVES: WaveDef[] = [
 const PICKUP_DROP_CHANCE = 0.3;
 const WEAPON_IDS = ["pistol", "machine", "silencer"];
 
+// Separate pools per enemy type because each type has different stats, sprites,
+// and behavior. Type-based routing in the spawnRequested handler maps the string
+// type name to the correct pool, avoiding a single heterogeneous pool.
 export class EnemyManager extends Node {
 	playerRef: Player | null = null;
 	bulletManager: BulletManager | null = null;
@@ -42,10 +46,7 @@ export class EnemyManager extends Node {
 	private _pickupPool = new NodePool(WeaponPickup, 15);
 
 	private _activeEnemies = new Set<BaseEnemy>();
-	private _waveIndex = 0;
-	private _remainingInWave = 0;
-	private _spawnQueue: Array<() => BaseEnemy> = [];
-	private _spawnTimer = 0;
+	private _spawner!: WaveSpawner;
 
 	readonly waveComplete: Signal<number> = signal<number>();
 	readonly enemyDied: Signal<BaseEnemy> = signal<BaseEnemy>();
@@ -55,24 +56,33 @@ export class EnemyManager extends Node {
 		this._robotPool.prefill(10);
 		this._soldierPool.prefill(10);
 		this._pickupPool.prefill(5);
-	}
 
-	override onFixedUpdate(dt: number) {
-		if (this._spawnQueue.length > 0) {
-			this._spawnTimer -= dt;
-			if (this._spawnTimer <= 0) {
-				this._spawnTimer = 0.3;
-				const factory = this._spawnQueue.shift();
-				if (!factory) return;
-				const enemy = factory();
+		// Set up WaveSpawner as child node
+		this._spawner = this.add(WaveSpawner);
+		this._spawner.spawnInterval = 0.3;
+		this._spawner.wavePause = 2.0;
+
+		this._spawner.spawnRequested.connect(({ type }) => {
+			const enemy = this._spawnEnemyByType(type);
+			if (enemy) {
 				this._placeEnemy(enemy);
 				this._activeEnemies.add(enemy);
 			}
-		}
+		});
+
+		this._spawner.waveCleared.connect((wave) => {
+			this.waveComplete.emit(wave + 1);
+		});
 	}
 
 	startWave(waveNum: number): void {
-		this._waveIndex = waveNum;
+		const entries = this._buildWaveEntries(waveNum);
+		this._spawner.defineWaves([entries]);
+		this._spawner.start();
+		gameState.wave = waveNum;
+	}
+
+	private _buildWaveEntries(waveNum: number): WaveEntry[] {
 		const idx = Math.min(waveNum - 1, WAVES.length - 1);
 		const def = WAVES[idx] ?? WAVES[WAVES.length - 1] ?? { zombies: 5, robots: 0, soldiers: 0 };
 
@@ -82,37 +92,32 @@ export class EnemyManager extends Node {
 		const r = Math.round(def.robots * scale);
 		const s = Math.round(def.soldiers * scale);
 
-		this._remainingInWave = z + r + s;
-		this._spawnQueue = [];
-		this._spawnTimer = 0;
+		const entries: WaveEntry[] = [];
+		if (z > 0) entries.push({ type: "zombie", count: z });
+		if (r > 0) entries.push({ type: "robot", count: r });
+		if (s > 0) entries.push({ type: "soldier", count: s });
+		return entries;
+	}
 
-		for (let i = 0; i < z; i++) {
-			this._spawnQueue.push(() => this._spawnEnemy(this._zombiePool));
+	private _spawnEnemyByType(type: string): BaseEnemy | null {
+		switch (type) {
+			case "zombie":
+				return this._spawnEnemy(this._zombiePool);
+			case "robot":
+				return this._spawnEnemy(this._robotPool);
+			case "soldier":
+				return this._spawnEnemy(this._soldierPool);
+			default:
+				return null;
 		}
-		for (let i = 0; i < r; i++) {
-			this._spawnQueue.push(() => this._spawnEnemy(this._robotPool));
-		}
-		for (let i = 0; i < s; i++) {
-			this._spawnQueue.push(() => this._spawnEnemy(this._soldierPool));
-		}
-
-		// Shuffle spawn order
-		const q = this._spawnQueue;
-		for (let i = q.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			const tmp = q[i] as () => BaseEnemy;
-			q[i] = q[j] as () => BaseEnemy;
-			q[j] = tmp;
-		}
-
-		gameState.wave = waveNum;
 	}
 
 	private _spawnEnemy(pool: NodePool<BaseEnemy>): BaseEnemy {
 		const enemy = pool.acquire();
 		enemy._playerRef = this.playerRef;
 		enemy._bulletManager = this.bulletManager;
-		enemy._onDied = (e) => this._onEnemyDied(e, pool);
+		// Connect died signal for pool recycling and score tracking
+		enemy.died.connect(() => this._onEnemyDied(enemy, pool));
 		this.add(enemy);
 		return enemy;
 	}
@@ -165,6 +170,7 @@ export class EnemyManager extends Node {
 		gameState.score += enemy.scoreValue;
 		gameState.kills++;
 		this.enemyDied.emit(enemy);
+		this._spawner.notifyDeath();
 
 		// Maybe spawn pickup
 		if (Math.random() < PICKUP_DROP_CHANCE) {
@@ -172,11 +178,6 @@ export class EnemyManager extends Node {
 		}
 
 		pool.release(enemy);
-		this._remainingInWave--;
-
-		if (this._remainingInWave <= 0 && this._spawnQueue.length === 0) {
-			this.waveComplete.emit(this._waveIndex);
-		}
 	}
 
 	private _spawnPickup(x: number, y: number): void {
@@ -188,7 +189,7 @@ export class EnemyManager extends Node {
 		pickup.position.y = y;
 		pickup._onCollected = (p) => this._pickupPool.release(p);
 		// Wire pickup to unlock weapon on the player
-		pickup.collected.connect((weaponId: string) => {
+		pickup.weaponCollected.connect((weaponId: string) => {
 			this.playerRef?.unlockWeapon(weaponId);
 		});
 		this.add(pickup);

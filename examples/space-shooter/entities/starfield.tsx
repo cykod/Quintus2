@@ -8,10 +8,15 @@ const STAR_FRAMES = [FRAME.STAR1, FRAME.STAR2, FRAME.STAR3];
 const LAYER_COUNT = 2;
 const STARS_PER_LAYER = 15;
 
-/** Speed for each parallax layer (pixels/sec). */
+/**
+ * Design decision -- Parallax speeds and depth cues:
+ * Back layer: 40px/s at 60% scale. Front layer: 80px/s at 100% scale.
+ * Both speed and scale decrease for the back layer, creating a depth cue
+ * where distant stars appear smaller and move slower. Stars wrap from
+ * bottom to top at y = GAME_HEIGHT+10 → y = -10, producing an infinite
+ * vertical scroll effect.
+ */
 const LAYER_SPEEDS = [40, 80];
-
-/** Scale for each parallax layer (back layer smaller). */
 const LAYER_SCALES = [STAR_SCALE * 0.6, STAR_SCALE];
 
 class Star extends Node2D {

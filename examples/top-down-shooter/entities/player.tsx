@@ -1,4 +1,4 @@
-import { type Signal, signal } from "@quintus/core";
+import { Damageable } from "@quintus/ai-prefabs";
 import { Vec2 } from "@quintus/math";
 import type { CollisionInfo } from "@quintus/physics";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
@@ -17,7 +17,13 @@ import { WEAPONS, type WeaponDef } from "./weapons.js";
 
 const WEAPON_IDS = Object.keys(WEAPONS);
 
-export class Player extends Actor {
+const DamageableActor = Damageable(Actor, {
+	maxHealth: PLAYER_MAX_HEALTH,
+	invincibilityDuration: PLAYER_INVINCIBILITY_DURATION,
+	deathTween: false,
+});
+
+export class Player extends DamageableActor {
 	override collisionGroup = "player";
 	override solid = true;
 	override gravity = 0;
@@ -26,9 +32,6 @@ export class Player extends Actor {
 	bulletManager: BulletManager | null = null;
 
 	private _speed = PLAYER_SPEED;
-	private _health = PLAYER_MAX_HEALTH;
-	private _invincible = false;
-	private _invincibleTimer = 0;
 
 	// Weapon state
 	private _currentWeaponId = "pistol";
@@ -44,9 +47,6 @@ export class Player extends Actor {
 	private _onWheel: ((e: WheelEvent) => void) | null = null;
 
 	sprite?: Sprite;
-
-	readonly damaged: Signal<number> = signal<number>();
-	readonly died: Signal<void> = signal<void>();
 
 	override build() {
 		return (
@@ -88,6 +88,9 @@ export class Player extends Actor {
 	}
 
 	override onFixedUpdate(dt: number) {
+		// Damageable mixin ticks the invincibility timer in super.onFixedUpdate
+		super.onFixedUpdate(dt);
+
 		const input = this.game.input;
 
 		// Movement
@@ -108,7 +111,10 @@ export class Player extends Actor {
 		this.velocity.y = vy * this._speed;
 		this.move(dt);
 
-		// Mouse aim — sprites face RIGHT at rotation=0
+		// Design decision -- Mouse aim rotation:
+		// atan2(dy, dx) returns radians where 0 = right. Quintus sprites face RIGHT
+		// at rotation=0, so the result maps directly without offset. When mouse is at
+		// the exact player center, atan2(0,0) returns 0 (valid, no NaN).
 		const mouse = input.mousePosition;
 		this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x);
 
@@ -127,16 +133,14 @@ export class Player extends Actor {
 		if (input.isJustPressed("weapon2")) this.switchWeapon("machine");
 		if (input.isJustPressed("weapon3")) this.switchWeapon("silencer");
 
-		// Invincibility blink
-		if (this._invincible) {
-			this._invincibleTimer -= dt;
+		// Invincibility blink — uses isInvincible() from Damageable mixin.
+		// sin(elapsed * 20) produces ~3 Hz flicker, matching the dungeon visual.
+		if (this.isInvincible()) {
 			if (this.sprite) {
-				this.sprite.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
+				this.sprite.alpha = Math.sin(this.game.elapsed * 20) > 0 ? 0.3 : 1;
 			}
-			if (this._invincibleTimer <= 0) {
-				this._invincible = false;
-				if (this.sprite) this.sprite.alpha = 1;
-			}
+		} else if (this.sprite && this.sprite.alpha < 1) {
+			this.sprite.alpha = 1;
 		}
 	}
 
@@ -239,24 +243,24 @@ export class Player extends Actor {
 		super.onDestroy();
 	}
 
-	takeDamage(amount: number): void {
-		if (this._invincible) return;
+	// Bypass mixin's takeDamage for lethal hits to prevent auto-destroy.
+	// ArenaScene manages death via died signal (0.5s delay + scene switch),
+	// so we emit the signals manually without triggering _playDeathEffect().
+	override takeDamage(amount: number): void {
+		if (this.isDead() || this.isInvincible()) return;
 
-		this._health -= amount;
-		this._invincible = true;
-		this._invincibleTimer = PLAYER_INVINCIBILITY_DURATION;
 		this.game.audio.play("player_hit", { bus: "sfx" });
 
-		gameState.health = Math.max(0, this._health);
-		this.damaged.emit(this._health);
-
-		if (this._health <= 0) {
+		if (this.health <= amount) {
+			this.health = 0;
+			gameState.health = 0;
+			this.damaged.emit(0);
 			this.died.emit();
+			return;
 		}
-	}
 
-	get health(): number {
-		return this._health;
+		super.takeDamage(amount);
+		gameState.health = this.health;
 	}
 
 	get currentWeaponId(): string {

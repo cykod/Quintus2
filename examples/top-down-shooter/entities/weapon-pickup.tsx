@@ -1,6 +1,9 @@
-import { type DrawContext, type Poolable, type Signal, signal } from "@quintus/core";
+import { Pickup } from "@quintus/ai-prefabs";
+import type { DrawContext } from "@quintus/core";
+import { type Signal, signal } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
-import { type CollisionObject, CollisionShape, Sensor, Shape } from "@quintus/physics";
+import type { Actor } from "@quintus/physics";
+import { CollisionShape, Shape } from "@quintus/physics";
 import { WEAPONS } from "./weapons.js";
 
 const PICKUP_RADIUS = 10;
@@ -16,15 +19,21 @@ const WEAPON_COLORS: Record<string, Color> = {
 };
 const WHITE = Color.fromHex("#ffffff");
 
-export class WeaponPickup extends Sensor implements Poolable {
+export class WeaponPickup extends Pickup {
 	override collisionGroup = "pickups";
+	override collectTag = "player";
+	override bobAmount = 2;
+	override bobSpeed = 1.2;
+	override popScale = 1.5;
+	override popDuration = 0.15;
 
 	weaponId = "pistol";
 	private _lifetime = PICKUP_LIFETIME;
 
+	// Callback for pool recycling / cleanup
 	_onCollected: ((pickup: WeaponPickup) => void) | null = null;
 
-	readonly collected: Signal<string> = signal<string>();
+	readonly weaponCollected: Signal<string> = signal<string>();
 
 	override build() {
 		return <CollisionShape shape={Shape.circle(PICKUP_RADIUS)} />;
@@ -33,15 +42,15 @@ export class WeaponPickup extends Sensor implements Poolable {
 	override onReady() {
 		super.onReady();
 		this._lifetime = PICKUP_LIFETIME;
-		this.bodyEntered.connect((other: CollisionObject) => {
-			if (other.hasTag("player") && this.isInsideTree) {
-				this.collected.emit(this.weaponId);
-				this._onCollected?.(this);
-			}
-		});
+	}
+
+	override onCollect(_collector: Actor): void {
+		this.weaponCollected.emit(this.weaponId);
+		this._onCollected?.(this);
 	}
 
 	override onFixedUpdate(dt: number) {
+		super.onFixedUpdate(dt);
 		this._lifetime -= dt;
 		if (this._lifetime <= 0 && this.isInsideTree) {
 			this._onCollected?.(this);

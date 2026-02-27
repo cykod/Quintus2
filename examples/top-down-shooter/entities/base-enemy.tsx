@@ -1,4 +1,5 @@
-import { type Poolable, type Signal, signal } from "@quintus/core";
+import { Damageable } from "@quintus/ai-prefabs";
+import type { Poolable } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { Actor, type CollisionInfo, CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
@@ -7,28 +8,29 @@ import { CHARACTER_SCALE, charactersAtlas } from "../sprites.js";
 import type { BulletManager } from "./bullet-manager.js";
 import type { Player } from "./player.js";
 
-export abstract class BaseEnemy extends Actor implements Poolable {
+const DamageableActor = Damageable(Actor, {
+	maxHealth: 50,
+	invincibilityDuration: 0,
+	deathTween: false,
+});
+
+export abstract class BaseEnemy extends DamageableActor implements Poolable {
 	override collisionGroup = "enemies";
 	override solid = true;
 	override gravity = 0;
 	override applyGravity = false;
 	override upDirection = new Vec2(0, 0);
 
-	abstract maxHealth: number;
+	abstract override maxHealth: number;
 	abstract speed: number;
 	abstract contactDamage: number;
 	abstract scoreValue: number;
 	abstract spriteFrame: string;
 
-	protected _health = 0;
-
 	_playerRef: Player | null = null;
 	_bulletManager: BulletManager | null = null;
-	_onDied: ((enemy: BaseEnemy) => void) | null = null;
 
 	sprite?: Sprite;
-
-	readonly died: Signal<BaseEnemy> = signal<BaseEnemy>();
 
 	override build() {
 		return (
@@ -47,7 +49,6 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 	override onReady() {
 		super.onReady();
 		this.tag("enemy");
-		this._health = this.maxHealth;
 
 		// Deal contact damage to the player when THIS enemy's move() collides
 		this.collided.connect((info: CollisionInfo) => {
@@ -57,22 +58,27 @@ export abstract class BaseEnemy extends Actor implements Poolable {
 		});
 	}
 
-	takeDamage(amount: number): void {
-		this._health -= amount;
-		if (this._health <= 0) {
+	// Bypass mixin's takeDamage for lethal hits to prevent auto-destroy.
+	// Enemies need pool release (not destroy), so we emit signals manually
+	// on lethal damage and let EnemyManager handle recycling.
+	override takeDamage(amount: number): void {
+		if (this.isDead() || this.isInvincible()) return;
+
+		if (this.health <= amount) {
+			this.health = 0;
 			this.game.audio.play("enemy_die", { bus: "sfx" });
-			this.died.emit(this);
-			this._onDied?.(this);
-		} else {
-			this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
+			this.damaged.emit(0);
+			this.died.emit();
+			return;
 		}
+
+		this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
+		super.takeDamage(amount);
 	}
 
 	reset(): void {
-		this._health = this.maxHealth;
 		this._playerRef = null;
 		this._bulletManager = null;
-		this._onDied = null;
 	}
 
 	protected _facePlayer(): void {

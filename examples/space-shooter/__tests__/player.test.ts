@@ -47,7 +47,7 @@ describe("Player", () => {
 		const player = result.game.currentScene!.findByType(Player)!;
 		expect(player.health).toBe(3);
 
-		player.takeDamage();
+		player.takeDamage(1);
 		expect(player.health).toBe(2);
 		expect(gameState.lives).toBe(2);
 	});

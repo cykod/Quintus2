@@ -1,5 +1,5 @@
-import { Node2D, NodePool, type Poolable } from "@quintus/core";
 import type { Scene } from "@quintus/core";
+import { Node2D, NodePool, type Poolable } from "@quintus/core";
 import type { Vec2 } from "@quintus/math";
 import { AnimatedSprite } from "@quintus/sprites";
 import { particleSheet } from "../sprites.js";

@@ -50,7 +50,7 @@ export class ArenaScene extends Scene {
 			this.camera.shake(4, 0.2);
 		});
 
-		// Wave completion
+		// Wave completion — start next wave after delay
 		this.enemyManager.waveComplete.connect((wave) => {
 			this.after(WAVE_DELAY, () => {
 				this.game.audio.play("wave_start", { bus: "sfx" });

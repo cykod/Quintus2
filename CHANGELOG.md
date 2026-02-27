@@ -1,3 +1,16 @@
+## Polish space shooter and top-down shooter with ai-prefabs integration
+*Friday, February 27th at 11am*
+Integrate the four core ai-prefabs utilities (Damageable, Bullet, WaveSpawner, 
+Pickup) into both shooter example games per Phases D and F of the prefabs 
+proposal. The space shooter replaces hand-rolled health/invincibility, separate 
+bullet classes, and inline wave logic with the shared utilities, while the 
+top-down shooter similarly consolidates its bullet hierarchy into a single 
+ShooterBullet class and delegates wave orchestration to WaveSpawner. Both games 
+gain dedicated edge-case test suites and design-decision comments at key 
+architectural points, with a net reduction of 116 lines of code.
+
+---
+
 ## Fix Bullet scene-tree error and sideways sprite rotation
 *Friday, February 27th at 11am*
 Fix two bugs in the ai-prefabs Bullet base class introduced during Phase D 

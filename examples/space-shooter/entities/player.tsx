@@ -1,11 +1,12 @@
-import { type Signal, signal } from "@quintus/core";
+import { Damageable } from "@quintus/ai-prefabs";
 import { Vec2 } from "@quintus/math";
-import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import type { Shape2D } from "@quintus/physics";
+import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import {
 	GAME_HEIGHT,
 	GAME_WIDTH,
+	PLAYER_BULLET_SPEED,
 	PLAYER_FIRE_RATE,
 	PLAYER_INVINCIBILITY_DURATION,
 	PLAYER_MAX_HEALTH,
@@ -16,11 +17,17 @@ import { FRAME, PLAYER_SCALE_X, PLAYER_SCALE_Y, tilesetAtlas } from "../sprites.
 import { gameState } from "../state.js";
 import { playerBulletPool } from "./player-bullet.js";
 
+const DamageableActor = Damageable(Actor, {
+	maxHealth: PLAYER_MAX_HEALTH,
+	invincibilityDuration: PLAYER_INVINCIBILITY_DURATION,
+	deathTween: false,
+});
+
 const HALF_WIDTH = 20;
 const HALF_HEIGHT = 15;
 const SPREAD_ANGLE = Math.PI / 12; // ~15 degrees
 
-/** Convex hull approximating the player ship silhouette (~40×30 visual). */
+/** Convex hull approximating the player ship silhouette (~40x30 visual). */
 const PLAYER_SHAPE: Shape2D = Shape.polygon([
 	new Vec2(0, -14), // nose
 	new Vec2(18, 4), // right wing
@@ -29,22 +36,17 @@ const PLAYER_SHAPE: Shape2D = Shape.polygon([
 	new Vec2(-18, 4), // left wing
 ]);
 
-export class Player extends Actor {
+export class Player extends DamageableActor {
 	override collisionGroup = "player";
 	override solid = true;
 	override gravity = 0;
 	override applyGravity = false;
 
-	readonly playerHit: Signal<void> = signal<void>();
-	readonly playerDied: Signal<void> = signal<void>();
-
-	health = PLAYER_MAX_HEALTH;
 	shieldActive = false;
 	spreadShot = false;
 	rapidFire = false;
 
 	private _fireTimer = 0;
-	private _invincibleTimer = 0;
 
 	sprite!: Sprite;
 
@@ -68,6 +70,8 @@ export class Player extends Actor {
 	}
 
 	override onFixedUpdate(dt: number) {
+		super.onFixedUpdate(dt); // tick Damageable invincibility timer
+
 		// --- Movement ---
 		const hAxis = this.game.input.getAxis("left", "right");
 		const vAxis = this.game.input.getAxis("up", "down");
@@ -83,11 +87,6 @@ export class Player extends Actor {
 			if (world) world.updatePosition(this);
 		}
 
-		// --- Invincibility timer ---
-		if (this._invincibleTimer > 0) {
-			this._invincibleTimer -= dt;
-		}
-
 		// --- Auto-fire ---
 		this._fireTimer -= dt;
 		if (this.game.input.isPressed("fire") && this._fireTimer <= 0) {
@@ -97,46 +96,37 @@ export class Player extends Actor {
 		}
 	}
 
-	takeDamage(): void {
-		if (this.shieldActive || this._invincibleTimer > 0) return;
-
-		this.health--;
-		gameState.lives = this.health;
-		this._invincibleTimer = PLAYER_INVINCIBILITY_DURATION;
+	override takeDamage(amount: number): void {
+		if (this.shieldActive) return;
+		if (this.isDead() || this.isInvincible()) return;
 		this.game.audio.play("player_hit", { bus: "sfx" });
-		this.playerHit.emit();
-
-		if (this.health <= 0) {
-			this.playerDied.emit();
-		}
+		super.takeDamage(amount);
+		gameState.lives = this.health;
 	}
 
+	/**
+	 * Design decision -- Spread shot angle mapping:
+	 * -PI/2 = straight up in the Bullet rotation frame. The offset rotates
+	 * from vertical: -SPREAD_ANGLE goes left, +SPREAD_ANGLE goes right.
+	 */
 	private _fire(): void {
 		this.game.audio.play("player_shoot", { bus: "sfx" });
+		const spawnPos = new Vec2(this.position.x, this.position.y - HALF_HEIGHT);
+		const bulletCfg = { speed: PLAYER_BULLET_SPEED, damage: 1, lifetime: 0 };
+
 		if (this.spreadShot) {
 			// Fire 3 bullets in a spread
 			for (const offset of [-SPREAD_ANGLE, 0, SPREAD_ANGLE]) {
 				const bullet = playerBulletPool.acquire();
-				bullet.angleOffset = offset;
 				bullet.isSpread = true;
-				bullet.position._set(this.position.x, this.position.y - HALF_HEIGHT);
+				bullet.angleOffset = offset;
+				bullet.fire(spawnPos, -Math.PI / 2 + offset, bulletCfg);
 				this.scene!.add(bullet);
 			}
 		} else {
 			const bullet = playerBulletPool.acquire();
-			bullet.position._set(this.position.x, this.position.y - HALF_HEIGHT);
+			bullet.fire(spawnPos, -Math.PI / 2, bulletCfg);
 			this.scene!.add(bullet);
 		}
-	}
-
-	serialize(): Record<string, unknown> {
-		return {
-			health: this.health,
-			shieldActive: this.shieldActive,
-			spreadShot: this.spreadShot,
-			rapidFire: this.rapidFire,
-			x: this.position.x,
-			y: this.position.y,
-		};
 	}
 }

@@ -1,3 +1,4 @@
+import { type WaveEntry, WaveSpawner } from "@quintus/ai-prefabs";
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
@@ -25,26 +26,16 @@ import { gameState } from "../state.js";
 /** Enemy types by class for collision checking. */
 type AnyEnemy = BasicEnemy | WeaverEnemy | BomberEnemy | Boss;
 
-interface WaveEntry {
-	type: "basic" | "weaver" | "bomber" | "boss";
-	count: number;
-}
-
 export class ShooterLevel extends Scene {
 	private _player!: Player;
-	private _spawnQueue: WaveEntry[] = [];
-	private _spawnTimer = 0;
-	private _spawnDelay = 0.6;
-	private _currentSpawnEntry: WaveEntry | null = null;
-	private _spawnedInEntry = 0;
-	private _activeEnemies = 0;
-	private _waveComplete = false;
+	private _spawner!: WaveSpawner;
 
 	override build() {
 		return (
 			<>
 				<Starfield />
 				<Player ref="_player" position={[GAME_WIDTH / 2, GAME_HEIGHT - 60]} />
+				<WaveSpawner ref="_spawner" />
 				<HUD />
 				<Camera position={[GAME_WIDTH / 2, GAME_HEIGHT / 2]} />
 			</>
@@ -53,40 +44,28 @@ export class ShooterLevel extends Scene {
 
 	override onReady() {
 		// Player signals
-		this._player.playerHit.connect(() => this._onPlayerHit());
-		this._player.playerDied.connect(() => this._onPlayerDied());
+		this._player.damaged.connect(() => this._onPlayerHit());
+		this._player.died.connect(() => this._onPlayerDied());
 
-		// Player→enemy contact damage (when player's move() hits a solid enemy)
+		// Player->enemy contact damage (when player's move() hits a solid enemy)
 		this._player.collided.connect((info: CollisionInfo) => {
 			if (info.collider.collisionGroup === "enemies") {
 				this._onEnemyContactPlayer(info.collider as AnyEnemy);
 			}
 		});
 
-		this._startWave(gameState.wave);
+		// WaveSpawner signals
+		this._spawner.spawnInterval = 0.6;
+		this._spawner.spawnRequested.connect(({ type }) => this._spawnEnemy(type));
+		this._spawner.waveCleared.connect(() => this._nextWave());
+
+		this._launchWave(gameState.wave);
 	}
 
-	override onFixedUpdate(dt: number) {
-		this._processSpawnQueue(dt);
-
-		// Check wave completion
-		if (
-			!this._waveComplete &&
-			this._activeEnemies <= 0 &&
-			this._spawnQueue.length === 0 &&
-			this._currentSpawnEntry === null
-		) {
-			this._waveComplete = true;
-			this.after(1.0, () => this._nextWave());
-		}
-	}
-
-	private _startWave(wave: number): void {
-		this._waveComplete = false;
-		this._spawnQueue = this._buildWave(wave);
-		this._currentSpawnEntry = null;
-		this._spawnedInEntry = 0;
-		this._spawnTimer = 0;
+	private _launchWave(wave: number): void {
+		const entries = this._buildWave(wave);
+		this._spawner.defineWaves([entries]);
+		this._spawner.start();
 	}
 
 	private _buildWave(wave: number): WaveEntry[] {
@@ -115,29 +94,6 @@ export class ShooterLevel extends Scene {
 		}
 
 		return entries;
-	}
-
-	private _processSpawnQueue(dt: number): void {
-		if (this._spawnQueue.length === 0 && this._currentSpawnEntry === null) return;
-
-		this._spawnTimer -= dt;
-		if (this._spawnTimer > 0) return;
-
-		// Get next spawn entry if needed
-		if (this._currentSpawnEntry === null) {
-			this._currentSpawnEntry = this._spawnQueue.shift()!;
-			this._spawnedInEntry = 0;
-		}
-
-		// Spawn one enemy from current entry
-		this._spawnEnemy(this._currentSpawnEntry.type);
-		this._spawnedInEntry++;
-		this._spawnTimer = this._spawnDelay;
-
-		// Move to next entry if done
-		if (this._spawnedInEntry >= this._currentSpawnEntry.count) {
-			this._currentSpawnEntry = null;
-		}
 	}
 
 	private _spawnEnemy(type: string): void {
@@ -170,21 +126,19 @@ export class ShooterLevel extends Scene {
 	}
 
 	private _connectEnemy(enemy: AnyEnemy): void {
-		this._activeEnemies++;
-
-		// Enemy killed → score, explosion, maybe power-up
-		enemy.died.connect((e) => {
-			this._activeEnemies--;
-			gameState.score += e.points;
-			this._spawnExplosion(e.position, e.hasTag("boss"));
+		// Enemy killed -> score, explosion, maybe power-up
+		enemy.died.connect(() => {
+			this._spawner.notifyDeath();
+			gameState.score += enemy.points;
+			this._spawnExplosion(enemy.position, enemy.hasTag("boss"));
 
 			// Maybe drop power-up
 			if (this.game.random.next() < POWERUP_DROP_CHANCE) {
-				this._spawnPowerUp(e.position);
+				this._spawnPowerUp(enemy.position);
 			}
 		});
 
-		// Enemy→player contact damage (when enemy's move() hits the solid player)
+		// Enemy->player contact damage (when enemy's move() hits the solid player)
 		enemy.collided.connect((info: CollisionInfo) => {
 			if (info.collider.hasTag("player")) {
 				this._onEnemyContactPlayer(enemy);
@@ -204,9 +158,15 @@ export class ShooterLevel extends Scene {
 			powerUpType: type,
 			position: new Vec2(pos.x, pos.y),
 		});
-		powerUp.collected.connect((t) => this._activatePowerUp(t));
+		powerUp.collected.connect(() => this._activatePowerUp(powerUp.powerUpType));
 	}
 
+	/**
+	 * Design decision -- Timed buff implementation:
+	 * Power-up buffs are flags on Player + gameState, deactivated by an `after()`
+	 * timer on the scene. A second same-type buff does NOT extend the timer --
+	 * it sets the flag again but the original timer still fires to deactivate.
+	 */
 	private _activatePowerUp(type: PowerUpType): void {
 		this.game.audio.play("powerup", { bus: "sfx" });
 		switch (type) {
@@ -238,8 +198,8 @@ export class ShooterLevel extends Scene {
 	}
 
 	private _onEnemyContactPlayer(enemy: AnyEnemy): void {
-		enemy.takeDamage(enemy.hp); // destroy enemy on contact
-		this._player.takeDamage();
+		enemy.takeDamage(enemy.health); // destroy enemy on contact
+		this._player.takeDamage(1);
 	}
 
 	private _onPlayerHit(): void {
@@ -252,6 +212,6 @@ export class ShooterLevel extends Scene {
 
 	private _nextWave(): void {
 		gameState.wave++;
-		this._startWave(gameState.wave);
+		this.after(1.0, () => this._launchWave(gameState.wave));
 	}
 }

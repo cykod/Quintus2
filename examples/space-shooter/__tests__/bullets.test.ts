@@ -1,4 +1,6 @@
+import { Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";
+import { PLAYER_BULLET_SPEED } from "../config.js";
 import { playerBulletPool } from "../entities/player-bullet.js";
 import { ShooterLevel } from "../scenes/shooter-level.js";
 import { runScene } from "./helpers.js";
@@ -9,7 +11,11 @@ describe("Bullets", () => {
 		const scene = result.game.currentScene!;
 
 		const bullet = playerBulletPool.acquire();
-		bullet.position._set(240, 300);
+		bullet.fire(new Vec2(240, 300), -Math.PI / 2, {
+			speed: PLAYER_BULLET_SPEED,
+			damage: 1,
+			lifetime: 0,
+		});
 		scene.add(bullet);
 		const initialY = bullet.position.y;
 
@@ -25,7 +31,11 @@ describe("Bullets", () => {
 		const scene = result.game.currentScene!;
 
 		const bullet = playerBulletPool.acquire();
-		bullet.position._set(240, 10);
+		bullet.fire(new Vec2(240, 10), -Math.PI / 2, {
+			speed: PLAYER_BULLET_SPEED,
+			damage: 1,
+			lifetime: 0,
+		});
 		scene.add(bullet);
 
 		const initialAvailable = playerBulletPool.available;

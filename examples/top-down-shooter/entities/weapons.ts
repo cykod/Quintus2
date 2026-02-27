@@ -1,5 +1,11 @@
 import { FRAME } from "../sprites.js";
 
+// Design decision -- Weapon definition config pattern:
+// Each weapon is a flat data object (not a class). Player reads fireRate to set cooldown,
+// damage/bulletSpeed to configure bullets, and spread for random angular offset. The tradeoff
+// is fire-rate vs damage vs spread: pistol is precise but slow, machine gun is fast but
+// inaccurate, silencer is powerful but limited ammo. maxAmmo/ammo are per-clip values;
+// pistol uses Infinity for unlimited.
 export interface WeaponDef {
 	name: string;
 	fireRate: number;

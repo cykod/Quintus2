@@ -11,7 +11,7 @@ describe("Power-ups", () => {
 		const player = result.game.currentScene!.findByType(Player)!;
 
 		player.shieldActive = true;
-		player.takeDamage();
+		player.takeDamage(1);
 
 		expect(player.health).toBe(3); // no damage taken
 	});

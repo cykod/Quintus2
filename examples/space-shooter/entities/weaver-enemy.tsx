@@ -1,7 +1,7 @@
-import { type Signal, signal } from "@quintus/core";
+import { Damageable } from "@quintus/ai-prefabs";
 import { Vec2 } from "@quintus/math";
-import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import type { Shape2D } from "@quintus/physics";
+import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import {
 	GAME_HEIGHT,
@@ -14,7 +14,9 @@ import {
 import { FRAME, tilesetAtlas, WEAVER_ENEMY_SCALE_X, WEAVER_ENEMY_SCALE_Y } from "../sprites.js";
 import { spawnFlash } from "./explosion.js";
 
-/** Hexagonal hull for weaver enemy (~36×28 visual). */
+const DamageableActor = Damageable(Actor, { invincibilityDuration: 0, deathTween: false });
+
+/** Hexagonal hull for weaver enemy (~36x28 visual). */
 const WEAVER_ENEMY_SHAPE: Shape2D = Shape.polygon([
 	new Vec2(-8, -13),
 	new Vec2(8, -13),
@@ -24,19 +26,17 @@ const WEAVER_ENEMY_SHAPE: Shape2D = Shape.polygon([
 	new Vec2(-17, 0),
 ]);
 
-export class WeaverEnemy extends Actor {
+export class WeaverEnemy extends DamageableActor {
 	override collisionGroup = "enemies";
 	override solid = true;
 	override gravity = 0;
 	override applyGravity = false;
 
-	hp = WEAVER_ENEMY_HP;
+	override maxHealth = WEAVER_ENEMY_HP;
 	points = WEAVER_ENEMY_POINTS;
 
 	/** Starting X position (sine oscillation center). */
 	startX = 0;
-
-	readonly died: Signal<WeaverEnemy> = signal<WeaverEnemy>();
 
 	private _elapsed = 0;
 
@@ -76,19 +76,15 @@ export class WeaverEnemy extends Actor {
 		}
 	}
 
-	takeDamage(amount: number, hitPoint?: Vec2): void {
-		this.hp -= amount;
-		if (this.hp <= 0) {
+	override takeDamage(amount: number, hitPoint?: Vec2): void {
+		if (this.isDead() || this.isInvincible()) return;
+		const willDie = this.health <= amount;
+		if (willDie) {
 			this.game.audio.play("enemy_die", { bus: "sfx" });
-			this.died.emit(this);
-			this.destroy();
 		} else {
 			this.game.audio.play("enemy_hit", { bus: "sfx", volume: 0.5 });
 			spawnFlash(this, hitPoint ?? this.position);
 		}
-	}
-
-	serialize(): Record<string, unknown> {
-		return { hp: this.hp, x: this.position.x, y: this.position.y };
+		super.takeDamage(amount);
 	}
 }
