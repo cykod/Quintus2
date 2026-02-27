@@ -26,7 +26,13 @@ export class PlayerSprite extends Node2D {
 		this._sprite = sprite;
 	}
 
-	/** Snap to grid position without animation. */
+	/**
+	 * Snap to grid position without animation.
+	 *
+	 * Grid-to-pixel mapping: `gx * CELL_SIZE` gives the left edge of the cell,
+	 * then `+ CELL_SIZE / 2` centers the sprite within it. The offset is needed
+	 * because sprites are center-anchored (origin at their midpoint).
+	 */
 	snapTo(gx: number, gy: number): void {
 		this.position._set(gx * CELL_SIZE + CELL_SIZE / 2, gy * CELL_SIZE + CELL_SIZE / 2);
 	}

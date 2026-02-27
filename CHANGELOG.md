@@ -1,3 +1,15 @@
+## Polish Sokoban with 7 edge-case tests and code comments
+*Friday, February 27th at 11am*
+Add edge-case test file for the Sokoban example game covering corner deadlocks, 
+push-on/push-off target transitions, undo at move zero, partial-solve 
+detection, rapid sequential input registration, and level-select rendering with 
+mixed completion state. Add architectural decision comments to grid.ts 
+(class-level separation rationale, MoveRecord undo stack design, tryMove atomic 
+return struct) and player-sprite.tsx (grid-to-pixel coordinate mapping for 
+center-anchored sprites). All 46 Sokoban tests pass with zero lint warnings.
+
+---
+
 ## Polish dungeon and breakout games with ai-prefabs integration
 *Friday, February 27th at 1am*
 Integrate ai-prefabs utilities into two example games as part of Phase 9 

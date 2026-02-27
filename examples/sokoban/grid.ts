@@ -15,7 +15,12 @@ export interface Pos {
 	y: number;
 }
 
-/** Records a single move for undo. */
+/**
+ * Records a single move for the undo stack. Each record stores the player's
+ * previous position and, if a crate was pushed, the crate's array index and
+ * its previous position. `crateIndex: -1` means no crate was involved.
+ * This enables O(1) undo: simply restore the saved positions and pop the stack.
+ */
 interface MoveRecord {
 	playerFrom: Pos;
 	crateIndex: number; // -1 if no crate was pushed
@@ -35,7 +40,13 @@ const PLAYER_ON_TARGET = "+";
 const CRATE_ON_TARGET = "*";
 
 /**
- * Pure grid-based Sokoban logic. No engine dependency.
+ * Pure grid-based Sokoban logic with zero engine dependency.
+ *
+ * Keeping the rules layer separate from rendering means:
+ * 1. Grid logic can be unit-tested directly without bootstrapping a Game/Scene.
+ * 2. The game logic is portable — it could drive a terminal UI or a server.
+ * 3. The scene layer (SokobanLevel) only handles visuals and input mapping.
+ *
  * All positions are {x, y} where x = column, y = row.
  */
 export class SokobanGrid {
@@ -151,8 +162,11 @@ export class SokobanGrid {
 
 	/**
 	 * Attempt to move the player in the given direction.
-	 * Returns true if the move was valid, false if blocked.
-	 * If a crate is pushed, returns the crate index and its new position.
+	 *
+	 * Returns `{ moved, pushedCrate }` as a single struct rather than separate
+	 * methods because the caller (SokobanLevel) needs both pieces atomically —
+	 * it must know whether to animate and, if so, which crate sprite to tween.
+	 * `pushedCrate` is the crate array index, or -1 if no crate was pushed.
 	 */
 	tryMove(dir: Dir): { moved: boolean; pushedCrate: number } {
 		const newX = this.player.x + dir.dx;
