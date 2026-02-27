@@ -101,7 +101,7 @@ export class Boss extends DamageableActor {
 		for (const spreadAngle of [-0.3, 0, 0.3]) {
 			const bullet = enemyBulletPool.acquire();
 			bullet.fire(spawnPos, Math.PI / 2 - spreadAngle, bulletCfg);
-			this.scene!.add(bullet);
+			this.scene.add(bullet);
 		}
 	}
 }

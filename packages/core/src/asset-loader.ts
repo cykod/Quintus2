@@ -139,6 +139,15 @@ export class AssetLoader {
 		return (this._customAssets.get(name) as T) ?? null;
 	}
 
+	/** Get a custom-loaded asset by name, throwing if not found. */
+	require<T = unknown>(name: string): T {
+		const asset = this.get<T>(name);
+		if (asset == null) {
+			throw new Error(`Required asset "${name}" not loaded. Call game.assets.load() first.`);
+		}
+		return asset;
+	}
+
 	/** Check if a specific asset is loaded. */
 	isLoaded(name: string): boolean {
 		return this.images.has(name) || this.jsonData.has(name) || this._customAssets.has(name);

@@ -66,7 +66,8 @@ export abstract class PathFollower extends DamageableActor {
 
 		// Start at first waypoint
 		if (this._worldWaypoints.length > 0) {
-			const start = this._worldWaypoints[0]!;
+			const start = this._worldWaypoints[0];
+			if (!start) return;
 			this.position._set(start.x, start.y);
 			this.waypointIndex = 1;
 		}
@@ -92,7 +93,8 @@ export abstract class PathFollower extends DamageableActor {
 			return;
 		}
 
-		const target = this._worldWaypoints[this.waypointIndex]!;
+		const target = this._worldWaypoints[this.waypointIndex];
+		if (!target) return;
 		const dx = target.x - this.position.x;
 		const dy = target.y - this.position.y;
 		const dist = Math.sqrt(dx * dx + dy * dy);

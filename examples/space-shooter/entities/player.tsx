@@ -121,12 +121,12 @@ export class Player extends DamageableActor {
 				bullet.isSpread = true;
 				bullet.angleOffset = offset;
 				bullet.fire(spawnPos, -Math.PI / 2 + offset, bulletCfg);
-				this.scene!.add(bullet);
+				this.scene.add(bullet);
 			}
 		} else {
 			const bullet = playerBulletPool.acquire();
 			bullet.fire(spawnPos, -Math.PI / 2, bulletCfg);
-			this.scene!.add(bullet);
+			this.scene.add(bullet);
 		}
 	}
 }

@@ -112,11 +112,14 @@ export function readPathFromMap(map: TileMap): MapPathData {
 
 	// Filter to direction-change points only — straight-line segments don't need
 	// intermediate waypoints, which reduces unnecessary lerp targets for PathFollower.
-	const waypoints: Vec2[] = [new Vec2(path[0]!.col, path[0]!.row)];
+	const first = path[0];
+	if (!first) throw new Error("Path is empty");
+	const waypoints: Vec2[] = [new Vec2(first.col, first.row)];
 	for (let i = 1; i < path.length - 1; i++) {
-		const prev = path[i - 1]!;
-		const curr = path[i]!;
-		const next = path[i + 1]!;
+		const prev = path[i - 1];
+		const curr = path[i];
+		const next = path[i + 1];
+		if (!prev || !curr || !next) continue;
 		const dx1 = curr.col - prev.col;
 		const dy1 = curr.row - prev.row;
 		const dx2 = next.col - curr.col;
@@ -126,8 +129,8 @@ export function readPathFromMap(map: TileMap): MapPathData {
 		}
 	}
 	if (path.length > 1) {
-		const last = path[path.length - 1]!;
-		waypoints.push(new Vec2(last.col, last.row));
+		const last = path[path.length - 1];
+		if (last) waypoints.push(new Vec2(last.col, last.row));
 	}
 
 	return { waypoints, placementCells };

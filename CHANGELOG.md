@@ -1,3 +1,16 @@
+## Eliminate all noNonNullAssertion warnings and promote to error
+*Friday, February 27th at 2pm*
+Fix all 37 noNonNullAssertion lint warnings across example games and promote 
+the Biome rule from "warn" to "error" to prevent regressions. Add 
+AssetLoader.require() method that throws on missing assets (replacing get()! 
+pattern in breakout and space-shooter sprites). Refactor brick.tsx to use 
+satisfies with nullable atlas instead of null! initialization. Replace array 
+index assertions with guards/fallbacks in tower-defense path tracing and 
+space-shooter starfield. Remove redundant this.scene! calls where the getter 
+already throws.
+
+---
+
 ## Add virtual control widgets to @quintus/touch
 *Friday, February 27th at 1pm*
 Implement Phase 2 of the Mobile Touch UI: virtual control widgets that inject 

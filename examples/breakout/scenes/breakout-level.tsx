@@ -71,7 +71,9 @@ export abstract class BreakoutLevel extends Scene {
 	/** Build a standard grid from row definitions (BRICK_COLS wide). */
 	protected buildBrickRows(rows: BrickRow[]): void {
 		for (let row = 0; row < rows.length; row++) {
-			const [color, type] = rows[row]!;
+			const entry = rows[row];
+			if (!entry) continue;
+			const [color, type] = entry;
 			for (let col = 0; col < BRICK_COLS; col++) {
 				const x = BRICK_START_X + col * BRICK_STEP_X;
 				const y = BRICK_START_Y + row * BRICK_STEP_Y;
@@ -172,7 +174,7 @@ export abstract class BreakoutLevel extends Scene {
 
 	private _spawnPowerUp(pos: Vec2): void {
 		const types: PowerUpType[] = ["wide", "multi", "speed"];
-		const type = types[this.game.random.int(0, types.length - 1)]!;
+		const type = types[this.game.random.int(0, types.length - 1)] ?? "wide";
 		const powerUp = this.add(PowerUp, {
 			powerUpType: type,
 			position: new Vec2(pos.x, pos.y),

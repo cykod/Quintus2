@@ -50,12 +50,15 @@ export const FRAME = {
  * Must be called after game.assets.load() completes.
  */
 export function loadAtlases(game: Game): void {
-	paddlesAtlas = TextureAtlas.fromXml(game.assets.get<string>("paddles")!, "paddles");
-	ballsAtlas = TextureAtlas.fromXml(game.assets.get<string>("balls")!, "balls");
-	tilesBlueAtlas = TextureAtlas.fromXml(game.assets.get<string>("tiles_blue")!, "tiles_blue");
-	tilesRedAtlas = TextureAtlas.fromXml(game.assets.get<string>("tiles_red")!, "tiles_red");
-	tilesGreenAtlas = TextureAtlas.fromXml(game.assets.get<string>("tiles_green")!, "tiles_green");
-	tilesYellowAtlas = TextureAtlas.fromXml(game.assets.get<string>("tiles_yellow")!, "tiles_yellow");
-	tilesGreyAtlas = TextureAtlas.fromXml(game.assets.get<string>("tiles_grey")!, "tiles_grey");
-	coinsAtlas = TextureAtlas.fromXml(game.assets.get<string>("coins")!, "coins");
+	paddlesAtlas = TextureAtlas.fromXml(game.assets.require<string>("paddles"), "paddles");
+	ballsAtlas = TextureAtlas.fromXml(game.assets.require<string>("balls"), "balls");
+	tilesBlueAtlas = TextureAtlas.fromXml(game.assets.require<string>("tiles_blue"), "tiles_blue");
+	tilesRedAtlas = TextureAtlas.fromXml(game.assets.require<string>("tiles_red"), "tiles_red");
+	tilesGreenAtlas = TextureAtlas.fromXml(game.assets.require<string>("tiles_green"), "tiles_green");
+	tilesYellowAtlas = TextureAtlas.fromXml(
+		game.assets.require<string>("tiles_yellow"),
+		"tiles_yellow",
+	);
+	tilesGreyAtlas = TextureAtlas.fromXml(game.assets.require<string>("tiles_grey"), "tiles_grey");
+	coinsAtlas = TextureAtlas.fromXml(game.assets.require<string>("coins"), "coins");
 }

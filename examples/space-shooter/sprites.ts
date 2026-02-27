@@ -83,5 +83,5 @@ export const particleSheet = new SpriteSheet({
  * Must be called after game.assets.load() completes.
  */
 export function loadAtlas(game: Game): void {
-	tilesetAtlas = TextureAtlas.fromXml(game.assets.get<string>("tileset")!, "tileset");
+	tilesetAtlas = TextureAtlas.fromXml(game.assets.require<string>("tileset"), "tileset");
 }

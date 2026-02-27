@@ -153,7 +153,7 @@ export class ShooterLevel extends Scene {
 
 	private _spawnPowerUp(pos: Vec2): void {
 		const types: PowerUpType[] = ["shield", "rapid", "spread"];
-		const type = types[this.game.random.int(0, types.length - 1)]!;
+		const type = types[this.game.random.int(0, types.length - 1)] ?? "shield";
 		const powerUp = this.add(PowerUp, {
 			powerUpType: type,
 			position: new Vec2(pos.x, pos.y),

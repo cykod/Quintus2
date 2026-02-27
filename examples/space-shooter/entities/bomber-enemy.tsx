@@ -96,6 +96,6 @@ export class BomberEnemy extends DamageableActor {
 			damage: 1,
 			lifetime: 0,
 		});
-		this.scene!.add(bullet);
+		this.scene.add(bullet);
 	}
 }

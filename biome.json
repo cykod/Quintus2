@@ -9,7 +9,7 @@
 				"noForEach": "warn"
 			},
 			"style": {
-				"noNonNullAssertion": "warn",
+				"noNonNullAssertion": "error",
 				"useConst": "error"
 			},
 			"suspicious": {

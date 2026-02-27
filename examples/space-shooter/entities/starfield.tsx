@@ -33,14 +33,14 @@ class Star extends Node2D {
 export class Starfield extends Node {
 	override onReady() {
 		for (let layer = 0; layer < LAYER_COUNT; layer++) {
-			const speed = LAYER_SPEEDS[layer]!;
-			const sc = LAYER_SCALES[layer]!;
+			const speed = LAYER_SPEEDS[layer] ?? 0;
+			const sc = LAYER_SCALES[layer] ?? STAR_SCALE;
 
 			for (let i = 0; i < STARS_PER_LAYER; i++) {
 				const star = new Star();
 				star.speed = speed;
 				const frameIdx = (layer * STARS_PER_LAYER + i) % STAR_FRAMES.length;
-				const frame = STAR_FRAMES[frameIdx]!;
+				const frame = STAR_FRAMES[frameIdx] ?? FRAME.STAR1;
 
 				const x = this.game.random.next() * GAME_WIDTH;
 				const y = this.game.random.next() * GAME_HEIGHT;
