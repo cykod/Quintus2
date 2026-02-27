@@ -26,7 +26,14 @@ import { ArenaScene } from "../../examples/top-down-shooter/scenes/arena-scene.j
 import { loadAtlases } from "../../examples/top-down-shooter/sprites.js";
 import { gameState } from "../../examples/top-down-shooter/state.js";
 
-const ASSETS_DIR = resolve(import.meta.dirname, "..", "..", "examples", "top-down-shooter", "assets");
+const ASSETS_DIR = resolve(
+	import.meta.dirname,
+	"..",
+	"..",
+	"examples",
+	"top-down-shooter",
+	"assets",
+);
 const TOTAL_FRAMES = 3600;
 const FPS = 60;
 const DURATION = TOTAL_FRAMES / FPS;

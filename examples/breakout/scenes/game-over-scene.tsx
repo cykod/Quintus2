@@ -9,13 +9,7 @@ export class GameOverScene extends Scene {
 		return (
 			<Layer fixed>
 				<Panel width={GAME_WIDTH} height={GAME_HEIGHT} backgroundColor="#0a0a2e" />
-				<Label
-					position={[cx, 200]}
-					text="Game Over"
-					fontSize={32}
-					color="#ef5350"
-					align="center"
-				/>
+				<Label position={[cx, 200]} text="Game Over" fontSize={32} color="#ef5350" align="center" />
 				<Label
 					position={[cx, 260]}
 					text={`Final Score: ${gameState.score}`}

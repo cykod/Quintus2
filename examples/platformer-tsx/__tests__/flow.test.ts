@@ -2,13 +2,11 @@ import { assertDeterministic, InputScript } from "@quintus/test";
 import { describe, expect, it } from "vitest";
 import { Player } from "../entities/player.js";
 import { Level1 } from "../scenes/level1.js";
-import { TitleScene } from "../scenes/title-scene.js";
 import {
 	loadPlatformerAssets,
 	platformerPlugins,
 	resetPlatformerState,
 	runLevel1,
-	runScene,
 } from "./helpers.js";
 
 describe("Game flow", () => {

@@ -1,9 +1,6 @@
 import { Vec2 } from "@quintus/math";
-import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
-import { InputScript } from "@quintus/test";
 import { describe, expect, it } from "vitest";
 import { Coin } from "../entities/coin.js";
-import { FlyingEnemy } from "../entities/flying-enemy.js";
 import { HealthPickup } from "../entities/health-pickup.js";
 import { LevelExit } from "../entities/level-exit.js";
 import { PatrolEnemy } from "../entities/patrol-enemy.js";
@@ -133,9 +130,6 @@ describe("Edge cases", () => {
 		player.takeDamage(3);
 		expect(player.isDead()).toBe(true);
 		expect(gameState.health).toBe(0);
-
-		const coinsBefore = gameState.coins;
-		const scoreBefore = gameState.score;
 
 		// Place a coin on the (now dead) player
 		const coin = scene.add(Coin);

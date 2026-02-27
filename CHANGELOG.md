@@ -1,3 +1,14 @@
+## Fix lint errors and configure Biome for test files
+*Friday, February 27th at 12pm*
+Fix all lint errors across the codebase: remove unused imports and variables in 
+breakout, platformer, platformer-tsx, and physics tests. Add Biome override to 
+disable noNonNullAssertion in test files so warnings surface only in production 
+code. Exclude .pnpm-store from Biome to eliminate 500+ false diagnostics. 
+Auto-fix formatting across 20 files including import ordering and line-width 
+compliance. Result: 0 errors, 37 actionable warnings, all 1862 tests passing.
+
+---
+
 ## Add @quintus/touch package with canvas scaling and touch utilities
 *Friday, February 27th at 12pm*
 Create the @quintus/touch package (Phase 1 of Mobile UI design) with core touch 

@@ -486,3 +486,27 @@
 [IMPL] fri 2/27 12am - Implement Phase C: Breakout game polish with Pickup integration, edge-case tests, and code comments
 
 [IMPL] fri 2/27 1am - Implement Phase D: Space Shooter Polish — integrate all 4 core utilities (Damageable, Bullet, WaveSpawner, Pickup), add edge-case tests, and code comments
+
+[MILE] fri 2/27 1am - Polished dungeon and breakout games with ai-prefabs Damageable and Pickup integration, 14 edge-case tests, and architectural comments
+
+[IMPL] fri 2/27 2am - Implement Phase E: Sokoban edge-case tests and code comments
+
+[IMPL] fri 2/27 2am - Implement Phase F: Top-Down Shooter polish with Damageable, Bullet, WaveSpawner, Pickup integration and edge-case tests
+
+[IMPL] fri 2/27 11am - Fix space shooter bugs from Phase D polish: bullet scene-tree error on hit and bullets facing sideways
+
+[MILE] fri 2/27 11am - Polished Sokoban with 7 edge-case tests and architectural decision comments
+
+[MILE] fri 2/27 11am - Fixed Bullet scene-tree error on collision recycle and sideways sprite rotation from fire() setting visual rotation
+
+[IMPL] fri 2/27 11am - Implement Phase G Tower Defense polish with edge-case tests and code comments
+
+[MILE] fri 2/27 11am - Polished space shooter and top-down shooter examples with ai-prefabs integration, edge-case tests, and design-decision comments
+
+[MILE] fri 2/27 12pm - Polished tower defense with Damageable mixin, WaveSpawner integration, 7 edge-case tests, and code comments
+
+[IMPL] fri 2/27 12pm - Fix any linting warnings across the codebase
+
+[MILE] fri 2/27 12pm - Added @quintus/touch package with canvas scaling, fullscreen helpers, scroll lock, touch detection, and TouchPlugin (Phase 1 of Mobile UI)
+
+[IMPL] fri 2/27 12pm - Implement Phase 2 virtual control widgets (TouchOverlay, VirtualJoystick, VirtualDPad, VirtualButton, VirtualAimStick)

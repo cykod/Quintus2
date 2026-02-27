@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PADDLE_WIDTH, PADDLE_WIDE_WIDTH } from "../config.js";
+import { PADDLE_WIDE_WIDTH, PADDLE_WIDTH } from "../config.js";
 import { Paddle } from "../entities/paddle.js";
 import { PowerUp } from "../entities/power-up.js";
 import { Level1 } from "../scenes/level1.js";

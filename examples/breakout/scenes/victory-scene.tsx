@@ -9,13 +9,7 @@ export class VictoryScene extends Scene {
 		return (
 			<Layer fixed>
 				<Panel width={GAME_WIDTH} height={GAME_HEIGHT} backgroundColor="#0a0a2e" />
-				<Label
-					position={[cx, 180]}
-					text="You Win!"
-					fontSize={36}
-					color="#81c784"
-					align="center"
-				/>
+				<Label position={[cx, 180]} text="You Win!" fontSize={36} color="#81c784" align="center" />
 				<Label
 					position={[cx, 230]}
 					text="All levels cleared!"

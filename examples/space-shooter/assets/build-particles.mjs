@@ -13,8 +13,8 @@
  */
 
 import { readdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { createRequire } from "node:module";
+import { join } from "node:path";
 
 // Load sharp from /tmp where we installed it
 const require = createRequire("/tmp/node_modules/");
@@ -29,8 +29,12 @@ const ROWS = 2;
 const SHEET_W = COLS * FRAME_SIZE;
 const SHEET_H = ROWS * FRAME_SIZE;
 
-const flashFiles = readdirSync(FLASH_DIR).filter(f => f.endsWith(".png")).sort();
-const explosionFiles = readdirSync(EXPLOSION_DIR).filter(f => f.endsWith(".png")).sort();
+const flashFiles = readdirSync(FLASH_DIR)
+	.filter((f) => f.endsWith(".png"))
+	.sort();
+const explosionFiles = readdirSync(EXPLOSION_DIR)
+	.filter((f) => f.endsWith(".png"))
+	.sort();
 
 console.log(`Flash: ${flashFiles.length} frames, Explosion: ${explosionFiles.length} frames`);
 
@@ -43,7 +47,10 @@ async function main() {
 		const resized = await sharp(src)
 			.resize(32, 32, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
 			.extend({
-				top: 16, bottom: 16, left: 16, right: 16,
+				top: 16,
+				bottom: 16,
+				left: 16,
+				right: 16,
 				background: { r: 0, g: 0, b: 0, alpha: 0 },
 			})
 			.png()
@@ -60,7 +67,10 @@ async function main() {
 	for (let i = 0; i < explosionFiles.length; i++) {
 		const src = join(EXPLOSION_DIR, explosionFiles[i]);
 		const resized = await sharp(src)
-			.resize(FRAME_SIZE, FRAME_SIZE, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+			.resize(FRAME_SIZE, FRAME_SIZE, {
+				fit: "contain",
+				background: { r: 0, g: 0, b: 0, alpha: 0 },
+			})
 			.png()
 			.toBuffer();
 
@@ -89,10 +99,14 @@ async function main() {
 	// Generate XML atlas
 	const xml = ['<TextureAtlas imagePath="particles.png">'];
 	for (let i = 0; i < 9; i++) {
-		xml.push(`\t<SubTexture name="flash${String(i).padStart(2, "0")}.png" x="${i * FRAME_SIZE}" y="0" width="${FRAME_SIZE}" height="${FRAME_SIZE}"/>`);
+		xml.push(
+			`\t<SubTexture name="flash${String(i).padStart(2, "0")}.png" x="${i * FRAME_SIZE}" y="0" width="${FRAME_SIZE}" height="${FRAME_SIZE}"/>`,
+		);
 	}
 	for (let i = 0; i < 9; i++) {
-		xml.push(`\t<SubTexture name="explosion${String(i).padStart(2, "0")}.png" x="${i * FRAME_SIZE}" y="${FRAME_SIZE}" width="${FRAME_SIZE}" height="${FRAME_SIZE}"/>`);
+		xml.push(
+			`\t<SubTexture name="explosion${String(i).padStart(2, "0")}.png" x="${i * FRAME_SIZE}" y="${FRAME_SIZE}" width="${FRAME_SIZE}" height="${FRAME_SIZE}"/>`,
+		);
 	}
 	xml.push("</TextureAtlas>");
 	writeFileSync(join(OUT_DIR, "particles.xml"), xml.join("\n") + "\n");

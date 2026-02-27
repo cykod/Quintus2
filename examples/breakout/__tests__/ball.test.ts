@@ -8,11 +8,7 @@ import { runScene } from "./helpers.js";
 
 describe("Ball", () => {
 	it("follows paddle before launch", async () => {
-		const result = await runScene(
-			Level1,
-			InputScript.create().press("right", 30),
-			0.5,
-		);
+		const result = await runScene(Level1, InputScript.create().press("right", 30), 0.5);
 		const paddle = result.game.currentScene!.findByType(Paddle);
 		const ball = result.game.currentScene!.findByType(Ball);
 		expect(ball).toBeDefined();
@@ -21,11 +17,7 @@ describe("Ball", () => {
 	});
 
 	it("launches on input", async () => {
-		const result = await runScene(
-			Level1,
-			InputScript.create().wait(6).tap("launch"),
-			0.3,
-		);
+		const result = await runScene(Level1, InputScript.create().wait(6).tap("launch"), 0.3);
 		const ball = result.game.currentScene!.findByType(Ball);
 		expect(ball!.attached).toBe(false);
 		// Ball should be moving upward
@@ -33,11 +25,7 @@ describe("Ball", () => {
 	});
 
 	it("launches at an angle from paddle", async () => {
-		const result = await runScene(
-			Level1,
-			InputScript.create().wait(6).tap("launch"),
-			0.15,
-		);
+		const result = await runScene(Level1, InputScript.create().wait(6).tap("launch"), 0.15);
 		const ball = result.game.currentScene!.findByType(Ball);
 		// Ball should launch at ~20° from vertical
 		const angle = Math.PI / 9;

@@ -1,7 +1,6 @@
 import { InputScript } from "@quintus/test";
 import { describe, expect, it } from "vitest";
 import { BRICK_COLS } from "../config.js";
-import { Brick } from "../entities/brick.js";
 import { Level1 } from "../scenes/level1.js";
 import { TitleScene } from "../scenes/title-scene.js";
 import { gameState } from "../state.js";
@@ -14,7 +13,7 @@ describe("Game flow", () => {
 	});
 
 	it("level 1 starts with correct initial state", async () => {
-		const result = await runScene(Level1, undefined, 0.1);
+		await runScene(Level1, undefined, 0.1);
 		expect(gameState.score).toBe(0);
 		expect(gameState.lives).toBe(3);
 		expect(gameState.level).toBe(1);
@@ -46,11 +45,7 @@ describe("Game flow", () => {
 	});
 
 	it("deterministic replay produces same final frame count", async () => {
-		const input = InputScript.create()
-			.wait(6)
-			.tap("launch")
-			.press("right", 60)
-			.press("left", 60);
+		const input = InputScript.create().wait(6).tap("launch").press("right", 60).press("left", 60);
 
 		const result1 = await runSceneWithSnapshots(Level1, input, 2.5);
 		const result2 = await runSceneWithSnapshots(Level1, input, 2.5);

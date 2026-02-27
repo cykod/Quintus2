@@ -1,7 +1,7 @@
 import { definePlugin, type Game, type Node2D, type Plugin } from "@quintus/core";
-import { lockScroll } from "./scroll-lock.js";
-import { requestFullscreen } from "./fullscreen.js";
 import { onInputMethodChange } from "./detect.js";
+import { requestFullscreen } from "./fullscreen.js";
+import { lockScroll } from "./scroll-lock.js";
 
 /** Configuration for the TouchPlugin. */
 export interface TouchPluginConfig {
@@ -51,10 +51,7 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 		name: "touch",
 		install(game: Game) {
 			// Resolve layout factory
-			const layout =
-				typeof config.layout === "function"
-					? config.layout(game)
-					: config.layout;
+			const layout = typeof config.layout === "function" ? config.layout(game) : config.layout;
 
 			const state: TouchState = {
 				config,
@@ -87,20 +84,22 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 				const onTouch = () => {
 					if (requested) return;
 					requested = true;
-					requestFullscreen(game.canvas).then(() => {
-						// Try to lock orientation (not in all TS type defs)
-						const orientation = config.orientation ?? "landscape";
-						if (orientation !== "any") {
-							const so = screen.orientation as ScreenOrientation & {
-								lock?: (o: string) => Promise<void>;
-							};
-							so.lock?.(orientation)?.catch(() => {
-								// Silently ignore — not all browsers support this
-							});
-						}
-					}).catch(() => {
-						// Fullscreen may be blocked by browser
-					});
+					requestFullscreen(game.canvas)
+						.then(() => {
+							// Try to lock orientation (not in all TS type defs)
+							const orientation = config.orientation ?? "landscape";
+							if (orientation !== "any") {
+								const so = screen.orientation as ScreenOrientation & {
+									lock?: (o: string) => Promise<void>;
+								};
+								so.lock?.(orientation)?.catch(() => {
+									// Silently ignore — not all browsers support this
+								});
+							}
+						})
+						.catch(() => {
+							// Fullscreen may be blocked by browser
+						});
 				};
 				game.canvas.addEventListener("touchstart", onTouch, { once: true });
 				cleanups.push(() => {

@@ -1,6 +1,6 @@
 import { Game, type GameOptions, Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
-import { TouchPlugin, getTouchState, type TouchLayout } from "./touch-plugin.js";
+import { getTouchState, type TouchLayout, TouchPlugin } from "./touch-plugin.js";
 
 function createGame(opts: Partial<GameOptions> = {}): Game {
 	const canvas = document.createElement("canvas");
@@ -29,7 +29,7 @@ describe("TouchPlugin", () => {
 		const game = createGame();
 		game.use(
 			TouchPlugin({
-				layout: (g) => ({ createControls: () => [] }),
+				layout: (_g) => ({ createControls: () => [] }),
 			}),
 		);
 		const state = getTouchState(game);

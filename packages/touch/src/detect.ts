@@ -10,9 +10,7 @@ export function isTouchDevice(): boolean {
  * Used to auto-show/hide virtual controls.
  * @returns A cleanup function that removes listeners.
  */
-export function onInputMethodChange(
-	callback: (method: "touch" | "mouse") => void,
-): () => void {
+export function onInputMethodChange(callback: (method: "touch" | "mouse") => void): () => void {
 	let current: "touch" | "mouse" | null = null;
 
 	const onPointer = (e: PointerEvent) => {

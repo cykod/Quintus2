@@ -20,7 +20,7 @@ describe("Coin", () => {
 		// Use props overload so position is set BEFORE onReady captures _baseY
 		// for the bob animation. Setting position after add() would be overwritten
 		// by Pickup's bob, which uses _baseY = position.y at onReady time.
-		const coin = scene.add(Coin, {
+		scene.add(Coin, {
 			position: new Vec2(player.position.x + 20, player.position.y),
 		});
 

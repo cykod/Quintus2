@@ -167,9 +167,7 @@ describe("CollisionObject", () => {
 
 	describe("collisionGroup default", () => {
 		it("defaults to null on base CollisionObject", () => {
-			const body = new CollisionObject() as unknown as { collisionGroup: string | null; bodyType: BodyType };
 			// TestBody overrides to "default", so test on raw CollisionObject-like
-			// Actually just create a fresh TestBody without override:
 			class BareBody extends CollisionObject {
 				readonly bodyType: BodyType = "actor";
 			}

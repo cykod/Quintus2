@@ -232,7 +232,6 @@ describe("createColliders", () => {
 			{ col: 2, row: 2, spanW: 2, spanH: 2 },
 		];
 
-		// biome-ignore lint/style/noNonNullAssertion: test setup guarantees parent
 		const colliders = createColliders(rects, 16, 16, "world", parent!, factories);
 		expect(colliders).toHaveLength(2);
 

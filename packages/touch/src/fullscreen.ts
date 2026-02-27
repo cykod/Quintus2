@@ -1,7 +1,5 @@
 /** Request fullscreen on an element. Cross-browser with Safari fallback. */
-export function requestFullscreen(
-	el: HTMLElement = document.documentElement,
-): Promise<void> {
+export function requestFullscreen(el: HTMLElement = document.documentElement): Promise<void> {
 	if (el.requestFullscreen) return el.requestFullscreen();
 	// Safari fallback
 	const webkit = el as HTMLElement & {

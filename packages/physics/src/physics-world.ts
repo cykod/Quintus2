@@ -293,7 +293,12 @@ export class PhysicsWorld {
 		if (bodyShapes.length === 0) return [];
 
 		for (const candidate of candidates) {
-			if (!this.groups.shouldCollide(body.collisionGroup as string, candidate.collisionGroup as string)) {
+			if (
+				!this.groups.shouldCollide(
+					body.collisionGroup as string,
+					candidate.collisionGroup as string,
+				)
+			) {
 				continue;
 			}
 
@@ -376,7 +381,12 @@ export class PhysicsWorld {
 			const monitorShapes = monitor.getShapeTransforms();
 
 			for (const candidate of candidates) {
-				if (!this.groups.shouldCollide(monitor.collisionGroup as string, candidate.collisionGroup as string)) {
+				if (
+					!this.groups.shouldCollide(
+						monitor.collisionGroup as string,
+						candidate.collisionGroup as string,
+					)
+				) {
 					continue;
 				}
 
@@ -1001,7 +1011,12 @@ export class PhysicsWorld {
 		let bestColliderShapeData: { shape: Shape2D; transform: Matrix2D } | null = null;
 
 		for (const candidate of candidates) {
-			if (!this.groups.shouldCollide(body.collisionGroup as string, candidate.collisionGroup as string)) {
+			if (
+				!this.groups.shouldCollide(
+					body.collisionGroup as string,
+					candidate.collisionGroup as string,
+				)
+			) {
 				continue;
 			}
 			if (candidate.bodyType === "sensor") continue;

@@ -10,8 +10,8 @@ import type { InputScript } from "@quintus/test";
 import { TestRunner } from "@quintus/test";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS } from "../config.js";
-import { gameState } from "../state.js";
 import { loadAtlases } from "../sprites.js";
+import { gameState } from "../state.js";
 
 const ASSETS_DIR = resolve(import.meta.dirname, "..", "assets");
 

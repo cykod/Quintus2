@@ -32,6 +32,18 @@
 			"semicolons": "always"
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
+					}
+				}
+			}
+		}
+	],
 	"files": {
 		"includes": [
 			"**",
@@ -41,6 +53,7 @@
 			"!**/old/**/*.json",
 			"!**/.claude",
 			"!**/coverage",
+			"!**/.pnpm-store",
 			"!docs/api",
 			"!examples/platformer/assets/*.json",
 			"!examples/platformer/tools",

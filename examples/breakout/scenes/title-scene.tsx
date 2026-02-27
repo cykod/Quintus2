@@ -9,13 +9,7 @@ export class TitleScene extends Scene {
 		return (
 			<Layer fixed>
 				<Panel width={GAME_WIDTH} height={GAME_HEIGHT} backgroundColor="#0a0a2e" />
-				<Label
-					position={[cx, 180]}
-					text="BREAKOUT"
-					fontSize={40}
-					color="#4fc3f7"
-					align="center"
-				/>
+				<Label position={[cx, 180]} text="BREAKOUT" fontSize={40} color="#4fc3f7" align="center" />
 				<Label
 					position={[cx, 230]}
 					text="A Quintus 2.0 Demo"

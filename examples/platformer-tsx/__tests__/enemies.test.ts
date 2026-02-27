@@ -63,7 +63,6 @@ describe("FlyingEnemy", () => {
 		const enemy = scene.add(FlyingEnemy);
 		enemy.position = new Vec2(100, 100);
 
-		const startY = enemy.position.y;
 		const yValues: number[] = [];
 
 		// Collect y values over 60 frames (1 second)

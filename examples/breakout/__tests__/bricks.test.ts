@@ -41,8 +41,8 @@ describe("Bricks", () => {
 
 	it("hard brick survives 1 hit, destroyed in 2", async () => {
 		const result = await runScene(Level2, undefined, 0.1);
-		const hardBrick = result.game.currentScene!
-			.findAllByType(Brick)
+		const hardBrick = result.game
+			.currentScene!.findAllByType(Brick)
 			.find((b) => b.brickType === "hard");
 		expect(hardBrick).toBeDefined();
 		expect(hardBrick!.health).toBe(2);
@@ -57,8 +57,8 @@ describe("Bricks", () => {
 
 	it("metal brick survives 2 hits, destroyed in 3", async () => {
 		const result = await runScene(Level3, undefined, 0.1);
-		const metalBrick = result.game.currentScene!
-			.findAllByType(Brick)
+		const metalBrick = result.game
+			.currentScene!.findAllByType(Brick)
 			.find((b) => b.brickType === "metal");
 		expect(metalBrick).toBeDefined();
 		expect(metalBrick!.health).toBe(3);
