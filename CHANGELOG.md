@@ -1,3 +1,16 @@
+## Add gamepad support, fullscreen HTML, and menu confirm to all examples
+*Friday, February 27th at 8pm*
+Added gamepad controller bindings to all 7 example game configs (platformer, 
+platformer-tsx, dungeon, breakout, space-shooter, sokoban, top-down-shooter), 
+with a new ui_confirm action mapped to Enter/gamepad:a/gamepad:start. Stripped 
+all 7 index.html files to minimal fullscreen canvas layout by removing titles, 
+instructions, back-links, and unnecessary CSS so the engine's scale:fit mode 
+fills the viewport. Added onFixedUpdate with isJustPressed("ui_confirm") to all 
+18 title/game-over/victory scenes so players can start and restart games with a 
+gamepad button press.
+
+---
+
 ## Add gamepad support to both shooter examples
 *Friday, February 27th at 8pm*
 Added full gamepad bindings to the space shooter and top-down shooter examples. 

@@ -64,4 +64,12 @@ export class TitleScene extends Scene {
 			</Layer>
 		);
 	}
+
+	override onFixedUpdate(_dt: number) {
+		if (this.game.input.isJustPressed("ui_confirm")) {
+			this.game.audio.play("click", { bus: "ui" });
+			gameState.reset();
+			this.switchTo("level-select");
+		}
+	}
 }

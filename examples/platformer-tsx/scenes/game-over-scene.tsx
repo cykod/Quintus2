@@ -39,4 +39,11 @@ export class GameOverScene extends Scene {
 			</Layer>
 		);
 	}
+
+	override onFixedUpdate(_dt: number) {
+		if (this.game.input.isJustPressed("ui_confirm")) {
+			gameState.reset();
+			this.switchTo("level1");
+		}
+	}
 }

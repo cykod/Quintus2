@@ -49,4 +49,5 @@ export const INPUT_BINDINGS: Record<string, string[]> = {
 	weapon1: ["Digit1", "gamepad:x"],
 	weapon2: ["Digit2", "gamepad:y"],
 	weapon3: ["Digit3", "gamepad:b"],
+	ui_confirm: ["Enter", "gamepad:a", "gamepad:start"],
 };

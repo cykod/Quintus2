@@ -54,4 +54,11 @@ export class TitleScene extends Scene {
 			this.switchTo("level1");
 		});
 	}
+
+	override onFixedUpdate(_dt: number) {
+		if (this.game.input.isJustPressed("ui_confirm")) {
+			gameState.reset();
+			this.switchTo("level1");
+		}
+	}
 }

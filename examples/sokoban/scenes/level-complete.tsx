@@ -62,4 +62,17 @@ export class LevelCompleteScene extends Scene {
 			</Layer>
 		);
 	}
+
+	override onFixedUpdate(_dt: number) {
+		if (this.game.input.isJustPressed("ui_confirm")) {
+			this.game.audio.play("click", { bus: "ui" });
+			const hasNext = gameState.currentLevel + 1 < LEVELS.length;
+			if (hasNext) {
+				gameState.currentLevel++;
+				this.switchTo("level");
+			} else {
+				this.switchTo("level-select");
+			}
+		}
+	}
 }

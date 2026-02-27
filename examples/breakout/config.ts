@@ -48,7 +48,8 @@ export const COLLISION_GROUPS: CollisionGroupsConfig = {
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	left: ["ArrowLeft", "KeyA"],
-	right: ["ArrowRight", "KeyD"],
-	launch: ["Space", "ArrowUp", "KeyW"],
+	left: ["ArrowLeft", "KeyA", "gamepad:left-stick-left", "gamepad:dpad-left"],
+	right: ["ArrowRight", "KeyD", "gamepad:left-stick-right", "gamepad:dpad-right"],
+	launch: ["Space", "ArrowUp", "KeyW", "gamepad:a"],
+	ui_confirm: ["Enter", "gamepad:a", "gamepad:start"],
 };

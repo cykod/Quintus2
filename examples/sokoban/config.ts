@@ -17,4 +17,5 @@ export const INPUT_BINDINGS: Record<string, string[]> = {
 	undo: ["KeyZ", "KeyU", "gamepad:b"],
 	reset: ["KeyR", "gamepad:y"],
 	menu: ["Escape", "gamepad:start"],
+	ui_confirm: ["Enter", "gamepad:a", "gamepad:start"],
 };

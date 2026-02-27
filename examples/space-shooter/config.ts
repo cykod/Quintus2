@@ -60,4 +60,5 @@ export const INPUT_BINDINGS: Record<string, string[]> = {
 	up: ["ArrowUp", "KeyW", "gamepad:left-stick-up", "gamepad:dpad-up"],
 	down: ["ArrowDown", "KeyS", "gamepad:left-stick-down", "gamepad:dpad-down"],
 	fire: ["Space", "gamepad:a", "gamepad:rt"],
+	ui_confirm: ["Enter", "gamepad:a", "gamepad:start"],
 };

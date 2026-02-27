@@ -10,12 +10,13 @@ export const COLLISION_GROUPS: CollisionGroupsConfig = {
 };
 
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	left: ["ArrowLeft", "KeyA"],
-	right: ["ArrowRight", "KeyD"],
-	up: ["ArrowUp", "KeyW"],
-	down: ["ArrowDown", "KeyS"],
-	attack: ["KeyJ", "Space"],
-	defend: ["KeyK", "ShiftLeft"],
-	interact: ["KeyE", "Enter"],
-	use_potion: ["KeyQ", "KeyP"],
+	left: ["ArrowLeft", "KeyA", "gamepad:left-stick-left", "gamepad:dpad-left"],
+	right: ["ArrowRight", "KeyD", "gamepad:left-stick-right", "gamepad:dpad-right"],
+	up: ["ArrowUp", "KeyW", "gamepad:left-stick-up", "gamepad:dpad-up"],
+	down: ["ArrowDown", "KeyS", "gamepad:left-stick-down", "gamepad:dpad-down"],
+	attack: ["KeyJ", "Space", "gamepad:a"],
+	defend: ["KeyK", "ShiftLeft", "gamepad:lb"],
+	interact: ["KeyE", "Enter", "gamepad:x"],
+	use_potion: ["KeyQ", "KeyP", "gamepad:rb"],
+	ui_confirm: ["Enter", "gamepad:a", "gamepad:start"],
 };
