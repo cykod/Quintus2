@@ -536,3 +536,7 @@
 [IMPL] fri 2/27 6pm - Fix mobile touch controls so sliding between directional arrows properly releases the previous direction and activates the new one
 
 [ASKS] fri 2/27 8pm - Research how to add gamepad support to the twin stick shooter example
+
+[MILE] fri 2/27 8pm - Added gamepad support to both shooter examples with twin-stick aiming and analog movement
+
+[MILE] fri 2/27 8pm - Added gamepad bindings, fullscreen HTML, and ui_confirm menu support to all 7 example games

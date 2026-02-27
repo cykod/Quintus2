@@ -257,6 +257,66 @@ describe("TouchOverlay", () => {
 		removeSpy.mockRestore();
 	});
 
+	it("sliding from one button to another releases old and presses new", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump) at (700, 500)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+		expect(input.isPressed("fire")).toBe(false);
+
+		// Slide finger to button B (fire) at (700, 400)
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 700, clientY: 400, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+		expect(input.isPressed("fire")).toBe(true);
+	});
+
+	it("sliding off a button into dead zone releases the button", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Slide to dead zone (far from both buttons)
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 100, clientY: 100, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+		expect(input.isPressed("fire")).toBe(false);
+	});
+
+	it("sliding within the same button does not release it", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Move slightly within the same button
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 710, clientY: 510, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+	});
+
 	it("clears pointer tracking on exit tree", () => {
 		const { game, input, scene } = setup();
 		const canvas = game.canvas;

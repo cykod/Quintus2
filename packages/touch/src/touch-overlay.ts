@@ -48,10 +48,34 @@ export class TouchOverlay extends Node2D {
 
 		this._onPointerMove = (e: PointerEvent) => {
 			if (e.pointerType !== "touch") return;
-			const control = this._pointers.get(e.pointerId);
-			if (!control) return;
+			const current = this._pointers.get(e.pointerId);
+			if (!current) return;
 			const pos = this._toLocal(e);
-			control._onTouchMove(pos.x, pos.y);
+
+			// If pointer is still inside the current control, forward the move
+			if (current.containsPoint(pos.x, pos.y)) {
+				current._onTouchMove(pos.x, pos.y);
+				e.stopImmediatePropagation();
+				e.preventDefault();
+				return;
+			}
+
+			// Pointer slid outside current control — release it
+			current._onTouchEnd();
+
+			// Check if pointer entered a different control
+			for (const control of this.controls) {
+				if (control !== current && control.containsPoint(pos.x, pos.y)) {
+					this._pointers.set(e.pointerId, control);
+					control._onTouchStart(pos.x, pos.y);
+					e.stopImmediatePropagation();
+					e.preventDefault();
+					return;
+				}
+			}
+
+			// Pointer is in dead zone — untrack it
+			this._pointers.delete(e.pointerId);
 			e.stopImmediatePropagation();
 			e.preventDefault();
 		};
