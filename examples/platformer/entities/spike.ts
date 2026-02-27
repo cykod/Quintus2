@@ -15,9 +15,11 @@ export class Spike extends Sensor {
 		sprite.spriteSheet = entitySheet;
 		sprite.play("spike");
 
+		// Damageable's invincibility window naturally prevents repeated damage
+		// from consecutive spike overlaps — no manual cooldown needed.
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
-				(body as Player).takeDamage();
+				(body as Player).takeDamage(1);
 			}
 		});
 	}

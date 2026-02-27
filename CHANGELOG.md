@@ -1,3 +1,14 @@
+## Polish platformer edge-case tests and add design-decision comments
+*Friday, February 27th at 12am*
+Expands Phase 8A platformer polish with a reusable TestArena test helper, five 
+focused test files (player, enemies, pickups, edge-cases, flow) totaling 31 
+passing tests, and inline comments explaining why specific entities do or don't 
+use the Damageable/Pickup ai-prefabs utilities. Also fixes a subtle double-jump 
+reset ordering bug where the floor check now runs before the jump input check 
+so a grounded jump can re-enable double-jump in the same frame.
+
+---
+
 ## Make TMX a built-in asset type in AssetLoader
 *Friday, February 27th at 12am*
 Added "tmx" as a first-class asset type in AssetLoader alongside images, json, 

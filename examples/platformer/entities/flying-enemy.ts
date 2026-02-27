@@ -5,6 +5,9 @@ import { Ease } from "@quintus/tween";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
+// FlyingEnemy does NOT use the Damageable mixin for the same reasons as
+// PatrolEnemy: 1 HP, custom death animation, private _playDeathEffect.
+// Sine-wave velocity: velocity(t) = A·ω·cos(ωt) where ω = 2π·frequency.
 export class FlyingEnemy extends Actor {
 	speed = 50;
 	amplitude = 30;

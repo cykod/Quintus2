@@ -3,6 +3,8 @@ import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
+// nextScene is set externally by the Level scene after spawning from the object
+// layer. The scene transition happens synchronously in the bodyEntered callback.
 export class LevelExit extends Sensor {
 	override collisionGroup = "items";
 	nextScene = "";

@@ -1,47 +1,45 @@
-import { CollisionShape, Sensor, Shape } from "@quintus/physics";
+import { Pickup } from "@quintus/ai-prefabs";
+import type { Actor } from "@quintus/physics";
+import { CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
-import { Ease } from "@quintus/tween";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
-export class Coin extends Sensor {
+// Coin uses the Pickup base class from @quintus/ai-prefabs which provides:
+// - Sine-wave bob animation (replaces repeating tween)
+// - Tag-based collection with double-collect guard
+// - Pop scale effect + self-destruction on collect
+// Coin only adds game-specific scoring, audio, and a sprite fade.
+export class Coin extends Pickup {
 	override collisionGroup = "items";
 
 	private _sprite!: AnimatedSprite;
 
+	constructor() {
+		super();
+		this.collectTag = "player";
+		this.bobAmount = 2; // ±2 px oscillation (4 px total range, matching original tween)
+		this.bobSpeed = 1.6; // 1.6 s full sine cycle ≈ original 0.8 s × 2 tween legs
+		this.popScale = 1.8;
+		this.popDuration = 0.2;
+	}
+
 	override onReady() {
-		super.onReady();
+		super.onReady(); // Pickup wires bodyEntered + stores baseY for bob
 		this.add(CollisionShape).shape = Shape.circle(4);
 		this.tag("coin");
 
 		this._sprite = this.add(AnimatedSprite);
 		this._sprite.spriteSheet = entitySheet;
 		this._sprite.play("coin_idle");
-
-		// Float animation
-		const baseY = this.position.y;
-		this.tween()
-			.to({ position: { y: baseY - 4 } }, 0.8, Ease.sineInOut)
-			.to({ position: { y: baseY } }, 0.8, Ease.sineInOut)
-			.repeat();
-
-		this.bodyEntered.connect((body) => {
-			if (body.hasTag("player")) this._collect();
-		});
 	}
 
-	private _collect() {
+	protected override onCollect(_collector: Actor): void {
 		gameState.coins++;
 		gameState.score += 10;
 		this.game?.audio.play("coin", { bus: "sfx" });
-
-		// Pop + fade effect (scale cascades to sprite child)
-		this.killTweens();
-		this.tween()
-			.to({ scale: { x: 1.8, y: 1.8 } }, 0.2, Ease.backOut)
-			.onComplete(() => this.destroy());
-
+		// Fade sprite alongside Pickup's pop scale effect
 		this._sprite.killTweens();
-		this._sprite.tween().to({ alpha: 0 }, 0.2, Ease.backOut);
+		this._sprite.tween().to({ alpha: 0 }, this.popDuration);
 	}
 }
