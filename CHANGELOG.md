@@ -1,3 +1,17 @@
+## Add virtual control widgets to @quintus/touch
+*Friday, February 27th at 1pm*
+Implement Phase 2 of the Mobile Touch UI: virtual control widgets that inject 
+actions into the Input system for zero-code mobile support. Adds VirtualButton 
+(circular hold button), VirtualJoystick (analog stick with dead zone), 
+VirtualDPad (4-way with 1-frame release delay for quick taps), VirtualAimStick 
+(twin-stick aiming with mouse position control), and TouchOverlay (multi-touch 
+dispatcher tracking pointer-to-control mapping). The TouchPlugin now 
+creates/destroys overlays on scene switches and toggles visibility based on 
+input method detection. Includes 32 new tests covering injection, hit testing, 
+multi-touch dispatch, and draw callbacks.
+
+---
+
 ## Fix lint errors and configure Biome for test files
 *Friday, February 27th at 12pm*
 Fix all lint errors across the codebase: remove unused imports and variables in 
