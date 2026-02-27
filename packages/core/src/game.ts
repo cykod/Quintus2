@@ -23,7 +23,7 @@ export interface GameOptions {
 	width: number;
 	/** Canvas height in pixels. */
 	height: number;
-	/** How to fit the canvas to the page. Default: "fit". */
+	/** How to fit the canvas to the page. Default: "fixed". */
 	scale?: "fit" | "fixed";
 	/** Enable pixel-art rendering (disables image smoothing). Default: false. */
 	pixelArt?: boolean;
@@ -123,6 +123,11 @@ export class Game {
 
 		if (this.pixelArt) {
 			this.canvas.style.imageRendering = "pixelated";
+		}
+
+		// Canvas scaling
+		if (typeof window !== "undefined") {
+			this._setupScaling(options.scale ?? "fixed");
 		}
 
 		// RNG
@@ -409,6 +414,49 @@ export class Game {
 		if (this._currentScene?._processDestroyQueue()) {
 			this.renderer?.markRenderDirty();
 		}
+	}
+
+	/** Set up CSS-based canvas scaling. */
+	private _setupScaling(mode: "fit" | "fixed"): void {
+		if (mode === "fixed") return;
+
+		const canvas = this.canvas;
+		const aspect = this.width / this.height;
+
+		canvas.style.touchAction = "none";
+
+		const resize = () => {
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+			const windowAspect = vw / vh;
+
+			let cssWidth: number;
+			let cssHeight: number;
+
+			if (windowAspect > aspect) {
+				// Window is wider than game — fit to height
+				cssHeight = vh;
+				cssWidth = vh * aspect;
+			} else {
+				// Window is taller than game — fit to width
+				cssWidth = vw;
+				cssHeight = vw / aspect;
+			}
+
+			canvas.style.width = `${cssWidth}px`;
+			canvas.style.height = `${cssHeight}px`;
+			canvas.style.position = "absolute";
+			canvas.style.left = `${(vw - cssWidth) / 2}px`;
+			canvas.style.top = `${(vh - cssHeight) / 2}px`;
+		};
+
+		resize();
+		window.addEventListener("resize", resize);
+		window.addEventListener("orientationchange", () => setTimeout(resize, 100));
+
+		this.stopped.connect(() => {
+			window.removeEventListener("resize", resize);
+		});
 	}
 
 	/** Draw "PAUSED [frame N]" overlay on canvas when paused in debug mode. */

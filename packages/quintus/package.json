@@ -39,6 +39,7 @@
 		"@quintus/camera": "workspace:*",
 		"@quintus/tween": "workspace:*",
 		"@quintus/audio": "workspace:*",
+		"@quintus/touch": "workspace:*",
 		"@quintus/ui": "workspace:*"
 	},
 	"license": "SEE LICENSE IN LICENSE.md",

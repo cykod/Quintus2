@@ -1,0 +1,42 @@
+{
+	"name": "@quintus/touch",
+	"version": "0.0.0",
+	"description": "Mobile touch UI — virtual joysticks, D-pads, buttons, fullscreen, scroll prevention",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch"
+	},
+	"keywords": [
+		"game-engine",
+		"quintus",
+		"html5",
+		"2d",
+		"touch",
+		"mobile"
+	],
+	"dependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/math": "workspace:*",
+		"@quintus/input": "workspace:*"
+	},
+	"license": "SEE LICENSE IN LICENSE.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/cykod/Quintus",
+		"directory": "packages/touch"
+	}
+}

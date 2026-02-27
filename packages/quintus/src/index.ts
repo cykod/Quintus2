@@ -6,5 +6,6 @@ export * from "@quintus/math";
 export * from "@quintus/physics";
 export * from "@quintus/sprites";
 export * from "@quintus/tilemap";
+export * from "@quintus/touch";
 export * from "@quintus/tween";
 export * from "@quintus/ui";

@@ -197,6 +197,9 @@ importers:
       '@quintus/tilemap':
         specifier: workspace:*
         version: link:../tilemap
+      '@quintus/touch':
+        specifier: workspace:*
+        version: link:../touch
       '@quintus/tween':
         specifier: workspace:*
         version: link:../tween
@@ -249,6 +252,18 @@ importers:
       '@quintus/physics':
         specifier: workspace:*
         version: link:../physics
+
+  packages/touch:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/input':
+        specifier: workspace:*
+        version: link:../input
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/tween:
     dependencies:

@@ -1,3 +1,15 @@
+## Add @quintus/touch package with canvas scaling and touch utilities
+*Friday, February 27th at 12pm*
+Create the @quintus/touch package (Phase 1 of Mobile UI design) with core touch 
+infrastructure: canvas scale: fit letterboxing in Game, cross-browser 
+fullscreen helpers with Safari fallback, scroll/zoom prevention via 
+lockScroll(), touch device detection with dynamic input method switching, and a 
+TouchPlugin using the WeakMap plugin pattern with scroll lock, 
+fullscreen-on-first-touch, and scene switch hooks. Includes 31 new tests across 
+5 test files and wires the package into the quintus meta-package.
+
+---
+
 ## Polish tower defense with ai-prefabs integration
 *Friday, February 27th at 12pm*
 Integrate Damageable mixin on PathFollower (replacing hand-rolled damage/death 
