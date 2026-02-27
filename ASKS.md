@@ -472,3 +472,17 @@
 [IMPL] thu 2/26 9pm - Find and remove all mentions of addChild, replacing with add — addChild should be fully removed, not just deprecated
 
 [MILE] thu 2/26 9pm - Removed deprecated addChild method entirely, replacing all call sites with add across 43 files
+
+[MILE] thu 2/26 11pm - Integrated ai-prefabs Damageable and Pickup into platformer-tsx with 24 edge-case tests and a double-jump bug fix
+
+[IMPL] thu 2/26 11pm - Implement Phase 1 of mobile touch UI — core touch infrastructure (scaling, fullscreen, scroll prevention, multi-touch)
+
+[IMPL] fri 2/27 12am - Implement Phase 8B dungeon polish — integrate ai-prefabs utilities, add edge-case tests, add comments
+
+[MILE] fri 2/27 12am - Made TMX a built-in asset type in AssetLoader, removing duplicate loader registrations from four example games
+
+[MILE] fri 2/27 12am - Polished platformer Phase 8A with expanded test helpers, five focused test files (31 tests), design-decision comments, and a double-jump reset ordering fix
+
+[IMPL] fri 2/27 12am - Implement Phase C: Breakout game polish with Pickup integration, edge-case tests, and code comments
+
+[IMPL] fri 2/27 1am - Implement Phase D: Space Shooter Polish — integrate all 4 core utilities (Damageable, Bullet, WaveSpawner, Pickup), add edge-case tests, and code comments

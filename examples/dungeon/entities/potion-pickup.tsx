@@ -1,12 +1,19 @@
-import { CollisionShape, Sensor, Shape } from "@quintus/physics";
+import { Pickup } from "@quintus/ai-prefabs";
+import type { Actor } from "@quintus/physics";
+import { CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
-import { Ease } from "@quintus/tween";
 import { showToast } from "../hud/toast.js";
 import { entitySheet } from "../sprites.js";
 import { gameState, POTIONS } from "../state.js";
 
-export class PotionPickup extends Sensor {
+// Pickup base replaces hand-rolled bob animation, bodyEntered listener, and collection logic.
+// It provides: sine-based bobbing (bobAmount/bobSpeed), single-collection guard (_collected),
+// bodyEntered → onCollect() dispatch, and a pop scale+destroy effect on collection.
+export class PotionPickup extends Pickup {
 	override collisionGroup = "items";
+	override collectTag = "player";
+	override bobAmount = 3;
+	override bobSpeed = 1.6;
 	potionType: "health" | "speed" | "attack" = "health";
 
 	sprite?: AnimatedSprite;
@@ -24,22 +31,9 @@ export class PotionPickup extends Sensor {
 	override onReady() {
 		super.onReady();
 		this.tag("potion");
-
-		// Bobbing float animation
-		this.sprite
-			?.tween()
-			.to({ position: { y: -3 } }, 0.8, Ease.sineInOut)
-			.to({ position: { y: 0 } }, 0.8, Ease.sineInOut)
-			.repeat();
-
-		this.bodyEntered.connect((body) => {
-			if (body.hasTag("player")) {
-				this._collect();
-			}
-		});
 	}
 
-	private _collect(): void {
+	protected override onCollect(_collector: Actor): void {
 		const potion = POTIONS.find((p) => p.type === this.potionType);
 		if (!potion) return;
 		const scene = this.scene;
@@ -48,15 +42,10 @@ export class PotionPickup extends Sensor {
 		this.game.audio.play("pickup", { volume: 0.5 });
 		showToast(scene, `Got ${potion.name}! [Q to use]`);
 
-		// Float up + fade effect
-		this.killTweens();
-		this.tween()
-			.to({ position: { y: this.position.y - 16 } }, 0.3, Ease.quadOut)
-			.onComplete(() => this.destroy());
-
+		// Fade sprite alongside Pickup's pop effect
 		if (this.sprite) {
 			this.sprite.killTweens();
-			this.sprite.tween().to({ alpha: 0 }, 0.3, Ease.quadOut);
+			this.sprite.tween().to({ alpha: 0 }, this.popDuration);
 		}
 	}
 

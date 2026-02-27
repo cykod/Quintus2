@@ -1,3 +1,19 @@
+## Polish dungeon and breakout games with ai-prefabs integration
+*Friday, February 27th at 1am*
+Integrate ai-prefabs utilities into two example games as part of Phase 9 
+polish. Dungeon (8B): refactor Player and BaseEnemy to use the Damageable 
+mixin, replace PotionPickup's hand-rolled bob/collection with the Pickup base 
+class, and add 7 edge-case tests plus architectural comments at 4 decision 
+points. Breakout (8C): refactor PowerUp to extend Pickup with falling-pickup 
+pattern (bobAmount=0, collectTag="paddle"), add paddle tagging, and add 7 
+edge-case tests covering ball physics corner cases (brick seam hits, paddle 
+edge angles, multi-ball life deduction, narrow gap resolution) plus 
+design-decision comments on ball reflection math, attachment state machine, and 
+power-up timer management. All 1824 engine tests and 32 breakout-specific tests 
+pass.
+
+---
+
 ## Polish platformer edge-case tests and add design-decision comments
 *Friday, February 27th at 12am*
 Expands Phase 8A platformer polish with a reusable TestArena test helper, five 

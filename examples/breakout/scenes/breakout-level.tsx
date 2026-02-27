@@ -180,6 +180,17 @@ export abstract class BreakoutLevel extends Scene {
 		powerUp.collected.connect(() => this._activatePowerUp(type));
 	}
 
+	/**
+	 * Power-up state management:
+	 * - "wide" and "speed" use independent fire-and-forget timers. Collecting
+	 *   a second pickup starts a new timer without cancelling the first, so
+	 *   the first timer may expire while the second is still running. This
+	 *   trades perfect timer-extension behavior for simplicity.
+	 * - "multi" is additive: each collection spawns 2 new balls regardless
+	 *   of how many are already in play.
+	 * - "speed" only affects balls that exist at the time of collection —
+	 *   balls spawned later via multi-ball will have the default multiplier.
+	 */
 	private _activatePowerUp(type: PowerUpType): void {
 		this.game.audio.play("powerup");
 

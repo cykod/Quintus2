@@ -4,6 +4,11 @@ import { gameState } from "../state.js";
 /**
  * Standalone node that ticks down active buff timers each frame.
  * Exposes multiplier getters for Player and other consumers.
+ *
+ * This is a separate Node (not part of Player) because buff timers are global
+ * game state that persists across player death/respawn. Putting it in the scene
+ * tree ensures it participates in the game loop without coupling it to the
+ * player entity's lifecycle.
  */
 export class BuffManager extends Node {
 	override onFixedUpdate(dt: number): void {

@@ -1,4 +1,4 @@
-import { type Signal, signal } from "@quintus/core";
+import { Damageable } from "@quintus/ai-prefabs";
 import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
@@ -18,7 +18,18 @@ const DIRECTION_VECTORS: Record<Direction, Vec2> = {
 	right: new Vec2(1, 0),
 };
 
-export class Player extends Actor {
+// Damageable mixin replaces hand-rolled health / invincibility / damage signals.
+// It provides: health, maxHealth, damaged, died signals, takeDamage(amount),
+// heal(amount), isDead(), isInvincible(), and invincibility timer management.
+// deathTween: false — dungeon manages death externally via DungeonLevel._onPlayerDied()
+// (0.5s delay + scene switch), so the mixin must not destroy the player on death.
+const DamageableActor = Damageable(Actor, {
+	maxHealth: 3,
+	invincibilityDuration: 1.5,
+	deathTween: false,
+});
+
+export class Player extends DamageableActor {
 	speed = 80;
 	override collisionGroup = "player";
 	override solid = true;
@@ -29,10 +40,7 @@ export class Player extends Actor {
 	override upDirection = Vec2.ZERO;
 
 	direction: Direction = "down";
-	invincibilityDuration = 1.5;
 
-	private _invincible = false;
-	private _invincibleTimer = 0;
 	private _bobTimer = 0;
 	private _moving = false;
 
@@ -45,9 +53,6 @@ export class Player extends Actor {
 	sprite?: AnimatedSprite;
 	weapon?: EquippedWeapon;
 	shield?: EquippedShield;
-
-	readonly damaged: Signal<number> = signal<number>();
-	readonly died: Signal<void> = signal<void>();
 
 	override build() {
 		return (
@@ -67,6 +72,9 @@ export class Player extends Actor {
 	override onReady() {
 		super.onReady();
 		this.tag("player");
+
+		// Sync mixin's initial health → reactive gameState so HUD starts correct
+		gameState.health = this.health;
 
 		// React to equipment changes from chests
 		gameState.on("shield").connect(({ value }) => {
@@ -88,6 +96,10 @@ export class Player extends Actor {
 	override onFixedUpdate(dt: number) {
 		const sprite = this.sprite;
 		if (!sprite) return;
+
+		// Damageable mixin ticks the invincibility timer in super.onFixedUpdate
+		super.onFixedUpdate(dt);
+
 		const input = this.game.input;
 
 		// Attack cooldown
@@ -168,18 +180,15 @@ export class Player extends Actor {
 			sprite.position.y = 0;
 		}
 
-		// Invincibility timer + blink effect
-		if (this._invincible) {
-			this._invincibleTimer -= dt;
-			sprite.alpha = Math.sin(this._invincibleTimer * 20) > 0 ? 0.3 : 1;
-			if (this._invincibleTimer <= 0) {
-				this._invincible = false;
-				sprite.alpha = 1;
-			}
+		// Invincibility blink effect — uses isInvincible() from Damageable mixin.
+		// We use game.elapsed for the oscillation since the mixin's timer is private.
+		// sin(elapsed * 20) produces ~3 Hz flicker, matching the original visual.
+		if (this.isInvincible()) {
+			sprite.alpha = Math.sin(this.game.elapsed * 20) > 0 ? 0.3 : 1;
 		}
 
 		// Restore sprite alpha when buff expires
-		if (!this._invincible && !gameState.activeBuff && sprite.alpha < 1) {
+		if (!this.isInvincible() && !gameState.activeBuff && sprite.alpha < 1) {
 			sprite.alpha = 1;
 		}
 	}
@@ -211,7 +220,9 @@ export class Player extends Actor {
 		this.game.audio.play("use-potion", { volume: 0.5 });
 		switch (potion.type) {
 			case "health":
-				gameState.health = Math.min(gameState.health + potion.value, gameState.maxHealth);
+				// Use mixin's heal() to keep this.health and gameState in sync
+				this.heal(potion.value);
+				gameState.health = this.health;
 				showToast(scene, `Used ${potion.name}! (+${potion.value} HP)`);
 				break;
 			case "speed":
@@ -229,8 +240,11 @@ export class Player extends Actor {
 		}
 	}
 
+	// Override takeDamage with fromDirection parameter for knockback.
+	// The mixin's takeDamage only takes amount; the dungeon extends the signature
+	// because top-down combat needs directional knockback.
 	takeDamage(amount: number, fromDirection?: Vec2): void {
-		if (this._invincible) return;
+		if (this.health <= 0 || this.isInvincible()) return;
 
 		// Defending with a shield blocks all damage
 		if (this._defending && gameState.shield) {
@@ -238,14 +252,7 @@ export class Player extends Actor {
 			return;
 		}
 
-		const finalAmount = amount;
 		this.game.audio.play("player-hurt", { volume: 0.6 });
-
-		gameState.health -= finalAmount;
-		this._invincible = true;
-		this._invincibleTimer = this.invincibilityDuration;
-
-		this.damaged.emit(gameState.health);
 
 		// Knockback
 		if (fromDirection) {
@@ -254,13 +261,20 @@ export class Player extends Actor {
 			this.velocity.y = kb.y;
 		}
 
-		if (gameState.health <= 0) {
+		// Bypass mixin's takeDamage for lethal hits to prevent auto-destroy.
+		// DungeonLevel manages death via _onPlayerDied() (0.5s delay + scene switch),
+		// so we emit the signals manually without triggering _playDeathEffect().
+		if (this.health <= amount) {
+			this.health = 0;
+			gameState.health = 0;
+			this.damaged.emit(0);
 			this.died.emit();
+			return;
 		}
-	}
 
-	get isInvincible(): boolean {
-		return this._invincible;
+		// Non-lethal: delegate to mixin (health decrement, damaged signal, invincibility)
+		super.takeDamage(amount);
+		gameState.health = this.health;
 	}
 
 	get isDefending(): boolean {

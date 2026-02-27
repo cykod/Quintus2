@@ -53,7 +53,11 @@ export class EquippedWeapon extends Node2D {
 			});
 	}
 
-	/** Position weapon based on facing direction (at rest). */
+	/**
+	 * Position weapon based on facing direction (at rest).
+	 * Offset: x = ±6 mirrors the weapon to the character's front side,
+	 * y = 2 aligns the weapon hilt with the character's hand height.
+	 */
 	updateResting(_direction: Direction, flipH: boolean): void {
 		if (this._swinging) return;
 		this.position.x = flipH ? -6 : 6;

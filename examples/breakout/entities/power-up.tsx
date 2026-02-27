@@ -1,5 +1,5 @@
-import { type Signal, signal } from "@quintus/core";
-import { type CollisionObject, CollisionShape, Sensor, Shape } from "@quintus/physics";
+import { Pickup } from "@quintus/ai-prefabs";
+import { CollisionShape, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import { GAME_HEIGHT, POWERUP_FALL_SPEED, POWERUP_SIZE } from "../config.js";
 import { COIN_SCALE, coinsAtlas, FRAME } from "../sprites.js";
@@ -12,13 +12,12 @@ const POWERUP_FRAMES: Record<PowerUpType, string> = {
 	speed: FRAME.COIN_BRONZE,
 };
 
-export class PowerUp extends Sensor {
+export class PowerUp extends Pickup {
 	override collisionGroup = "powerup";
+	override collectTag = "paddle";
+	override bobAmount = 0;
 
 	powerUpType: PowerUpType = "wide";
-
-	/** Emitted when the power-up is collected by the paddle. */
-	readonly collected: Signal<void> = signal<void>();
 
 	override build() {
 		const frame = POWERUP_FRAMES[this.powerUpType];
@@ -34,18 +33,9 @@ export class PowerUp extends Sensor {
 		);
 	}
 
-	override onReady() {
-		super.onReady();
-		// Detect paddle overlap
-		this.bodyEntered.connect((body: CollisionObject) => {
-			if (body.collisionGroup === "paddle") {
-				this.collected.emit();
-				this.destroy();
-			}
-		});
-	}
-
 	override onFixedUpdate(dt: number) {
+		super.onFixedUpdate(dt);
+
 		// Manual downward movement (Sensors don't use move())
 		this.position._set(this.position.x, this.position.y + POWERUP_FALL_SPEED * dt);
 

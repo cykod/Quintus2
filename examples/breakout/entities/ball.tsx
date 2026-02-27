@@ -51,7 +51,15 @@ export class Ball extends Actor {
 		);
 	}
 
-	/** Attach ball to paddle (pre-launch mode). */
+	/**
+	 * Ball attachment state machine:
+	 * - Attached: ball tracks paddle's x-position, sitting just above it.
+	 *   Waits for explicit "launch" input or an auto-launch timer to expire.
+	 * - Launch: detaches, sets initial velocity at ~20° from vertical for
+	 *   natural breakout gameplay (straight-up launches feel unresponsive).
+	 * - Free flight: `_moveWithReflection()` handles movement, bouncing off
+	 *   surfaces, and death-zone detection when the ball falls off-screen.
+	 */
 	attachToPaddle(paddle: Paddle): void {
 		this._paddle = paddle;
 		this._attached = true;
@@ -101,6 +109,20 @@ export class Ball extends Actor {
 		this.velocity = new Vec2(Math.sin(angle) * BALL_SPEED, -Math.cos(angle) * BALL_SPEED);
 	}
 
+	/**
+	 * Continuous collision resolution with multi-bounce.
+	 *
+	 * Uses the standard dot-product reflection formula: v' = v - 2(v·n)n
+	 * where v is the incoming velocity and n is the surface normal.
+	 *
+	 * The remainder vector (unconsumed motion after a collision) is also
+	 * reflected so the ball continues along the correct trajectory within
+	 * the same frame — this prevents "tunneling" through thin surfaces.
+	 *
+	 * MAX_BOUNCES (default 4) caps the loop iterations to prevent infinite
+	 * loops in degenerate cases (e.g., ball wedged between two surfaces
+	 * whose normals point at each other, causing endless reflections).
+	 */
 	private _moveWithReflection(dt: number): void {
 		const speed = this.speedMultiplier;
 		let motion = new Vec2(this.velocity.x * dt * speed, this.velocity.y * dt * speed);

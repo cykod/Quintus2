@@ -4,6 +4,10 @@ import { Ease } from "@quintus/tween";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
+// HealthPickup does NOT extend Pickup because it has conditional collection:
+// it only collects when health < maxHealth. Pickup's bodyEntered handler is
+// unconditional (collect on any tagged Actor overlap), so using it would require
+// overriding the guard logic. Keeping HealthPickup as a manual Sensor is simpler.
 export class HealthPickup extends Sensor {
 	override collisionGroup = "items";
 

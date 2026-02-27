@@ -52,7 +52,11 @@ export class EquippedShield extends Node2D {
 		this.tween().to({ position: { x: this._restX, y: this._restY } }, 0.1, Ease.quadOut);
 	}
 
-	/** Position shield based on facing direction (at rest). */
+	/**
+	 * Position shield based on facing direction (at rest).
+	 * Offset: x = ±5 mirrors the shield to the character's off-hand side
+	 * (opposite the weapon), y = 2 aligns with the hand height.
+	 */
 	updateResting(_direction: Direction, flipH: boolean): void {
 		if (this._raised) return;
 		this._restX = flipH ? 5 : -5;

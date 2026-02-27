@@ -29,6 +29,11 @@ export class Paddle extends Actor {
 	/** Emitted when paddle width changes. */
 	readonly widthChanged: Signal<boolean> = signal<boolean>();
 
+	override onReady() {
+		super.onReady();
+		this.tag("paddle");
+	}
+
 	override build() {
 		return (
 			<>
