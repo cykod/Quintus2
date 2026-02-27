@@ -53,7 +53,7 @@ export function createMockAudioContext(state = "running"): MockAudioContext {
 	const gains: MockGainNode[] = [];
 	const sources: MockSourceNode[] = [];
 
-	return {
+	const ctx: MockAudioContext = {
 		state,
 		destination: {},
 		createGain: vi.fn(() => {
@@ -66,11 +66,15 @@ export function createMockAudioContext(state = "running"): MockAudioContext {
 			sources.push(s);
 			return s;
 		}),
-		resume: vi.fn(() => Promise.resolve()),
+		resume: vi.fn(() => {
+			ctx.state = "running";
+			return Promise.resolve();
+		}),
 		suspend: vi.fn(() => Promise.resolve()),
 		close: vi.fn(() => Promise.resolve()),
 		decodeAudioData: vi.fn((buf: ArrayBuffer) => Promise.resolve(buf)),
 		_gains: gains,
 		_sources: sources,
 	};
+	return ctx;
 }

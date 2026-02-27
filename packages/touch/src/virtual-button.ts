@@ -7,6 +7,8 @@ export interface VirtualButtonConfig {
 	radius?: number;
 	action: string;
 	label?: string;
+	/** Icon character (emoji/unicode) rendered larger than label. Takes priority over label. */
+	icon?: string;
 	color?: Color;
 }
 
@@ -18,6 +20,7 @@ export class VirtualButton extends VirtualControl {
 	readonly action: string;
 	readonly radius: number;
 	readonly label: string;
+	readonly icon: string;
 	readonly color: Color;
 	private _pressed = false;
 
@@ -27,6 +30,7 @@ export class VirtualButton extends VirtualControl {
 		this.radius = config.radius ?? 30;
 		this.action = config.action;
 		this.label = config.label ?? "";
+		this.icon = config.icon ?? "";
 		this.color = config.color ?? Color.WHITE;
 	}
 
@@ -62,7 +66,14 @@ export class VirtualButton extends VirtualControl {
 			stroke: this.color,
 			strokeWidth: 2,
 		});
-		if (this.label) {
+		if (this.icon) {
+			ctx.text(this.icon, center, {
+				color: this.color,
+				size: this.radius * 0.8,
+				align: "center",
+				baseline: "middle",
+			});
+		} else if (this.label) {
 			ctx.text(this.label, center, {
 				color: this.color,
 				size: 14,

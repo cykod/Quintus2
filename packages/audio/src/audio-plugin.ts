@@ -25,7 +25,7 @@ export function AudioPlugin(): Plugin {
 
 			// Autoplay gate (browser only)
 			if (context && typeof document !== "undefined") {
-				const gate = new AutoplayGate(context, game.canvas);
+				const gate = new AutoplayGate(context);
 				system._setGate(gate);
 			}
 

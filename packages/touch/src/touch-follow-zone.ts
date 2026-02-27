@@ -3,6 +3,8 @@ import { VirtualControl } from "./virtual-control.js";
 export interface TouchFollowZoneConfig {
 	/** Fixed Y coordinate to use for the mouse position. If undefined, uses the touch Y. */
 	followY?: number;
+	/** Action to inject on tap (press on touch start, release on touch end). */
+	tapAction?: string;
 }
 
 /**
@@ -14,11 +16,13 @@ export interface TouchFollowZoneConfig {
  */
 export class TouchFollowZone extends VirtualControl {
 	readonly followY: number | undefined;
+	readonly tapAction: string | undefined;
 	private _active = false;
 
 	constructor(config?: TouchFollowZoneConfig) {
 		super();
 		this.followY = config?.followY;
+		this.tapAction = config?.tapAction;
 	}
 
 	get active(): boolean {
@@ -33,6 +37,9 @@ export class TouchFollowZone extends VirtualControl {
 	_onTouchStart(x: number, y: number): void {
 		this._active = true;
 		this._updateMousePosition(x, y);
+		if (this.tapAction) {
+			this.input.inject(this.tapAction, true);
+		}
 	}
 
 	_onTouchMove(x: number, y: number): void {
@@ -42,6 +49,9 @@ export class TouchFollowZone extends VirtualControl {
 
 	_onTouchEnd(): void {
 		this._active = false;
+		if (this.tapAction) {
+			this.input.inject(this.tapAction, false);
+		}
 	}
 
 	private _updateMousePosition(x: number, y: number): void {

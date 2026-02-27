@@ -274,6 +274,28 @@ describe("InputPlugin", () => {
 
 			game.stop();
 		});
+
+		it("pointerdown sets mouse position (touch has no preceding pointermove)", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { select: ["mouse:left"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			const input = getInput(game) as Input;
+
+			// Mock getBoundingClientRect so coordinate transform works in jsdom
+			game.canvas.getBoundingClientRect = () =>
+				({ left: 0, top: 0, width: 800, height: 600 }) as DOMRect;
+
+			// Simulate a touch: pointerdown with no preceding pointermove
+			game.canvas.dispatchEvent(
+				new MouseEvent("pointerdown", { button: 0, clientX: 200, clientY: 150 }),
+			);
+			expect(input.mousePosition.x).toBe(200);
+			expect(input.mousePosition.y).toBe(150);
+
+			game.stop();
+		});
 	});
 
 	describe("cleanup", () => {

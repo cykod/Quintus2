@@ -11,12 +11,12 @@ function createGame(opts: Partial<GameOptions> = {}): Game {
 }
 
 describe("breakoutLayout", () => {
-	it("creates 4 controls (left, right, launch, follow zone)", () => {
+	it("creates 3 controls (left, right, follow zone)", () => {
 		const game = createGame();
 		game.use(InputPlugin({ actions: { left: [], right: [], launch: [] } }));
 		const factory = breakoutLayout();
 		const controls = factory(game).createControls(game);
-		expect(controls).toHaveLength(4);
+		expect(controls).toHaveLength(3);
 	});
 
 	it("TouchFollowZone is the last control", () => {
@@ -35,7 +35,6 @@ describe("breakoutLayout", () => {
 
 		expect((controls[0] as VirtualButton).action).toBe("left");
 		expect((controls[1] as VirtualButton).action).toBe("right");
-		expect((controls[2] as VirtualButton).action).toBe("launch");
 	});
 
 	it("respects custom action names", () => {
@@ -50,7 +49,7 @@ describe("breakoutLayout", () => {
 
 		expect((controls[0] as VirtualButton).action).toBe("move_l");
 		expect((controls[1] as VirtualButton).action).toBe("move_r");
-		expect((controls[2] as VirtualButton).action).toBe("fire");
+		expect((controls[2] as TouchFollowZone).tapAction).toBe("fire");
 	});
 
 	it("left button is on lower-left, right on lower-right", () => {
@@ -66,27 +65,27 @@ describe("breakoutLayout", () => {
 		expect(rightBtn.position.x).toBeGreaterThan(game.width / 2);
 	});
 
-	it("launch button is centered horizontally", () => {
-		const game = createGame();
-		game.use(InputPlugin({ actions: { left: [], right: [], launch: [] } }));
-		const factory = breakoutLayout();
-		const controls = factory(game).createControls(game);
-
-		const launchBtn = controls[2] as VirtualButton;
-		expect(launchBtn.position.x).toBe(game.width / 2);
-	});
-
 	it("passes followY to TouchFollowZone", () => {
 		const game = createGame();
 		game.use(InputPlugin({ actions: { left: [], right: [], launch: [] } }));
 		const factory = breakoutLayout({ followY: 550 });
 		const controls = factory(game).createControls(game);
 
-		const zone = controls[3] as TouchFollowZone;
+		const zone = controls[2] as TouchFollowZone;
 		expect(zone.followY).toBe(550);
 	});
 
-	it("TouchFollowZone sets mouse position when touched", () => {
+	it("follow zone tapAction defaults to launch", () => {
+		const game = createGame();
+		game.use(InputPlugin({ actions: { left: [], right: [], launch: [] } }));
+		const factory = breakoutLayout();
+		const controls = factory(game).createControls(game);
+
+		const zone = controls[2] as TouchFollowZone;
+		expect(zone.tapAction).toBe("launch");
+	});
+
+	it("TouchFollowZone sets mouse position and injects launch on tap", () => {
 		const game = createGame();
 		game.use(InputPlugin({ actions: { left: [], right: [], launch: [] } }));
 		const input = getInput(game)!;
@@ -110,5 +109,10 @@ describe("breakoutLayout", () => {
 		input._beginFrame();
 		expect(input.mousePosition.x).toBe(200);
 		expect(input.mousePosition.y).toBe(550);
+		expect(input.isPressed("launch")).toBe(true);
+
+		zone._onTouchEnd();
+		input._beginFrame();
+		expect(input.isPressed("launch")).toBe(false);
 	});
 });

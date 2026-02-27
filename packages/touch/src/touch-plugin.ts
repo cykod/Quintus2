@@ -1,4 +1,4 @@
-import { definePlugin, type Game, type Node2D, type Plugin } from "@quintus/core";
+import { definePlugin, type Game, type Node2D, type Plugin, type Scene } from "@quintus/core";
 import { onInputMethodChange } from "./detect.js";
 import { requestFullscreen } from "./fullscreen.js";
 import { lockScroll } from "./scroll-lock.js";
@@ -19,6 +19,8 @@ export interface TouchPluginConfig {
 	opacity?: number;
 	/** Preferred orientation when fullscreen. Default: "landscape". Set "any" to skip locking. */
 	orientation?: "landscape" | "portrait" | "any";
+	/** Only show controls on these scene classes. If undefined, controls appear on all scenes. */
+	scenes?: Array<new (...args: unknown[]) => Scene>;
 }
 
 /** Factory function that creates a TouchLayout given a Game instance. */
@@ -53,6 +55,12 @@ export function getTouchState(game: Game): TouchState | null {
 function _createOverlay(game: Game, state: TouchState): void {
 	const scene = game.currentScene;
 	if (!scene) return;
+
+	// Skip controls on scenes not in the filter list
+	const sceneFilter = state.config.scenes;
+	if (sceneFilter && !sceneFilter.some((cls) => scene instanceof cls)) {
+		return;
+	}
 
 	const overlay = new TouchOverlay();
 	overlay.alpha = state.config.opacity ?? 0.4;
@@ -121,9 +129,17 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 			// --- Fullscreen on First Touch ---
 			if (config.fullscreen && typeof document !== "undefined") {
 				let requested = false;
-				const onTouch = () => {
+				// Use "click" — it is the most universally accepted user activation
+				// event across all browsers. touchstart and pointerdown do NOT
+				// reliably grant user activation on mobile Chrome.
+				// Register on document in capture phase so virtual control handlers
+				// that call stopImmediatePropagation() cannot block this.
+				const onFirstClick = (e: Event) => {
+					// Only trigger on touch devices (mouse users don't need auto-fullscreen)
+					if (e instanceof PointerEvent && e.pointerType === "mouse") return;
 					if (requested) return;
 					requested = true;
+					document.removeEventListener("click", onFirstClick, true);
 					requestFullscreen(game.canvas)
 						.then(() => {
 							// Try to lock orientation (not in all TS type defs)
@@ -141,9 +157,9 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 							// Fullscreen may be blocked by browser
 						});
 				};
-				game.canvas.addEventListener("touchstart", onTouch, { once: true });
+				document.addEventListener("click", onFirstClick, true);
 				cleanups.push(() => {
-					game.canvas.removeEventListener("touchstart", onTouch);
+					document.removeEventListener("click", onFirstClick, true);
 				});
 			}
 

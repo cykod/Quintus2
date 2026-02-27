@@ -1,3 +1,20 @@
+## Fix mobile touch controls, audio gate, and fullscreen activation
+*Friday, February 27th at 6pm*
+Fix several mobile touch issues discovered during review. Sokoban controls now 
+only appear during gameplay via a scene filter, and duplicate HUD buttons were 
+removed. Breakout's launch button was replaced by tap-to-launch on the follow 
+zone via a new tapAction config. Dungeon action buttons now render emoji icons 
+(sword, shield, hand, potion) via a new VirtualButton icon field. Fixed 
+InputPlugin's pointerdown handler to set mouse position (touch has no preceding 
+pointermove, causing tower defense placement at wrong coordinates). Rewrote the 
+AutoplayGate to use click/keydown events instead of touchstart (which does not 
+grant user activation in Chrome), retry on every gesture until context.state is 
+actually running, and register on document capture phase to survive 
+stopImmediatePropagation. Changed fullscreen activation from touchstart to 
+click for the same user activation reason.
+
+---
+
 ## Improve test coverage from 91.5% to 96.6% across engine packages
 *Friday, February 27th at 4pm*
 Added 86 new tests across 8 packages to close coverage gaps identified in a 

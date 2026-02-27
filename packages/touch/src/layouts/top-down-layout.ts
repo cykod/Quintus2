@@ -8,7 +8,7 @@ export interface TopDownLayoutConfig {
 	/** Override the joystick's directional action names. Default: move_left/move_right/move_up/move_down. */
 	moveActions?: { left?: string; right?: string; up?: string; down?: string };
 	/** Action buttons on the lower-right. Default: [{ action: "fire", label: "A" }] */
-	actions?: Array<{ action: string; label: string }>;
+	actions?: Array<{ action: string; label: string; icon?: string }>;
 }
 
 /**
@@ -53,6 +53,7 @@ export function topDownLayout(config?: TopDownLayoutConfig): TouchLayoutFactory 
 							radius: btnR,
 							action: btn.action,
 							label: btn.label,
+							icon: btn.icon,
 						}),
 					);
 				}
@@ -73,6 +74,7 @@ export function topDownLayout(config?: TopDownLayoutConfig): TouchLayoutFactory 
 							radius: btnR,
 							action: btn.action,
 							label: btn.label,
+							icon: btn.icon,
 						}),
 					);
 				}

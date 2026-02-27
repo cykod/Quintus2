@@ -46,6 +46,15 @@ export function InputPlugin(config: InputConfig): Plugin {
 				};
 
 				const onPointerDown = (e: PointerEvent) => {
+					if (game.canvas) {
+						const rect = game.canvas.getBoundingClientRect();
+						const scaleX = game.width / rect.width;
+						const scaleY = game.height / rect.height;
+						input._setMousePosition(
+							(e.clientX - rect.left) * scaleX,
+							(e.clientY - rect.top) * scaleY,
+						);
+					}
 					input._bufferMousePress(e.button);
 				};
 

@@ -27,9 +27,11 @@ game.use(
 			buttons: [
 				{ action: "undo", label: "Undo" },
 				{ action: "reset", label: "Reset" },
+				{ action: "menu", label: "Menu" },
 			],
 		}),
 		fullscreen: true,
+		scenes: [SokobanLevel],
 	}),
 );
 game.use(TweenPlugin());

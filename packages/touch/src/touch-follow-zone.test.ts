@@ -86,4 +86,37 @@ describe("TouchFollowZone", () => {
 		expect(input.mousePosition.x).toBe(0);
 		expect(input.mousePosition.y).toBe(0);
 	});
+
+	it("injects tapAction on touch start and releases on touch end", () => {
+		const game = createGame();
+		game.use(InputPlugin({ actions: { launch: [] } }));
+		const input = getInput(game)!;
+
+		class TestScene extends Scene {
+			zone!: TouchFollowZone;
+			override onReady() {
+				this.zone = new TouchFollowZone({ tapAction: "launch" });
+				this.add(this.zone);
+			}
+		}
+
+		game.start(TestScene);
+		const scene = game.currentScene as TestScene;
+
+		scene.zone._onTouchStart(200, 300);
+		input._beginFrame();
+		expect(input.isPressed("launch")).toBe(true);
+
+		scene.zone._onTouchEnd();
+		input._beginFrame();
+		expect(input.isPressed("launch")).toBe(false);
+	});
+
+	it("does not inject when tapAction is not configured", () => {
+		const { input, scene } = setup();
+		scene.zone._onTouchStart(200, 300);
+		input._beginFrame();
+		// No action should be pressed — only mouse position updated
+		expect(input.mousePosition.x).toBe(200);
+	});
 });

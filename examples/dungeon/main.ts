@@ -37,10 +37,10 @@ game.use(
 		layout: topDownLayout({
 			moveActions: { left: "left", right: "right", up: "up", down: "down" },
 			actions: [
-				{ action: "attack", label: "Atk" },
-				{ action: "defend", label: "Def" },
-				{ action: "interact", label: "E" },
-				{ action: "use_potion", label: "Pot" },
+				{ action: "attack", label: "Atk", icon: "⚔" },
+				{ action: "defend", label: "Def", icon: "🛡" },
+				{ action: "interact", label: "E", icon: "✋" },
+				{ action: "use_potion", label: "Pot", icon: "🧪" },
 			],
 		}),
 		fullscreen: true,

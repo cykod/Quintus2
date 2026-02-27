@@ -9,15 +9,16 @@ export interface BreakoutLayoutConfig {
 	leftAction?: string;
 	/** Action for moving right. Default: "right" */
 	rightAction?: string;
-	/** Action for launching the ball. Default: "launch" */
+	/** Action injected when tapping the follow zone (e.g., "launch"). Default: "launch" */
 	launchAction?: string;
 	/** Fixed Y for the touch-follow zone mouse position. If undefined, uses touch Y. */
 	followY?: number;
 }
 
 /**
- * Breakout-style layout: left/right buttons + launch button at bottom,
+ * Breakout-style layout: left/right buttons at bottom,
  * with a full-screen TouchFollowZone behind them for paddle tracking.
+ * Tapping the follow zone also fires the launch action.
  *
  * The TouchFollowZone is always last so discrete buttons get hit-test priority.
  *
@@ -49,14 +50,11 @@ export function breakoutLayout(config?: BreakoutLayoutConfig): TouchLayoutFactor
 					action: rightAction,
 					label: ">",
 				}),
-				new VirtualButton({
-					position: new Vec2(w / 2, h - margin - btnR),
-					radius: btnR,
-					action: launchAction,
-					label: "Launch",
-				}),
 				// TouchFollowZone must be last for hit-test priority
-				new TouchFollowZone({ followY: config?.followY }),
+				new TouchFollowZone({
+					followY: config?.followY,
+					tapAction: launchAction,
+				}),
 			];
 		},
 	});
