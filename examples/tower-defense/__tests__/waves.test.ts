@@ -1,46 +1,51 @@
+import { WaveSpawner } from "@quintus/ai-prefabs";
 import { Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
-import { WaveManager } from "../entities/wave-manager.js";
-import { runScene, TEST_PATH } from "./helpers.js";
+import { SPAWN_INTERVAL, WAVE_DEFS, WAVE_DELAY } from "../config.js";
+import { runScene } from "./helpers.js";
 
 class WaveTestScene extends Scene {}
 
 describe("Waves", () => {
-	it("wave manager emits waveStarted on first wave", async () => {
+	it("wave spawner emits waveStarted on first wave", async () => {
 		const result = await runScene(WaveTestScene, undefined, 0.01);
 		const scene = result.game.currentScene!;
 
-		const wm = new WaveManager();
-		wm.pathDef = TEST_PATH;
-		scene.add(wm);
+		const ws = new WaveSpawner();
+		ws.spawnInterval = SPAWN_INTERVAL;
+		ws.wavePause = WAVE_DELAY;
+		ws.defineWaves(WAVE_DEFS);
+		scene.add(ws);
 		result.game.step();
 
-		let startedWave = 0;
-		wm.waveStarted.connect((w) => {
+		let startedWave = -1;
+		ws.waveStarted.connect((w) => {
 			startedWave = w;
 		});
 
-		wm.startWaves();
+		ws.start();
 		result.game.step();
 
-		expect(startedWave).toBe(1);
+		expect(startedWave).toBe(0); // WaveSpawner is 0-indexed
 	});
 
-	it("wave spawns enemies", async () => {
+	it("wave spawns enemies via spawnRequested", async () => {
 		const result = await runScene(WaveTestScene, undefined, 0.01);
 		const scene = result.game.currentScene!;
 
-		const wm = new WaveManager();
-		wm.pathDef = TEST_PATH;
-		scene.add(wm);
+		const ws = new WaveSpawner();
+		ws.spawnInterval = SPAWN_INTERVAL;
+		ws.wavePause = WAVE_DELAY;
+		ws.defineWaves(WAVE_DEFS);
+		scene.add(ws);
 		result.game.step();
 
 		let spawnCount = 0;
-		wm.enemySpawned.connect(() => {
+		ws.spawnRequested.connect(() => {
 			spawnCount++;
 		});
 
-		wm.startWaves();
+		ws.start();
 
 		// Run enough frames for some enemies to spawn
 		for (let i = 0; i < 120; i++) {
@@ -54,48 +59,52 @@ describe("Waves", () => {
 		const result = await runScene(WaveTestScene, undefined, 0.01);
 		const scene = result.game.currentScene!;
 
-		const wm = new WaveManager();
-		wm.pathDef = TEST_PATH;
-		scene.add(wm);
+		const ws = new WaveSpawner();
+		ws.spawnInterval = SPAWN_INTERVAL;
+		ws.wavePause = WAVE_DELAY;
+		ws.defineWaves(WAVE_DEFS);
+		scene.add(ws);
 		result.game.step();
 
-		let clearedWave = 0;
-		wm.waveCleared.connect((w) => {
+		let clearedWave = -1;
+		ws.waveCleared.connect((w) => {
 			clearedWave = w;
 		});
 
-		wm.startWaves();
-
-		// Kill all enemies as they spawn (give them 0 hp)
-		wm.enemySpawned.connect((enemy) => {
-			enemy.takeDamage(enemy.hp);
+		// Kill all enemies as they spawn
+		ws.spawnRequested.connect(() => {
+			ws.notifyDeath();
 		});
+
+		ws.start();
 
 		// Run enough frames for wave 1 to spawn and be killed
 		for (let i = 0; i < 300; i++) {
 			result.game.step();
 		}
 
-		expect(clearedWave).toBe(1);
+		expect(clearedWave).toBe(0); // 0-indexed
 	});
 
-	it("wave manager tracks active enemy count", async () => {
+	it("wave spawner tracks active enemy count", async () => {
 		const result = await runScene(WaveTestScene, undefined, 0.01);
 		const scene = result.game.currentScene!;
 
-		const wm = new WaveManager();
-		wm.pathDef = TEST_PATH;
-		scene.add(wm);
+		const ws = new WaveSpawner();
+		ws.spawnInterval = SPAWN_INTERVAL;
+		ws.wavePause = WAVE_DELAY;
+		ws.defineWaves(WAVE_DEFS);
+		scene.add(ws);
 		result.game.step();
 
-		wm.startWaves();
-		expect(wm.activeEnemies).toBe(0);
+		ws.start();
+		expect(ws.activeCount).toBe(0);
 
-		// Run some frames for spawning
-		for (let i = 0; i < 10; i++) {
+		// Run enough frames for at least one spawn (spawnInterval is 0.8s at 60fps = 48 frames)
+		for (let i = 0; i < 60; i++) {
 			result.game.step();
 		}
 
-		expect(wm.activeEnemies).toBeGreaterThan(0);
+		expect(ws.activeCount).toBeGreaterThan(0);
 	});
 });

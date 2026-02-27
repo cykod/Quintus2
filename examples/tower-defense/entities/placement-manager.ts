@@ -32,7 +32,7 @@ export class PlacementManager extends Node {
 		const mousePos = this.game.input.mousePosition;
 		if (!mousePos) return;
 
-		// Convert screen position to grid coordinates
+		// Convert screen position to grid coordinates using GRID_OFFSET (16) and CELL_SIZE (64)
 		const col = Math.floor((mousePos.x - 16) / 64);
 		const row = Math.floor((mousePos.y - 16) / 64);
 

@@ -80,7 +80,8 @@ export function readPathFromMap(map: TileMap): MapPathData {
 	if (!start) throw new Error("TMX path layer missing start tile (tile 18 / GID 19)");
 	if (!end) throw new Error("TMX path layer missing end tile (tile 17 / GID 18)");
 
-	// Trace path from start to end through road tiles
+	// Greedy depth-first walk: pick the first unvisited road neighbor at each step.
+	// This only works for non-branching paths (single corridor from start → end).
 	const path: Array<{ col: number; row: number }> = [start];
 	const visited = new Set<string>();
 	visited.add(`${start.col},${start.row}`);
@@ -109,7 +110,8 @@ export function readPathFromMap(map: TileMap): MapPathData {
 		if (!found) break;
 	}
 
-	// Extract waypoints at direction changes
+	// Filter to direction-change points only — straight-line segments don't need
+	// intermediate waypoints, which reduces unnecessary lerp targets for PathFollower.
 	const waypoints: Vec2[] = [new Vec2(path[0]!.col, path[0]!.row)];
 	for (let i = 1; i < path.length - 1; i++) {
 		const prev = path[i - 1]!;

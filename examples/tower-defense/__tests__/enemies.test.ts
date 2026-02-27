@@ -25,7 +25,8 @@ describe("Enemies", () => {
 		scene.add(creep);
 		result.game.step();
 
-		expect(creep.hp).toBe(BASIC_CREEP_HP);
+		expect(creep.health).toBe(BASIC_CREEP_HP);
+		expect(creep.maxHealth).toBe(BASIC_CREEP_HP);
 		expect(creep.speed).toBe(BASIC_CREEP_SPEED);
 		expect(creep.goldReward).toBe(BASIC_CREEP_GOLD);
 	});
@@ -52,7 +53,7 @@ describe("Enemies", () => {
 		scene.add(tank);
 		result.game.step();
 
-		expect(tank.hp).toBe(TANK_CREEP_HP);
+		expect(tank.health).toBe(TANK_CREEP_HP);
 		expect(TANK_CREEP_HP).toBeGreaterThan(BASIC_CREEP_HP);
 		expect(tank.speed).toBe(TANK_CREEP_SPEED);
 	});
@@ -71,7 +72,7 @@ describe("Enemies", () => {
 			diedEmitted = true;
 		});
 
-		creep.takeDamage(creep.hp);
+		creep.takeDamage(creep.health);
 		expect(diedEmitted).toBe(true);
 	});
 

@@ -4,7 +4,7 @@ import { PathFollower } from "./path-follower.js";
 
 export class BasicCreep extends PathFollower {
 	speed = BASIC_CREEP_SPEED;
-	hp = BASIC_CREEP_HP;
+	override maxHealth = BASIC_CREEP_HP;
 	goldReward = BASIC_CREEP_GOLD;
 	frameIndex = FRAME_ENEMY_BASIC;
 }

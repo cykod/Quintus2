@@ -6,8 +6,9 @@ import type { PathFollower } from "./path-follower.js";
 
 /**
  * A homing projectile that moves toward its target enemy.
- * Not physics-driven — purely positional movement.
- * Rotates to face its direction of travel.
+ * Extends Node2D instead of Actor or ai-prefabs Bullet because homing projectiles
+ * change direction every frame — not suitable for fixed-angle Bullet class.
+ * Purely positional movement, no physics collision response.
  */
 export class Projectile extends Node2D {
 	target!: PathFollower;
@@ -25,6 +26,7 @@ export class Projectile extends Node2D {
 
 	override onReady() {
 		this.tag("projectile");
+		// Render behind enemies and towers
 		this.zIndex = -1;
 	}
 
@@ -70,6 +72,7 @@ export class Projectile extends Node2D {
 		this.destroy();
 	}
 
+	// O(n) scan over all enemies — acceptable for TD enemy counts (<50 per wave)
 	private _applySplashDamage(): void {
 		const enemies = this.scene?.findAll("enemy");
 		for (const node of enemies) {

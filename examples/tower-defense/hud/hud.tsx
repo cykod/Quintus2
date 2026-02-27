@@ -1,12 +1,7 @@
-import { type DrawContext } from "@quintus/core";
+import type { DrawContext } from "@quintus/core";
 import { Color, type Rect, Vec2 } from "@quintus/math";
 import { Button, Label, Layer } from "@quintus/ui";
-import {
-	GAME_WIDTH,
-	TOWER_ARROW_COST,
-	TOWER_CANNON_COST,
-	TOWER_SLOW_COST,
-} from "../config.js";
+import { GAME_WIDTH, TOWER_ARROW_COST, TOWER_CANNON_COST, TOWER_SLOW_COST } from "../config.js";
 import {
 	FRAME_TURRET_ARROW,
 	FRAME_TURRET_CANNON,
@@ -36,11 +31,7 @@ class TowerSelectButton extends Button {
 	costAmount = 0;
 
 	override onDraw(ctx: DrawContext): void {
-		const bgColor = this.pressed
-			? PRESSED_COLOR
-			: this.hovered
-				? HOVER_COLOR
-				: BG_COLOR;
+		const bgColor = this.pressed ? PRESSED_COLOR : this.hovered ? HOVER_COLOR : BG_COLOR;
 
 		ctx.rect(Vec2.ZERO, this.size, { fill: bgColor });
 

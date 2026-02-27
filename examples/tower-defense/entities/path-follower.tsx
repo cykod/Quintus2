@@ -1,3 +1,4 @@
+import { Damageable } from "@quintus/ai-prefabs";
 import { type Signal, signal } from "@quintus/core";
 import type { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
@@ -6,18 +7,24 @@ import { CELL_SIZE } from "../config.js";
 import { gridToWorld, type PathDef } from "../path.js";
 import { tileSheet } from "../sprites.js";
 
+const DamageableActor = Damageable(Actor, {
+	invincibilityDuration: 0,
+	deathTween: false,
+});
+
 /**
  * Base class for enemies that follow a waypoint path.
- * Subclasses set speed, hp, gold, and frame index.
+ * Subclasses set speed, maxHealth, gold, and frame index.
  */
-export abstract class PathFollower extends Actor {
+export abstract class PathFollower extends DamageableActor {
 	override collisionGroup = "enemies";
+	// solid = true so tower Sensors can detect enemies via bodyEntered/bodyExited
 	override solid = true;
 	override gravity = 0;
 	override applyGravity = false;
 
 	abstract speed: number;
-	abstract hp: number;
+	abstract override maxHealth: number;
 	abstract goldReward: number;
 	abstract frameIndex: number;
 
@@ -33,7 +40,6 @@ export abstract class PathFollower extends Actor {
 	private _shimmyTime = 0;
 
 	readonly reachedExit: Signal<PathFollower> = signal<PathFollower>();
-	readonly died: Signal<PathFollower> = signal<PathFollower>();
 
 	/** Must be set before adding to scene. */
 	pathDef!: PathDef;
@@ -66,7 +72,11 @@ export abstract class PathFollower extends Actor {
 		}
 	}
 
+	// Manual position updates instead of Actor.move() — path followers don't need
+	// physics-based collision response, they simply lerp between waypoints.
 	override onFixedUpdate(dt: number) {
+		super.onFixedUpdate(dt);
+
 		// Update slow timer
 		if (this._slowTimer > 0) {
 			this._slowTimer -= dt;
@@ -100,14 +110,15 @@ export abstract class PathFollower extends Actor {
 				this.position.y + (dy / dist) * step,
 			);
 
-			// Face movement direction with walking shimmy
+			// Face movement direction with walking shimmy animation:
+			// 14 = oscillation frequency (cycles/sec), 0.12 = amplitude in radians (~7°)
 			const baseAngle = Math.atan2(dy, dx);
 			this._shimmyTime += dt;
 			const shimmy = Math.sin(this._shimmyTime * 14) * 0.12;
 			this.rotation = baseAngle + shimmy;
 		}
 
-		// Update physics world position
+		// Required to keep the physics spatial hash in sync with manual position changes
 		const world = this._getWorld();
 		if (world) world.updatePosition(this);
 	}
@@ -117,17 +128,9 @@ export abstract class PathFollower extends Actor {
 		this._slowTimer = duration;
 	}
 
-	takeDamage(amount: number): void {
-		this.hp -= amount;
-		if (this.hp <= 0) {
-			this.died.emit(this);
-			this.destroy();
-		}
-	}
-
 	serialize(): Record<string, unknown> {
 		return {
-			hp: this.hp,
+			health: this.health,
 			waypointIndex: this.waypointIndex,
 			x: this.position.x,
 			y: this.position.y,

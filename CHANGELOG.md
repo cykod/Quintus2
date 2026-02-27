@@ -1,3 +1,16 @@
+## Polish tower defense with ai-prefabs integration
+*Friday, February 27th at 12pm*
+Integrate Damageable mixin on PathFollower (replacing hand-rolled damage/death 
+system) and replace the custom WaveManager with the ai-prefabs WaveSpawner, 
+deleting wave-manager.ts entirely. Wave definitions move to a data array in 
+config.ts. Add 7 edge-case tests covering path blocking, slow stacking, wave 
+transition exits, equidistant targeting, wave overlap prevention, zero-gold 
+placement, and projectile self-destruct. Targeted code comments added at 
+architectural decision points across 8 files. Phase G marked complete in 
+PREFABS_PROPOSAL.md.
+
+---
+
 ## Polish space shooter and top-down shooter with ai-prefabs integration
 *Friday, February 27th at 11am*
 Integrate the four core ai-prefabs utilities (Damageable, Bullet, WaveSpawner, 

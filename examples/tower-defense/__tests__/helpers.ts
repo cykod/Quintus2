@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { AudioPlugin } from "@quintus/audio";
 import { _resetNodeIdCounter, type Plugin, type SceneConstructor } from "@quintus/core";
 import type { HeadlessGame } from "@quintus/headless";
@@ -7,8 +9,6 @@ import { PhysicsPlugin } from "@quintus/physics";
 import type { InputScript } from "@quintus/test";
 import { TestRunner } from "@quintus/test";
 import { TweenPlugin } from "@quintus/tween";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { COLLISION_GROUPS, GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS } from "../config.js";
 import type { PathDef } from "../path.js";
 import { gameState } from "../state.js";

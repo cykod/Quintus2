@@ -1,3 +1,4 @@
+import type { WaveEntry } from "@quintus/ai-prefabs";
 import type { CollisionGroupsConfig } from "@quintus/physics";
 
 // === Game dimensions ===
@@ -50,8 +51,31 @@ export const PROJECTILE_SPEED = 300;
 export const STARTING_GOLD = 200;
 export const STARTING_LIVES = 20;
 
-// === Waves ===
-export const WAVE_COUNT = 5;
+// === Wave definitions ===
+// Wave composition scales difficulty: wave 1 is basic-only, later waves mix in fast/tank
+// enemies with increasing counts. Wave 5 is the boss wave with all three types.
+export const WAVE_DEFS: WaveEntry[][] = [
+	[{ type: "basic", count: 5 }],
+	[
+		{ type: "basic", count: 4 },
+		{ type: "fast", count: 3 },
+	],
+	[
+		{ type: "basic", count: 5 },
+		{ type: "fast", count: 4 },
+		{ type: "tank", count: 1 },
+	],
+	[
+		{ type: "fast", count: 5 },
+		{ type: "tank", count: 3 },
+	],
+	[
+		{ type: "basic", count: 6 },
+		{ type: "fast", count: 5 },
+		{ type: "tank", count: 4 },
+	],
+];
+export const WAVE_COUNT = WAVE_DEFS.length;
 export const SPAWN_INTERVAL = 0.8; // seconds between enemy spawns
 export const WAVE_DELAY = 3.0; // seconds between waves
 

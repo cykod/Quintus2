@@ -455,7 +455,7 @@ Each game gets a dedicated phase. Every phase follows the same structure:
 
 ---
 
-### Phase G: Tower Defense Polish (LAST — separate overhaul)
+### Phase G: Tower Defense Polish (DONE)
 
 **Note:** This phase is intentionally last. The tower defense game is being overhauled separately and should be integrated after the other games are polished.
 

@@ -1,13 +1,24 @@
+import { WaveSpawner } from "@quintus/ai-prefabs";
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { TileMap } from "@quintus/tilemap";
-import { GAME_HEIGHT, GAME_WIDTH, GRID_OFFSET_X, GRID_OFFSET_Y } from "../config.js";
+import {
+	GAME_HEIGHT,
+	GAME_WIDTH,
+	GRID_OFFSET_X,
+	GRID_OFFSET_Y,
+	SPAWN_INTERVAL,
+	WAVE_DEFS,
+	WAVE_DELAY,
+} from "../config.js";
+import { BasicCreep } from "../entities/basic-creep.js";
+import { FastCreep } from "../entities/fast-creep.js";
 import type { PathFollower } from "../entities/path-follower.js";
 import { PlacementManager } from "../entities/placement-manager.js";
-import { WaveManager } from "../entities/wave-manager.js";
+import { TankCreep } from "../entities/tank-creep.js";
 import { HUD } from "../hud/hud.js";
-import { readPathFromMap } from "../path.js";
+import { type PathDef, readPathFromMap } from "../path.js";
 import { gameState } from "../state.js";
 
 /**
@@ -17,8 +28,9 @@ import { gameState } from "../state.js";
 export abstract class TDLevel extends Scene {
 	abstract getMapAsset(): string;
 
-	private _waveManager!: WaveManager;
+	private _waveSpawner!: WaveSpawner;
 	private _placementManager!: PlacementManager;
+	private _pathDef!: PathDef;
 
 	override build() {
 		return (
@@ -35,43 +47,70 @@ export abstract class TDLevel extends Scene {
 		map.tilesetImage = "tileset";
 		map.asset = this.getMapAsset();
 		map.position = new Vec2(GRID_OFFSET_X, GRID_OFFSET_Y);
+		// Tilemap renders behind all gameplay entities (towers, enemies, projectiles)
 		map.zIndex = -2;
 
 		// Read path data from the TMX path layer
 		const mapData = readPathFromMap(map);
+		this._pathDef = { waypoints: mapData.waypoints };
 
 		// Set up placement manager
 		this._placementManager = new PlacementManager();
 		this._placementManager.validCells = mapData.placementCells;
 		this.add(this._placementManager);
 
-		// Set up wave manager
-		this._waveManager = new WaveManager();
-		this._waveManager.pathDef = { waypoints: mapData.waypoints };
-		this.add(this._waveManager);
+		// Set up wave spawner
+		this._waveSpawner = new WaveSpawner();
+		this._waveSpawner.spawnInterval = SPAWN_INTERVAL;
+		this._waveSpawner.wavePause = WAVE_DELAY;
+		this._waveSpawner.defineWaves(WAVE_DEFS);
+		this.add(this._waveSpawner);
 
-		this._waveManager.waveStarted.connect((wave) => {
-			gameState.wave = wave;
+		this._waveSpawner.waveStarted.connect((wave) => {
+			gameState.wave = wave + 1; // WaveSpawner is 0-indexed, display is 1-indexed
 			this.game.audio.play("wave-start", { volume: 0.5 });
 		});
 
-		this._waveManager.enemySpawned.connect((enemy) => {
+		this._waveSpawner.spawnRequested.connect(({ type }) => {
+			const enemy = this._createEnemy(type);
+			enemy.pathDef = this._pathDef;
+			this.add(enemy);
 			this._connectEnemy(enemy);
+
+			enemy.died.connect(() => {
+				this._waveSpawner.notifyDeath();
+			});
+			enemy.reachedExit.connect(() => {
+				this._waveSpawner.notifyDeath();
+			});
 		});
 
-		this._waveManager.allWavesCleared.connect(() => {
+		this._waveSpawner.allCleared.connect(() => {
 			this.game.audio.play("victory", { volume: 0.7 });
+			// 1s delay before scene switch allows victory sound to play
 			this.after(1.0, () => this.switchTo("game-over"));
 		});
 
 		// Start the first wave
-		this._waveManager.startWaves();
+		this._waveSpawner.start();
+	}
+
+	private _createEnemy(type: string): PathFollower {
+		switch (type) {
+			case "fast":
+				return new FastCreep();
+			case "tank":
+				return new TankCreep();
+			default:
+				return new BasicCreep();
+		}
 	}
 
 	private _connectEnemy(enemy: PathFollower): void {
-		enemy.died.connect((e) => {
-			gameState.gold += e.goldReward;
-			gameState.score += e.goldReward;
+		enemy.died.connect(() => {
+			gameState.gold += enemy.goldReward;
+			// score += goldReward is intentional — gold earned serves as the score metric
+			gameState.score += enemy.goldReward;
 			this.game.audio.play("enemy-die", { volume: 0.4 });
 		});
 
@@ -85,8 +124,8 @@ export abstract class TDLevel extends Scene {
 		});
 	}
 
-	getWaveManager(): WaveManager {
-		return this._waveManager;
+	getWaveSpawner(): WaveSpawner {
+		return this._waveSpawner;
 	}
 
 	getPlacementManager(): PlacementManager {

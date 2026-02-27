@@ -72,7 +72,8 @@ export abstract class TowerBase extends Node2D {
 	}
 
 	override onFixedUpdate(dt: number) {
-		// Clean up destroyed enemies
+		// Manual cleanup: Sensor.bodyExited doesn't fire for destroyed nodes,
+		// so we must prune destroyed enemies from the tracking set each frame.
 		for (const enemy of this._enemiesInRange) {
 			if (enemy.isDestroyed) {
 				this._enemiesInRange.delete(enemy);
@@ -84,6 +85,7 @@ export abstract class TowerBase extends Node2D {
 		if (target && this.turretSprite) {
 			const dx = target.position.x - this.position.x;
 			const dy = target.position.y - this.position.y;
+			// +π/2 offset: sprites face up by default, atan2 returns angle from right axis
 			this.turretSprite.rotation = Math.atan2(dy, dx) + Math.PI / 2;
 		}
 
@@ -95,7 +97,8 @@ export abstract class TowerBase extends Node2D {
 		this._fireTimer = this.fireRate;
 	}
 
-	/** Pick the enemy closest to the exit (highest waypointIndex). */
+	// Targeting strategy: "closest to exit" = highest waypointIndex.
+	// This is the standard TD heuristic — prioritize enemies about to score.
 	private _pickTarget(): PathFollower | null {
 		let best: PathFollower | null = null;
 		let bestIndex = -1;
