@@ -107,4 +107,116 @@ describe("AudioPlayer", () => {
 		const player = new AudioPlayer();
 		expect(player.bus).toBe("music");
 	});
+
+	it("pause suspends audio context", () => {
+		const game = createGame();
+		game.use(AudioPlugin());
+
+		const fakeBuffer = {} as AudioBuffer;
+		game.assets._storeCustom("bgm_pause", fakeBuffer);
+
+		game.start(TestScene);
+
+		const player = new AudioPlayer();
+		player.stream = "bgm_pause";
+		game.currentScene.add(player);
+		player.play();
+
+		expect(player.playing).toBe(true);
+		expect(player.audioPaused).toBe(false);
+
+		player.pause();
+		expect(player.audioPaused).toBe(true);
+		expect(mockCtx.suspend).toHaveBeenCalled();
+
+		game.stop();
+	});
+
+	it("resume resumes audio context", () => {
+		const game = createGame();
+		game.use(AudioPlugin());
+
+		const fakeBuffer = {} as AudioBuffer;
+		game.assets._storeCustom("bgm_resume", fakeBuffer);
+
+		game.start(TestScene);
+
+		const player = new AudioPlayer();
+		player.stream = "bgm_resume";
+		game.currentScene.add(player);
+		player.play();
+
+		player.pause();
+		expect(player.audioPaused).toBe(true);
+
+		player.resume();
+		expect(player.audioPaused).toBe(false);
+		expect(mockCtx.resume).toHaveBeenCalled();
+
+		game.stop();
+	});
+
+	it("pause is a no-op when not playing", () => {
+		const game = createGame();
+		game.use(AudioPlugin());
+		game.start(TestScene);
+
+		const player = new AudioPlayer();
+		game.currentScene.add(player);
+
+		// Not playing — pause should do nothing
+		player.pause();
+		expect(player.audioPaused).toBe(false);
+
+		game.stop();
+	});
+
+	it("resume is a no-op when not paused", () => {
+		const game = createGame();
+		game.use(AudioPlugin());
+
+		const fakeBuffer = {} as AudioBuffer;
+		game.assets._storeCustom("bgm_nop", fakeBuffer);
+
+		game.start(TestScene);
+
+		const player = new AudioPlayer();
+		player.stream = "bgm_nop";
+		game.currentScene.add(player);
+		player.play();
+
+		// Not paused — resume count before should equal count after
+		const resumeCountBefore = mockCtx.resume.mock.calls.length;
+		player.resume();
+		expect(mockCtx.resume.mock.calls.length).toBe(resumeCountBefore);
+
+		game.stop();
+	});
+
+	it("audioPaused getter reflects pause state", () => {
+		const game = createGame();
+		game.use(AudioPlugin());
+
+		const fakeBuffer = {} as AudioBuffer;
+		game.assets._storeCustom("bgm_getter", fakeBuffer);
+
+		game.start(TestScene);
+
+		const player = new AudioPlayer();
+		player.stream = "bgm_getter";
+		game.currentScene.add(player);
+
+		expect(player.audioPaused).toBe(false);
+
+		player.play();
+		expect(player.audioPaused).toBe(false);
+
+		player.pause();
+		expect(player.audioPaused).toBe(true);
+
+		player.resume();
+		expect(player.audioPaused).toBe(false);
+
+		game.stop();
+	});
 });

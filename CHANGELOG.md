@@ -1,3 +1,17 @@
+## Improve test coverage from 91.5% to 96.6% across engine packages
+*Friday, February 27th at 4pm*
+Added 86 new tests across 8 packages to close coverage gaps identified in a 
+systematic review. The touch package saw the biggest improvement (82% to 95%) 
+with tests for plugin lifecycle, overlay pointer routing, and aim-stick 
+mechanics. Tilemap gained spawnFromTiles and rendering tests (89% to 96%), 
+audio got pause/resume coverage (88% to 95%), and the test runner, 
+assert-deterministic, and debug-bridge packages each gained edge-case tests. 
+Also updated vitest.config.ts to exclude pure interface files, barrel 
+re-exports, type-only files, and placeholder packages from coverage metrics for 
+a more accurate picture.
+
+---
+
 ## Integrate mobile touch controls into all 8 example games
 *Friday, February 27th at 4pm*
 Complete Mobile Touch UI Phase 4: switch InputPlugin from MouseEvent to 

@@ -201,4 +201,83 @@ describe("TouchOverlay", () => {
 		expect(scene.overlay.renderFixed).toBe(true);
 		expect(scene.overlay.zIndex).toBe(9999);
 	});
+
+	it("routes pointermove to tracked control", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Move pointer (should be routed to button A's _onTouchMove)
+		const moveEvent = makePointerEvent("pointermove", {
+			clientX: 710,
+			clientY: 510,
+			pointerId: 1,
+		});
+		const stopSpy = vi.spyOn(moveEvent, "stopImmediatePropagation");
+		canvas.dispatchEvent(moveEvent);
+		expect(stopSpy).toHaveBeenCalled();
+	});
+
+	it("ignores pointermove for untracked pointer", () => {
+		const { game } = setup();
+		const canvas = game.canvas;
+
+		// Move without prior pointerdown — should pass through
+		const moveEvent = makePointerEvent("pointermove", {
+			clientX: 700,
+			clientY: 500,
+			pointerId: 99,
+		});
+		const stopSpy = vi.spyOn(moveEvent, "stopImmediatePropagation");
+		canvas.dispatchEvent(moveEvent);
+		expect(stopSpy).not.toHaveBeenCalled();
+	});
+
+	it("cleans up event listeners on exit tree", () => {
+		const { game, scene } = setup();
+		const removeSpy = vi.spyOn(game.canvas, "removeEventListener");
+		const overlay = scene.overlay;
+
+		overlay.destroy();
+		game.step(); // process destroy
+
+		const removedEvents = removeSpy.mock.calls
+			.map((c) => c[0])
+			.filter(
+				(e) =>
+					e === "pointerdown" || e === "pointermove" || e === "pointerup" || e === "pointercancel",
+			);
+		expect(removedEvents).toHaveLength(4);
+		removeSpy.mockRestore();
+	});
+
+	it("clears pointer tracking on exit tree", () => {
+		const { game, input, scene } = setup();
+		const canvas = game.canvas;
+
+		// Touch down
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Destroy overlay
+		scene.overlay.destroy();
+		game.step();
+
+		// Re-add a new overlay — previous pointer state should not leak
+		const newOverlay = new TouchOverlay();
+		game.currentScene!.add(newOverlay);
+		// Dispatching pointerup for old pointer should not throw or affect anything
+		canvas.dispatchEvent(
+			makePointerEvent("pointerup", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+	});
 });

@@ -32,6 +32,9 @@
 		"@quintus/math": "workspace:*",
 		"@quintus/snapshot": "workspace:*"
 	},
+	"devDependencies": {
+		"@quintus/input": "workspace:*"
+	},
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",

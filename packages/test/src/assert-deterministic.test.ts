@@ -60,4 +60,26 @@ describe("assertDeterministic", () => {
 			5,
 		);
 	});
+
+	test("throws and cleans up on determinism failure", async () => {
+		class NonDeterministicScene extends Scene {
+			onReady(): void {
+				const child = this.add(Node2D);
+				child.name = "Random";
+				// Use Math.random() which is NOT seeded — different each run
+				child.position.x = Math.random() * 1000;
+			}
+		}
+
+		await expect(
+			assertDeterministic(
+				{
+					scene: NonDeterministicScene,
+					seed: 42,
+					duration: 0.1,
+				},
+				3,
+			),
+		).rejects.toThrow("Determinism failure");
+	});
 });

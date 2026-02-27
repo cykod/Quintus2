@@ -465,6 +465,116 @@ describe("DebugBridge", () => {
 		});
 	});
 
+	describe("destroy()", () => {
+		it("destroys nodes by name", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const a = new Node2D();
+					a.name = "Enemy";
+					this.add(a);
+					const b = new Node2D();
+					b.name = "Enemy";
+					this.add(b);
+					const c = new Node2D();
+					c.name = "Player";
+					this.add(c);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const count = bridge.destroy("Enemy");
+			expect(count).toBe(2);
+			game.step(); // process destroys
+			expect(bridge.query("Enemy")).toHaveLength(0);
+			expect(bridge.query("Player")).toHaveLength(1);
+		});
+
+		it("destroys nodes by tag", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const a = new Node2D();
+					a.tag("enemy");
+					this.add(a);
+					const b = new Node2D();
+					b.tag("enemy");
+					this.add(b);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const count = bridge.destroy("enemy");
+			expect(count).toBe(2);
+		});
+
+		it("destroys node by numeric id", () => {
+			const game = createDebugGame();
+			let nodeId = -1;
+			class TestScene extends Scene {
+				onReady() {
+					const a = new Node2D();
+					a.name = "Target";
+					this.add(a);
+					nodeId = a.id;
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const count = bridge.destroy(nodeId);
+			expect(count).toBe(1);
+		});
+
+		it("returns 0 when no matches", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+
+			expect(bridge.destroy("NonExistent")).toBe(0);
+			expect(bridge.destroy(99999)).toBe(0);
+		});
+	});
+
+	describe("switchScene() / listScenes()", () => {
+		it("lists registered scenes", () => {
+			const game = createDebugGame();
+			class SceneA extends Scene {}
+			class SceneB extends Scene {}
+			game.registerScenes({ sceneA: SceneA, sceneB: SceneB });
+			const bridge = startWithBridge(game, SceneA);
+
+			const scenes = bridge.listScenes();
+			expect(scenes).toContain("sceneA");
+			expect(scenes).toContain("sceneB");
+		});
+
+		it("switches to a registered scene", () => {
+			const game = createDebugGame();
+			let sceneBReady = false;
+			class SceneA extends Scene {}
+			class SceneB extends Scene {
+				onReady() {
+					sceneBReady = true;
+				}
+			}
+			game.registerScenes({ sceneA: SceneA, sceneB: SceneB });
+			const bridge = startWithBridge(game, SceneA);
+
+			bridge.switchScene("sceneB");
+			expect(sceneBReady).toBe(true);
+		});
+	});
+
+	describe("setMousePosition() / getMousePosition()", () => {
+		it("returns (0,0) when no input plugin", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+
+			const pos = bridge.getMousePosition();
+			expect(pos.x).toBe(0);
+			expect(pos.y).toBe(0);
+		});
+	});
+
 	describe("events with filter", () => {
 		it("events() supports category filter", () => {
 			const game = createDebugGame();

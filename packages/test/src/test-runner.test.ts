@@ -1,4 +1,5 @@
 import { Scene } from "@quintus/core";
+import { InputPlugin } from "@quintus/input";
 import { describe, expect, test } from "vitest";
 import { InputScript } from "./input-script.js";
 import { TestRunner } from "./test-runner.js";
@@ -135,6 +136,56 @@ describe("TestRunner", () => {
 			duration: 2,
 		});
 		expect(result.totalTime).toBeCloseTo(2, 3);
+		result.game.stop();
+	});
+
+	test("run() with input script executes actions against input system", async () => {
+		const result = await TestRunner.run({
+			scene: EmptyScene,
+			seed: 42,
+			plugins: [InputPlugin({ actions: { move_right: [] } })],
+			input: InputScript.create().press("move_right", 30),
+		});
+		expect(result.totalFrames).toBe(30);
+		expect(result.game.fixedFrame).toBe(30);
+		result.game.stop();
+	});
+
+	test("run() with input and longer duration runs remaining frames", async () => {
+		const result = await TestRunner.run({
+			scene: EmptyScene,
+			seed: 42,
+			plugins: [InputPlugin({ actions: { jump: [] } })],
+			input: InputScript.create().press("jump", 10),
+			duration: 1, // 60 frames > 10 from script
+		});
+		expect(result.totalFrames).toBe(60);
+		expect(result.game.fixedFrame).toBe(60);
+		result.game.stop();
+	});
+
+	test("run() records timeline snapshots during input execution", async () => {
+		const result = await TestRunner.run({
+			scene: EmptyScene,
+			seed: 42,
+			plugins: [InputPlugin({ actions: { jump: [] } })],
+			input: InputScript.create().press("jump", 30),
+			snapshotInterval: 10,
+		});
+		// Frame 0, 10, 20, 30 = 4 snapshots
+		expect(result.timeline.length).toBe(4);
+		result.game.stop();
+	});
+
+	test("run() with debug mode enables event logging", async () => {
+		const result = await TestRunner.run({
+			scene: EmptyScene,
+			seed: 42,
+			duration: 0.5,
+			debug: true,
+		});
+		// Game should have debug mode on
+		expect(result.game.debug).toBe(true);
 		result.game.stop();
 	});
 });

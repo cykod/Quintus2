@@ -288,6 +288,126 @@ describe("TileMap", () => {
 		});
 	});
 
+	describe("spawnFromTiles", () => {
+		it("spawns nodes from tile layer using ID mapping", () => {
+			const game = createTestGame();
+			const json = makeTiledJSON({
+				layers: [
+					{
+						name: "entities",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						// A few tiles with GID 3 (localId 2) scattered
+						data: [0, 0, 3, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0],
+					},
+				],
+			});
+			const map = setupTileMap(game, json);
+
+			class Enemy extends Node2D {}
+			const spawned = map.spawnFromTiles("entities", { 2: Enemy });
+			expect(spawned).toHaveLength(3);
+			expect(spawned[0]).toBeInstanceOf(Enemy);
+		});
+
+		it("positions spawned nodes at tile center", () => {
+			const game = createTestGame();
+			const json = makeTiledJSON({
+				layers: [
+					{
+						name: "entities",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						data: [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					},
+				],
+			});
+			const map = setupTileMap(game, json);
+
+			class Enemy extends Node2D {}
+			const spawned = map.spawnFromTiles("entities", { 2: Enemy }) as Node2D[];
+			expect(spawned).toHaveLength(1);
+			// Tile at col=1, row=0, tileWidth=16
+			// Center: (1 * 16 + 8, 0 * 16 + 8) = (24, 8)
+			expect(spawned[0]!.position.x).toBe(24);
+			expect(spawned[0]!.position.y).toBe(8);
+		});
+
+		it("clears tiles after spawning by default", () => {
+			const game = createTestGame();
+			const json = makeTiledJSON({
+				layers: [
+					{
+						name: "entities",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						data: [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					},
+				],
+			});
+			const map = setupTileMap(game, json);
+
+			class Enemy extends Node2D {}
+			map.spawnFromTiles("entities", { 2: Enemy });
+			// Tile should be cleared
+			expect(map.getTileAt(1, 0, "entities")).toBe(0);
+		});
+
+		it("preserves tiles when clearTiles is false", () => {
+			const game = createTestGame();
+			const json = makeTiledJSON({
+				layers: [
+					{
+						name: "entities",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						data: [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					},
+				],
+			});
+			const map = setupTileMap(game, json);
+
+			class Enemy extends Node2D {}
+			map.spawnFromTiles("entities", { 2: Enemy }, { clearTiles: false });
+			// Tile should still be there
+			expect(map.getTileAt(1, 0, "entities")).toBe(2);
+		});
+
+		it("returns empty array for nonexistent layer", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+
+			class Enemy extends Node2D {}
+			const spawned = map.spawnFromTiles("nonexistent", { 0: Enemy });
+			expect(spawned).toHaveLength(0);
+		});
+
+		it("skips tiles not in mapping", () => {
+			const game = createTestGame();
+			const json = makeTiledJSON({
+				layers: [
+					{
+						name: "stuff",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						data: [1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					},
+				],
+			});
+			const map = setupTileMap(game, json);
+
+			class Coin extends Node2D {}
+			// Only map localId 1 (GID 2)
+			const spawned = map.spawnFromTiles("stuff", { 1: Coin });
+			expect(spawned).toHaveLength(1);
+		});
+	});
+
 	describe("generateCollision", () => {
 		it("creates StaticColliders from solid tiles", () => {
 			const game = createTestGame();
@@ -536,6 +656,32 @@ describe("TileMap", () => {
 			};
 			// Should not throw
 			map.onDraw(ctx);
+		});
+
+		it("renders tiles with correct source rects", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const imageCalls: { name: string; pos: Vec2; opts: unknown }[] = [];
+			const ctx = {
+				text: () => {},
+				rect: () => {},
+				circle: () => {},
+				polygon: () => {},
+				line: () => {},
+				image: (name: string, pos: Vec2, opts: unknown) => {
+					imageCalls.push({ name, pos, opts });
+				},
+				measureText: () => new Vec2(0, 0),
+				save: () => {},
+				restore: () => {},
+				setAlpha: () => {},
+				assets: {} as never,
+			};
+			map.onDraw(ctx);
+			// Should have drawn tiles (row 1 has 2 tiles, row 2 has 5 tiles = 7 total)
+			expect(imageCalls.length).toBe(7);
+			// Tileset image name should be derived from "tiles.png" -> "tiles"
+			expect(imageCalls[0]!.name).toBe("tiles");
 		});
 	});
 
