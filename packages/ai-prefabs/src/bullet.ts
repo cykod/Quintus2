@@ -24,6 +24,9 @@ export class Bullet extends Actor implements Poolable {
 
 	readonly hit: Signal<CollisionObject> = signal<CollisionObject>();
 
+	/** Movement direction in radians. Updated by fire(); can be changed per-frame for homing. */
+	angle = 0;
+
 	private _elapsed = 0;
 	private _fired = false;
 	private _releaser: ((b: Bullet) => void) | null = null;
@@ -31,7 +34,7 @@ export class Bullet extends Actor implements Poolable {
 	fire(pos: Vec2, angle: number, overrides?: Partial<BulletConfig>): void {
 		this.position.x = pos.x;
 		this.position.y = pos.y;
-		this.rotation = angle;
+		this.angle = angle;
 		if (overrides) {
 			if (overrides.speed !== undefined) this.speed = overrides.speed;
 			if (overrides.damage !== undefined) this.damage = overrides.damage;
@@ -63,10 +66,12 @@ export class Bullet extends Actor implements Poolable {
 			return;
 		}
 
-		this.velocity.x = Math.cos(this.rotation) * this.speed;
-		this.velocity.y = Math.sin(this.rotation) * this.speed;
+		this.velocity.x = Math.cos(this.angle) * this.speed;
+		this.velocity.y = Math.sin(this.angle) * this.speed;
 		this.move(dt);
 
+		// Bullet may have been recycled during move() collision
+		if (!this.isInsideTree) return;
 		this._checkOffScreen();
 	}
 
@@ -76,6 +81,7 @@ export class Bullet extends Actor implements Poolable {
 		this.lifetime = 3;
 		this._elapsed = 0;
 		this._fired = false;
+		this.angle = 0;
 		this._releaser = null;
 	}
 

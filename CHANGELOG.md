@@ -1,3 +1,15 @@
+## Fix Bullet scene-tree error and sideways sprite rotation
+*Friday, February 27th at 11am*
+Fix two bugs in the ai-prefabs Bullet base class introduced during Phase D 
+space shooter polish. The scene-tree error occurred because _checkOffScreen() 
+accessed this.game after the bullet was recycled during move() collision -- 
+fixed by adding an isInsideTree guard after move(). The sideways sprite bug 
+occurred because fire() set this.rotation to the movement angle, visually 
+rotating pre-oriented sprites -- fixed by storing the angle in a private _angle 
+field separate from visual rotation.
+
+---
+
 ## Polish Sokoban with 7 edge-case tests and code comments
 *Friday, February 27th at 11am*
 Add edge-case test file for the Sokoban example game covering corner deadlocks, 
