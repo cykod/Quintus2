@@ -19,6 +19,7 @@
 		"@quintus/sprites": "workspace:*",
 		"@quintus/test": "workspace:*",
 		"@quintus/tilemap": "workspace:*",
+		"@quintus/touch": "workspace:*",
 		"@quintus/tween": "workspace:*",
 		"@quintus/ui": "workspace:*"
 	},

@@ -3,6 +3,7 @@ import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { Vec2 } from "@quintus/math";
 import { PhysicsPlugin } from "@quintus/physics";
+import { TouchPlugin, topDownLayout } from "@quintus/touch";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "./config.js";
 import { GameOverScene } from "./scenes/game-over-scene.js";
@@ -17,6 +18,7 @@ const game = new Game({
 	width: 320,
 	height: 240,
 	canvas: "game",
+	scale: "fit",
 	pixelArt: true,
 	backgroundColor: "#1a1a2e",
 	seed: 42,
@@ -30,6 +32,20 @@ game.use(
 	}),
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
+game.use(
+	TouchPlugin({
+		layout: topDownLayout({
+			moveActions: { left: "left", right: "right", up: "up", down: "down" },
+			actions: [
+				{ action: "attack", label: "Atk" },
+				{ action: "defend", label: "Def" },
+				{ action: "interact", label: "E" },
+				{ action: "use_potion", label: "Pot" },
+			],
+		}),
+		fullscreen: true,
+	}),
+);
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

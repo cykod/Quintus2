@@ -90,4 +90,34 @@ describe("topDownLayout", () => {
 		expect(joystick.actions.up).toBe("move_up");
 		expect(joystick.actions.down).toBe("move_down");
 	});
+
+	it("respects custom moveActions", () => {
+		const game = createGame();
+		game.use(InputPlugin({ actions: { left: [], right: [], up: [], down: [] } }));
+		const factory = topDownLayout({
+			moveActions: { left: "left", right: "right", up: "up", down: "down" },
+		});
+		const controls = factory(game).createControls(game);
+		const joystick = controls[0] as VirtualJoystick;
+
+		expect(joystick.actions.left).toBe("left");
+		expect(joystick.actions.right).toBe("right");
+		expect(joystick.actions.up).toBe("up");
+		expect(joystick.actions.down).toBe("down");
+	});
+
+	it("partially overrides moveActions with defaults for the rest", () => {
+		const game = createGame();
+		game.use(InputPlugin({ actions: { left: [], move_right: [] } }));
+		const factory = topDownLayout({
+			moveActions: { left: "left" },
+		});
+		const controls = factory(game).createControls(game);
+		const joystick = controls[0] as VirtualJoystick;
+
+		expect(joystick.actions.left).toBe("left");
+		expect(joystick.actions.right).toBe("move_right");
+		expect(joystick.actions.up).toBe("move_up");
+		expect(joystick.actions.down).toBe("move_down");
+	});
 });

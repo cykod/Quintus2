@@ -254,7 +254,7 @@ describe("InputPlugin", () => {
 			game.stop();
 		});
 
-		it("mouse events drive actions", () => {
+		it("pointer events drive actions", () => {
 			const game = createGame();
 			game.use(InputPlugin({ actions: { attack: ["mouse:left"] } }));
 			class TestScene extends Scene {}
@@ -262,11 +262,13 @@ describe("InputPlugin", () => {
 
 			const input = getInput(game) as Input;
 
-			game.canvas.dispatchEvent(new MouseEvent("mousedown", { button: 0 }));
+			// jsdom lacks PointerEvent; use MouseEvent with pointer event names
+			// (PointerEvent extends MouseEvent, so the handler properties match)
+			game.canvas.dispatchEvent(new MouseEvent("pointerdown", { button: 0 }));
 			game.step();
 			expect(input.isPressed("attack")).toBe(true);
 
-			document.dispatchEvent(new MouseEvent("mouseup", { button: 0 }));
+			document.dispatchEvent(new MouseEvent("pointerup", { button: 0 }));
 			game.step();
 			expect(input.isPressed("attack")).toBe(false);
 
@@ -286,11 +288,11 @@ describe("InputPlugin", () => {
 
 			game.stop();
 
-			// Should have removed keydown, keyup, mouseup from document
+			// Should have removed keydown, keyup, pointerup from document
 			const docEvents = docRemoveSpy.mock.calls.map(([e]) => e);
 			expect(docEvents).toContain("keydown");
 			expect(docEvents).toContain("keyup");
-			expect(docEvents).toContain("mouseup");
+			expect(docEvents).toContain("pointerup");
 
 			// Should have removed blur from window
 			const winEvents = winRemoveSpy.mock.calls.map(([e]) => e);

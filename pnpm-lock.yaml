@@ -80,6 +80,9 @@ importers:
       '@quintus/tilemap':
         specifier: workspace:*
         version: link:../packages/tilemap
+      '@quintus/touch':
+        specifier: workspace:*
+        version: link:../packages/touch
       '@quintus/tween':
         specifier: workspace:*
         version: link:../packages/tween
@@ -238,6 +241,10 @@ importers:
       '@quintus/snapshot':
         specifier: workspace:*
         version: link:../snapshot
+    devDependencies:
+      '@quintus/input':
+        specifier: workspace:*
+        version: link:../input
 
   packages/three: {}
 

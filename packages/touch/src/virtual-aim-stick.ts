@@ -97,9 +97,7 @@ export class VirtualAimStick extends VirtualControl {
 					const gp = aimNode.globalPosition;
 					const targetX = gp.x + dirX * this.aimDistance;
 					const targetY = gp.y + dirY * this.aimDistance;
-					(
-						this.input as unknown as { _setMousePosition(x: number, y: number): void }
-					)._setMousePosition(targetX, targetY);
+					this.input.setMousePosition(targetX, targetY);
 				}
 			}
 		}

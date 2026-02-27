@@ -1,6 +1,7 @@
 import { AudioPlugin } from "@quintus/audio";
 import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
+import { puzzleLayout, TouchPlugin } from "@quintus/touch";
 import { TweenPlugin } from "@quintus/tween";
 import { GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS } from "./config.js";
 import { LevelCompleteScene } from "./scenes/level-complete.js";
@@ -12,6 +13,7 @@ const game = new Game({
 	width: GAME_WIDTH,
 	height: GAME_HEIGHT,
 	canvas: "game",
+	scale: "fit",
 	pixelArt: true,
 	backgroundColor: "#3b2d1f",
 	seed: 42,
@@ -19,6 +21,17 @@ const game = new Game({
 
 // === Plugins — NO PhysicsPlugin ===
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
+game.use(
+	TouchPlugin({
+		layout: puzzleLayout({
+			buttons: [
+				{ action: "undo", label: "Undo" },
+				{ action: "reset", label: "Reset" },
+			],
+		}),
+		fullscreen: true,
+	}),
+);
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

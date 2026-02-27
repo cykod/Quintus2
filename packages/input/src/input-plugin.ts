@@ -45,15 +45,15 @@ export function InputPlugin(config: InputConfig): Plugin {
 					input._bufferKeyRelease(e.code);
 				};
 
-				const onMouseDown = (e: MouseEvent) => {
+				const onPointerDown = (e: PointerEvent) => {
 					input._bufferMousePress(e.button);
 				};
 
-				const onMouseUp = (e: MouseEvent) => {
+				const onPointerUp = (e: PointerEvent) => {
 					input._bufferMouseRelease(e.button);
 				};
 
-				const onMouseMove = (e: MouseEvent) => {
+				const onPointerMove = (e: PointerEvent) => {
 					if (!game.canvas) return;
 					const rect = game.canvas.getBoundingClientRect();
 					const scaleX = game.width / rect.width;
@@ -71,10 +71,10 @@ export function InputPlugin(config: InputConfig): Plugin {
 				document.addEventListener("keydown", onKeyDown);
 				document.addEventListener("keyup", onKeyUp);
 				if (game.canvas) {
-					game.canvas.addEventListener("mousedown", onMouseDown);
-					game.canvas.addEventListener("mousemove", onMouseMove);
+					game.canvas.addEventListener("pointerdown", onPointerDown);
+					game.canvas.addEventListener("pointermove", onPointerMove);
 				}
-				document.addEventListener("mouseup", onMouseUp);
+				document.addEventListener("pointerup", onPointerUp);
 				window.addEventListener("blur", onBlur);
 
 				// --- Cleanup on stop ---
@@ -82,10 +82,10 @@ export function InputPlugin(config: InputConfig): Plugin {
 					document.removeEventListener("keydown", onKeyDown);
 					document.removeEventListener("keyup", onKeyUp);
 					if (game.canvas) {
-						game.canvas.removeEventListener("mousedown", onMouseDown);
-						game.canvas.removeEventListener("mousemove", onMouseMove);
+						game.canvas.removeEventListener("pointerdown", onPointerDown);
+						game.canvas.removeEventListener("pointermove", onPointerMove);
 					}
-					document.removeEventListener("mouseup", onMouseUp);
+					document.removeEventListener("pointerup", onPointerUp);
 					window.removeEventListener("blur", onBlur);
 					inputMap.delete(game);
 				});

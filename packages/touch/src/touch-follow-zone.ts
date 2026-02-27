@@ -46,9 +46,6 @@ export class TouchFollowZone extends VirtualControl {
 
 	private _updateMousePosition(x: number, y: number): void {
 		const targetY = this.followY ?? y;
-		(this.input as unknown as { _setMousePosition(x: number, y: number): void })._setMousePosition(
-			x,
-			targetY,
-		);
+		this.input.setMousePosition(x, targetY);
 	}
 }

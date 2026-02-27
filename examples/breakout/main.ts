@@ -3,8 +3,9 @@ import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { Vec2 } from "@quintus/math";
 import { PhysicsPlugin } from "@quintus/physics";
+import { breakoutLayout, TouchPlugin } from "@quintus/touch";
 import { TweenPlugin } from "@quintus/tween";
-import { COLLISION_GROUPS, GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS } from "./config.js";
+import { COLLISION_GROUPS, GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS, PADDLE_Y } from "./config.js";
 import { GameOverScene } from "./scenes/game-over-scene.js";
 import { Level1 } from "./scenes/level1.js";
 import { Level2 } from "./scenes/level2.js";
@@ -17,6 +18,7 @@ const game = new Game({
 	width: GAME_WIDTH,
 	height: GAME_HEIGHT,
 	canvas: "game",
+	scale: "fit",
 	pixelArt: false,
 	backgroundColor: "#0a0a2e",
 	seed: 42,
@@ -30,6 +32,7 @@ game.use(
 	}),
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
+game.use(TouchPlugin({ layout: breakoutLayout({ followY: PADDLE_Y }), fullscreen: true }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

@@ -10,7 +10,7 @@
 | 1 | Core touch infrastructure (scaling, fullscreen, scroll prevention, multi-touch) | Done |
 | 2 | Virtual control widgets (joystick, D-pad, button, overlay) | Done |
 | 3 | Preset layouts for common game types | Done |
-| 4 | Example game integration | Pending |
+| 4 | Example game integration | Done |
 
 ---
 

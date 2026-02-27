@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Quintus 2.0 — Sokoban</title>
   <style>
-    body { margin: 0; background: #3b2d1f; color: #e0e0e0; font-family: system-ui; }
-    canvas { display: block; margin: 2rem auto; border: 1px solid #333; }
+    body { margin: 0; overflow: hidden; background: #3b2d1f; color: #e0e0e0; font-family: system-ui; }
+    canvas { display: block; margin: 2rem auto; border: 1px solid #333; touch-action: none; }
     h1 { text-align: center; margin-top: 2rem; }
     p { text-align: center; color: #888; }
     a { color: #e8c170; }
@@ -15,7 +16,7 @@
 <body>
   <h1>Quintus 2.0 — Sokoban</h1>
   <p>Push crates onto targets. Arrow keys / WASD to move, Z to undo, R to reset</p>
-  <canvas id="game" width="480" height="640" style="width: 480px; height: 640px;"></canvas>
+  <canvas id="game" width="480" height="640"></canvas>
   <p><a href="/">&larr; All Examples</a></p>
   <script type="module" src="./main.ts"></script>
 </body>

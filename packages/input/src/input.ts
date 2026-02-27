@@ -263,7 +263,12 @@ export class Input {
 		this._mousePressBuffer.delete(binding);
 	}
 
-	/** @internal Update mouse position (immediate — no buffering needed). */
+	/** Set the mouse position in game coordinates. Used by virtual controls. */
+	setMousePosition(x: number, y: number): void {
+		this._mousePosition._set(x, y);
+	}
+
+	/** @internal Alias for setMousePosition (backwards compat with InputPlugin). */
 	_setMousePosition(x: number, y: number): void {
 		this._mousePosition._set(x, y);
 	}

@@ -4,6 +4,7 @@ import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { Vec2 } from "@quintus/math";
 import { PhysicsPlugin } from "@quintus/physics";
+import { platformerLayout, TouchPlugin } from "@quintus/touch";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "./config.js";
 import { GameOverScene } from "./scenes/game-over-scene.js";
@@ -16,6 +17,7 @@ const game = new Game({
 	width: 320,
 	height: 240,
 	canvas: "game",
+	scale: "fit",
 	pixelArt: true,
 	backgroundColor: "#1a1a2e",
 	seed: 42,
@@ -29,6 +31,7 @@ game.use(
 	}),
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
+game.use(TouchPlugin({ layout: platformerLayout(), fullscreen: true }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

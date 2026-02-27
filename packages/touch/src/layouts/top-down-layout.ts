@@ -5,6 +5,8 @@ import { VirtualButton } from "../virtual-button.js";
 import { VirtualJoystick } from "../virtual-joystick.js";
 
 export interface TopDownLayoutConfig {
+	/** Override the joystick's directional action names. Default: move_left/move_right/move_up/move_down. */
+	moveActions?: { left?: string; right?: string; up?: string; down?: string };
 	/** Action buttons on the lower-right. Default: [{ action: "fire", label: "A" }] */
 	actions?: Array<{ action: string; label: string }>;
 }
@@ -26,16 +28,17 @@ export function topDownLayout(config?: TopDownLayoutConfig): TouchLayoutFactory 
 			const btnR = unit * 0.07;
 
 			const actions = config?.actions ?? [{ action: "fire", label: "A" }];
+			const move = config?.moveActions;
 
 			const controls: Node2D[] = [
 				new VirtualJoystick({
 					position: new Vec2(margin + stickR, h - margin - stickR),
 					radius: stickR,
 					actions: {
-						left: "move_left",
-						right: "move_right",
-						up: "move_up",
-						down: "move_down",
+						left: move?.left ?? "move_left",
+						right: move?.right ?? "move_right",
+						up: move?.up ?? "move_up",
+						down: move?.down ?? "move_down",
 					},
 				}),
 			];

@@ -1,3 +1,17 @@
+## Integrate mobile touch controls into all 8 example games
+*Friday, February 27th at 4pm*
+Complete Mobile Touch UI Phase 4: switch InputPlugin from MouseEvent to 
+PointerEvent so touch input works natively, add public setMousePosition() API 
+to Input (removing ugly type casts in virtual controls), add moveActions config 
+to topDownLayout for games using non-standard action names, update all 8 
+example HTML files with mobile viewport meta tags and touch-action CSS, and 
+integrate TouchPlugin with appropriate layouts into every example game 
+(platformer, platformer-tsx, dungeon, breakout, sokoban, tower-defense, 
+top-down-shooter, space-shooter). Each game now has scale: "fit" for responsive 
+canvas sizing and fullscreen support on mobile.
+
+---
+
 ## Add preset touch layouts to @quintus/touch
 *Friday, February 27th at 2pm*
 Implement Phase 3 of the mobile touch UI: 6 preset layout factory functions 
