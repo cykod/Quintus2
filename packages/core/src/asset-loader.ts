@@ -9,6 +9,8 @@ export interface AssetManifest {
 	json?: string[];
 	/** XML paths to load (fetched as text). Used for sprite atlas descriptors. */
 	xml?: string[];
+	/** TMX paths to load (fetched as text). Used for Tiled map files. */
+	tmx?: string[];
 	/** Custom asset types registered via registerLoader(). */
 	[key: string]: string[] | undefined;
 }
@@ -45,10 +47,13 @@ export class AssetLoader {
 		for (const path of manifest.xml ?? []) {
 			entries.push({ type: "xml", path });
 		}
+		for (const path of manifest.tmx ?? []) {
+			entries.push({ type: "tmx", path });
+		}
 
 		// Custom types
 		for (const [key, paths] of Object.entries(manifest)) {
-			if (key === "images" || key === "json" || key === "xml") continue;
+			if (key === "images" || key === "json" || key === "xml" || key === "tmx") continue;
 			if (!Array.isArray(paths)) continue;
 			if (!this._customLoaders.has(key)) {
 				console.warn(`No loader registered for asset type "${key}". Skipping.`);
@@ -80,7 +85,7 @@ export class AssetLoader {
 						}
 						const data = await response.json();
 						this.jsonData.set(this.nameFromPath(entry.path), data);
-					} else if (entry.type === "xml") {
+					} else if (entry.type === "xml" || entry.type === "tmx") {
 						const response = await fetch(entry.path);
 						if (!response.ok) {
 							throw new Error(`HTTP ${response.status}: ${response.statusText}`);

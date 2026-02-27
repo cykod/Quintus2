@@ -30,13 +30,6 @@ game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 
-// === TMX Loader ===
-game.assets.registerLoader("tmx", async (_name: string, path: string) => {
-	const response = await fetch(path);
-	if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-	return response.text();
-});
-
 // === Register Scenes ===
 game.registerScenes({
 	title: TitleScene,

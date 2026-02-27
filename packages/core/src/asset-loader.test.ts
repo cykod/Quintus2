@@ -265,15 +265,15 @@ describe("AssetLoader", () => {
 		it("multiple custom types in one manifest", async () => {
 			const loader = new AssetLoader();
 			loader.registerLoader("audio", async () => ({ type: "audio" }));
-			loader.registerLoader("tmx", async () => "<map/>");
+			loader.registerLoader("csv", async () => "a,b,c");
 
 			await loader.load({
 				audio: ["bgm.ogg"],
-				tmx: ["level1.tmx"],
+				csv: ["data.csv"],
 			});
 
 			expect(loader.get("bgm")).toEqual({ type: "audio" });
-			expect(loader.get("level1")).toBe("<map/>");
+			expect(loader.get("data")).toBe("a,b,c");
 		});
 	});
 

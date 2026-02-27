@@ -1,3 +1,15 @@
+## Make TMX a built-in asset type in AssetLoader
+*Friday, February 27th at 12am*
+Added "tmx" as a first-class asset type in AssetLoader alongside images, json, 
+and xml. The TMX loader fetches text identically to the xml handler, 
+eliminating the need for manual registerLoader("tmx", ...) calls. Removed the 
+duplicated 5-line TMX loader registration from all four example games that used 
+it (platformer, platformer-tsx, dungeon, tower-defense). Updated one test that 
+was using "tmx" as a custom type name to use "csv" instead, since TMX is now 
+built-in.
+
+---
+
 ## Integrate ai-prefabs into platformer and add 24 edge-case tests
 *Thursday, February 26th at 11pm*
 Refactors the platformer-tsx example to use @quintus/ai-prefabs utilities: 
