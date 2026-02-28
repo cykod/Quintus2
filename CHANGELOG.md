@@ -1,3 +1,15 @@
+## Add advanced platformer asset pipeline and Tiled setup (Phase 2)
+*Saturday, February 28th at 3pm*
+Implements Phase 2 of the Advanced Platformer example: copies Kenney New 
+Platformer Pack 1.1 assets (spritesheets, backgrounds, sounds), creates 
+TextureAtlas/SpriteSheet loaders with a grid-index bridging helper, generates a 
+235-tile Tiled tileset (TSX) with typed properties, slope collision polygons, 
+and animated tiles, and wires external TSX resolution into TileMap._loadMap(). 
+A minimal test scene with player movement verifies the full pipeline 
+end-to-end. All 2014 tests pass, build and lint clean.
+
+---
+
 ## Add TileMap query APIs, animated tiles, and polygon colliders
 *Saturday, February 28th at 12am*
 Implement Phase 1 engine enhancements for the advanced platformer: tile 

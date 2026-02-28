@@ -8,7 +8,7 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Engine Enhancements | Done |
-| 2 | Asset Pipeline & Tiled Setup | Pending |
+| 2 | Asset Pipeline & Tiled Setup | Done |
 | 3 | Core Player Mechanics | Pending |
 | 4 | Terrain & Collision (Slopes, One-Way) | Pending |
 | 5 | Interactive Tiles (Breakable, Fall-Away, Springs, Ladders) | Pending |
@@ -472,14 +472,14 @@ Also build a `_tileDefCache: Map<number, TiledTileDefinition>` once during `_loa
 
 Copy from the Kenney pack into the example's `assets/` directory.
 
-- [ ] Copy `Spritesheets/spritesheet-tiles-default.png` → `assets/tiles.png`
-- [ ] Copy `Spritesheets/spritesheet-tiles-default.xml` → `assets/tiles.xml`
-- [ ] Copy `Spritesheets/spritesheet-characters-default.png` → `assets/characters.png`
-- [ ] Copy `Spritesheets/spritesheet-characters-default.xml` → `assets/characters.xml`
-- [ ] Copy `Spritesheets/spritesheet-enemies-default.png` → `assets/enemies.png`
-- [ ] Copy `Spritesheets/spritesheet-enemies-default.xml` → `assets/enemies.xml`
-- [ ] Copy background PNGs for hills, desert, and clouds themes
-- [ ] Copy all 10 sound files to `assets/sounds/`
+- [x] Copy `Spritesheets/spritesheet-tiles-default.png` → `assets/tiles.png`
+- [x] Copy `Spritesheets/spritesheet-tiles-default.xml` → `assets/tiles.xml`
+- [x] Copy `Spritesheets/spritesheet-characters-default.png` → `assets/characters.png`
+- [x] Copy `Spritesheets/spritesheet-characters-default.xml` → `assets/characters.xml`
+- [x] Copy `Spritesheets/spritesheet-enemies-default.png` → `assets/enemies.png`
+- [x] Copy `Spritesheets/spritesheet-enemies-default.xml` → `assets/enemies.xml`
+- [x] Copy background PNGs for hills, desert, and clouds themes
+- [x] Copy all 10 sound files to `assets/sounds/`
 
 ### 2b. TextureAtlas Setup (`sprites.ts`)
 
@@ -583,11 +583,11 @@ Layers (bottom to top):
       - pathPoints: polyline defining movement path
 ```
 
-- [ ] Copy all sprite/sound assets to `examples/advanced-platformer/assets/`
-- [ ] Create `sprites.ts` with TextureAtlas loading and animation definitions
-- [ ] Create `tileset.tsx` external Tiled tileset with all tile types and collision shapes
-- [ ] Create template TMX with 3 tile layers + 1 object layer
-- [ ] Verify asset loading in a minimal `main.ts` test scene
+- [x] Copy all sprite/sound assets to `examples/advanced-platformer/assets/`
+- [x] Create `sprites.ts` with TextureAtlas loading and animation definitions
+- [x] Create `tileset.tsx` external Tiled tileset with all tile types and collision shapes
+- [x] Create template TMX with 3 tile layers + 1 object layer
+- [x] Verify asset loading in a minimal `main.ts` test scene
 
 ---
 

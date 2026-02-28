@@ -540,3 +540,11 @@
 [MILE] fri 2/27 8pm - Added gamepad support to both shooter examples with twin-stick aiming and analog movement
 
 [MILE] fri 2/27 8pm - Added gamepad bindings, fullscreen HTML, and ui_confirm menu support to all 7 example games
+
+[DSGN] fri 2/27 10pm - Design advanced platformer with parallax, ladders, enemies, moving platforms, slopes, breakable blocks, and power-ups using Kenney asset pack
+
+[IMPL] fri 2/27 11pm - Implement Phase 1 engine enhancements for advanced platformer (TileMap APIs, visible layers, animated tiles, slope colliders)
+
+[MILE] sat 2/28 12am - Added TileMap query APIs, animated tiles, visible layer filtering, and polygon collision generation for advanced platformer Phase 1
+
+[IMPL] sat 2/28 12am - Implement Phase 2: Asset Pipeline & Tiled Setup for Advanced Platformer

@@ -12,6 +12,7 @@ import type { ParsedMap, ParsedObject, ParsedTileLayer } from "./tiled-parser.js
 import { parseTiledMap } from "./tiled-parser.js";
 import type { TiledMap, TiledTileDefinition, TiledTileset } from "./tiled-types.js";
 import { parseTmx } from "./tmx-parser.js";
+import { parseTsx } from "./tsx-parser.js";
 
 /** Result of a tilemap grid raycast. */
 export interface TileRayHit {
@@ -643,7 +644,22 @@ export class TileMap extends Node2D {
 			// Try TMX text (loaded via custom "tmx" loader or stored as custom asset)
 			const tmxText = game.assets.get<string>(this.asset);
 			if (tmxText && typeof tmxText === "string") {
-				const tiledMap = parseTmx(tmxText);
+				const tiledMap = parseTmx(tmxText, (source) => {
+					// Try raw source path first, then strip extension (asset loader uses nameFromPath)
+					let tsxText = game.assets.get<string>(source);
+					if (!tsxText || typeof tsxText !== "string") {
+						const dotIdx = source.lastIndexOf(".");
+						const nameOnly = dotIdx > 0 ? source.slice(0, dotIdx) : source;
+						tsxText = game.assets.get<string>(nameOnly);
+					}
+					if (!tsxText || typeof tsxText !== "string") {
+						throw new Error(
+							`External tileset '${source}' not found. ` +
+								`Load it via game.assets.load({ tmx: ['${source}'] }) before starting the scene.`,
+						);
+					}
+					return parseTsx(tsxText);
+				});
 				parsed = parseTiledMap(tiledMap);
 			}
 		}
