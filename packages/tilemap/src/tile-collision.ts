@@ -1,4 +1,5 @@
 import type { Node2D } from "@quintus/core";
+import { Vec2 } from "@quintus/math";
 import type { ParsedTileLayer } from "./tiled-parser.js";
 import type { TiledTileset } from "./tiled-types.js";
 
@@ -19,6 +20,7 @@ export interface PhysicsFactories {
 	StaticCollider: new () => Node2D & { collisionGroup: string; oneWay: boolean };
 	CollisionShape: new () => Node2D & { shape: unknown };
 	shapeRect: (w: number, h: number) => unknown;
+	shapePolygon?: (points: Vec2[]) => unknown;
 }
 
 /**
@@ -173,4 +175,147 @@ export function createColliders(
 	}
 
 	return colliders;
+}
+
+/**
+ * Ensure polygon vertices are wound clockwise.
+ * Clockwise winding in screen coordinates means positive cross product sum.
+ */
+function ensureClockwise(points: Vec2[]): Vec2[] {
+	// Compute signed area (positive = clockwise in screen coords where Y points down)
+	let sum = 0;
+	for (let i = 0; i < points.length; i++) {
+		const a = points[i] as Vec2;
+		const b = points[(i + 1) % points.length] as Vec2;
+		sum += (b.x - a.x) * (b.y + a.y);
+	}
+	// If sum < 0, winding is counterclockwise — reverse
+	if (sum < 0) {
+		return [...points].reverse();
+	}
+	return points;
+}
+
+/**
+ * Create individual StaticCollider + CollisionShape nodes from tiles that have
+ * per-tile collision shapes defined in Tiled's collision editor (objectgroup).
+ *
+ * Supports polygon and rectangle shapes. Polygon vertices are offset relative
+ * to tile center and corrected for flip flags and clockwise winding.
+ *
+ * @param layer Parsed tile layer.
+ * @param tilesets The map's tilesets (contain tile definitions with objectgroups).
+ * @param tileWidth Tile width in pixels.
+ * @param tileHeight Tile height in pixels.
+ * @param collisionGroup Collision group name.
+ * @param parent Node to add colliders to (the TileMap).
+ * @param factories Physics constructors.
+ * @returns Set of local tile IDs that were handled (should be excluded from rect merging).
+ */
+export function createTileShapeColliders(
+	layer: ParsedTileLayer,
+	tilesets: TiledTileset[],
+	tileWidth: number,
+	tileHeight: number,
+	collisionGroup: string,
+	parent: Node2D,
+	factories: PhysicsFactories,
+): Set<number> {
+	if (!factories.shapePolygon) return new Set();
+
+	// Build a map of localId -> objectgroup from tileset definitions
+	const tileObjectGroups = new Map<
+		number,
+		NonNullable<TiledTileset["tiles"]>[number]["objectgroup"]
+	>();
+	for (const ts of tilesets) {
+		if (!ts.tiles) continue;
+		for (const tileDef of ts.tiles) {
+			if (tileDef.objectgroup) {
+				tileObjectGroups.set(tileDef.id, tileDef.objectgroup);
+			}
+		}
+	}
+
+	if (tileObjectGroups.size === 0) return new Set();
+
+	const handledIds = new Set<number>();
+	const halfW = tileWidth / 2;
+	const halfH = tileHeight / 2;
+
+	for (let row = 0; row < layer.height; row++) {
+		for (let col = 0; col < layer.width; col++) {
+			const tile = layer.tiles[row * layer.width + col];
+			if (!tile) continue;
+
+			const objGroup = tileObjectGroups.get(tile.localId);
+			if (!objGroup) continue;
+
+			handledIds.add(tile.localId);
+
+			// Tile center in world space (relative to tilemap)
+			const tileCenterX = col * tileWidth + halfW;
+			const tileCenterY = row * tileHeight + halfH;
+
+			for (const obj of objGroup.objects) {
+				let shape: unknown;
+
+				if (obj.polygon && obj.polygon.length >= 3) {
+					// Polygon: vertices are relative to obj.x/obj.y within the tile
+					let points = obj.polygon.map((p) => new Vec2(obj.x + p.x - halfW, obj.y + p.y - halfH));
+
+					// Handle flip flags
+					if (tile.flipH) {
+						points = points.map((p) => new Vec2(-p.x, p.y));
+					}
+					if (tile.flipV) {
+						points = points.map((p) => new Vec2(p.x, -p.y));
+					}
+
+					points = ensureClockwise(points);
+					shape = factories.shapePolygon(points);
+				} else if (obj.width > 0 && obj.height > 0) {
+					// Rectangle collision shape
+					// If the rect covers the entire tile, use shapeRect
+					if (obj.x === 0 && obj.y === 0 && obj.width === tileWidth && obj.height === tileHeight) {
+						shape = factories.shapeRect(tileWidth, tileHeight);
+					} else {
+						// Convert rect to polygon (relative to tile center)
+						let points = [
+							new Vec2(obj.x - halfW, obj.y - halfH),
+							new Vec2(obj.x + obj.width - halfW, obj.y - halfH),
+							new Vec2(obj.x + obj.width - halfW, obj.y + obj.height - halfH),
+							new Vec2(obj.x - halfW, obj.y + obj.height - halfH),
+						];
+
+						if (tile.flipH) {
+							points = points.map((p) => new Vec2(-p.x, p.y));
+						}
+						if (tile.flipV) {
+							points = points.map((p) => new Vec2(p.x, -p.y));
+						}
+
+						points = ensureClockwise(points);
+						shape = factories.shapePolygon(points);
+					}
+				} else {
+					continue;
+				}
+
+				const collider = new factories.StaticCollider();
+				collider.name = `TileShapeCollider_${col}_${row}`;
+				collider.position.x = tileCenterX;
+				collider.position.y = tileCenterY;
+				collider.collisionGroup = collisionGroup;
+
+				const collisionShape = new factories.CollisionShape();
+				collisionShape.shape = shape;
+				collider.add(collisionShape);
+
+				parent.add(collider);
+			}
+		}
+	}
+
+	return handledIds;
 }

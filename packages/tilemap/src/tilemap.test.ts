@@ -11,6 +11,7 @@ beforeAll(() => {
 		StaticCollider: StaticCollider as never,
 		CollisionShape: CollisionShape as never,
 		shapeRect: Shape.rect,
+		shapePolygon: Shape.polygon as never,
 	});
 });
 
@@ -717,6 +718,397 @@ describe("TileMap", () => {
 			expect(tileMap?.isLoaded).toBe(true);
 			expect(tileMap?.mapWidth).toBe(3);
 			expect(tileMap?.mapHeight).toBe(2);
+		});
+	});
+
+	describe("getTileDefinition", () => {
+		function makeTiledWithDefs(): TiledMap {
+			return {
+				width: 3,
+				height: 1,
+				tilewidth: 16,
+				tileheight: 16,
+				tilesets: [
+					{
+						firstgid: 1,
+						name: "terrain",
+						tilewidth: 16,
+						tileheight: 16,
+						image: "tiles.png",
+						imagewidth: 160,
+						imageheight: 160,
+						columns: 10,
+						tilecount: 100,
+						tiles: [
+							{
+								id: 0,
+								type: "Solid",
+								properties: [{ name: "solid", type: "bool", value: true }],
+							},
+							{
+								id: 5,
+								type: "Water",
+								properties: [
+									{ name: "climbable", type: "bool", value: true },
+									{ name: "speed", type: "float", value: 0.5 },
+								],
+							},
+							{
+								id: 10,
+								type: "Water",
+								properties: [{ name: "damage", type: "int", value: 2 }],
+							},
+						],
+					},
+				],
+				layers: [
+					{
+						name: "ground",
+						type: "tilelayer",
+						width: 3,
+						height: 1,
+						data: [1, 6, 11],
+					},
+				],
+			};
+		}
+
+		it("returns definition for known tile ID", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithDefs());
+			const def = map.getTileDefinition(0);
+			expect(def).not.toBeNull();
+			expect(def?.id).toBe(0);
+			expect(def?.type).toBe("Solid");
+		});
+
+		it("returns null for unknown tile ID", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithDefs());
+			expect(map.getTileDefinition(99)).toBeNull();
+		});
+
+		it("returns null when map not loaded", () => {
+			const map = new TileMap();
+			expect(map.getTileDefinition(0)).toBeNull();
+		});
+	});
+
+	describe("getTileIdsByProperty", () => {
+		function makeTiledWithProps(): TiledMap {
+			return {
+				width: 3,
+				height: 1,
+				tilewidth: 16,
+				tileheight: 16,
+				tilesets: [
+					{
+						firstgid: 1,
+						name: "terrain",
+						tilewidth: 16,
+						tileheight: 16,
+						image: "tiles.png",
+						imagewidth: 160,
+						imageheight: 160,
+						columns: 10,
+						tilecount: 100,
+						tiles: [
+							{
+								id: 0,
+								properties: [{ name: "solid", type: "bool", value: true }],
+							},
+							{
+								id: 5,
+								properties: [{ name: "climbable", type: "bool", value: true }],
+							},
+							{
+								id: 10,
+								properties: [{ name: "solid", type: "bool", value: true }],
+							},
+						],
+					},
+				],
+				layers: [
+					{
+						name: "ground",
+						type: "tilelayer",
+						width: 3,
+						height: 1,
+						data: [1, 6, 11],
+					},
+				],
+			};
+		}
+
+		it("matches correct IDs by property", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithProps());
+			const solidIds = map.getTileIdsByProperty("solid", true);
+			expect(solidIds).toContain(0);
+			expect(solidIds).toContain(10);
+			expect(solidIds).toHaveLength(2);
+		});
+
+		it("returns empty array for no match", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithProps());
+			expect(map.getTileIdsByProperty("nonexistent", true)).toHaveLength(0);
+		});
+	});
+
+	describe("getTileIdsByType", () => {
+		function makeTiledWithTypes(): TiledMap {
+			return {
+				width: 3,
+				height: 1,
+				tilewidth: 16,
+				tileheight: 16,
+				tilesets: [
+					{
+						firstgid: 1,
+						name: "terrain",
+						tilewidth: 16,
+						tileheight: 16,
+						image: "tiles.png",
+						imagewidth: 160,
+						imageheight: 160,
+						columns: 10,
+						tilecount: 100,
+						tiles: [
+							{ id: 0, type: "Solid" },
+							{ id: 5, type: "Water" },
+							{ id: 10, type: "Water" },
+							{ id: 15, type: "Ladder" },
+						],
+					},
+				],
+				layers: [
+					{
+						name: "ground",
+						type: "tilelayer",
+						width: 3,
+						height: 1,
+						data: [1, 6, 11],
+					},
+				],
+			};
+		}
+
+		it("matches correct IDs by type", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithTypes());
+			const waterIds = map.getTileIdsByType("Water");
+			expect(waterIds).toContain(5);
+			expect(waterIds).toContain(10);
+			expect(waterIds).toHaveLength(2);
+		});
+
+		it("returns empty array for no match", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithTypes());
+			expect(map.getTileIdsByType("NonExistent")).toHaveLength(0);
+		});
+	});
+
+	describe("visibleLayers", () => {
+		function makeTiledMultiLayer(): TiledMap {
+			return {
+				width: 2,
+				height: 1,
+				tilewidth: 16,
+				tileheight: 16,
+				tilesets: [
+					{
+						firstgid: 1,
+						name: "terrain",
+						tilewidth: 16,
+						tileheight: 16,
+						image: "tiles.png",
+						imagewidth: 160,
+						imageheight: 160,
+						columns: 10,
+						tilecount: 100,
+					},
+				],
+				layers: [
+					{
+						name: "background",
+						type: "tilelayer",
+						width: 2,
+						height: 1,
+						data: [1, 2],
+					},
+					{
+						name: "foreground",
+						type: "tilelayer",
+						width: 2,
+						height: 1,
+						data: [3, 4],
+					},
+				],
+			};
+		}
+
+		it("renders all layers when visibleLayers is empty", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledMultiLayer());
+			const imageCalls: unknown[] = [];
+			const ctx = {
+				text: () => {},
+				rect: () => {},
+				circle: () => {},
+				polygon: () => {},
+				line: () => {},
+				image: (...args: unknown[]) => {
+					imageCalls.push(args);
+				},
+				measureText: () => new Vec2(0, 0),
+				save: () => {},
+				restore: () => {},
+				setAlpha: () => {},
+				assets: {} as never,
+			};
+			map.onDraw(ctx);
+			// 2 tiles per layer × 2 layers = 4 total
+			expect(imageCalls).toHaveLength(4);
+		});
+
+		it("filters rendering to specified layers", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledMultiLayer());
+			map.visibleLayers = ["foreground"];
+			const imageCalls: unknown[] = [];
+			const ctx = {
+				text: () => {},
+				rect: () => {},
+				circle: () => {},
+				polygon: () => {},
+				line: () => {},
+				image: (...args: unknown[]) => {
+					imageCalls.push(args);
+				},
+				measureText: () => new Vec2(0, 0),
+				save: () => {},
+				restore: () => {},
+				setAlpha: () => {},
+				assets: {} as never,
+			};
+			map.onDraw(ctx);
+			// Only foreground layer: 2 tiles
+			expect(imageCalls).toHaveLength(2);
+		});
+	});
+
+	describe("animated tiles", () => {
+		function makeTiledWithAnimation(): TiledMap {
+			return {
+				width: 2,
+				height: 1,
+				tilewidth: 16,
+				tileheight: 16,
+				tilesets: [
+					{
+						firstgid: 1,
+						name: "terrain",
+						tilewidth: 16,
+						tileheight: 16,
+						image: "tiles.png",
+						imagewidth: 160,
+						imageheight: 160,
+						columns: 10,
+						tilecount: 100,
+						tiles: [
+							{
+								id: 0,
+								animation: [
+									{ tileid: 0, duration: 200 },
+									{ tileid: 1, duration: 200 },
+									{ tileid: 2, duration: 200 },
+								],
+							},
+						],
+					},
+				],
+				layers: [
+					{
+						name: "ground",
+						type: "tilelayer",
+						width: 2,
+						height: 1,
+						// GID 1 = localId 0 (animated), GID 3 = localId 2 (not animated)
+						data: [1, 3],
+					},
+				],
+			};
+		}
+
+		it("renders correct animation frame based on elapsed time", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithAnimation());
+
+			const sourceRects: { x: number; y: number }[] = [];
+			const ctx = {
+				text: () => {},
+				rect: () => {},
+				circle: () => {},
+				polygon: () => {},
+				line: () => {},
+				image: (_name: string, _pos: Vec2, opts: { sourceRect: { x: number; y: number } }) => {
+					sourceRects.push({ x: opts.sourceRect.x, y: opts.sourceRect.y });
+				},
+				measureText: () => new Vec2(0, 0),
+				save: () => {},
+				restore: () => {},
+				setAlpha: () => {},
+				assets: {} as never,
+			};
+
+			// At elapsed=0, frame 0 → tileid 0, source x=0
+			// Mock game.elapsed via the loop
+			Object.defineProperty(game, "elapsed", { value: 0, writable: true, configurable: true });
+			sourceRects.length = 0;
+			map.onDraw(ctx);
+			// First tile (animated): tileid 0 at elapsed 0 → source x = 0 * 16 = 0
+			expect(sourceRects[0]!.x).toBe(0);
+
+			// At elapsed=0.25s = 250ms, we're in frame 1 (tileid 1) → source x = 16
+			Object.defineProperty(game, "elapsed", { value: 0.25, configurable: true });
+			sourceRects.length = 0;
+			map.onDraw(ctx);
+			expect(sourceRects[0]!.x).toBe(16);
+
+			// At elapsed=0.45s = 450ms, we're in frame 2 (tileid 2) → source x = 32
+			Object.defineProperty(game, "elapsed", { value: 0.45, configurable: true });
+			sourceRects.length = 0;
+			map.onDraw(ctx);
+			expect(sourceRects[0]!.x).toBe(32);
+		});
+
+		it("non-animated tiles render unchanged", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithAnimation());
+
+			const sourceRects: { x: number }[] = [];
+			const ctx = {
+				text: () => {},
+				rect: () => {},
+				circle: () => {},
+				polygon: () => {},
+				line: () => {},
+				image: (_name: string, _pos: Vec2, opts: { sourceRect: { x: number } }) => {
+					sourceRects.push({ x: opts.sourceRect.x });
+				},
+				measureText: () => new Vec2(0, 0),
+				save: () => {},
+				restore: () => {},
+				setAlpha: () => {},
+				assets: {} as never,
+			};
+
+			Object.defineProperty(game, "elapsed", { value: 0.25, writable: true, configurable: true });
+			map.onDraw(ctx);
+			// Second tile is localId 2 (not animated) → source x = 2 * 16 = 32
+			expect(sourceRects[1]!.x).toBe(32);
 		});
 	});
 });

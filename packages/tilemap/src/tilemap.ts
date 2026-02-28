@@ -1,10 +1,16 @@
 import { type DrawContext, type Node, Node2D, type NodeConstructor } from "@quintus/core";
 import { Rect, Vec2 } from "@quintus/math";
 import type { PhysicsFactories } from "./tile-collision.js";
-import { buildSolidGrid, createColliders, getSolidTileIds, mergeRects } from "./tile-collision.js";
+import {
+	buildSolidGrid,
+	createColliders,
+	createTileShapeColliders,
+	getSolidTileIds,
+	mergeRects,
+} from "./tile-collision.js";
 import type { ParsedMap, ParsedObject, ParsedTileLayer } from "./tiled-parser.js";
 import { parseTiledMap } from "./tiled-parser.js";
-import type { TiledMap, TiledTileset } from "./tiled-types.js";
+import type { TiledMap, TiledTileDefinition, TiledTileset } from "./tiled-types.js";
 import { parseTmx } from "./tmx-parser.js";
 
 /** Result of a tilemap grid raycast. */
@@ -38,6 +44,10 @@ export class TileMap extends Node2D {
 	// === Internal State ===
 	private _parsed: ParsedMap | null = null;
 	private _collisionGeneratedLayers = new Set<string>();
+	private _tileDefCache: Map<number, TiledTileDefinition> = new Map();
+
+	/** When non-empty, only tile layers whose names are in this list will be drawn. */
+	visibleLayers: string[] = [];
 
 	get asset(): string {
 		return this._asset;
@@ -133,6 +143,46 @@ export class TileMap extends Node2D {
 				};
 			}
 		}
+	}
+
+	// === Tile Definition Queries ===
+
+	/**
+	 * Look up a tile definition by local tile ID.
+	 * Returns the TiledTileDefinition (properties, animation, objectgroup) or null.
+	 */
+	getTileDefinition(localId: number): TiledTileDefinition | null {
+		return this._tileDefCache.get(localId) ?? null;
+	}
+
+	/**
+	 * Find all local tile IDs that have a custom property with the given name and value.
+	 */
+	getTileIdsByProperty(name: string, value: boolean | number | string): number[] {
+		const result: number[] = [];
+		for (const [id, def] of this._tileDefCache) {
+			if (!def.properties) continue;
+			for (const prop of def.properties) {
+				if (prop.name === name && prop.value === value) {
+					result.push(id);
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Find all local tile IDs that have the given type string.
+	 */
+	getTileIdsByType(type: string): number[] {
+		const result: number[] = [];
+		for (const [id, def] of this._tileDefCache) {
+			if (def.type === type) {
+				result.push(id);
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -286,6 +336,11 @@ export class TileMap extends Node2D {
 		 *  instead of solid colliders. These tiles are excluded from the solid grid
 		 *  and get their own one-way colliders. */
 		oneWayTileIds?: number[];
+		/** Local tile IDs to exclude from collision generation entirely. */
+		excludeTileIds?: number[];
+		/** When true, tiles with per-tile collision shapes (objectgroup) in the tileset
+		 *  get individual polygon/rect colliders instead of being merged into rectangles. */
+		tileShapeColliders?: boolean;
 	}): number {
 		if (!this._parsed) {
 			throw new Error("TileMap: Map not loaded. Cannot generate collision.");
@@ -310,12 +365,36 @@ export class TileMap extends Node2D {
 
 		let totalColliders = 0;
 
+		// Collect tile IDs to exclude from rect merging
+		const excludeSet = new Set(options?.excludeTileIds ?? []);
+
+		// Handle per-tile shape colliders (slopes, custom collision polygons)
+		if (options?.tileShapeColliders) {
+			const childCountBefore = this.children.length;
+			const handledIds = createTileShapeColliders(
+				tileLayer,
+				this._parsed.tilesets,
+				this._parsed.tileWidth,
+				this._parsed.tileHeight,
+				collisionGroup,
+				this,
+				factories,
+			);
+			for (const id of handledIds) {
+				excludeSet.add(id);
+			}
+			totalColliders += this.children.length - childCountBefore;
+		}
+
 		if (oneWayTileIds && oneWayTileIds.length > 0) {
 			const oneWayIdSet = new Set(oneWayTileIds);
 
-			// Build solid grid excluding one-way tiles
+			// Add one-way IDs and user excludes to solid exclusion set
+			const solidExclude = new Set([...excludeSet, ...oneWayIdSet]);
+
+			// Build solid grid excluding one-way tiles and shape-handled tiles
 			const solidTileIds = allSolid ? null : getSolidTileIds(this._parsed.tilesets);
-			const solidGrid = buildSolidGrid(tileLayer, solidTileIds, oneWayIdSet);
+			const solidGrid = buildSolidGrid(tileLayer, solidTileIds, solidExclude);
 			const solidRects = mergeRects(solidGrid, tileLayer.width, tileLayer.height);
 			totalColliders += createColliders(
 				solidRects,
@@ -342,9 +421,13 @@ export class TileMap extends Node2D {
 		} else {
 			// Original code path
 			const solidTileIds = allSolid ? null : getSolidTileIds(this._parsed.tilesets);
-			const solid = buildSolidGrid(tileLayer, solidTileIds);
+			const solid = buildSolidGrid(
+				tileLayer,
+				solidTileIds,
+				excludeSet.size > 0 ? excludeSet : undefined,
+			);
 			const rects = mergeRects(solid, tileLayer.width, tileLayer.height);
-			totalColliders = createColliders(
+			totalColliders += createColliders(
 				rects,
 				this._parsed.tileWidth,
 				this._parsed.tileHeight,
@@ -532,6 +615,7 @@ export class TileMap extends Node2D {
 
 		for (const layer of this._parsed.tileLayers) {
 			if (!layer.visible) continue;
+			if (this.visibleLayers.length > 0 && !this.visibleLayers.includes(layer.name)) continue;
 			this._drawTileLayer(ctx, layer);
 		}
 	}
@@ -551,23 +635,38 @@ export class TileMap extends Node2D {
 		const game = this.game;
 
 		// Try JSON first (existing path)
+		let parsed: ParsedMap | null = null;
 		const json = game.assets.getJSON<TiledMap>(this.asset);
 		if (json) {
-			this._parsed = parseTiledMap(json);
-			return;
+			parsed = parseTiledMap(json);
+		} else {
+			// Try TMX text (loaded via custom "tmx" loader or stored as custom asset)
+			const tmxText = game.assets.get<string>(this.asset);
+			if (tmxText && typeof tmxText === "string") {
+				const tiledMap = parseTmx(tmxText);
+				parsed = parseTiledMap(tiledMap);
+			}
 		}
 
-		// Try TMX text (loaded via custom "tmx" loader or stored as custom asset)
-		const tmxText = game.assets.get<string>(this.asset);
-		if (tmxText && typeof tmxText === "string") {
-			const tiledMap = parseTmx(tmxText);
-			this._parsed = parseTiledMap(tiledMap);
-			return;
+		if (!parsed) {
+			throw new Error(
+				`TileMap: Asset '${this.asset}' not found. Load it via game.assets.load({ json: ['${this.asset}.json'] }) or game.assets.load({ tmx: ['${this.asset}.tmx'] }) before starting the scene.`,
+			);
 		}
 
-		throw new Error(
-			`TileMap: Asset '${this.asset}' not found. Load it via game.assets.load({ json: ['${this.asset}.json'] }) or game.assets.load({ tmx: ['${this.asset}.tmx'] }) before starting the scene.`,
-		);
+		this._parsed = parsed;
+		this._buildTileDefCache();
+	}
+
+	private _buildTileDefCache(): void {
+		this._tileDefCache.clear();
+		if (!this._parsed) return;
+		for (const tileset of this._parsed.tilesets) {
+			if (!tileset.tiles) continue;
+			for (const tileDef of tileset.tiles) {
+				this._tileDefCache.set(tileDef.id, tileDef);
+			}
+		}
 	}
 
 	private _getTileLayer(name?: string): ParsedTileLayer | null {
@@ -609,7 +708,8 @@ export class TileMap extends Node2D {
 
 				const tileset = tile.tileset;
 				const imageName = this._getTilesetImageName(tileset);
-				const sourceRect = this._getTileSourceRect(tile.localId, tileset);
+				const displayId = this._getAnimatedTileId(tile.localId);
+				const sourceRect = this._getTileSourceRect(displayId, tileset);
 				const x = col * parsed.tileWidth + layer.offsetX;
 				const y = row * parsed.tileHeight + layer.offsetY;
 
@@ -629,6 +729,31 @@ export class TileMap extends Node2D {
 				}
 			}
 		}
+	}
+
+	private _getAnimatedTileId(localId: number): number {
+		const def = this._tileDefCache.get(localId);
+		if (!def?.animation || def.animation.length === 0) return localId;
+
+		// Compute total duration
+		let totalDuration = 0;
+		for (const frame of def.animation) {
+			totalDuration += frame.duration;
+		}
+		if (totalDuration <= 0) return localId;
+
+		// Tiled durations are ms; game.elapsed is seconds
+		const elapsedMs = this.game.elapsed * 1000;
+		let t = elapsedMs % totalDuration;
+
+		for (const frame of def.animation) {
+			t -= frame.duration;
+			if (t < 0) return frame.tileid;
+		}
+
+		// Fallback (shouldn't happen — the loop above should always match)
+		const lastFrame = def.animation[def.animation.length - 1];
+		return lastFrame ? lastFrame.tileid : localId;
 	}
 
 	private _getTilesetImageName(tileset: TiledTileset): string {

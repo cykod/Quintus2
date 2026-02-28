@@ -1,8 +1,15 @@
 import { Game, Node2D, Scene } from "@quintus/core";
 import { CollisionShape, PhysicsPlugin, Shape, StaticCollider } from "@quintus/physics";
 import { describe, expect, it } from "vitest";
-import { buildSolidGrid, createColliders, getSolidTileIds, mergeRects } from "./tile-collision.js";
+import {
+	buildSolidGrid,
+	createColliders,
+	createTileShapeColliders,
+	getSolidTileIds,
+	mergeRects,
+} from "./tile-collision.js";
 import type { ParsedTileLayer } from "./tiled-parser.js";
+import type { TiledTileset } from "./tiled-types.js";
 
 function makeSolidGrid(pattern: string[]): { solid: boolean[]; width: number; height: number } {
 	const height = pattern.length;
@@ -250,5 +257,298 @@ describe("createColliders", () => {
 		const c2 = colliders[1] as StaticCollider;
 		expect(c2.position.x).toBe(48);
 		expect(c2.position.y).toBe(48);
+	});
+});
+
+describe("createTileShapeColliders", () => {
+	const factories = {
+		StaticCollider: StaticCollider as never,
+		CollisionShape: CollisionShape as never,
+		shapeRect: Shape.rect,
+		shapePolygon: Shape.polygon as never,
+	};
+
+	function setupParent(): { game: Game; parent: Node2D } {
+		const game = new Game({
+			width: 320,
+			height: 240,
+			canvas: document.createElement("canvas"),
+			renderer: null,
+		});
+		game.use(
+			PhysicsPlugin({
+				collisionGroups: {
+					default: { collidesWith: ["default"] },
+					world: { collidesWith: ["default"] },
+				},
+			}),
+		);
+
+		let parent: Node2D | undefined;
+		class TestScene extends Scene {
+			onReady() {
+				parent = this.add(Node2D);
+			}
+		}
+		game.start(TestScene);
+		return { game, parent: parent! };
+	}
+
+	it("creates polygon colliders from objectgroup", () => {
+		const { parent } = setupParent();
+
+		const tilesets: TiledTileset[] = [
+			{
+				firstgid: 1,
+				name: "terrain",
+				tilewidth: 16,
+				tileheight: 16,
+				image: "tiles.png",
+				imagewidth: 160,
+				imageheight: 160,
+				columns: 10,
+				tilecount: 100,
+				tiles: [
+					{
+						id: 3,
+						objectgroup: {
+							name: "collision",
+							type: "objectgroup",
+							objects: [
+								{
+									id: 1,
+									name: "",
+									type: "",
+									x: 0,
+									y: 0,
+									width: 0,
+									height: 0,
+									polygon: [
+										{ x: 0, y: 16 },
+										{ x: 16, y: 16 },
+										{ x: 16, y: 0 },
+									],
+								},
+							],
+						},
+					},
+				],
+			},
+		];
+
+		const layer: ParsedTileLayer = {
+			name: "ground",
+			tiles: [
+				{ localId: 3, tileset: tilesets[0]!, flipH: false, flipV: false, flipD: false },
+				null,
+			],
+			width: 2,
+			height: 1,
+			visible: true,
+			opacity: 1,
+			offsetX: 0,
+			offsetY: 0,
+			properties: new Map(),
+		};
+
+		const handledIds = createTileShapeColliders(
+			layer,
+			tilesets,
+			16,
+			16,
+			"world",
+			parent,
+			factories,
+		);
+		expect(handledIds.has(3)).toBe(true);
+		expect(handledIds.size).toBe(1);
+
+		// A StaticCollider should have been created
+		const colliders = parent.getChildren(StaticCollider);
+		expect(colliders.length).toBe(1);
+		expect(colliders[0]!.position.x).toBe(8); // tile center col=0: 0*16+8
+		expect(colliders[0]!.position.y).toBe(8);
+	});
+
+	it("creates rect shape colliders from objectgroup rectangles", () => {
+		const { parent } = setupParent();
+
+		const tilesets: TiledTileset[] = [
+			{
+				firstgid: 1,
+				name: "terrain",
+				tilewidth: 16,
+				tileheight: 16,
+				image: "tiles.png",
+				imagewidth: 160,
+				imageheight: 160,
+				columns: 10,
+				tilecount: 100,
+				tiles: [
+					{
+						id: 5,
+						objectgroup: {
+							name: "collision",
+							type: "objectgroup",
+							objects: [
+								{
+									id: 1,
+									name: "",
+									type: "",
+									x: 0,
+									y: 0,
+									width: 16,
+									height: 16,
+								},
+							],
+						},
+					},
+				],
+			},
+		];
+
+		const layer: ParsedTileLayer = {
+			name: "ground",
+			tiles: [{ localId: 5, tileset: tilesets[0]!, flipH: false, flipV: false, flipD: false }],
+			width: 1,
+			height: 1,
+			visible: true,
+			opacity: 1,
+			offsetX: 0,
+			offsetY: 0,
+			properties: new Map(),
+		};
+
+		const handledIds = createTileShapeColliders(
+			layer,
+			tilesets,
+			16,
+			16,
+			"world",
+			parent,
+			factories,
+		);
+		expect(handledIds.has(5)).toBe(true);
+
+		const colliders = parent.getChildren(StaticCollider);
+		expect(colliders.length).toBe(1);
+
+		// Full-tile rect should use shapeRect
+		const shape = colliders[0]!.getChild(CollisionShape);
+		expect(shape).not.toBeNull();
+		expect(shape!.shape).toEqual(Shape.rect(16, 16));
+	});
+
+	it("returns empty set when no objectgroups exist", () => {
+		const { parent } = setupParent();
+
+		const tilesets: TiledTileset[] = [
+			{
+				firstgid: 1,
+				name: "terrain",
+				tilewidth: 16,
+				tileheight: 16,
+				image: "tiles.png",
+				imagewidth: 160,
+				imageheight: 160,
+				columns: 10,
+				tilecount: 100,
+			},
+		];
+
+		const layer: ParsedTileLayer = {
+			name: "ground",
+			tiles: [{ localId: 0, tileset: tilesets[0]!, flipH: false, flipV: false, flipD: false }],
+			width: 1,
+			height: 1,
+			visible: true,
+			opacity: 1,
+			offsetX: 0,
+			offsetY: 0,
+			properties: new Map(),
+		};
+
+		const handledIds = createTileShapeColliders(
+			layer,
+			tilesets,
+			16,
+			16,
+			"world",
+			parent,
+			factories,
+		);
+		expect(handledIds.size).toBe(0);
+	});
+
+	it("returns empty set when shapePolygon factory is missing", () => {
+		const { parent } = setupParent();
+
+		const factoriesNoPolygon = {
+			StaticCollider: StaticCollider as never,
+			CollisionShape: CollisionShape as never,
+			shapeRect: Shape.rect,
+		};
+
+		const tilesets: TiledTileset[] = [
+			{
+				firstgid: 1,
+				name: "terrain",
+				tilewidth: 16,
+				tileheight: 16,
+				image: "tiles.png",
+				imagewidth: 160,
+				imageheight: 160,
+				columns: 10,
+				tilecount: 100,
+				tiles: [
+					{
+						id: 0,
+						objectgroup: {
+							name: "collision",
+							type: "objectgroup",
+							objects: [
+								{
+									id: 1,
+									name: "",
+									type: "",
+									x: 0,
+									y: 0,
+									width: 0,
+									height: 0,
+									polygon: [
+										{ x: 0, y: 16 },
+										{ x: 16, y: 16 },
+										{ x: 16, y: 0 },
+									],
+								},
+							],
+						},
+					},
+				],
+			},
+		];
+
+		const layer: ParsedTileLayer = {
+			name: "ground",
+			tiles: [{ localId: 0, tileset: tilesets[0]!, flipH: false, flipV: false, flipD: false }],
+			width: 1,
+			height: 1,
+			visible: true,
+			opacity: 1,
+			offsetX: 0,
+			offsetY: 0,
+			properties: new Map(),
+		};
+
+		const handledIds = createTileShapeColliders(
+			layer,
+			tilesets,
+			16,
+			16,
+			"world",
+			parent,
+			factoriesNoPolygon,
+		);
+		expect(handledIds.size).toBe(0);
 	});
 });

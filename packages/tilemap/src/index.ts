@@ -2,7 +2,13 @@
 
 // Tile collision
 export type { MergedRect, PhysicsFactories } from "./tile-collision.js";
-export { buildSolidGrid, createColliders, getSolidTileIds, mergeRects } from "./tile-collision.js";
+export {
+	buildSolidGrid,
+	createColliders,
+	createTileShapeColliders,
+	getSolidTileIds,
+	mergeRects,
+} from "./tile-collision.js";
 
 // Parser
 export type {

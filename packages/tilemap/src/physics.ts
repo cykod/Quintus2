@@ -12,4 +12,5 @@ TileMap.registerPhysics({
 	StaticCollider: StaticCollider as never,
 	CollisionShape: CollisionShape as never,
 	shapeRect: Shape.rect,
+	shapePolygon: Shape.polygon as never,
 });

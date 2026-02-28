@@ -1,3 +1,18 @@
+## Add TileMap query APIs, animated tiles, and polygon colliders
+*Saturday, February 28th at 12am*
+Implement Phase 1 engine enhancements for the advanced platformer: tile 
+definition query APIs (getTileDefinition, getTileIdsByProperty, 
+getTileIdsByType) with O(1) cache lookup, visibleLayers filtering for split 
+foreground/background rendering, animated tile support using Tiled animation 
+frames driven by game.elapsed, and per-tile polygon collision generation 
+(createTileShapeColliders) with flip flag handling and clockwise winding 
+enforcement. Extended generateCollision() with excludeTileIds and 
+tileShapeColliders options. Added shapePolygon to PhysicsFactories interface. 
+19 new tests across tilemap.test.ts and tile-collision.test.ts; all 2014 tests 
+pass.
+
+---
+
 ## Add gamepad support, fullscreen HTML, and menu confirm to all examples
 *Friday, February 27th at 8pm*
 Added gamepad controller bindings to all 7 example game configs (platformer, 
