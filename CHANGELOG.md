@@ -1,3 +1,16 @@
+## Add Player class with full mechanics and SpriteSheet.fromAtlas (Phase 3)
+*Saturday, February 28th at 11pm*
+Add the advanced platformer Player class with movement, jumping, double-jump, 
+ducking, ladder climbing (state machine ready for Phase 5), star power, 
+invincibility, fall death, and animation state management. Also add 
+SpriteSheet.fromAtlas() factory to the sprites package, which creates 
+SpriteSheets from TextureAtlas frame names directly — eliminating manual grid 
+math. Includes vitest config, test helpers, and 13 passing player tests. 
+Replaces the inline TestPlayer placeholder in test-scene.tsx with the real 
+Player class.
+
+---
+
 ## Add advanced platformer asset pipeline and Tiled setup (Phase 2)
 *Saturday, February 28th at 3pm*
 Implements Phase 2 of the Advanced Platformer example: copies Kenney New 

@@ -548,3 +548,9 @@
 [MILE] sat 2/28 12am - Added TileMap query APIs, animated tiles, visible layer filtering, and polygon collision generation for advanced platformer Phase 1
 
 [IMPL] sat 2/28 12am - Implement Phase 2: Asset Pipeline & Tiled Setup for Advanced Platformer
+
+[MILE] sat 2/28 3pm - Added advanced platformer asset pipeline and Tiled setup (Phase 2)
+
+[ASKS] sat 2/28 3pm - Review TextureAtlas/SpriteSheet integration for the advanced platformer, ensuring the approach is well-thought-out for future game development
+
+[IMPL] sat 2/28 11pm - Implement Phase 3 Core Player Mechanics for advanced platformer

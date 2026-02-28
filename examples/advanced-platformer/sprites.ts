@@ -16,16 +16,6 @@ export let snailSheet: SpriteSheet;
 export let frogSheet: SpriteSheet;
 export let sawSheet: SpriteSheet;
 
-// ─── Grid Constants ─────────────────────────────────────────────
-
-/** Characters spritesheet: 128×128 px frames, 1px spacing, 7 columns. */
-const CHAR_COLS = 7;
-const CHAR_SPACING = 1;
-
-/** Enemies spritesheet: 64×64 px frames, 1px spacing, 8 columns. */
-const ENEMY_COLS = 8;
-const ENEMY_SPACING = 1;
-
 // ─── Named Tile Frames (for Sprite.sourceRect lookups via tileAtlas) ─
 
 export const FRAME = {
@@ -124,122 +114,57 @@ export function loadAtlases(game: Game): void {
 	charAtlas = TextureAtlas.fromXml(game.assets.require<string>("characters"), "characters");
 	enemyAtlas = TextureAtlas.fromXml(game.assets.require<string>("enemies"), "enemies");
 
-	// Build SpriteSheets for AnimatedSprite usage
-	const ci = makeFrameIndex(charAtlas, CHAR_COLS, CHAR_SPACING);
-	playerSheet = new SpriteSheet({
-		texture: "characters",
-		frameWidth: 128,
-		frameHeight: 128,
-		columns: CHAR_COLS,
-		spacing: CHAR_SPACING,
-		animations: {
-			idle: { frames: [ci("character_green_idle")], fps: 1, loop: true },
-			walk: {
-				frames: [ci("character_green_walk_a"), ci("character_green_walk_b")],
-				fps: 6,
-				loop: true,
-			},
-			jump: { frames: [ci("character_green_jump")], fps: 1, loop: false },
-			duck: { frames: [ci("character_green_duck")], fps: 1, loop: false },
-			climb: {
-				frames: [ci("character_green_climb_a"), ci("character_green_climb_b")],
-				fps: 4,
-				loop: true,
-			},
-			hit: { frames: [ci("character_green_hit")], fps: 1, loop: false },
+	// Build SpriteSheets from atlases using frame names directly
+	playerSheet = SpriteSheet.fromAtlas(charAtlas, {
+		idle: { frames: ["character_green_idle"], fps: 1, loop: true },
+		walk: {
+			frames: ["character_green_walk_a", "character_green_walk_b"],
+			fps: 6,
+			loop: true,
 		},
+		jump: { frames: ["character_green_jump"], fps: 1, loop: false },
+		duck: { frames: ["character_green_duck"], fps: 1, loop: false },
+		climb: {
+			frames: ["character_green_climb_a", "character_green_climb_b"],
+			fps: 4,
+			loop: true,
+		},
+		hit: { frames: ["character_green_hit"], fps: 1, loop: false },
 	});
 
-	const ei = makeFrameIndex(enemyAtlas, ENEMY_COLS, ENEMY_SPACING);
-	slimeSheet = new SpriteSheet({
-		texture: "enemies",
-		frameWidth: 64,
-		frameHeight: 64,
-		columns: ENEMY_COLS,
-		spacing: ENEMY_SPACING,
-		animations: {
-			walk: {
-				frames: [ei("slime_normal_walk_a"), ei("slime_normal_walk_b")],
-				fps: 4,
-				loop: true,
-			},
-			rest: { frames: [ei("slime_normal_rest")], fps: 1, loop: false },
-			flat: { frames: [ei("slime_normal_flat")], fps: 1, loop: false },
+	slimeSheet = SpriteSheet.fromAtlas(enemyAtlas, {
+		walk: {
+			frames: ["slime_normal_walk_a", "slime_normal_walk_b"],
+			fps: 4,
+			loop: true,
 		},
+		rest: { frames: ["slime_normal_rest"], fps: 1, loop: false },
+		flat: { frames: ["slime_normal_flat"], fps: 1, loop: false },
 	});
 
-	beeSheet = new SpriteSheet({
-		texture: "enemies",
-		frameWidth: 64,
-		frameHeight: 64,
-		columns: ENEMY_COLS,
-		spacing: ENEMY_SPACING,
-		animations: {
-			fly: { frames: [ei("bee_a"), ei("bee_b")], fps: 6, loop: true },
-			rest: { frames: [ei("bee_rest")], fps: 1, loop: false },
-		},
+	beeSheet = SpriteSheet.fromAtlas(enemyAtlas, {
+		fly: { frames: ["bee_a", "bee_b"], fps: 6, loop: true },
+		rest: { frames: ["bee_rest"], fps: 1, loop: false },
 	});
 
-	snailSheet = new SpriteSheet({
-		texture: "enemies",
-		frameWidth: 64,
-		frameHeight: 64,
-		columns: ENEMY_COLS,
-		spacing: ENEMY_SPACING,
-		animations: {
-			walk: {
-				frames: [ei("snail_walk_a"), ei("snail_walk_b")],
-				fps: 3,
-				loop: true,
-			},
-			rest: { frames: [ei("snail_rest")], fps: 1, loop: false },
-			shell: { frames: [ei("snail_shell")], fps: 1, loop: false },
+	snailSheet = SpriteSheet.fromAtlas(enemyAtlas, {
+		walk: {
+			frames: ["snail_walk_a", "snail_walk_b"],
+			fps: 3,
+			loop: true,
 		},
+		rest: { frames: ["snail_rest"], fps: 1, loop: false },
+		shell: { frames: ["snail_shell"], fps: 1, loop: false },
 	});
 
-	frogSheet = new SpriteSheet({
-		texture: "enemies",
-		frameWidth: 64,
-		frameHeight: 64,
-		columns: ENEMY_COLS,
-		spacing: ENEMY_SPACING,
-		animations: {
-			idle: { frames: [ei("frog_idle")], fps: 1, loop: false },
-			jump: { frames: [ei("frog_jump")], fps: 1, loop: false },
-			rest: { frames: [ei("frog_rest")], fps: 1, loop: false },
-		},
+	frogSheet = SpriteSheet.fromAtlas(enemyAtlas, {
+		idle: { frames: ["frog_idle"], fps: 1, loop: false },
+		jump: { frames: ["frog_jump"], fps: 1, loop: false },
+		rest: { frames: ["frog_rest"], fps: 1, loop: false },
 	});
 
-	sawSheet = new SpriteSheet({
-		texture: "enemies",
-		frameWidth: 64,
-		frameHeight: 64,
-		columns: ENEMY_COLS,
-		spacing: ENEMY_SPACING,
-		animations: {
-			spin: { frames: [ei("saw_a"), ei("saw_b")], fps: 8, loop: true },
-			rest: { frames: [ei("saw_rest")], fps: 1, loop: false },
-		},
+	sawSheet = SpriteSheet.fromAtlas(enemyAtlas, {
+		spin: { frames: ["saw_a", "saw_b"], fps: 8, loop: true },
+		rest: { frames: ["saw_rest"], fps: 1, loop: false },
 	});
-}
-
-// ─── Helpers ────────────────────────────────────────────────────
-
-/**
- * Create a function that maps atlas frame names to SpriteSheet grid indices.
- * This works because Kenney spritesheets are uniform grids with consistent spacing.
- */
-function makeFrameIndex(
-	atlas: TextureAtlas,
-	columns: number,
-	spacing: number,
-): (name: string) => number {
-	return (name: string) => {
-		const rect = atlas.getFrameOrThrow(name);
-		const fw = rect.width;
-		const fh = rect.height;
-		const col = Math.round(rect.x / (fw + spacing));
-		const row = Math.round(rect.y / (fh + spacing));
-		return row * columns + col;
-	};
 }

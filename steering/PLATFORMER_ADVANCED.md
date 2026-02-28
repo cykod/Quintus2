@@ -9,7 +9,7 @@
 |-------|-------------|--------|
 | 1 | Engine Enhancements | Done |
 | 2 | Asset Pipeline & Tiled Setup | Done |
-| 3 | Core Player Mechanics | Pending |
+| 3 | Core Player Mechanics | Done |
 | 4 | Terrain & Collision (Slopes, One-Way) | Pending |
 | 5 | Interactive Tiles (Breakable, Fall-Away, Springs, Ladders) | Pending |
 | 6 | Enemies | Pending |
@@ -428,8 +428,9 @@ Also build a `_tileDefCache: Map<number, TiledTileDefinition>` once during `_loa
 | `packages/tilemap/src/tilemap.ts` | Animated tile rendering (`_getAnimatedTileId`) | New feature |
 | `packages/tilemap/src/tilemap.ts` | Integrate `createTileShapeColliders()` into `generateCollision()` | Enhancement |
 | `packages/tilemap/src/tile-collision.ts` | `createTileShapeColliders()` function | New function |
+| `packages/sprites/src/sprite-sheet.ts` | `SpriteSheet.fromAtlas()` factory + `AtlasAnimationConfig` type | New public API |
 
-**No changes needed to:** Camera, Physics (Actor/StaticCollider), Sprites, Input, Core Renderer.
+**No changes needed to:** Camera, Physics (Actor/StaticCollider), Input, Core Renderer.
 
 - [x] Add `getTileDefinition(localId)` to TileMap
 - [x] Add `getTileIdsByProperty(name, value)` to TileMap
@@ -483,45 +484,49 @@ Copy from the Kenney pack into the example's `assets/` directory.
 
 ### 2b. TextureAtlas Setup (`sprites.ts`)
 
-Use `TextureAtlas.fromXml()` (like breakout does) to load the three sprite sheets. Define animation sequences using `getFramesByPrefix()`.
+Use `TextureAtlas.fromXml()` to load the three sprite sheets, then `SpriteSheet.fromAtlas()` to create animation-ready SpriteSheets using frame names directly. The `fromAtlas()` factory (added as an engine enhancement) bridges TextureAtlas and AnimatedSprite — no grid math or index computation needed.
+
+For static sprites (HUD icons, blocks, collectibles), use `TextureAtlas.getFrame()` with `Sprite.sourceRect` directly.
 
 ```typescript
 // sprites.ts
-import { TextureAtlas } from "@quintus/sprites";
+import { SpriteSheet, TextureAtlas } from "@quintus/sprites";
 
 export let tileAtlas: TextureAtlas;
 export let charAtlas: TextureAtlas;
 export let enemyAtlas: TextureAtlas;
+export let playerSheet: SpriteSheet;
+export let slimeSheet: SpriteSheet;
+// ... other sheets
 
 export function loadAtlases(game: Game): void {
-    const tilesXml = game.assets.get<string>("tiles_xml");
-    tileAtlas = TextureAtlas.fromXml(tilesXml!, "tiles");
+    tileAtlas = TextureAtlas.fromXml(game.assets.require<string>("tiles"), "tiles");
+    charAtlas = TextureAtlas.fromXml(game.assets.require<string>("characters"), "characters");
+    enemyAtlas = TextureAtlas.fromXml(game.assets.require<string>("enemies"), "enemies");
 
-    const charsXml = game.assets.get<string>("characters_xml");
-    charAtlas = TextureAtlas.fromXml(charsXml!, "characters");
+    // SpriteSheet.fromAtlas() maps frame names → atlas rects automatically.
+    // Works with any atlas layout (not just uniform grids).
+    playerSheet = SpriteSheet.fromAtlas(charAtlas, {
+        idle: { frames: ["character_green_idle"], fps: 1, loop: true },
+        walk: { frames: ["character_green_walk_a", "character_green_walk_b"], fps: 6, loop: true },
+        jump: { frames: ["character_green_jump"], fps: 1, loop: false },
+        duck: { frames: ["character_green_duck"], fps: 1, loop: false },
+        climb: { frames: ["character_green_climb_a", "character_green_climb_b"], fps: 4, loop: true },
+        hit: { frames: ["character_green_hit"], fps: 1, loop: false },
+    });
 
-    const enemiesXml = game.assets.get<string>("enemies_xml");
-    enemyAtlas = TextureAtlas.fromXml(enemiesXml!, "enemies");
+    slimeSheet = SpriteSheet.fromAtlas(enemyAtlas, {
+        walk: { frames: ["slime_normal_walk_a", "slime_normal_walk_b"], fps: 4, loop: true },
+        rest: { frames: ["slime_normal_rest"], fps: 1, loop: false },
+        flat: { frames: ["slime_normal_flat"], fps: 1, loop: false },
+    });
+    // ... bee, snail, frog, saw sheets follow the same pattern
 }
-
-// Animation definitions using atlas frame names
-export const PLAYER_ANIMS = {
-    idle: { frames: ["character_green_idle"], fps: 1, loop: true },
-    walk: { frames: ["character_green_walk_a", "character_green_walk_b"], fps: 6, loop: true },
-    jump: { frames: ["character_green_jump"], fps: 1, loop: false },
-    duck: { frames: ["character_green_duck"], fps: 1, loop: false },
-    climb: { frames: ["character_green_climb_a", "character_green_climb_b"], fps: 4, loop: true },
-    hit: { frames: ["character_green_hit"], fps: 1, loop: false },
-};
-
-export const COIN_ANIM = {
-    spin: { frames: ["coin_gold", "coin_gold_side"], fps: 4, loop: true },
-};
 ```
 
-**Note:** The existing `SpriteSheet` class uses integer frame indices on a grid. `TextureAtlas` uses string-named regions. For AnimatedSprite to work with TextureAtlas frames, we need to verify that `AnimatedSprite` supports `TextureAtlas` — the breakout example uses this pattern already. The `AnimatedSprite` class works with `SpriteSheet` which has named animations. We'll need to create `SpriteSheet` instances from the atlas frame names, or use Sprite nodes with manual frame switching. Check breakout's approach.
-
-**Resolution:** Looking at breakout, it uses `Sprite` (not `AnimatedSprite`) and manually switches `sourceRect` via `atlas.getFrame()`. For our game, we'll create `SpriteSheet`-compatible objects from the TextureAtlas data, or use a lightweight animation controller. The simplest approach: build `SpriteSheet` instances that reference the atlas image and define animations by pixel rects extracted from the XML.
+**Two usage patterns** for atlas-backed sprites:
+- **Animated sprites** (player, enemies): `SpriteSheet.fromAtlas()` → `AnimatedSprite`
+- **Static sprites** (HUD, blocks, collectibles): `tileAtlas.getFrame("heart")` → `Sprite.sourceRect`
 
 ### 2c. Tiled Tileset (.tsx)
 
@@ -697,17 +702,17 @@ any → duck (duck pressed, on floor)
 any → hit (take damage) → idle (after invincibility)
 ```
 
-- [ ] Create `Player` class with full movement, jumping, double jump
-- [ ] Implement ducking with animation
-- [ ] Implement ladder climbing state
-- [ ] Implement star power state
-- [ ] Implement invincibility blink
-- [ ] Implement fall death (below map bounds)
-- [ ] Implement animation state machine
-- [ ] Wire player to `gameState` for health/lives sync
-- [ ] Write player movement tests
-- [ ] Write player jump/double-jump tests
-- [ ] Write player ladder climb tests
+- [x] Create `Player` class with full movement, jumping, double jump
+- [x] Implement ducking with animation
+- [x] Implement ladder climbing state
+- [x] Implement star power state
+- [x] Implement invincibility blink
+- [x] Implement fall death (below map bounds)
+- [x] Implement animation state machine
+- [x] Wire player to `gameState` for health/lives sync
+- [x] Write player movement tests
+- [x] Write player jump/double-jump tests
+- [x] Write player ladder climb tests
 
 ### Tests for Phase 3
 
