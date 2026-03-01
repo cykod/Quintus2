@@ -19,6 +19,7 @@ export class Player extends DamageableActor {
 
 	override collisionGroup = "player";
 	override solid = true;
+	override floorMaxAngle = Math.PI / 4 + 0.15;
 
 	private _canDoubleJump = false;
 	private _facing: "left" | "right" = "right";
@@ -69,7 +70,7 @@ export class Player extends DamageableActor {
 		return (
 			<>
 				<CollisionShape shape={Shape.rect(40, 56)} />
-				<AnimatedSprite ref="sprite" spriteSheet={playerSheet} animation="idle" centered />
+				<AnimatedSprite ref="sprite" spriteSheet={playerSheet} animation="idle" centered position={[0, -18]} />
 			</>
 		);
 	}
@@ -145,14 +146,17 @@ export class Player extends DamageableActor {
 		}
 
 		// Jump + double-jump
+		let jumped = false;
 		if (input.isJustPressed("jump")) {
 			if (this.isOnFloor()) {
 				this.velocity.y = this.jumpForce;
+				jumped = true;
 				this._canDoubleJump = true;
 				this._isDucking = false;
 				this.game.audio.play("jump", { bus: "sfx" });
 			} else if (this._canDoubleJump) {
 				this.velocity.y = this.doubleJumpForce;
+				jumped = true;
 				this._canDoubleJump = false;
 				this.game.audio.play("jump", { bus: "sfx", volume: 0.7 });
 			}
@@ -170,6 +174,17 @@ export class Player extends DamageableActor {
 			this._isClimbing = true;
 			this.applyGravity = false;
 			this.velocity.y = 0;
+		}
+
+		// Slope-exit launch prevention: when grounded on a slope, move() projects
+		// velocity onto the surface, giving velocity.y a negative component. Clear
+		// it so the player doesn't launch off slope-to-flat transitions.
+		// Only apply on slopes (floor normal has non-zero x component).
+		if (this.isOnFloor() && !jumped && this.velocity.y < 0) {
+			const fn = this.getFloorNormal();
+			if (fn && Math.abs(fn.x) > 0.01) {
+				this.velocity.y = 0;
+			}
 		}
 
 		this.move(dt);

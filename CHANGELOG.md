@@ -1,3 +1,17 @@
+## Fix tileset slope collisions to match visual art across all biomes
+*Sunday, March 1st at 6pm*
+Swapped collision polygon assignments in tileset.tsx across all 6 biomes so 
+that slope tile collision shapes match their visual art positions. The original 
+tileset had slope_long_a/b and slope_left_asc/top polygons assigned to the 
+wrong tile IDs, causing tiles that looked like slopes to have solid-rect 
+collision and vice versa. Also corrected the 2:1 slope polygon values from 
+21/22px rise per tile to 32px each (proper 2:1 ratio totaling 64px over 2 
+tiles), made slope_long_c a full solid square, and updated the player with 
+floorMaxAngle override, sprite offset fix, and slope-exit launch prevention. 
+Updated level1.tmx to a focused slope test layout.
+
+---
+
 ## Fix Vite .tsx conflict, add advanced platformer walkthrough doc
 *Sunday, March 1st at 3am*
 Fixed two bugs discovered while testing the advanced platformer with qdbg: Vite 

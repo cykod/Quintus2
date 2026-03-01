@@ -554,3 +554,17 @@
 [ASKS] sat 2/28 3pm - Review TextureAtlas/SpriteSheet integration for the advanced platformer, ensuring the approach is well-thought-out for future game development
 
 [IMPL] sat 2/28 11pm - Implement Phase 3 Core Player Mechanics for advanced platformer
+
+[MILE] sat 2/28 11pm - Added Player class with full mechanics, SpriteSheet.fromAtlas factory, and 13 player tests (Phase 3)
+
+[IMPL] sat 2/28 11pm - Implement Phase 4: Terrain & Collision (Slopes, One-Way) for advanced platformer
+
+[MILE] sun 3/1 1am - Added slope collision, one-way platforms, and terrain tests for advanced platformer Phase 4
+
+[MILE] sun 3/1 3am - Fixed Vite .tsx tileset conflict, removed orphan camera ref, and documented advanced platformer Phases 1-4 with 9 qdbg screenshots
+
+[IMPL] sun 3/1 3am - Debug advanced platformer player sinking into ground and broken slope collisions, modify test scene and debug with qdbg
+
+[IMPL] sun 3/1 3pm - Debug advanced platformer slope collision vectors and flip issues using qdbg
+
+[IMPL] sun 3/1 3pm - Fix tileset collision polygon assignments to match visual art across all 6 biomes, resolving slope visual/collision mismatch
