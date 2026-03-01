@@ -1,3 +1,16 @@
+## Fix Vite .tsx conflict, add advanced platformer walkthrough doc
+*Sunday, March 1st at 3am*
+Fixed two bugs discovered while testing the advanced platformer with qdbg: Vite 
+was intercepting Tiled tileset .tsx files (XML) as TypeScript JSX and returning 
+500 errors, fixed by adding a serve-tiled-tsx Vite plugin that serves .tsx 
+files in /assets/ directories as plain XML; and an orphan ref="camera" in 
+TestScene.build() that threw because the class had no camera property. Also 
+generated a comprehensive walkthrough document with 9 Playwright screenshots 
+verifying all Phase 1-4 features: player movement, jumping, double-jump, 
+ducking, slope collision, and one-way platforms.
+
+---
+
 ## Add slope collision, one-way platforms, and terrain tests (Phase 4)
 *Sunday, March 1st at 1am*
 Add Phase 4 (Terrain & Collision) to the advanced platformer. Configures 

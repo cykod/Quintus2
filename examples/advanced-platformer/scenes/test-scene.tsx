@@ -17,7 +17,7 @@ export class TestScene extends Scene {
 			<>
 				<TileMap ref="map" tilesetImage="tiles" asset="level1" />
 				<Player ref="player" />
-				<Camera ref="camera" follow="$player" smoothing={0.1} zoom={1} />
+				<Camera follow="$player" smoothing={0.1} zoom={1} />
 			</>
 		);
 	}

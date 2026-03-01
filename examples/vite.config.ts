@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
@@ -14,6 +16,36 @@ export default defineConfig({
 		open: !process.env.DEVCONTAINER,
 		host: process.env.DEVCONTAINER ? "0.0.0.0" : undefined,
 	},
+	plugins: [
+		{
+			// Serve Tiled tileset .tsx files (XML) as plain text instead of
+			// transforming them as TypeScript JSX. Tiled uses .tsx for its
+			// external tileset format, which collides with TypeScript's .tsx.
+			name: "serve-tiled-tsx",
+			enforce: "pre",
+			load(id) {
+				if (id.endsWith(".tsx") && id.includes("/assets/")) {
+					return `export default ""`;
+				}
+			},
+			configureServer(server) {
+				server.middlewares.use((req, res, next) => {
+					if (req.url?.endsWith(".tsx") && req.url.includes("/assets/")) {
+						const filePath = join(server.config.root, req.url);
+						try {
+							const content = readFileSync(filePath, "utf-8");
+							res.setHeader("Content-Type", "text/xml");
+							res.end(content);
+						} catch {
+							next();
+						}
+					} else {
+						next();
+					}
+				});
+			},
+		},
+	],
 	resolve: {
 		alias: {
 			"@quintus/jsx/jsx-runtime": subpath("jsx", "jsx-runtime"),
