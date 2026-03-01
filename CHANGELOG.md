@@ -1,3 +1,19 @@
+## Add interactive tiles: breakable blocks, springs, fall-away, ladders
+*Sunday, March 1st at 8pm*
+Implement Phase 5 of the advanced platformer with four interactive tile entity 
+types: breakable blocks (brick/coin/exclamation with bump tweens, score, and 
+popups), fall-away platforms (shake + crumble + respawn cycle), spring bounce 
+pads (configurable force with sprite animation), and ladder zone sensors 
+(overlap-based climbing with contiguous tile column detection via 
+createLadderZones). The test scene now spawns interactive entities from tilemap 
+tile types via spawnFromTiles and wires physics contact callbacks for 
+hit-from-below, land-on-top, and sensor overlap interactions. Includes 16 new 
+tests across 4 test files (38 total for the example) with dedicated test 
+arenas, and fixes a missing super.onReady() call in LadderZone that prevented 
+sensor registration with the physics world.
+
+---
+
 ## Add floor snap to prevent floating when walking down slopes
 *Sunday, March 1st at 8pm*
 Actor.move() now has two mechanisms to keep actors grounded on descending 

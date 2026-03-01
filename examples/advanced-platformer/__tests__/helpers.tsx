@@ -11,7 +11,11 @@ import type { InputScript } from "@quintus/test";
 import { TestRunner } from "@quintus/test";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "../config.js";
+import { BrickBlock, CoinBlock, ExclamationBlock } from "../entities/breakable-block.js";
+import { FallAwayPlatform } from "../entities/fall-away-platform.js";
+import { LadderZone } from "../entities/ladder-zone.js";
 import { Player } from "../entities/player.js";
+import { Spring } from "../entities/spring.js";
 import { loadAtlases } from "../sprites.js";
 import { gameState } from "../state.js";
 
@@ -362,5 +366,148 @@ export class OneWayArena extends Scene {
 
 	override onReady() {
 		this.player.position = new Vec2(320, 280);
+	}
+}
+
+// ── Interactive tile arenas ─────────────────────────────────────────
+
+/**
+ * BreakableBlockArena: Floor + BrickBlock above player + CoinBlock + ExclamationBlock.
+ * Floor top at y=300. Blocks at y=200 (100px above floor surface).
+ * Player starts at (320, 280) on the floor, can jump up into blocks.
+ */
+export class BreakableBlockArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<BrickBlock position={[260, 200]} />
+				<CoinBlock position={[320, 200]} />
+				<ExclamationBlock position={[380, 200]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(320, 280);
+
+		// Wire contact callbacks for breakable blocks
+		this.game.physics.onContact("player", "world", (player, other, info) => {
+			if (
+				info.normal.y > 0 &&
+				(other instanceof BrickBlock ||
+					other instanceof CoinBlock ||
+					other instanceof ExclamationBlock)
+			) {
+				(other as BrickBlock | CoinBlock | ExclamationBlock).hitFromBelow(player as Player);
+			}
+		});
+	}
+}
+
+/**
+ * SpringArena: Floor + Spring on the floor surface.
+ * Floor top at y=300, spring at (400, 268) — sitting on the floor.
+ * Player starts at (200, 280) and walks right onto the spring.
+ */
+export class SpringArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<Spring position={[400, 268]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+
+		this.game.physics.onContact("player", "world", (player, other, info) => {
+			if (info.normal.y < 0 && other instanceof Spring) {
+				other.bounce(player as Player);
+			}
+		});
+	}
+}
+
+/**
+ * FallAwayArena: FallAwayPlatform above the floor.
+ * Floor at y=308 (top at y=300). FallAway platform at y=244 (top at y=212).
+ * Player starts on the fall-away platform.
+ */
+export class FallAwayArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<FallAwayPlatform position={[320, 244]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(320, 216);
+
+		this.game.physics.onContact("player", "world", (_player, other, info) => {
+			if (info.normal.y < 0 && other instanceof FallAwayPlatform) {
+				other.trigger();
+			}
+		});
+	}
+}
+
+/** Small platform for ladder test. */
+class SmallPlatform extends StaticCollider {
+	override collisionGroup = "world";
+
+	override build() {
+		return <CollisionShape shape={Shape.rect(200, 16)} />;
+	}
+}
+
+/**
+ * LadderArena: Floor + ladder zone sensor (manually placed, not from tilemap).
+ * Floor top at y=300. Ladder from y=150 to y=300.
+ * Player starts at (320, 280) on the floor near the ladder.
+ * Small platform at top of ladder so player can climb to it.
+ */
+export class LadderArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	ladder!: LadderZone;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<SmallPlatform position={[320, 158]} />
+				<LadderZone ref="ladder" position={[320, 225]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(320, 280);
+		this.ladder.ladderTop = 150;
+		this.ladder.ladderBottom = 300;
+		this.ladder.add(CollisionShape, { shape: Shape.rect(40, 150) });
 	}
 }
