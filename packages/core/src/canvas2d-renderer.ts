@@ -136,6 +136,9 @@ class Canvas2DDrawContext implements DrawContext {
 	setAlpha(alpha: number): void {
 		this.ctx.globalAlpha = alpha;
 	}
+	setImageSmoothing(enabled: boolean): void {
+		this.ctx.imageSmoothingEnabled = enabled;
+	}
 }
 
 /** The base Node2D.onDraw — used to detect overrides via prototype comparison. */
@@ -156,7 +159,7 @@ export class Canvas2DRenderer implements Renderer {
 	/**
 	 * When true, snap transform translation to integer pixels before rendering.
 	 * Prevents sub-pixel seams between tiles and sprites.
-	 * Defaults to the value of `pixelArt`.
+	 * Defaults to `true` — disable only if you need sub-pixel smoothness.
 	 */
 	pixelSnap: boolean;
 
@@ -182,7 +185,7 @@ export class Canvas2DRenderer implements Renderer {
 		this.gameHeight = height;
 		this.backgroundColor = backgroundColor;
 		this.pixelArt = pixelArt;
-		this.pixelSnap = pixelArt;
+		this.pixelSnap = true;
 		if (pixelArt) {
 			ctx.imageSmoothingEnabled = false;
 		}

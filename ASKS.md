@@ -568,3 +568,5 @@
 [IMPL] sun 3/1 3pm - Debug advanced platformer slope collision vectors and flip issues using qdbg
 
 [IMPL] sun 3/1 3pm - Fix tileset collision polygon assignments to match visual art across all 6 biomes, resolving slope visual/collision mismatch
+
+[MILE] sun 3/1 6pm - Fixed tileset slope collision polygons to match visual art, corrected 2:1 slope geometry, and added player slope handling

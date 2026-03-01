@@ -1,3 +1,15 @@
+## Fix tile seams when pixelArt is off, default pixelSnap to true
+*Sunday, March 1st at 7pm*
+Tile seams appeared between tiles when pixelArt mode was disabled because 
+pixelSnap defaulted to false (causing sub-pixel camera offsets) and bilinear 
+filtering bled across tile boundaries in the atlas. Fixed by defaulting 
+pixelSnap to true for all games and adding setImageSmoothing to DrawContext so 
+TileMap can disable image smoothing during tile rendering while sprites remain 
+smooth. Also updated the advanced platformer to use higher resolution without 
+pixelArt mode and adjusted the player sprite offset.
+
+---
+
 ## Fix tileset slope collisions to match visual art across all biomes
 *Sunday, March 1st at 6pm*
 Swapped collision polygon assignments in tileset.tsx across all 6 biomes so 

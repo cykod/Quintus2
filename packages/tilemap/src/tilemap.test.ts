@@ -653,6 +653,7 @@ describe("TileMap", () => {
 				save: () => {},
 				restore: () => {},
 				setAlpha: () => {},
+				setImageSmoothing: () => {},
 				assets: {} as never,
 			};
 			// Should not throw
@@ -676,6 +677,7 @@ describe("TileMap", () => {
 				save: () => {},
 				restore: () => {},
 				setAlpha: () => {},
+				setImageSmoothing: () => {},
 				assets: {} as never,
 			};
 			map.onDraw(ctx);
@@ -966,6 +968,7 @@ describe("TileMap", () => {
 				save: () => {},
 				restore: () => {},
 				setAlpha: () => {},
+				setImageSmoothing: () => {},
 				assets: {} as never,
 			};
 			map.onDraw(ctx);
@@ -991,6 +994,7 @@ describe("TileMap", () => {
 				save: () => {},
 				restore: () => {},
 				setAlpha: () => {},
+				setImageSmoothing: () => {},
 				assets: {} as never,
 			};
 			map.onDraw(ctx);
@@ -1060,6 +1064,7 @@ describe("TileMap", () => {
 				save: () => {},
 				restore: () => {},
 				setAlpha: () => {},
+				setImageSmoothing: () => {},
 				assets: {} as never,
 			};
 
@@ -1102,6 +1107,7 @@ describe("TileMap", () => {
 				save: () => {},
 				restore: () => {},
 				setAlpha: () => {},
+				setImageSmoothing: () => {},
 				assets: {} as never,
 			};
 

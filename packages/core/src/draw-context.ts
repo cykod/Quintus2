@@ -54,4 +54,6 @@ export interface DrawContext {
 	save(): void;
 	restore(): void;
 	setAlpha(alpha: number): void;
+	/** Control image smoothing (bilinear filtering). Use save/restore to scope. */
+	setImageSmoothing(enabled: boolean): void;
 }

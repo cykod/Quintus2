@@ -731,9 +731,9 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 		expect(setTransform).toHaveBeenCalledWith(1, 0, 0, 1, 11, 20);
 	});
 
-	it("pixelSnap defaults to false when pixelArt is not set", () => {
+	it("pixelSnap defaults to true even when pixelArt is not set", () => {
 		const setup = createTestSetup();
-		expect(setup.renderer.pixelSnap).toBe(false);
+		expect(setup.renderer.pixelSnap).toBe(true);
 	});
 
 	it("pixelSnap defaults to true when pixelArt is enabled", () => {

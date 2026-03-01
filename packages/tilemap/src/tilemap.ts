@@ -614,11 +614,16 @@ export class TileMap extends Node2D {
 	onDraw(ctx: DrawContext): void {
 		if (!this._parsed) return;
 
+		// Disable image smoothing during tile rendering to prevent bilinear
+		// filtering from bleeding across tile boundaries in the atlas.
+		ctx.save();
+		ctx.setImageSmoothing(false);
 		for (const layer of this._parsed.tileLayers) {
 			if (!layer.visible) continue;
 			if (this.visibleLayers.length > 0 && !this.visibleLayers.includes(layer.name)) continue;
 			this._drawTileLayer(ctx, layer);
 		}
+		ctx.restore();
 	}
 
 	// === Map Properties ===
