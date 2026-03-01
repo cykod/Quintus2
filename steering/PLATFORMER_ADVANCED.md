@@ -10,7 +10,7 @@
 | 1 | Engine Enhancements | Done |
 | 2 | Asset Pipeline & Tiled Setup | Done |
 | 3 | Core Player Mechanics | Done |
-| 4 | Terrain & Collision (Slopes, One-Way) | Pending |
+| 4 | Terrain & Collision (Slopes, One-Way) | Done |
 | 5 | Interactive Tiles (Breakable, Fall-Away, Springs, Ladders) | Pending |
 | 6 | Enemies | Pending |
 | 7 | Moving Platforms & Hazards | Pending |
@@ -773,15 +773,15 @@ Use Tiled's horizontal flip on the tile. The engine already parses `flipH` on ti
 
 Cloud tiles (`terrain_*_cloud_*`) and thin horizontal platforms (`terrain_*_horizontal_*`) get `oneWay = true` in Tiled's tile properties. The existing `oneWayTileIds` option in `generateCollision()` handles these perfectly.
 
-- [ ] Configure slope tile collision polygons in Tiled tileset
-- [ ] Implement `generateSlopeCollision()` or integrate into `generateCollision()` with `excludeTileIds`
-- [ ] Handle flipped tile polygon mirroring in slope collision generator
-- [ ] Set `oneWay = true` property on cloud and horizontal platform tiles
-- [ ] Test player walking up/down short slopes
-- [ ] Test player walking up/down long (3-tile) slopes
-- [ ] Test one-way platforms (pass through from below, land from above)
-- [ ] Test player `isOnFloor()` on slopes
-- [ ] Verify `floorMaxAngle` works correctly with slope angles
+- [x] Configure slope tile collision polygons in Tiled tileset
+- [x] Implement `generateSlopeCollision()` or integrate into `generateCollision()` with `excludeTileIds`
+- [x] Handle flipped tile polygon mirroring in slope collision generator
+- [x] Set `oneWay = true` property on cloud and horizontal platform tiles
+- [x] Test player walking up/down short slopes
+- [x] Test player walking up/down long (3-tile) slopes
+- [x] Test one-way platforms (pass through from below, land from above)
+- [x] Test player `isOnFloor()` on slopes
+- [x] Verify `floorMaxAngle` works correctly with slope angles
 
 ---
 

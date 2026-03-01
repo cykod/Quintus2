@@ -251,13 +251,34 @@
   </properties>
  </tile>
  <tile id="158" type="slope_long_a">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,64 64,43 64,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="159" type="slope_long_b">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,43 64,21 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="160" type="slope_long_c">
   <properties>
   <property name="solid" type="bool" value="true"/>
   </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,21 64,0 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="161" type="slope_right_asc_bottom">
   <objectgroup draworder="index">
@@ -384,13 +405,34 @@
   </properties>
  </tile>
  <tile id="186" type="slope_long_a">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,64 64,43 64,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="187" type="slope_long_b">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,43 64,21 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="188" type="slope_long_c">
   <properties>
   <property name="solid" type="bool" value="true"/>
   </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,21 64,0 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="189" type="slope_right_asc_bottom">
   <objectgroup draworder="index">
@@ -517,13 +559,34 @@
   </properties>
  </tile>
  <tile id="214" type="slope_long_a">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,64 64,43 64,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="215" type="slope_long_b">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,43 64,21 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="216" type="slope_long_c">
   <properties>
   <property name="solid" type="bool" value="true"/>
   </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,21 64,0 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="217" type="slope_right_asc_bottom">
   <objectgroup draworder="index">
@@ -650,13 +713,34 @@
   </properties>
  </tile>
  <tile id="242" type="slope_long_a">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,64 64,43 64,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="243" type="slope_long_b">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,43 64,21 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="244" type="slope_long_c">
   <properties>
   <property name="solid" type="bool" value="true"/>
   </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,21 64,0 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="245" type="slope_right_asc_bottom">
   <objectgroup draworder="index">
@@ -783,13 +867,34 @@
   </properties>
  </tile>
  <tile id="270" type="slope_long_a">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,64 64,43 64,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="271" type="slope_long_b">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,43 64,21 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="272" type="slope_long_c">
   <properties>
   <property name="solid" type="bool" value="true"/>
   </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,21 64,0 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="273" type="slope_right_asc_bottom">
   <objectgroup draworder="index">
@@ -916,13 +1021,34 @@
   </properties>
  </tile>
  <tile id="298" type="slope_long_a">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,64 64,43 64,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="299" type="slope_long_b">
+  <properties>
+  <property name="solid" type="bool" value="true"/>
+  </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,43 64,21 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="300" type="slope_long_c">
   <properties>
   <property name="solid" type="bool" value="true"/>
   </properties>
+  <objectgroup draworder="index">
+   <object id="1" x="0" y="0">
+    <polygon points="0,21 64,0 64,64 0,64"/>
+   </object>
+  </objectgroup>
  </tile>
  <tile id="301" type="slope_right_asc_bottom">
   <objectgroup draworder="index">

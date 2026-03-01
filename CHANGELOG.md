@@ -1,3 +1,17 @@
+## Add slope collision, one-way platforms, and terrain tests (Phase 4)
+*Sunday, March 1st at 1am*
+Add Phase 4 (Terrain & Collision) to the advanced platformer. Configures 
+polygon collision shapes on all 18 long slope tiles across 6 theme rows in the 
+tileset, enables tileShapeColliders in the test scene, and expands level1.tmx 
+with short/long slopes and one-way cloud platforms. Adds 7 test arena scenes 
+(SlopeArena, SlopeDescentArena, FlippedSlopeArena, LongSlopeArena, OneWayArena) 
+with direct polygon StaticColliders, and 8 new tests verifying slope 
+ascent/descent, isOnFloor detection on 45° and 18° slopes, flipped slope 
+traversal, and one-way platform pass-through/landing behavior. All 2024 tests 
+pass.
+
+---
+
 ## Add Player class with full mechanics and SpriteSheet.fromAtlas (Phase 3)
 *Saturday, February 28th at 11pm*
 Add the advanced platformer Player class with movement, jumping, double-jump, 

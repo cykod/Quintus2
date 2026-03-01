@@ -30,6 +30,7 @@ export class TestScene extends Scene {
 			allSolid: true,
 			collisionGroup: "world",
 			oneWayTileIds: oneWayIds,
+			tileShapeColliders: true,
 		});
 
 		// Position player at the spawn point
