@@ -36,6 +36,31 @@ describe("Terrain: Slopes", () => {
 		result.game.stop();
 	});
 
+	it("player stays grounded while descending a slope (no floating)", async () => {
+		// Regression test: walking down a slope must not cause the player to
+		// lose floor contact and enter the "jump" state mid-descent.
+		const result = await runScene(
+			SlopeDescentArena,
+			InputScript.create().hold("left"),
+			0.2, // ~12 frames to settle on the top platform
+		);
+		const player = result.game.currentScene?.findByType(Player);
+		expect(player).toBeDefined();
+		expect(player!.isOnFloor()).toBe(true);
+
+		// Walk left through the slope — check isOnFloor every frame
+		let framesOffGround = 0;
+		for (let i = 0; i < 100; i++) {
+			result.game.step();
+			if (!player!.isOnFloor()) framesOffGround++;
+		}
+
+		// The player should maintain floor contact throughout the descent.
+		// Allow at most 2 frames for transition edges (platform-to-slope, slope-to-floor).
+		expect(framesOffGround).toBeLessThanOrEqual(2);
+		result.game.stop();
+	});
+
 	it("player isOnFloor while standing on a 45° slope", async () => {
 		// 45° is exactly at the floorMaxAngle boundary (π/4).
 		// Bump the limit slightly so the angle check passes reliably.

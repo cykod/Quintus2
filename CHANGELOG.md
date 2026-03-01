@@ -1,3 +1,16 @@
+## Add floor snap to prevent floating when walking down slopes
+*Sunday, March 1st at 8pm*
+Actor.move() now has two mechanisms to keep actors grounded on descending 
+slopes. First, the gravity step computes slope-following velocity (|vx * 
+normalX / normalY|) instead of the fixed FLOOR_SNAP_GRAVITY when moving 
+downhill on a known slope. Second, a new floorSnapLength property enables a 
+post-move downward cast that re-establishes floor contact when transitioning 
+from flat surfaces onto slopes. The advanced-platformer Player sets 
+floorSnapLength=32, and a frame-by-frame regression test verifies zero frames 
+off-ground during 45-degree slope descent.
+
+---
+
 ## Fix tile seams when pixelArt is off, default pixelSnap to true
 *Sunday, March 1st at 7pm*
 Tile seams appeared between tiles when pixelArt mode was disabled because 

@@ -56,6 +56,18 @@ export class Actor extends CollisionObject {
 	floorMaxAngle: number = Math.PI / 4;
 
 	/**
+	 * Maximum distance (pixels) to snap downward when the actor walks off
+	 * a floor edge. If the actor was on floor, isn't after move(), and isn't
+	 * jumping (velocity.y >= 0), a short downward cast re-establishes floor
+	 * contact. Prevents floating when walking from flat surfaces onto slopes
+	 * or over small terrain gaps.
+	 *
+	 * Set to 0 to disable. Typical values: 16–48 depending on speed/slope angle.
+	 * Default: 0 (disabled).
+	 */
+	floorSnapLength = 0;
+
+	/**
 	 * Maximum number of slide iterations per move() call.
 	 * Higher = more accurate corner handling. Default: 4.
 	 */
@@ -151,6 +163,7 @@ export class Actor extends CollisionObject {
 		this.applyGravity = true;
 		this.upDirection._set(0, -1);
 		this.floorMaxAngle = Math.PI / 4;
+		this.floorSnapLength = 0;
 		this.maxSlides = 4;
 		this._onFloor = false;
 		this._onWall = false;
@@ -308,7 +321,16 @@ export class Actor extends CollisionObject {
 			if (this._onFloor) {
 				// Only snap if not jumping upward — preserve negative velocity from jumps
 				if (this.velocity.y >= 0) {
-					this.velocity.y = FLOOR_SNAP_GRAVITY;
+					// On a slope moving downhill, match the slope angle to maintain contact.
+					// Without this, FLOOR_SNAP_GRAVITY alone is too small and the player
+					// "steps off" the slope surface, losing floor contact each frame.
+					const fnx = this._floorNormal.x;
+					const fny = this._floorNormal.y;
+					if (Math.abs(fnx) > 0.001 && Math.abs(fny) > 0.001 && this.velocity.x * fnx > 0) {
+						this.velocity.y = Math.max(FLOOR_SNAP_GRAVITY, Math.abs((this.velocity.x * fnx) / fny));
+					} else {
+						this.velocity.y = FLOOR_SNAP_GRAVITY;
+					}
 				}
 			} else {
 				this.velocity.y += this.gravity * dt;
@@ -442,6 +464,34 @@ export class Actor extends CollisionObject {
 				} else {
 					this._onWall = true;
 					this._wallNormal._set(col.normal.x, col.normal.y);
+				}
+			}
+		}
+
+		// 5b. Floor snap — re-establish contact when walking off an edge onto a slope
+		if (
+			wasOnFloor &&
+			!this._onFloor &&
+			this.velocity.y >= 0 &&
+			this.floorSnapLength > 0 &&
+			upLen > 0
+		) {
+			const snapCollision = world._castMotionScalar(this, 0, this.floorSnapLength, 0, 0);
+			if (snapCollision) {
+				const cosA = snapCollision.normal.dot(this.upDirection) / upLen;
+				const snapAngle = Math.acos(Math.min(1, Math.max(-1, cosA)));
+				if (snapAngle <= this.floorMaxAngle) {
+					const snapX = snapCollision.travel.x + snapCollision.normal.x * SAFE_MARGIN;
+					const snapY = snapCollision.travel.y + snapCollision.normal.y * SAFE_MARGIN;
+					this.position._set(this.position.x + snapX, this.position.y + snapY);
+					this._onFloor = true;
+					this._floorNormal._set(snapCollision.normal.x, snapCollision.normal.y);
+					this._floorCollider = snapCollision.collider;
+					this._slideCollisions.push(snapCollision);
+					// Kill downward velocity — we're snapped to the surface
+					if (this.velocity.y > 0) {
+						this.velocity.y = 0;
+					}
 				}
 			}
 		}
