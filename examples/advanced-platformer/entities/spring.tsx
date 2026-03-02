@@ -1,5 +1,6 @@
 import { type Actor, CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
+import type { TileSpawnInfo } from "@quintus/tilemap";
 import { FRAME, tileAtlas } from "../sprites.js";
 
 /**
@@ -12,6 +13,7 @@ export class Spring extends StaticCollider {
 	bounceForce = -800;
 
 	sprite!: Sprite;
+	tileInfo: TileSpawnInfo | null = null;
 
 	override build() {
 		return (
@@ -24,7 +26,11 @@ export class Spring extends StaticCollider {
 
 	override onReady() {
 		super.onReady();
-		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.SPRING);
+		if (this.tileInfo) {
+			this.sprite.sourceRect = this.tileInfo.sourceRect;
+		} else {
+			this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.SPRING);
+		}
 	}
 
 	/** Bounce an actor. Called by contact callback when player lands on top. */

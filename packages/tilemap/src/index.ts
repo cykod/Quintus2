@@ -37,7 +37,7 @@ export {
 	TILE_GID_MASK,
 } from "./tiled-types.js";
 // TileMap node
-export type { TileRayHit } from "./tilemap.js";
+export type { TileRayHit, TileSpawnInfo } from "./tilemap.js";
 export { TileMap } from "./tilemap.js";
 // TMX/TSX XML parsers
 export { parseTmx } from "./tmx-parser.js";

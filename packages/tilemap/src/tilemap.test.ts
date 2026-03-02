@@ -409,6 +409,140 @@ describe("TileMap", () => {
 		});
 	});
 
+	describe("spawnFromTiles tileInfo injection", () => {
+		function makeTiledWithTileDefs(): TiledMap {
+			return {
+				width: 5,
+				height: 3,
+				tilewidth: 16,
+				tileheight: 16,
+				tilesets: [
+					{
+						firstgid: 1,
+						name: "terrain",
+						tilewidth: 16,
+						tileheight: 16,
+						image: "tiles.png",
+						imagewidth: 160,
+						imageheight: 160,
+						columns: 10,
+						tilecount: 100,
+						tiles: [
+							{
+								id: 2,
+								type: "breakable",
+								properties: [{ name: "solid", type: "bool", value: true }],
+								objectgroup: {
+									name: "",
+									type: "objectgroup",
+									objects: [
+										{
+											id: 1,
+											name: "",
+											type: "",
+											x: 1,
+											y: 2,
+											width: 14,
+											height: 12,
+										},
+									],
+								},
+							},
+						],
+					},
+				],
+				layers: [
+					{
+						name: "entities",
+						type: "tilelayer",
+						width: 5,
+						height: 3,
+						// GID 3 = localId 2 (has definition), GID 2 = localId 1 (no definition)
+						data: [0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+					},
+				],
+			};
+		}
+
+		it("injects tileInfo on nodes that declare the property", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithTileDefs());
+
+			class Block extends Node2D {
+				tileInfo: unknown = null;
+			}
+			const spawned = map.spawnFromTiles("entities", { 2: Block }) as Block[];
+			expect(spawned).toHaveLength(1);
+			expect(spawned[0]!.tileInfo).not.toBeNull();
+
+			const info = spawned[0]!.tileInfo as {
+				localId: number;
+				sourceRect: { x: number; y: number; width: number; height: number };
+				definition: { id: number; type: string } | null;
+			};
+			expect(info.localId).toBe(2);
+			expect(info.sourceRect.width).toBe(16);
+			expect(info.sourceRect.height).toBe(16);
+			// localId 2 → col 2, row 0 → x = 32, y = 0
+			expect(info.sourceRect.x).toBe(32);
+			expect(info.sourceRect.y).toBe(0);
+			expect(info.definition).not.toBeNull();
+			expect(info.definition!.id).toBe(2);
+			expect(info.definition!.type).toBe("breakable");
+		});
+
+		it("does NOT inject tileInfo on nodes without the property", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithTileDefs());
+
+			class PlainNode extends Node2D {}
+			const spawned = map.spawnFromTiles("entities", { 2: PlainNode });
+			expect(spawned).toHaveLength(1);
+			expect("tileInfo" in spawned[0]!).toBe(false);
+		});
+
+		it("sets definition to null when tile has no definition", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game, makeTiledWithTileDefs());
+
+			class Block extends Node2D {
+				tileInfo: unknown = null;
+			}
+			// localId 1 (GID 2) has no tile definition
+			const spawned = map.spawnFromTiles("entities", { 1: Block }) as Block[];
+			expect(spawned).toHaveLength(1);
+			const info = spawned[0]!.tileInfo as { localId: number; definition: unknown };
+			expect(info.localId).toBe(1);
+			expect(info.definition).toBeNull();
+		});
+	});
+
+	describe("getTileSourceRect", () => {
+		it("returns correct source rect for a tile", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			const rect = map.getTileSourceRect(0);
+			expect(rect.x).toBe(0);
+			expect(rect.y).toBe(0);
+			expect(rect.width).toBe(16);
+			expect(rect.height).toBe(16);
+		});
+
+		it("computes correct column/row for tile ID", () => {
+			const game = createTestGame();
+			const map = setupTileMap(game);
+			// tileset has 10 columns, so localId 12 → col 2, row 1 → x=32, y=16
+			const rect = map.getTileSourceRect(12);
+			expect(rect.x).toBe(32);
+			expect(rect.y).toBe(16);
+		});
+
+		it("throws when map not loaded", () => {
+			const map = new TileMap();
+			expect(() => map.getTileSourceRect(0)).toThrow("No tileset available");
+		});
+	});
+
 	describe("generateCollision", () => {
 		it("creates StaticColliders from solid tiles", () => {
 			const game = createTestGame();

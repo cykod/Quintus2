@@ -1,3 +1,16 @@
+## Pass tile metadata to spawned entities via tileInfo
+*Monday, March 2nd at 8pm*
+Entities spawned by spawnFromTiles() now receive per-tile metadata through the 
+TileSpawnInfo interface, which was wired up in the previous commit but not yet 
+consumed. BreakableBlock uses tileInfo to render the correct tile art from the 
+tileset and compute per-tile collision shapes from TSX objectgroup data, so 
+breakable blocks with different tile IDs now render distinctly with accurate 
+collision bounds. Spring similarly uses tileInfo for its initial sprite 
+sourceRect. Adds 7 new tests covering tileInfo injection and getTileSourceRect, 
+and exports the TileSpawnInfo type from the tilemap package.
+
+---
+
 ## Fix fall-away platform collision using CollisionShape.disabled
 *Monday, March 2nd at 8pm*
 The fall-away platform was using monitoring = false to disable collision after 

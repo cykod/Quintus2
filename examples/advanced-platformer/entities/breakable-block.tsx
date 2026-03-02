@@ -1,6 +1,8 @@
 import { Node2D } from "@quintus/core";
+import { Vec2 } from "@quintus/math";
 import { type Actor, CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
+import type { TileSpawnInfo } from "@quintus/tilemap";
 import { Ease } from "@quintus/tween";
 import { FRAME, tileAtlas } from "../sprites.js";
 import { gameState } from "../state.js";
@@ -14,13 +16,16 @@ import { gameState } from "../state.js";
 export abstract class BreakableBlock extends StaticCollider {
 	override collisionGroup = "world";
 	sprite!: Sprite;
+	tileInfo: TileSpawnInfo | null = null;
 
 	protected abstract frameName: string;
 
 	override build() {
+		const shape = this._buildCollisionShape();
+		const offset = this._buildCollisionOffset();
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(64, 64)} />
+				<CollisionShape shape={shape} position={offset} />
 				<Sprite ref="sprite" texture={tileAtlas.texture} centered />
 			</>
 		);
@@ -28,7 +33,33 @@ export abstract class BreakableBlock extends StaticCollider {
 
 	override onReady() {
 		super.onReady();
-		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(this.frameName);
+		if (this.tileInfo) {
+			this.sprite.sourceRect = this.tileInfo.sourceRect;
+		} else {
+			this.sprite.sourceRect = tileAtlas.getFrameOrThrow(this.frameName);
+		}
+	}
+
+	/** Compute collision shape from tile objectgroup or fall back to full-tile rect. */
+	private _buildCollisionShape(): ReturnType<typeof Shape.rect> {
+		const obj = this.tileInfo?.definition?.objectgroup?.objects[0];
+		if (obj) {
+			return Shape.rect(obj.width, obj.height);
+		}
+		return Shape.rect(64, 64);
+	}
+
+	/** Compute collision offset from tile objectgroup or return zero. */
+	private _buildCollisionOffset(): Vec2 {
+		const obj = this.tileInfo?.definition?.objectgroup?.objects[0];
+		if (obj) {
+			const halfTile = 32; // tileWidth / 2
+			return new Vec2(
+				obj.x + obj.width / 2 - halfTile,
+				obj.y + obj.height / 2 - halfTile,
+			);
+		}
+		return Vec2.ZERO;
 	}
 
 	/** Called by contact callback when player hits from below. */
