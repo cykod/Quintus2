@@ -570,3 +570,17 @@
 [IMPL] sun 3/1 3pm - Fix tileset collision polygon assignments to match visual art across all 6 biomes, resolving slope visual/collision mismatch
 
 [MILE] sun 3/1 6pm - Fixed tileset slope collision polygons to match visual art, corrected 2:1 slope geometry, and added player slope handling
+
+[MILE] sun 3/1 7pm - Fixed tile seams by defaulting pixelSnap to true and disabling image smoothing during TileMap rendering
+
+[IMPL] sun 3/1 7pm - Fix player floating when walking down slopes in advanced-platformer by adding ground-snapping so players stick to slopes instead of entering jump mode
+
+[IMPL] sun 3/1 7pm - Implement Phase 5 interactive tiles (breakable blocks, fall-away platforms, springs, ladders)
+
+[MILE] sun 3/1 8pm - Added floor snap and slope-following velocity to Actor.move() to prevent player floating when walking down slopes
+
+[MILE] sun 3/1 8pm - Added interactive tiles (breakable blocks, springs, fall-away platforms, ladders) for advanced platformer Phase 5 with 16 tests
+
+[IMPL] sun 3/1 8pm - Update level1.tmx with interactive tiles (breakable blocks, springs, fall-away, ladders) and test Phase 5 features in qdbg
+
+[IMPL] sun 3/1 9pm - Update level1.tmx with interactive tiles and fix missing super.onReady() in entity classes preventing physics registration

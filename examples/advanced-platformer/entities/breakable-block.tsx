@@ -27,6 +27,7 @@ export abstract class BreakableBlock extends StaticCollider {
 	}
 
 	override onReady() {
+		super.onReady();
 		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(this.frameName);
 	}
 
@@ -98,7 +99,7 @@ export class ExclamationBlock extends BreakableBlock {
 		if (this._hit) return;
 		this._hit = true;
 
-		this.game.audio.play("powerup", { bus: "sfx" });
+		this.game.audio.play("magic", { bus: "sfx" });
 
 		// Bump tween
 		const baseY = this.position.y;

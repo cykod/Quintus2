@@ -27,6 +27,8 @@ export class Player extends DamageableActor {
 	private _isClimbing = false;
 	private _isDucking = false;
 	private _isOnLadder = false;
+	private _ladderMinX = 0;
+	private _ladderMaxX = 0;
 	private _starPower = false;
 	private _starTimer = 0;
 
@@ -46,12 +48,16 @@ export class Player extends DamageableActor {
 		return this._isClimbing;
 	}
 
-	enterLadder(): void {
+	enterLadder(minX: number, maxX: number): void {
 		this._isOnLadder = true;
+		this._ladderMinX = minX;
+		this._ladderMaxX = maxX;
 	}
 
 	exitLadder(): void {
 		this._isOnLadder = false;
+		this._ladderMinX = 0;
+		this._ladderMaxX = 0;
 		if (this._isClimbing) {
 			this._isClimbing = false;
 			this.applyGravity = true;
@@ -210,6 +216,16 @@ export class Player extends DamageableActor {
 			this.velocity.y = this.climbSpeed;
 		}
 
+		// Horizontal movement within ladder bounds
+		if (input.isPressed("left")) {
+			this.velocity.x = -this.speed;
+			this._facing = "left";
+		}
+		if (input.isPressed("right")) {
+			this.velocity.x = this.speed;
+			this._facing = "right";
+		}
+
 		// Jump exits climbing
 		if (input.isJustPressed("jump")) {
 			this._isClimbing = false;
@@ -226,6 +242,15 @@ export class Player extends DamageableActor {
 		}
 
 		this.move(dt);
+
+		// Clamp horizontal position to ladder bounds
+		if (this._isClimbing && this._ladderMaxX > this._ladderMinX) {
+			const halfW = 20; // half of player collision width (40)
+			this.position.x = Math.max(
+				this._ladderMinX + halfW,
+				Math.min(this._ladderMaxX - halfW, this.position.x),
+			);
+		}
 	}
 
 	// ─── Animation ───────────────────────────────────────────────

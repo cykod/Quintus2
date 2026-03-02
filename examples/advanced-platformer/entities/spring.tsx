@@ -16,13 +16,14 @@ export class Spring extends StaticCollider {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(64, 64)} />
+				<CollisionShape shape={Shape.rect(56, 56)} />
 				<Sprite ref="sprite" texture={tileAtlas.texture} centered />
 			</>
 		);
 	}
 
 	override onReady() {
+		super.onReady();
 		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.SPRING);
 	}
 

@@ -1,3 +1,16 @@
+## Fix entity physics registration and refine interactive tiles
+*Monday, March 2nd at 4pm*
+Fixed a critical bug where BreakableBlock, Spring, and FallAwayPlatform 
+entities were invisible to physics because their onReady() overrides didn't 
+call super.onReady(), preventing spatial hash registration. Also refined 
+collision shapes (spring 56x56, fall-away thin 60x14 platform), fixed fall-away 
+sprite mismatch by switching to bridge atlas frames matching the Tiled editor 
+tiles, added horizontal movement while climbing ladders with position clamping 
+to ladder bounds, and redesigned level1.tmx with proper test sections for all 
+Phase 5 features.
+
+---
+
 ## Add interactive tiles: breakable blocks, springs, fall-away, ladders
 *Sunday, March 1st at 8pm*
 Implement Phase 5 of the advanced platformer with four interactive tile entity 

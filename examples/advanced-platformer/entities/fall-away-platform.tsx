@@ -25,14 +25,15 @@ export class FallAwayPlatform extends StaticCollider {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(64, 64)} />
+				<CollisionShape shape={Shape.rect(60, 14)} position={[0, -25]} />
 				<Sprite ref="sprite" texture={tileAtlas.texture} centered />
 			</>
 		);
 	}
 
 	override onReady() {
-		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.BRICK_GREY);
+		super.onReady();
+		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.BRIDGE);
 		this._startX = this.position.x;
 		this._startY = this.position.y;
 	}

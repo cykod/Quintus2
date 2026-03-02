@@ -10,6 +10,10 @@
  </tile>
  <tile id="2" type="coin_block">
  </tile>
+ <tile id="3">
+ </tile>
+ <tile id="4">
+ </tile>
  <tile id="5" type="exclamation_block">
  </tile>
  <tile id="6" type="exclamation_block">
@@ -60,6 +64,10 @@
  <tile id="27" type="breakable">
  </tile>
  <tile id="28" type="breakable">
+ </tile>
+ <tile id="29" type="fall_away">
+ </tile>
+ <tile id="30" type="fall_away">
  </tile>
  <tile id="34" type="coin">
  </tile>

@@ -37,7 +37,6 @@ export class TestScene extends Scene {
 		const oneWayIds = this.map.getTileIdsByProperty("oneWay", true);
 		this.map.generateCollision({
 			layer: "main",
-			allSolid: true,
 			collisionGroup: "world",
 			oneWayTileIds: oneWayIds,
 			tileShapeColliders: true,

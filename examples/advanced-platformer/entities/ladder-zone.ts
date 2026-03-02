@@ -20,7 +20,14 @@ export class LadderZone extends Sensor {
 
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
-				(body as Player).enterLadder();
+				const shapes = this.getShapes();
+				const shape = shapes[0]?.shape;
+				const halfW =
+					shape && shape.type === "rect" ? shape.width / 2 : 32;
+				(body as Player).enterLadder(
+					this.position.x - halfW,
+					this.position.x + halfW,
+				);
 			}
 		});
 

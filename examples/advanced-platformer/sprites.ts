@@ -64,6 +64,10 @@ export const FRAME = {
 	BRICKS_BROWN: "bricks_brown",
 	BRICKS_GREY: "bricks_grey",
 
+	// Platforms
+	BRIDGE: "bridge",
+	BRIDGE_LOGS: "bridge_logs",
+
 	// Spring
 	SPRING: "spring",
 	SPRING_OUT: "spring_out",
