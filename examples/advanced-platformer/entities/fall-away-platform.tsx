@@ -1,5 +1,6 @@
 import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
+import type { TileSpawnInfo } from "@quintus/tilemap";
 import { Ease } from "@quintus/tween";
 import { FRAME, tileAtlas } from "../sprites.js";
 
@@ -17,15 +18,17 @@ export class FallAwayPlatform extends StaticCollider {
 	respawnDelay = 3.0;
 
 	sprite!: Sprite;
+	tileInfo: TileSpawnInfo | null = null;
 
 	private _falling = false;
 	private _startX = 0;
 	private _startY = 0;
+	private _collisionShape!: CollisionShape;
 
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.rect(60, 14)} position={[0, -25]} />
+				<CollisionShape ref="_collisionShape" shape={Shape.rect(60, 14)} position={[0, -25]} />
 				<Sprite ref="sprite" texture={tileAtlas.texture} centered />
 			</>
 		);
@@ -33,7 +36,11 @@ export class FallAwayPlatform extends StaticCollider {
 
 	override onReady() {
 		super.onReady();
-		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.BRIDGE);
+		if (this.tileInfo) {
+			this.sprite.sourceRect = this.tileInfo.sourceRect;
+		} else {
+			this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.BRIDGE);
+		}
 		this._startX = this.position.x;
 		this._startY = this.position.y;
 	}
@@ -55,13 +62,14 @@ export class FallAwayPlatform extends StaticCollider {
 		// Snap back to center before falling
 		this.position.x = this._startX;
 
+		// Disable collision shape so the player falls through immediately
+		this._collisionShape.disabled = true;
+
 		this.tween()
 			.to({ position: { y: this._startY + 200 } }, 0.4, Ease.easeInQuad)
 			.parallel()
 			.to({ sprite: { alpha: 0 } }, 0.4)
 			.onComplete(() => {
-				// Disable collision while "gone"
-				this.monitoring = false;
 				this.visible = false;
 
 				if (this.respawnDelay > 0) {
@@ -76,7 +84,7 @@ export class FallAwayPlatform extends StaticCollider {
 		this.position.x = this._startX;
 		this.position.y = this._startY;
 		this.sprite.alpha = 1;
-		this.monitoring = true;
+		this._collisionShape.disabled = false;
 		this.visible = true;
 		this._falling = false;
 	}

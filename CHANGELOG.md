@@ -1,3 +1,16 @@
+## Fix fall-away platform collision using CollisionShape.disabled
+*Monday, March 2nd at 8pm*
+The fall-away platform was using monitoring = false to disable collision after 
+falling, but monitoring only controls overlap signals (bodyEntered/bodyExited), 
+not collision response from StaticColliders. This left an invisible solid body 
+blocking the player until respawn. Fixed by using CollisionShape.disabled = 
+true which removes the shape from getShapes() and returns null from 
+getWorldAABB(), so the physics sweep finds no shape pairs and the player falls 
+through immediately. Also adds a public getTileSourceRect() method and 
+TileSpawnInfo interface to the TileMap API.
+
+---
+
 ## Fix entity physics registration and refine interactive tiles
 *Monday, March 2nd at 4pm*
 Fixed a critical bug where BreakableBlock, Spring, and FallAwayPlatform 

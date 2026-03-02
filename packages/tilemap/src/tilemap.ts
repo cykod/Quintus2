@@ -14,6 +14,16 @@ import type { TiledMap, TiledTileDefinition, TiledTileset } from "./tiled-types.
 import { parseTmx } from "./tmx-parser.js";
 import { parseTsx } from "./tsx-parser.js";
 
+/** Tile metadata injected into spawned nodes by spawnFromTiles(). */
+export interface TileSpawnInfo {
+	/** Local tile ID (0-based within the tileset). */
+	localId: number;
+	/** Source rectangle in the tileset image for rendering this tile. */
+	sourceRect: Rect;
+	/** Per-tile definition from the tileset (properties, objectgroup, animation), or null. */
+	definition: TiledTileDefinition | null;
+}
+
 /** Result of a tilemap grid raycast. */
 export interface TileRayHit {
 	/** Tile column index. */
@@ -311,6 +321,16 @@ export class TileMap extends Node2D {
 					node.position.y = row * parsed.tileHeight + parsed.tileHeight / 2;
 				}
 
+				// Inject tile metadata for entities that declare a tileInfo property
+				if ("tileInfo" in node) {
+					// biome-ignore lint/suspicious/noExplicitAny: dynamic property assignment from tile data
+					(node as any).tileInfo = {
+						localId: tile.localId,
+						sourceRect: this._getTileSourceRect(tile.localId, tile.tileset),
+						definition: this._tileDefCache.get(tile.localId) ?? null,
+					} satisfies TileSpawnInfo;
+				}
+
 				this.add(node);
 				spawned.push(node);
 
@@ -461,6 +481,21 @@ export class TileMap extends Node2D {
 	 */
 	static registerPhysics(factories: PhysicsFactories): void {
 		_cachedPhysicsFactories = factories;
+	}
+
+	// === Tile Source Rect ===
+
+	/**
+	 * Get the source rectangle for a tile ID in the tileset image.
+	 * @param localId Local tile ID (0-based).
+	 * @param tileset Tileset to use. Default: first tileset.
+	 */
+	getTileSourceRect(localId: number, tileset?: TiledTileset): Rect {
+		const ts = tileset ?? this._parsed?.tilesets[0];
+		if (!ts) {
+			throw new Error("TileMap: No tileset available. Map must be loaded first.");
+		}
+		return this._getTileSourceRect(localId, ts);
 	}
 
 	// === Grid Raycast (DDA) ===
