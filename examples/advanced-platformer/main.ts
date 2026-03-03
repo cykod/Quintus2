@@ -8,6 +8,8 @@ import { platformerLayout, TouchPlugin } from "@quintus/touch";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "./config.js";
 import { GameOverScene } from "./scenes/game-over-scene.js";
+import { Level2Scene } from "./scenes/level2-scene.js";
+import { Level3Scene } from "./scenes/level3-scene.js";
 import { Level1Scene } from "./scenes/test-scene.js";
 import { TitleScene } from "./scenes/title-scene.js";
 import { VictoryScene } from "./scenes/victory-scene.js";
@@ -38,6 +40,8 @@ game.use(AudioPlugin());
 game.registerScenes({
 	title: TitleScene,
 	level1: Level1Scene,
+	level2: Level2Scene,
+	level3: Level3Scene,
 	"game-over": GameOverScene,
 	victory: VictoryScene,
 });
@@ -60,7 +64,13 @@ game.assets
 			"assets/bg_fade_mushrooms.png",
 		],
 		xml: ["assets/tiles.xml", "assets/characters.xml", "assets/enemies.xml"],
-		tmx: ["assets/level1.tmx", "assets/tileset.tsx", "assets/enemies-tileset.tsx"],
+		tmx: [
+			"assets/level1.tmx",
+			"assets/level2.tmx",
+			"assets/level3.tmx",
+			"assets/tileset.tsx",
+			"assets/enemies-tileset.tsx",
+		],
 		audio: [
 			"assets/sounds/bump.ogg",
 			"assets/sounds/coin.ogg",

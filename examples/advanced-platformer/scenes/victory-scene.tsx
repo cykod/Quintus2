@@ -22,7 +22,7 @@ export class VictoryScene extends Scene {
 				/>
 				<Label
 					position={[cx, 260]}
-					text="Level Complete!"
+					text="All Levels Complete!"
 					fontSize={14}
 					color="#aaaaaa"
 					align="center"

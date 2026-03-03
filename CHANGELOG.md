@@ -1,3 +1,16 @@
+## Add 3-level progression to advanced platformer (Phase 11)
+*Tuesday, March 3rd at 9pm*
+Extract shared level logic into BaseLevelScene and create three themed levels 
+with full progression: Grasslands (100x20), Desert Ruins (120x25), and Dark 
+Fortress (140x30). Each level uses theme-appropriate terrain tiles, parallax 
+backgrounds, and escalating difficulty with unique enemy placements and 
+mechanics. Level transitions flow level1 -> level2 -> level3 -> victory, with 
+per-level state clearing (keys, checkpoint) while preserving score/coins/lives 
+across levels. Death respawns in the current level; game-over restarts from 
+level 1.
+
+---
+
 ## Spawn enemies from TMX tile layer instead of hardcoded positions
 *Tuesday, March 3rd at 7pm*
 Refactored enemy spawning in the advanced-platformer to use a dedicated enemies 
