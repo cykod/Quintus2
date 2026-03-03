@@ -60,7 +60,7 @@ game.assets
 			"assets/bg_fade_mushrooms.png",
 		],
 		xml: ["assets/tiles.xml", "assets/characters.xml", "assets/enemies.xml"],
-		tmx: ["assets/level1.tmx", "assets/tileset.tsx"],
+		tmx: ["assets/level1.tmx", "assets/tileset.tsx", "assets/enemies-tileset.tsx"],
 		audio: [
 			"assets/sounds/bump.ogg",
 			"assets/sounds/coin.ogg",

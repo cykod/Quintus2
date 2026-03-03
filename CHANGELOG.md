@@ -1,3 +1,17 @@
+## Spawn enemies from TMX tile layer instead of hardcoded positions
+*Tuesday, March 3rd at 7pm*
+Refactored enemy spawning in the advanced-platformer to use a dedicated enemies 
+tile layer in level1.tmx backed by the enemies.png spritesheet as a Tiled 
+tileset. Created enemies-tileset.tsx (64x64 tiles, 8 cols), added an enemies 
+tile layer to level1.tmx with all 5 enemy types (slime, bee, snail, frog, saw) 
+placed at grid positions, and replaced the hardcoded _spawnEnemies() method 
+with spawnFromTiles()-based spawning. Added 5 integration tests verifying 
+tile-layer enemy placement and count. Enemy tile IDs are exported as 
+ENEMY_TILE_IDS constants to avoid multi-tileset tile definition cache 
+collisions in the engine.
+
+---
+
 ## Add HUD, menu scenes, and audio polish (Phase 10)
 *Tuesday, March 3rd at 7pm*
 Implement Phase 10 of the advanced platformer: sprite-based HUD with reactive 

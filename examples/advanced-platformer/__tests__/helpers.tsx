@@ -25,6 +25,13 @@ const ASSETS_DIR = resolve(import.meta.dirname, "..", "assets");
 
 const XML_FILES = ["characters", "enemies", "tiles"];
 
+/** TMX and TSX files needed to run Level1Scene via TileMap. */
+const TMX_FILES: Array<{ file: string; key: string }> = [
+	{ file: "level1.tmx", key: "level1" },
+	{ file: "tileset.tsx", key: "tileset" },
+	{ file: "enemies-tileset.tsx", key: "enemies-tileset" },
+];
+
 export function advancedPlatformerPlugins(): Plugin[] {
 	return [
 		PhysicsPlugin({
@@ -47,6 +54,18 @@ export async function loadAdvancedPlatformerAssets(game: HeadlessGame): Promise<
 		game.assets._storeCustom(name, xml);
 	}
 	loadAtlases(game);
+}
+
+/**
+ * Load TMX/TSX map assets in addition to the base XML atlases.
+ * Call this instead of loadAdvancedPlatformerAssets when testing Level1Scene.
+ */
+export async function loadAdvancedPlatformerAssetsWithMaps(game: HeadlessGame): Promise<void> {
+	await loadAdvancedPlatformerAssets(game);
+	for (const { file, key } of TMX_FILES) {
+		const content = await readFile(resolve(ASSETS_DIR, file), "utf-8");
+		game.assets._storeCustom(key, content);
+	}
 }
 
 export function resetState(): void {
@@ -124,6 +143,33 @@ export function runScene(
 /** Run the minimal TestArena scene for controlled entity testing. */
 export function runArena(input?: InputScript, duration?: number, afterReset?: () => void) {
 	return runScene(TestArena, input, duration, afterReset);
+}
+
+/**
+ * Run a scene that requires TMX/TSX map assets (e.g., Level1Scene).
+ * Loads tilemap files in addition to the base XML atlases.
+ */
+export function runSceneWithMaps(
+	scene: typeof Scene,
+	input?: InputScript,
+	duration?: number,
+	afterReset?: () => void,
+) {
+	return TestRunner.run({
+		scene,
+		seed: 42,
+		width: 640,
+		height: 360,
+		plugins: PLUGINS,
+		input,
+		duration,
+		snapshotInterval: 0,
+		setup: loadAdvancedPlatformerAssetsWithMaps,
+		beforeRun: () => {
+			resetState();
+			afterReset?.();
+		},
+	});
 }
 
 // ── Slope collider helpers ──────────────────────────────────────────

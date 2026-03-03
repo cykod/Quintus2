@@ -36,6 +36,19 @@ import { ParallaxBackground, ParallaxLayer } from "../parallax/parallax-backgrou
 import { gameState } from "../state.js";
 
 /**
+ * Enemy tile IDs in the enemies-tileset (local tile IDs).
+ * These correspond to positions in the enemies.png spritesheet grid (8 cols, 64x64+1px spacing).
+ * Hardcoded rather than using getTileIdsByType to avoid multi-tileset cache collisions.
+ */
+export const ENEMY_TILE_IDS = {
+	bee: 3, // bee_a
+	frog: 21, // frog_idle
+	saw: 31, // saw_a
+	slime: 44, // slime_normal_walk_a
+	snail: 52, // snail_walk_a
+} as const;
+
+/**
  * Level 1 scene: tilemap, collision, interactive tiles, enemies, HUD, and scene transitions.
  */
 export class Level1Scene extends Scene {
@@ -202,8 +215,8 @@ export class Level1Scene extends Scene {
 			}
 		}
 
-		// ── Spawn enemies ───────────────────────────────────────────
-		this._spawnEnemies();
+		// ── Spawn enemies from tile layer ───────────────────────────
+		this._spawnEnemiesFromTiles();
 
 		// Camera bounds
 		const camera = this.findFirst(Camera);
@@ -212,37 +225,27 @@ export class Level1Scene extends Scene {
 		}
 	}
 
-	/** Spawn enemies at hand-picked positions along the level. */
-	private _spawnEnemies(): void {
-		// Ground surface is at y=448 (row 7). Enemy centers offset by half-height.
+	/** Spawn enemies from the "enemies" tile layer using spawnFromTiles. */
+	private _spawnEnemiesFromTiles(): void {
+		const enemyMapping: Record<number, NodeConstructor> = {
+			[ENEMY_TILE_IDS.slime]: Slime,
+			[ENEMY_TILE_IDS.bee]: Bee,
+			[ENEMY_TILE_IDS.snail]: Snail,
+			[ENEMY_TILE_IDS.frog]: Frog,
+			[ENEMY_TILE_IDS.saw]: Saw,
+		};
 
-		// Two slimes patrolling the ground
-		const slime1 = this.add(Slime);
-		slime1.position = new Vec2(550, 430);
+		const spawned = this.map.spawnFromTiles("enemies", enemyMapping, { clearTiles: true });
 
-		const slime2 = this.add(Slime);
-		slime2.position = new Vec2(750, 430);
-		slime2.direction = -1;
+		// Post-spawn configuration for enemies that need extra setup
+		for (const node of spawned) {
+			if (node instanceof Saw) {
+				// Default saw path: 200px to the right at the same Y
+				node.pathEnd = new Vec2(node.position.x + 200, node.position.y);
+			}
+		}
 
-		// Bee flying above the mid section
-		const bee = this.add(Bee);
-		bee.position = new Vec2(1000, 320);
-
-		// Snail on the ground past the ladder
-		const snail = this.add(Snail);
-		snail.position = new Vec2(1200, 430);
-
-		// Frog further along
-		const frog = this.add(Frog);
-		frog.position = new Vec2(1600, 430);
-		frog.jumpInterval = 1.5;
-
-		// Saw patrolling a horizontal path near the gap (columns 27-29)
-		const saw = this.add(Saw);
-		saw.position = new Vec2(2000, 380);
-		saw.pathEnd = new Vec2(2200, 380);
-
-		// Moving platform over a gap
+		// Moving platform (code-spawned — requires per-instance properties)
 		const movingPlatform = this.add(MovingPlatform);
 		movingPlatform.position = new Vec2(1800, 350);
 		movingPlatform.direction = "horizontal";
