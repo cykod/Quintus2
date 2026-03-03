@@ -31,6 +31,7 @@ import { PowerUp } from "../entities/power-up.js";
 import { Spike } from "../entities/spike.js";
 import { Spring } from "../entities/spring.js";
 import { createWaterZones } from "../entities/water-zone.js";
+import { ParallaxBackground, ParallaxLayer } from "../parallax/parallax-background.js";
 import { gameState } from "../state.js";
 
 /**
@@ -43,9 +44,15 @@ export class TestScene extends Scene {
 	override build() {
 		return (
 			<>
+				<ParallaxBackground>
+					<ParallaxLayer texture="bg_solid_sky" scrollFactor={0} tileY zIndex={-100} />
+					<ParallaxLayer texture="bg_clouds" scrollFactor={0.05} screenY={0} zIndex={-99} />
+					<ParallaxLayer texture="bg_fade_hills" scrollFactor={0.2} screenY={250} zIndex={-98} />
+					<ParallaxLayer texture="bg_color_hills" scrollFactor={0.4} screenY={450} zIndex={-97} />
+				</ParallaxBackground>
 				<TileMap ref="map" tilesetImage="tiles" asset="level1" />
 				<Player ref="player" />
-				<Camera follow="$player" smoothing={0.1} zoom={1} />
+				<Camera follow="$player" smoothing={0.08} offset={[0, -30]} zoom={1} />
 			</>
 		);
 	}

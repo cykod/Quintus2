@@ -15,7 +15,7 @@
 | 6 | Enemies | Done |
 | 7 | Moving Platforms & Hazards | Done |
 | 8 | Collectibles, Power-Ups, Keys/Locks | Done |
-| 9 | Parallax Backgrounds & Camera | Pending |
+| 9 | Parallax Backgrounds & Camera | Done |
 | 10 | HUD, Menus & Audio | Pending |
 | 11 | Level Design (3 Levels in Tiled) | Pending |
 | 12 | Tests & Polish | Pending |
@@ -1635,12 +1635,12 @@ camera.bounds = new Rect(0, 0, map.bounds.width, map.bounds.height);
 camera.offset.y = -30;  // look slightly ahead/above
 ```
 
-- [ ] Implement `ParallaxBackground` container node
-- [ ] Implement `ParallaxLayer` with tiling + scroll factor
-- [ ] Set up 4-layer parallax for each level theme
-- [ ] Configure camera follow with smoothing and bounds
-- [ ] Test parallax scrolling visually
-- [ ] Verify background tiles seamlessly at all camera positions
+- [x] Implement `ParallaxBackground` container node
+- [x] Implement `ParallaxLayer` with tiling + scroll factor
+- [x] Set up 4-layer parallax for each level theme
+- [x] Configure camera follow with smoothing and bounds
+- [x] Test parallax scrolling visually
+- [x] Verify background tiles seamlessly at all camera positions
 
 ---
 

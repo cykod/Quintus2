@@ -1,3 +1,15 @@
+## Add parallax scrolling backgrounds (Phase 9)
+*Tuesday, March 3rd at 7pm*
+Add 4-layer parallax scrolling to the advanced platformer: solid sky fill, 
+slow-drifting clouds, distant fade hills, and closer color hills. ParallaxLayer 
+uses renderFixed screen-space rendering with lazy camera lookup to avoid JSX 
+ordering issues, horizontal-only tiling with configurable screenY positioning, 
+integer pixel snapping to prevent tile seams, and vertical parallax relative to 
+the initial camera position. Camera tuned with smoothing=0.08 and offset y=-30. 
+Desert and mushroom background assets preloaded for future levels.
+
+---
+
 ## Add collectibles, keys/locks, and checkpoints (Phase 8)
 *Tuesday, March 3rd at 5pm*
 Implement Phase 8 of the advanced platformer: collectible items (Coin, Gem, 
