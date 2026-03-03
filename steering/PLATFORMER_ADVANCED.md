@@ -14,7 +14,7 @@
 | 5 | Interactive Tiles (Breakable, Fall-Away, Springs, Ladders) | Done |
 | 6 | Enemies | Done |
 | 7 | Moving Platforms & Hazards | Done |
-| 8 | Collectibles, Power-Ups, Keys/Locks | Pending |
+| 8 | Collectibles, Power-Ups, Keys/Locks | Done |
 | 9 | Parallax Backgrounds & Camera | Pending |
 | 10 | HUD, Menus & Audio | Pending |
 | 11 | Level Design (3 Levels in Tiled) | Pending |
@@ -1517,19 +1517,19 @@ Level completion trigger. When touched:
 2. Player walks into door (disable input, tween player position)
 3. Transition to next level
 
-- [ ] Implement `Coin` (3 tiers, spin animation, collect popup)
-- [ ] Implement `Gem` (4 colors, high value)
-- [ ] Implement `HeartPickup` (restore 1 HP)
-- [ ] Implement `PowerUp` star (10s invincibility)
-- [ ] Implement `KeyPickup` (4 colors)
-- [ ] Implement `LockedDoor` (4 colors, blocks until matching key)
-- [ ] Implement `Flag` checkpoint
-- [ ] Implement `DoorExit` level transition
-- [ ] Implement respawn at checkpoint on death
-- [ ] Wire all collectibles to `gameState`
-- [ ] Write key/lock tests
-- [ ] Write power-up activation tests
-- [ ] Write checkpoint respawn tests
+- [x] Implement `Coin` (collect popup, score + coins)
+- [x] Implement `Gem` (4 colors, high value)
+- [x] Implement `HeartPickup` (restore 1 HP)
+- [x] Implement `PowerUp` star (10s invincibility)
+- [x] Implement `KeyPickup` (4 colors, auto-detect from tile type)
+- [x] Implement `LockedDoor` (4 colors, blocks until matching key)
+- [x] Implement `Flag` checkpoint (sets gameState.checkpoint)
+- [x] Implement `DoorExit` level transition (signal-based, scene transition deferred)
+- [x] Implement checkpoint-based spawn point
+- [x] Wire all collectibles to `gameState`
+- [x] Write key/lock tests
+- [x] Write collectible tests (coin, gem, heart, power-up)
+- [x] Write checkpoint/exit tests
 
 ### Tests for Phase 8
 

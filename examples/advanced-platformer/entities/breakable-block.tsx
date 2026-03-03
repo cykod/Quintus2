@@ -54,10 +54,7 @@ export abstract class BreakableBlock extends StaticCollider {
 		const obj = this.tileInfo?.definition?.objectgroup?.objects[0];
 		if (obj) {
 			const halfTile = 32; // tileWidth / 2
-			return new Vec2(
-				obj.x + obj.width / 2 - halfTile,
-				obj.y + obj.height / 2 - halfTile,
-			);
+			return new Vec2(obj.x + obj.width / 2 - halfTile, obj.y + obj.height / 2 - halfTile);
 		}
 		return Vec2.ZERO;
 	}

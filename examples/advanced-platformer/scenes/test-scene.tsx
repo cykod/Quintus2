@@ -10,6 +10,8 @@ import {
 	CoinBlock,
 	ExclamationBlock,
 } from "../entities/breakable-block.js";
+import { Coin } from "../entities/coin.js";
+import { DoorExit } from "../entities/door-exit.js";
 import type { BaseEnemy } from "../entities/enemies/base-enemy.js";
 import { Bee } from "../entities/enemies/bee.js";
 import { Frog } from "../entities/enemies/frog.js";
@@ -17,12 +19,19 @@ import { Saw } from "../entities/enemies/saw.js";
 import { Slime } from "../entities/enemies/slime.js";
 import { Snail } from "../entities/enemies/snail.js";
 import { FallAwayPlatform } from "../entities/fall-away-platform.js";
+import { Flag } from "../entities/flag.js";
+import { Gem } from "../entities/gem.js";
+import { HeartPickup } from "../entities/heart-pickup.js";
+import { KeyPickup } from "../entities/key-pickup.js";
 import { createLadderZones } from "../entities/ladder-zone.js";
+import { LockedDoor } from "../entities/locked-door.js";
 import { MovingPlatform } from "../entities/moving-platform.js";
 import { Player } from "../entities/player.js";
+import { PowerUp } from "../entities/power-up.js";
 import { Spike } from "../entities/spike.js";
 import { Spring } from "../entities/spring.js";
 import { createWaterZones } from "../entities/water-zone.js";
+import { gameState } from "../state.js";
 
 /**
  * Test scene: tilemap rendering, collision, interactive tiles, and player character.
@@ -58,6 +67,20 @@ export class TestScene extends Scene {
 		const springIds = this.map.getTileIdsByType("spring");
 		const fallAwayIds = this.map.getTileIdsByType("fall_away");
 		const spikeIds = this.map.getTileIdsByType("spike");
+		const coinIds = this.map.getTileIdsByType("coin");
+		const gemIds = this.map.getTileIdsByType("gem");
+		const heartIds = this.map.getTileIdsByType("heart");
+		const starIds = this.map.getTileIdsByType("star");
+		const keyRedIds = this.map.getTileIdsByType("key_red");
+		const keyBlueIds = this.map.getTileIdsByType("key_blue");
+		const keyGreenIds = this.map.getTileIdsByType("key_green");
+		const keyYellowIds = this.map.getTileIdsByType("key_yellow");
+		const lockRedIds = this.map.getTileIdsByType("lock_red");
+		const lockBlueIds = this.map.getTileIdsByType("lock_blue");
+		const lockGreenIds = this.map.getTileIdsByType("lock_green");
+		const lockYellowIds = this.map.getTileIdsByType("lock_yellow");
+		const flagIds = this.map.getTileIdsByType("flag");
+		const doorIds = this.map.getTileIdsByType("door");
 
 		const mapping: Record<number, NodeConstructor> = {};
 		for (const id of brickIds) mapping[id] = BrickBlock;
@@ -66,6 +89,20 @@ export class TestScene extends Scene {
 		for (const id of springIds) mapping[id] = Spring;
 		for (const id of fallAwayIds) mapping[id] = FallAwayPlatform;
 		for (const id of spikeIds) mapping[id] = Spike;
+		for (const id of coinIds) mapping[id] = Coin;
+		for (const id of gemIds) mapping[id] = Gem;
+		for (const id of heartIds) mapping[id] = HeartPickup;
+		for (const id of starIds) mapping[id] = PowerUp;
+		for (const id of keyRedIds) mapping[id] = KeyPickup;
+		for (const id of keyBlueIds) mapping[id] = KeyPickup;
+		for (const id of keyGreenIds) mapping[id] = KeyPickup;
+		for (const id of keyYellowIds) mapping[id] = KeyPickup;
+		for (const id of lockRedIds) mapping[id] = LockedDoor;
+		for (const id of lockBlueIds) mapping[id] = LockedDoor;
+		for (const id of lockGreenIds) mapping[id] = LockedDoor;
+		for (const id of lockYellowIds) mapping[id] = LockedDoor;
+		for (const id of flagIds) mapping[id] = Flag;
+		for (const id of doorIds) mapping[id] = DoorExit;
 
 		this.map.spawnFromTiles("main", mapping, { clearTiles: true });
 
@@ -88,6 +125,10 @@ export class TestScene extends Scene {
 			// Land on top → fall-away trigger
 			if (info.normal.y < 0 && other instanceof FallAwayPlatform) {
 				other.trigger();
+			}
+			// Locked door → open if player has matching key
+			if (other instanceof LockedDoor && gameState.keys[other.color]) {
+				other.open();
 			}
 		});
 
@@ -125,8 +166,12 @@ export class TestScene extends Scene {
 			}
 		});
 
-		// Position player at the spawn point
-		this.player.position = this.map.getSpawnPoint("player_start");
+		// Position player at checkpoint or spawn point
+		if (gameState.checkpoint) {
+			this.player.position = gameState.checkpoint.clone();
+		} else {
+			this.player.position = this.map.getSpawnPoint("player_start");
+		}
 
 		// ── Spawn enemies ───────────────────────────────────────────
 		this._spawnEnemies();

@@ -673,6 +673,14 @@ export class SpikeArena extends Scene {
 
 // ── Water zone arena ────────────────────────────────────────────────
 
+import { Coin } from "../entities/coin.js";
+import { DoorExit } from "../entities/door-exit.js";
+import { Flag } from "../entities/flag.js";
+import { Gem } from "../entities/gem.js";
+import { HeartPickup } from "../entities/heart-pickup.js";
+import { KeyPickup } from "../entities/key-pickup.js";
+import { LockedDoor } from "../entities/locked-door.js";
+import { PowerUp } from "../entities/power-up.js";
 import { WaterZone } from "../entities/water-zone.js";
 
 /**
@@ -707,5 +715,191 @@ export class WaterZoneArena extends Scene {
 				p.takeDamage(1);
 			}
 		});
+	}
+}
+
+// ── Collectible arenas ──────────────────────────────────────────────
+
+/**
+ * CoinArena: Floor + a coin to the right of the player.
+ * Floor top at y=300. Coin at (400, 280).
+ * Player starts at (200, 280) on the floor.
+ */
+export class CoinArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	coin!: Coin;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<Coin ref="coin" position={[400, 280]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+	}
+}
+
+/**
+ * GemArena: Floor + a gem to the right of the player.
+ */
+export class GemArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	gem!: Gem;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<Gem ref="gem" position={[400, 280]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+	}
+}
+
+/**
+ * HeartArena: Floor + heart pickup to the right.
+ */
+export class HeartArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	heart!: HeartPickup;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<HeartPickup ref="heart" position={[400, 280]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+	}
+}
+
+/**
+ * PowerUpArena: Floor + star power-up to the right.
+ */
+export class PowerUpArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	powerUp!: PowerUp;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<PowerUp ref="powerUp" position={[400, 280]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+	}
+}
+
+/**
+ * KeyLockArena: Floor + key + locked door blocking path.
+ * Key at (300, 280), locked door at (500, 276).
+ * Player starts at (100, 280).
+ */
+export class KeyLockArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	key!: KeyPickup;
+	door!: LockedDoor;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<KeyPickup ref="key" position={[300, 280]} />
+				<LockedDoor ref="door" position={[500, 276]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(100, 280);
+		this.key.color = "red";
+		this.door.color = "red";
+
+		this.game.physics.onContact("player", "world", (_player, other) => {
+			if (other instanceof LockedDoor && gameState.keys[other.color]) {
+				other.open();
+			}
+		});
+	}
+}
+
+/**
+ * CheckpointArena: Floor + checkpoint flag to the right.
+ * Flag at (400, 276). Player starts at (200, 280).
+ */
+export class CheckpointArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	flag!: Flag;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<Flag ref="flag" position={[400, 276]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+	}
+}
+
+/**
+ * DoorExitArena: Floor + exit door to the right.
+ * Door at (400, 276). Player starts at (200, 280).
+ */
+export class DoorExitArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	door!: DoorExit;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<DoorExit ref="door" position={[400, 276]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
 	}
 }

@@ -1,3 +1,17 @@
+## Add collectibles, keys/locks, and checkpoints (Phase 8)
+*Tuesday, March 3rd at 5pm*
+Implement Phase 8 of the advanced platformer: collectible items (Coin, Gem, 
+HeartPickup, PowerUp), key/lock mechanics (KeyPickup with 4 colors 
+auto-detected from tile type, LockedDoor that opens on contact when the player 
+holds the matching key), checkpoint flags that set gameState.checkpoint for 
+respawn, and a DoorExit sensor that emits a levelComplete signal. All entities 
+follow the established Sensor/StaticCollider + JSX build() + tileInfo pattern. 
+Includes 18 new tests across 3 test files, 7 new test arenas, collectible tiles 
+placed on level1.tmx, and full wiring in test-scene.tsx with checkpoint-based 
+spawn logic.
+
+---
+
 ## Add moving platforms, spikes, and water zone hazards (Phase 7)
 *Tuesday, March 3rd at 4pm*
 Implement Phase 7 of the advanced platformer: MovingPlatform oscillates between 

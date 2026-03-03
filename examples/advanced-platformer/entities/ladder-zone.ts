@@ -22,12 +22,8 @@ export class LadderZone extends Sensor {
 			if (body.hasTag("player")) {
 				const shapes = this.getShapes();
 				const shape = shapes[0]?.shape;
-				const halfW =
-					shape && shape.type === "rect" ? shape.width / 2 : 32;
-				(body as Player).enterLadder(
-					this.position.x - halfW,
-					this.position.x + halfW,
-				);
+				const halfW = shape && shape.type === "rect" ? shape.width / 2 : 32;
+				(body as Player).enterLadder(this.position.x - halfW, this.position.x + halfW);
 			}
 		});
 
