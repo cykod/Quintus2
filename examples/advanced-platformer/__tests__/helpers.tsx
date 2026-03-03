@@ -12,6 +12,8 @@ import { TestRunner } from "@quintus/test";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "../config.js";
 import { BrickBlock, CoinBlock, ExclamationBlock } from "../entities/breakable-block.js";
+import type { BaseEnemy } from "../entities/enemies/base-enemy.js";
+import { Snail } from "../entities/enemies/snail.js";
 import { FallAwayPlatform } from "../entities/fall-away-platform.js";
 import { LadderZone } from "../entities/ladder-zone.js";
 import { Player } from "../entities/player.js";
@@ -212,7 +214,7 @@ class OneWayPlatform extends StaticCollider {
 }
 
 /** Narrow floor (left half only). */
-class HalfFloor extends StaticCollider {
+export class HalfFloor extends StaticCollider {
 	override collisionGroup = "world";
 
 	override build() {
@@ -510,4 +512,93 @@ export class LadderArena extends Scene {
 		this.ladder.ladderBottom = 300;
 		this.ladder.add(CollisionShape, { shape: Shape.rect(40, 150) });
 	}
+}
+
+// ── Enemy arena ─────────────────────────────────────────────────
+
+/**
+ * EnemyArena: Floor + walls on both sides + player.
+ * Player at (320, 280), floor top at y=300, walls at x=8 and x=632.
+ * Wire stomp/damage contact in onReady().
+ */
+export class EnemyArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<Wall position={[8, 180]} />
+				<Wall position={[632, 180]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(320, 280);
+		this._wireEnemyContact();
+	}
+
+	private _wireEnemyContact(): void {
+		this.game.physics.onContact("player", "enemies", (player, enemy, info) => {
+			const p = player as Player;
+			const e = enemy as BaseEnemy;
+
+			// Star power: destroy any enemy on contact
+			if (p.hasStarPower) {
+				e.stomp();
+				return;
+			}
+
+			// Stomp: player above and falling
+			if (info.normal.y < 0 && p.velocity.y > 0) {
+				// For snails, set kick direction based on relative position
+				if (e instanceof Snail) {
+					e.direction = Math.sign(e.position.x - p.position.x) || 1;
+				}
+				e.stomp();
+				p.velocity.y = -250; // bounce
+			} else {
+				// Side/below contact → damage player
+				p.takeDamage(1);
+			}
+		});
+
+		// Hazard overlap (saw blades, etc.) — always damages player
+		this.game.physics.onOverlap("player", "hazards", (player) => {
+			(player as Player).takeDamage(1);
+		});
+	}
+}
+
+/**
+ * HalfFloorEnemyArena: Half-width floor for testing edge detection.
+ * Floor spans x=0..300 (center at 150), top at y=300.
+ * Player at (100, 280).
+ */
+export class HalfFloorEnemyArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<HalfFloor position={[150, 308]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(100, 280);
+	}
+}
+
+/** Run the EnemyArena scene for enemy testing. */
+export function runEnemyArena(input?: InputScript, duration?: number, afterReset?: () => void) {
+	return runScene(EnemyArena, input, duration, afterReset);
 }

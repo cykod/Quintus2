@@ -1,9 +1,10 @@
 import type { CollisionGroupsConfig } from "@quintus/physics";
 
 export const COLLISION_GROUPS: CollisionGroupsConfig = {
-	player: { collidesWith: ["world", "enemies", "items"] },
+	player: { collidesWith: ["world", "enemies", "items", "hazards"] },
 	world: { collidesWith: ["player", "enemies"] },
 	enemies: { collidesWith: ["world", "player"] },
+	hazards: { collidesWith: ["player"] },
 	items: { collidesWith: ["player"] },
 };
 

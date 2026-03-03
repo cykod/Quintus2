@@ -1,7 +1,7 @@
 import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
-import { Rect } from "@quintus/math";
+import { Rect, Vec2 } from "@quintus/math";
 import type { Actor, StaticCollider } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
 import {
@@ -10,6 +10,12 @@ import {
 	CoinBlock,
 	ExclamationBlock,
 } from "../entities/breakable-block.js";
+import type { BaseEnemy } from "../entities/enemies/base-enemy.js";
+import { Bee } from "../entities/enemies/bee.js";
+import { Frog } from "../entities/enemies/frog.js";
+import { Saw } from "../entities/enemies/saw.js";
+import { Slime } from "../entities/enemies/slime.js";
+import { Snail } from "../entities/enemies/snail.js";
 import { FallAwayPlatform } from "../entities/fall-away-platform.js";
 import { createLadderZones } from "../entities/ladder-zone.js";
 import { Player } from "../entities/player.js";
@@ -77,13 +83,76 @@ export class TestScene extends Scene {
 			}
 		});
 
+		// ── Enemy contact ───────────────────────────────────────────
+		this.game.physics.onContact("player", "enemies", (player, enemy, info) => {
+			const p = player as Player;
+			const e = enemy as BaseEnemy;
+
+			// Star power: destroy any enemy on contact
+			if (p.hasStarPower) {
+				e.stomp();
+				return;
+			}
+
+			// Stomp: player above and falling
+			if (info.normal.y < 0 && p.velocity.y > 0) {
+				if (e instanceof Snail) {
+					e.direction = Math.sign(e.position.x - p.position.x) || 1;
+				}
+				e.stomp();
+				p.velocity.y = -250; // bounce
+			} else {
+				// Side/below contact → damage player
+				p.takeDamage(1);
+			}
+		});
+
+		// ── Hazard overlap (saw blades, etc.) ───────────────────────
+		this.game.physics.onOverlap("player", "hazards", (player) => {
+			(player as Player).takeDamage(1);
+		});
+
 		// Position player at the spawn point
 		this.player.position = this.map.getSpawnPoint("player_start");
+
+		// ── Spawn enemies ───────────────────────────────────────────
+		this._spawnEnemies();
 
 		// Camera bounds
 		const camera = this.findFirst(Camera);
 		if (camera) {
 			camera.bounds = new Rect(0, 0, this.map.bounds.width, this.map.bounds.height);
 		}
+	}
+
+	/** Spawn enemies at hand-picked positions along the level. */
+	private _spawnEnemies(): void {
+		// Ground surface is at y=448 (row 7). Enemy centers offset by half-height.
+
+		// Two slimes patrolling the ground
+		const slime1 = this.add(Slime);
+		slime1.position = new Vec2(550, 430);
+
+		const slime2 = this.add(Slime);
+		slime2.position = new Vec2(750, 430);
+		slime2.direction = -1;
+
+		// Bee flying above the mid section
+		const bee = this.add(Bee);
+		bee.position = new Vec2(1000, 320);
+
+		// Snail on the ground past the ladder
+		const snail = this.add(Snail);
+		snail.position = new Vec2(1200, 430);
+
+		// Frog further along
+		const frog = this.add(Frog);
+		frog.position = new Vec2(1600, 430);
+		frog.jumpInterval = 1.5;
+
+		// Saw patrolling a horizontal path near the gap (columns 27-29)
+		const saw = this.add(Saw);
+		saw.position = new Vec2(2000, 380);
+		saw.pathEnd = new Vec2(2200, 380);
 	}
 }

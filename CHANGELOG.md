@@ -1,3 +1,14 @@
+## Fix saw hazard damage using onOverlap with hazards group
+*Tuesday, March 3rd at 3pm*
+The saw blade enemy (SawSensor) used a Sensor body type, which is invisible to 
+the onContact dispatch system since onContact only hooks into Actor collided 
+signals. Fixed by introducing a separate hazards collision group for the 
+SawSensor and wiring onOverlap(player, hazards) in both the game scene and test 
+arena. This also includes the full enemy system: five enemy types (Slime, Bee, 
+Snail, Frog, Saw) with base enemy infrastructure, stomp mechanics, and 25 tests.
+
+---
+
 ## Pass tile metadata to spawned entities via tileInfo
 *Monday, March 2nd at 8pm*
 Entities spawned by spawnFromTiles() now receive per-tile metadata through the 

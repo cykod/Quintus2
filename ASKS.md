@@ -584,3 +584,17 @@
 [IMPL] sun 3/1 8pm - Update level1.tmx with interactive tiles (breakable blocks, springs, fall-away, ladders) and test Phase 5 features in qdbg
 
 [IMPL] sun 3/1 9pm - Update level1.tmx with interactive tiles and fix missing super.onReady() in entity classes preventing physics registration
+
+[MILE] mon 3/2 4pm - Fixed entity physics registration bug (missing super.onReady), refined collision shapes, and added ladder horizontal movement
+
+[ASKS] mon 3/2 5pm - Plan how spawn-from-tiles can pass tile ID and collision shape to breakable blocks so they render and collide correctly
+
+[MILE] mon 3/2 8pm - Fixed fall-away platform using CollisionShape.disabled instead of monitoring to properly disable collision response
+
+[IMPL] mon 3/2 8pm - Implement Phase 5 (Interactive Tiles) and Phase 6 (Enemies) for the advanced platformer
+
+[MILE] mon 3/2 8pm - Passed tile metadata (ID, sourceRect, objectgroup) to spawned entities via TileSpawnInfo so breakable blocks, springs, and fall-away platforms render correct tile art with per-tile collision shapes
+
+[IMPL] tue 3/3 3pm - Fix the flying gray spinning enemy in the advanced platformer to interact with the player
+
+[IMPL] tue 3/3 3pm - Implement Phase 7: Moving Platforms & Hazards for the advanced platformer
