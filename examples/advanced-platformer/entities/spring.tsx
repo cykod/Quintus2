@@ -36,7 +36,7 @@ export class Spring extends StaticCollider {
 	/** Bounce an actor. Called by contact callback when player lands on top. */
 	bounce(actor: Actor): void {
 		actor.velocity.y = this.bounceForce;
-		this.game.audio.play("jump", { bus: "sfx", volume: 1.2 });
+		this.game.audio.play("jump_high", { bus: "sfx", volume: 1.2 });
 
 		// Visual: swap to extended sprite, then back
 		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.SPRING_OUT);

@@ -7,7 +7,10 @@ import { PhysicsPlugin } from "@quintus/physics";
 import { platformerLayout, TouchPlugin } from "@quintus/touch";
 import { TweenPlugin } from "@quintus/tween";
 import { COLLISION_GROUPS, INPUT_BINDINGS } from "./config.js";
-import { TestScene } from "./scenes/test-scene.js";
+import { GameOverScene } from "./scenes/game-over-scene.js";
+import { Level1Scene } from "./scenes/test-scene.js";
+import { TitleScene } from "./scenes/title-scene.js";
+import { VictoryScene } from "./scenes/victory-scene.js";
 import { loadAtlases } from "./sprites.js";
 
 const game = new Game({
@@ -33,7 +36,10 @@ game.use(AudioPlugin());
 
 // === Register Scenes ===
 game.registerScenes({
-	test: TestScene,
+	title: TitleScene,
+	level1: Level1Scene,
+	"game-over": GameOverScene,
+	victory: VictoryScene,
 });
 
 // === Load Assets & Start ===
@@ -70,5 +76,5 @@ game.assets
 	})
 	.then(() => {
 		loadAtlases(game);
-		game.start("test");
+		game.start("title");
 	});

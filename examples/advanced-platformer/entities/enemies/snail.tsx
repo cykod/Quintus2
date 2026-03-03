@@ -87,6 +87,7 @@ export class Snail extends BaseEnemy {
 			case "shell": {
 				this._state = "kicked";
 				this.velocity.x = this.shellSpeed * this.direction;
+				this.game?.audio.play("throw", { bus: "sfx" });
 				break;
 			}
 			case "kicked": {

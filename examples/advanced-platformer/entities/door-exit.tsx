@@ -41,7 +41,7 @@ export class DoorExit extends Sensor {
 			if (body.hasTag("player") && !this._triggered) {
 				this._triggered = true;
 				this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.DOOR_OPEN);
-				this.game.audio.play("magic", { bus: "sfx" });
+				this.game.audio.play("select", { bus: "sfx" });
 				this.levelComplete.emit();
 			}
 		});

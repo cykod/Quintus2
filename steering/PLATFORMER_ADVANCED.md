@@ -16,7 +16,7 @@
 | 7 | Moving Platforms & Hazards | Done |
 | 8 | Collectibles, Power-Ups, Keys/Locks | Done |
 | 9 | Parallax Backgrounds & Camera | Done |
-| 10 | HUD, Menus & Audio | Pending |
+| 10 | HUD, Menus & Audio | Done |
 | 11 | Level Design (3 Levels in Tiled) | Pending |
 | 12 | Tests & Polish | Pending |
 

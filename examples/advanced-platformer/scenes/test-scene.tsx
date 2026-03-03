@@ -31,13 +31,14 @@ import { PowerUp } from "../entities/power-up.js";
 import { Spike } from "../entities/spike.js";
 import { Spring } from "../entities/spring.js";
 import { createWaterZones } from "../entities/water-zone.js";
+import { HUD } from "../hud/hud.js";
 import { ParallaxBackground, ParallaxLayer } from "../parallax/parallax-background.js";
 import { gameState } from "../state.js";
 
 /**
- * Test scene: tilemap rendering, collision, interactive tiles, and player character.
+ * Level 1 scene: tilemap, collision, interactive tiles, enemies, HUD, and scene transitions.
  */
-export class TestScene extends Scene {
+export class Level1Scene extends Scene {
 	protected player!: Player;
 	protected map!: TileMap;
 
@@ -53,6 +54,7 @@ export class TestScene extends Scene {
 				<TileMap ref="map" tilesetImage="tiles" asset="level1" />
 				<Player ref="player" />
 				<Camera follow="$player" smoothing={0.08} offset={[0, -30]} zoom={1} />
+				<HUD />
 			</>
 		);
 	}
@@ -111,7 +113,7 @@ export class TestScene extends Scene {
 		for (const id of flagIds) mapping[id] = Flag;
 		for (const id of doorIds) mapping[id] = DoorExit;
 
-		this.map.spawnFromTiles("main", mapping, { clearTiles: true });
+		const spawned = this.map.spawnFromTiles("main", mapping, { clearTiles: true });
 
 		// ── Create ladder zones (tiles stay visible) ─────────────────
 		createLadderZones(this.map, "main");
@@ -180,6 +182,26 @@ export class TestScene extends Scene {
 			this.player.position = this.map.getSpawnPoint("player_start");
 		}
 
+		// ── Wire player death → game-over or respawn ────────────────
+		this.player.died.connect(() => {
+			if (gameState.lives <= 0) {
+				this.switchTo("game-over");
+			} else {
+				// Respawn at checkpoint or start
+				gameState.checkpoint = null;
+				this.switchTo("level1");
+			}
+		});
+
+		// ── Wire door exit → victory ────────────────────────────────
+		for (const node of spawned) {
+			if (node instanceof DoorExit) {
+				node.levelComplete.connect(() => {
+					this.switchTo("victory");
+				});
+			}
+		}
+
 		// ── Spawn enemies ───────────────────────────────────────────
 		this._spawnEnemies();
 
@@ -229,3 +251,6 @@ export class TestScene extends Scene {
 		movingPlatform.waitTime = 0.5;
 	}
 }
+
+/** @deprecated Use Level1Scene instead. */
+export const TestScene = Level1Scene;

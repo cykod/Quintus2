@@ -14,6 +14,6 @@ export default defineConfig({
 		environment: "jsdom",
 		globals: true,
 		setupFiles: ["vitest-canvas-mock"],
-		include: ["examples/advanced-platformer/__tests__/**/*.test.ts"],
+		include: ["examples/advanced-platformer/__tests__/**/*.test.{ts,tsx}"],
 	},
 });

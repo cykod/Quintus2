@@ -1,3 +1,17 @@
+## Add HUD, menu scenes, and audio polish (Phase 10)
+*Tuesday, March 3rd at 7pm*
+Implement Phase 10 of the advanced platformer: sprite-based HUD with reactive 
+hearts, coin digit display, score label, key icons, and star power progress 
+bar; title screen with parallax background and start button; game-over and 
+victory screens with score display and replay buttons. Renamed TestScene to 
+Level1Scene and wired player death to game-over/respawn and door exit to 
+victory transitions. Fixed key-pickup reactivity by reassigning the keys object 
+instead of mutating, and refined audio by using distinct SFX for double jump, 
+spring bounce, door open, and snail shell kick. Adds 11 new tests covering HUD 
+reactivity and scene existence.
+
+---
+
 ## Add parallax scrolling backgrounds (Phase 9)
 *Tuesday, March 3rd at 7pm*
 Add 4-layer parallax scrolling to the advanced platformer: solid sky fill, 

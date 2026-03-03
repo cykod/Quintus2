@@ -57,7 +57,7 @@ export class KeyPickup extends Sensor {
 
 		this.bodyEntered.connect((body) => {
 			if (body.hasTag("player")) {
-				gameState.keys[this.color] = true;
+				gameState.keys = { ...gameState.keys, [this.color]: true };
 				this.game.audio.play("magic", { bus: "sfx" });
 				this.destroy();
 			}

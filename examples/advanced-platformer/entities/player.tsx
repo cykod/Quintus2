@@ -171,7 +171,7 @@ export class Player extends DamageableActor {
 				this.velocity.y = this.doubleJumpForce;
 				jumped = true;
 				this._canDoubleJump = false;
-				this.game.audio.play("jump", { bus: "sfx", volume: 0.7 });
+				this.game.audio.play("jump_high", { bus: "sfx", volume: 0.7 });
 			}
 		}
 
