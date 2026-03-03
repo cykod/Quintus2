@@ -77,6 +77,19 @@ export const FRAME = {
 	BLOCK_SPIKES: "block_spikes",
 	SAW: "saw",
 
+	// Water & Lava
+	WATER: "water",
+	WATER_TOP: "water_top",
+	WATER_TOP_LOW: "water_top_low",
+	LAVA: "lava",
+	LAVA_TOP: "lava_top",
+	LAVA_TOP_LOW: "lava_top_low",
+
+	// Cloud platform tiles
+	CLOUD_LEFT: "terrain_grass_cloud_left",
+	CLOUD_MIDDLE: "terrain_grass_cloud_middle",
+	CLOUD_RIGHT: "terrain_grass_cloud_right",
+
 	// Doors and flags
 	DOOR_CLOSED: "door_closed",
 	DOOR_CLOSED_TOP: "door_closed_top",

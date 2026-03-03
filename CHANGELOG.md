@@ -1,3 +1,16 @@
+## Add moving platforms, spikes, and water zone hazards (Phase 7)
+*Tuesday, March 3rd at 4pm*
+Implement Phase 7 of the advanced platformer: MovingPlatform oscillates between 
+endpoints using constantVelocity for automatic player carry, with configurable 
+direction, distance, speed, and endpoint wait time. Spike sensor spawns from 
+tiles and damages on overlap. WaterZone sensor with createWaterZones() helper 
+scans tilemap for water/lava tile regions and creates lethal hazard sensors. 
+Added water tiles to level1.tmx gap. All wired into the test scene with 8 new 
+tests covering platform carry, direction reversal, endpoint pausing, spike 
+damage, and water lethality.
+
+---
+
 ## Fix saw hazard damage using onOverlap with hazards group
 *Tuesday, March 3rd at 3pm*
 The saw blade enemy (SawSensor) used a Sensor body type, which is invisible to 

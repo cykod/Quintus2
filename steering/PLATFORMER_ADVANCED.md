@@ -11,9 +11,9 @@
 | 2 | Asset Pipeline & Tiled Setup | Done |
 | 3 | Core Player Mechanics | Done |
 | 4 | Terrain & Collision (Slopes, One-Way) | Done |
-| 5 | Interactive Tiles (Breakable, Fall-Away, Springs, Ladders) | Pending |
-| 6 | Enemies | Pending |
-| 7 | Moving Platforms & Hazards | Pending |
+| 5 | Interactive Tiles (Breakable, Fall-Away, Springs, Ladders) | Done |
+| 6 | Enemies | Done |
+| 7 | Moving Platforms & Hazards | Done |
 | 8 | Collectibles, Power-Ups, Keys/Locks | Pending |
 | 9 | Parallax Backgrounds & Camera | Pending |
 | 10 | HUD, Menus & Audio | Pending |
@@ -1012,20 +1012,20 @@ export class LadderZone extends Sensor {
 }
 ```
 
-- [ ] Implement `BreakableBlock` with brick/coin/exclamation variants
-- [ ] Implement brick break particles (4 quarter-pieces)
-- [ ] Implement coin spawn from coin blocks (pop-up animation)
-- [ ] Implement `FallAwayPlatform` with shake-then-fall + optional respawn
-- [ ] Implement `Spring` bounce pad
-- [ ] Implement `LadderZone` sensor and `createLadderZones()` scanner
-- [ ] Wire ladder state into Player climbing logic
-- [ ] Add contact callbacks for breakable blocks (hit from below detection)
-- [ ] Add contact callbacks for springs
-- [ ] Add fall-away trigger detection (floor collider check)
-- [ ] Write tests for breakable blocks
-- [ ] Write tests for fall-away platforms
-- [ ] Write tests for springs
-- [ ] Write tests for ladder climbing
+- [x] Implement `BreakableBlock` with brick/coin/exclamation variants
+- [x] Implement brick break particles (4 quarter-pieces)
+- [x] Implement coin spawn from coin blocks (pop-up animation)
+- [x] Implement `FallAwayPlatform` with shake-then-fall + optional respawn
+- [x] Implement `Spring` bounce pad
+- [x] Implement `LadderZone` sensor and `createLadderZones()` scanner
+- [x] Wire ladder state into Player climbing logic
+- [x] Add contact callbacks for breakable blocks (hit from below detection)
+- [x] Add contact callbacks for springs
+- [x] Add fall-away trigger detection (floor collider check)
+- [x] Write tests for breakable blocks
+- [x] Write tests for fall-away platforms
+- [x] Write tests for springs
+- [x] Write tests for ladder climbing
 
 ### Tests for Phase 5
 
@@ -1291,18 +1291,18 @@ this.game.physics.onContact("player", "enemies", (player, enemy, info) => {
 });
 ```
 
-- [ ] Implement `BaseEnemy` with stomp animation and score
-- [ ] Implement `Slime` (ground patrol, edge/wall turn)
+- [x] Implement `BaseEnemy` with stomp animation and score
+- [x] Implement `Slime` (ground patrol, edge/wall turn)
 - [ ] Implement spike slime variant (unstompable)
-- [ ] Implement `Bee` (flying sine-wave, stompable)
-- [ ] Implement `Snail` (shell mechanic: stomp → shell → kick)
-- [ ] Implement `Frog` (periodic jumping toward player)
-- [ ] Implement `Saw` (path-following hazard)
-- [ ] Wire stomp detection in Level scene
-- [ ] Wire star-power instant-kill logic
-- [ ] Write enemy patrol tests (edge detection, wall reversal)
-- [ ] Write stomp tests
-- [ ] Write snail shell kick test
+- [x] Implement `Bee` (flying sine-wave, stompable)
+- [x] Implement `Snail` (shell mechanic: stomp → shell → kick)
+- [x] Implement `Frog` (periodic jumping toward player)
+- [x] Implement `Saw` (path-following hazard)
+- [x] Wire stomp detection in Level scene
+- [x] Wire star-power instant-kill logic
+- [x] Write enemy patrol tests (edge detection, wall reversal)
+- [x] Write stomp tests
+- [x] Write snail shell kick test
 
 ### Tests for Phase 6
 
@@ -1397,13 +1397,13 @@ export class MovingPlatform extends StaticCollider {
 
 **Bombs** (optional): Placed as tiles. When player is nearby, fuse lights (bomb_active animation), then explodes after delay, damaging nearby entities.
 
-- [ ] Implement `MovingPlatform` with horizontal/vertical modes
-- [ ] Implement platform carry via `constantVelocity`
-- [ ] Implement endpoint waiting
-- [ ] Implement `Spike` sensor (damage on contact)
-- [ ] Implement `WaterZone` sensor (instant death)
-- [ ] Wire Tiled object properties to MovingPlatform (direction, distance, speed)
-- [ ] Write moving platform tests (player carry, direction reversal)
+- [x] Implement `MovingPlatform` with horizontal/vertical modes
+- [x] Implement platform carry via `constantVelocity`
+- [x] Implement endpoint waiting
+- [x] Implement `Spike` sensor (damage on contact)
+- [x] Implement `WaterZone` sensor (instant death)
+- [x] Wire Tiled object properties to MovingPlatform (direction, distance, speed)
+- [x] Write moving platform tests (player carry, direction reversal)
 
 ---
 

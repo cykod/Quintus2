@@ -602,3 +602,110 @@ export class HalfFloorEnemyArena extends Scene {
 export function runEnemyArena(input?: InputScript, duration?: number, afterReset?: () => void) {
 	return runScene(EnemyArena, input, duration, afterReset);
 }
+
+// ── Moving platform arena ───────────────────────────────────────────
+
+import { MovingPlatform } from "../entities/moving-platform.js";
+
+/**
+ * MovingPlatformArena: Floor with a gap, horizontal moving platform above the gap.
+ * Floor: two halves with a 200px gap in the middle.
+ * Platform oscillates horizontally above the gap.
+ * Player starts at (200, 280) on the left floor.
+ */
+export class MovingPlatformArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	platform!: MovingPlatform;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<MovingPlatform ref="platform" position={[320, 200]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+		this.platform.direction = "horizontal";
+		this.platform.distance = 200;
+		this.platform.speed = 100;
+		this.platform.waitTime = 0;
+	}
+}
+
+// ── Spike arena ─────────────────────────────────────────────────────
+
+import { Spike } from "../entities/spike.js";
+
+/**
+ * SpikeArena: Floor with a spike sensor on the ground surface.
+ * Floor top at y=300. Spike at (400, 268) — surface-level hazard.
+ * Player starts at (200, 280) on the floor.
+ */
+export class SpikeArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<Floor position={[320, 308]} />
+				<Spike position={[400, 268]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(200, 280);
+
+		this.game.physics.onOverlap("player", "hazards", (player) => {
+			(player as Player).takeDamage(1);
+		});
+	}
+}
+
+// ── Water zone arena ────────────────────────────────────────────────
+
+import { WaterZone } from "../entities/water-zone.js";
+
+/**
+ * WaterZoneArena: Half floor on left, water zone below on the right.
+ * Player starts on the left floor and can walk off into the water.
+ */
+export class WaterZoneArena extends Scene {
+	player!: Player;
+	camera!: Camera;
+	water!: WaterZone;
+
+	override build() {
+		return (
+			<>
+				<Player ref="player" />
+				<Camera ref="camera" follow="$player" zoom={1} />
+				<HalfFloor position={[150, 308]} />
+				<WaterZone ref="water" position={[450, 340]} />
+			</>
+		);
+	}
+
+	override onReady() {
+		this.player.position = new Vec2(100, 280);
+		this.water.add(CollisionShape, { shape: Shape.rect(200, 40) });
+
+		this.game.physics.onOverlap("player", "hazards", (player, hazard) => {
+			const p = player as Player;
+			if (hazard.hasTag("water")) {
+				p.takeDamage(p.health);
+			} else {
+				p.takeDamage(1);
+			}
+		});
+	}
+}

@@ -1,8 +1,8 @@
 import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
-import { Scene } from "@quintus/core";
+import { type NodeConstructor, Scene } from "@quintus/core";
 import { Rect, Vec2 } from "@quintus/math";
-import type { Actor, StaticCollider } from "@quintus/physics";
+import type { Actor } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
 import {
 	BreakableBlock,
@@ -18,8 +18,11 @@ import { Slime } from "../entities/enemies/slime.js";
 import { Snail } from "../entities/enemies/snail.js";
 import { FallAwayPlatform } from "../entities/fall-away-platform.js";
 import { createLadderZones } from "../entities/ladder-zone.js";
+import { MovingPlatform } from "../entities/moving-platform.js";
 import { Player } from "../entities/player.js";
+import { Spike } from "../entities/spike.js";
 import { Spring } from "../entities/spring.js";
+import { createWaterZones } from "../entities/water-zone.js";
 
 /**
  * Test scene: tilemap rendering, collision, interactive tiles, and player character.
@@ -54,18 +57,23 @@ export class TestScene extends Scene {
 		const exclamationBlockIds = this.map.getTileIdsByType("exclamation_block");
 		const springIds = this.map.getTileIdsByType("spring");
 		const fallAwayIds = this.map.getTileIdsByType("fall_away");
+		const spikeIds = this.map.getTileIdsByType("spike");
 
-		const mapping: Record<number, new () => StaticCollider> = {};
+		const mapping: Record<number, NodeConstructor> = {};
 		for (const id of brickIds) mapping[id] = BrickBlock;
 		for (const id of coinBlockIds) mapping[id] = CoinBlock;
 		for (const id of exclamationBlockIds) mapping[id] = ExclamationBlock;
 		for (const id of springIds) mapping[id] = Spring;
 		for (const id of fallAwayIds) mapping[id] = FallAwayPlatform;
+		for (const id of spikeIds) mapping[id] = Spike;
 
 		this.map.spawnFromTiles("main", mapping, { clearTiles: true });
 
 		// ── Create ladder zones (tiles stay visible) ─────────────────
 		createLadderZones(this.map, "main");
+
+		// ── Create water/lava zones (tiles stay visible) ─────────────
+		createWaterZones(this.map, "main");
 
 		// ── Contact callbacks ────────────────────────────────────────
 		this.game.physics.onContact("player", "world", (player, other, info) => {
@@ -107,9 +115,14 @@ export class TestScene extends Scene {
 			}
 		});
 
-		// ── Hazard overlap (saw blades, etc.) ───────────────────────
-		this.game.physics.onOverlap("player", "hazards", (player) => {
-			(player as Player).takeDamage(1);
+		// ── Hazard overlap (saw blades, spikes, water/lava) ─────────
+		this.game.physics.onOverlap("player", "hazards", (player, hazard) => {
+			const p = player as Player;
+			if (hazard.hasTag("water")) {
+				p.takeDamage(p.health);
+			} else {
+				p.takeDamage(1);
+			}
 		});
 
 		// Position player at the spawn point
@@ -154,5 +167,13 @@ export class TestScene extends Scene {
 		const saw = this.add(Saw);
 		saw.position = new Vec2(2000, 380);
 		saw.pathEnd = new Vec2(2200, 380);
+
+		// Moving platform over a gap
+		const movingPlatform = this.add(MovingPlatform);
+		movingPlatform.position = new Vec2(1800, 350);
+		movingPlatform.direction = "horizontal";
+		movingPlatform.distance = 200;
+		movingPlatform.speed = 80;
+		movingPlatform.waitTime = 0.5;
 	}
 }
