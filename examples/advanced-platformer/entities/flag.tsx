@@ -1,6 +1,7 @@
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import type { TileSpawnInfo } from "@quintus/tilemap";
+import { Ease } from "@quintus/tween";
 import { FRAME, tileAtlas } from "../sprites.js";
 import { gameState } from "../state.js";
 
@@ -48,5 +49,11 @@ export class Flag extends Sensor {
 
 		// Swap to waving flag sprite
 		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.FLAG_YELLOW_A);
+
+		// Bounce tween
+		const baseY = this.position.y;
+		this.tween()
+			.to({ position: { y: baseY - 6 } }, 0.15, Ease.quadOut)
+			.to({ position: { y: baseY } }, 0.15, Ease.quadIn);
 	}
 }

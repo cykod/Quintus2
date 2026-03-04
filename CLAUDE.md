@@ -211,6 +211,7 @@ pnpm qdbg <cmd>       # CLI game debugger (see qdbg section)
 | Tower Defense | `examples/tower-defense/` | (placeholder) | — |
 | Sokoban | `examples/sokoban/` | (placeholder) | — |
 | Bullet Hell | `examples/bullet-hell/` | (placeholder) | — |
+| Advanced Platformer | `examples/advanced-platformer/` | 3-level flagship demo: slopes, enemies, breakable blocks, parallax, HUD, 105 tests | Done |
 
 ## Claude Code Skills
 

@@ -1,3 +1,25 @@
+## Add integration tests and visual polish (Phase 12)
+*Wednesday, March 4th at 5pm*
+Complete Phase 12 of the advanced platformer with 6 integration tests (entity 
+loading, coin collection, enemy stomp, damage, checkpoint, deterministic 
+replay) and 8 visual polish effects: camera shake on damage/death, spring 
+squash-stretch, flag bounce tween, door open animation, score popups on enemy 
+stomp, fade-to-black scene transitions, and brick debris particles. All 12 
+phases of the advanced platformer are now complete. Added the game to the 
+examples index page.
+
+---
+
+## Complete advanced platformer Phase 12: integration tests and visual polish
+*Tuesday, March 4th at 3pm*
+Added 6 integration tests (entity loading, coin collection, enemy stomp, damage,
+checkpoint, deterministic replay) and 8 visual polish effects: camera shake on
+damage/death, spring squash-stretch, flag bounce tween, door open animation,
+score popups on enemy stomp, fade-to-black scene transitions, and brick debris
+particles. All 12 phases of the advanced platformer are now complete.
+
+---
+
 ## Fix fall-death boundary and stomp detection, clean up docs
 *Wednesday, March 4th at 3pm*
 Made the player's fall-death threshold configurable via a fallDeathY property 

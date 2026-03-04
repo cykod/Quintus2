@@ -69,16 +69,39 @@ export abstract class BreakableBlock extends StaticCollider {
 
 // ─── BrickBlock ──────────────────────────────────────────────────
 
-/** Breakable brick — bump animation then destroy. */
+/** Breakable brick — bump animation, spawn debris, then destroy. */
 export class BrickBlock extends BreakableBlock {
 	protected frameName = FRAME.BRICK_BROWN;
 
 	protected onHit(): void {
 		this.game.audio.play("bump", { bus: "sfx" });
+
+		// Spawn 4 debris chunks that arc outward and fade
+		this._spawnDebris();
+
 		this.tween()
 			.to({ position: { y: this.position.y - 8 } }, 0.08, Ease.easeOutQuad)
 			.to({ position: { y: this.position.y } }, 0.08, Ease.easeInQuad)
 			.onComplete(() => this.destroy());
+	}
+
+	private _spawnDebris(): void {
+		const offsets = [new Vec2(-12, -12), new Vec2(12, -12), new Vec2(-12, 12), new Vec2(12, 12)];
+		const velocities = [
+			new Vec2(-60, -120),
+			new Vec2(60, -120),
+			new Vec2(-40, -60),
+			new Vec2(40, -60),
+		];
+
+		for (let i = 0; i < 4; i++) {
+			const debris = new DebrisChunk();
+			debris.position.x = this.position.x + offsets[i].x;
+			debris.position.y = this.position.y + offsets[i].y;
+			debris.frameName = this.frameName;
+			debris.vel = velocities[i];
+			this.parent?.add(debris);
+		}
 	}
 }
 
@@ -188,5 +211,33 @@ class PowerUpPopup extends Node2D {
 			.parallel()
 			.to({ sprite: { alpha: 0 } }, 0.4, Ease.easeInQuad)
 			.onComplete(() => this.destroy());
+	}
+}
+
+// ─── DebrisChunk ─────────────────────────────────────────────────
+
+/** Small sprite debris that arcs outward and fades after a brick breaks. */
+class DebrisChunk extends Node2D {
+	sprite!: Sprite;
+	frameName = FRAME.BRICK_BROWN;
+	vel = Vec2.ZERO;
+
+	override build() {
+		return <Sprite ref="sprite" texture={tileAtlas.texture} centered />;
+	}
+
+	override onReady() {
+		this.sprite.sourceRect = tileAtlas.getFrameOrThrow(this.frameName);
+		this.scale = new Vec2(0.4, 0.4);
+
+		// Arc outward (position tween simulates velocity + gravity)
+		const endX = this.position.x + this.vel.x * 0.5;
+		const endY = this.position.y + this.vel.y * 0.5 + 60; // gravity pull
+
+		this.tween()
+			.to({ position: { x: endX, y: endY } }, 0.5, Ease.easeOutQuad)
+			.onComplete(() => this.destroy());
+
+		this.sprite.tween().to({ alpha: 0 }, 0.5, Ease.easeInQuad);
 	}
 }

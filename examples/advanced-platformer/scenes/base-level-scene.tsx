@@ -1,9 +1,12 @@
 import "@quintus/tilemap/physics";
 import { Camera } from "@quintus/camera";
 import { type NodeConstructor, Scene } from "@quintus/core";
-import { Rect, Vec2 } from "@quintus/math";
+import { Color, Rect, Vec2 } from "@quintus/math";
 import type { Actor } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
+import { Ease } from "@quintus/tween";
+import { Layer, Panel } from "@quintus/ui";
+import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import {
 	BreakableBlock,
 	BrickBlock,
@@ -31,6 +34,7 @@ import { Spike } from "../entities/spike.js";
 import { Spring } from "../entities/spring.js";
 import { createWaterZones } from "../entities/water-zone.js";
 import { HUD } from "../hud/hud.js";
+import { showScorePopup } from "../hud/score-popup.js";
 import { ParallaxBackground, ParallaxLayer } from "../parallax/parallax-background.js";
 import { gameState } from "../state.js";
 
@@ -75,6 +79,7 @@ export abstract class BaseLevelScene extends Scene {
 
 	protected player!: Player;
 	protected map!: TileMap;
+	private _fadeOverlay!: Panel;
 
 	override build() {
 		return (
@@ -202,6 +207,7 @@ export abstract class BaseLevelScene extends Scene {
 
 			// Star power: destroy any enemy on contact
 			if (p.hasStarPower) {
+				showScorePopup(this, e.position.clone(), `+${e.scoreValue}`);
 				e.stomp();
 				return;
 			}
@@ -211,6 +217,7 @@ export abstract class BaseLevelScene extends Scene {
 				if (e instanceof Snail) {
 					e.direction = Math.sign(e.position.x - p.position.x) || 1;
 				}
+				showScorePopup(this, e.position.clone(), `+${e.scoreValue}`);
 				e.stomp();
 				p.velocity.y = -250; // bounce
 			} else {
@@ -242,11 +249,11 @@ export abstract class BaseLevelScene extends Scene {
 		// ── Wire player death → game-over or respawn ────────────────
 		this.player.died.connect(() => {
 			if (gameState.lives <= 0) {
-				this.switchTo("game-over");
+				this._fadeToScene("game-over");
 			} else {
 				// Respawn at checkpoint or start
 				gameState.checkpoint = null;
-				this.switchTo(this.sceneName);
+				this._fadeToScene(this.sceneName);
 			}
 		});
 
@@ -262,7 +269,7 @@ export abstract class BaseLevelScene extends Scene {
 						yellow: false,
 					};
 					gameState.checkpoint = null;
-					this.switchTo(this.nextSceneName);
+					this._fadeToScene(this.nextSceneName);
 				});
 			}
 		}
@@ -275,6 +282,30 @@ export abstract class BaseLevelScene extends Scene {
 		if (camera) {
 			camera.bounds = new Rect(0, 0, this.map.bounds.width, this.map.bounds.height);
 		}
+
+		// ── Fade overlay — fade in from black ────────────────────────
+		this._setupFadeOverlay();
+	}
+
+	/** Create the full-screen black overlay used for fade transitions. */
+	private _setupFadeOverlay(): void {
+		const fadeLayer = this.add(Layer, { fixed: true, zIndex: 200 });
+		this._fadeOverlay = fadeLayer.add(Panel, {
+			size: new Vec2(GAME_WIDTH, GAME_HEIGHT),
+			backgroundColor: Color.BLACK,
+		});
+		// Fade in from black
+		this._fadeOverlay.alpha = 1;
+		this._fadeOverlay.tween().to({ alpha: 0 }, 0.3, Ease.easeOutQuad);
+	}
+
+	/** Fade to black then switch to the target scene. */
+	private _fadeToScene(target: string): void {
+		this._fadeOverlay.alpha = 0;
+		this._fadeOverlay
+			.tween()
+			.to({ alpha: 1 }, 0.4, Ease.easeInQuad)
+			.onComplete(() => this.switchTo(target));
 	}
 
 	/** Spawn enemies from the "enemies" tile layer. Override to add moving platforms. */

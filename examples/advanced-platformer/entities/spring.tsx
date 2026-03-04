@@ -1,7 +1,9 @@
 import { type Actor, CollisionShape, Shape, StaticCollider } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import type { TileSpawnInfo } from "@quintus/tilemap";
+import { Ease } from "@quintus/tween";
 import { FRAME, tileAtlas } from "../sprites.js";
+import { Player } from "./player.js";
 
 /**
  * Spring bounce pad — launches actors upward on contact from above.
@@ -43,5 +45,14 @@ export class Spring extends StaticCollider {
 		this.after(0.3, () => {
 			this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.SPRING);
 		});
+
+		// Squash-stretch on the player sprite
+		if (actor instanceof Player && actor.sprite) {
+			actor.sprite.killTweens();
+			actor.sprite
+				.tween()
+				.to({ scale: { x: 0.7, y: 1.3 } }, 0.1, Ease.quadOut)
+				.to({ scale: { x: 1, y: 1 } }, 0.15, Ease.quadOut);
+		}
 	}
 }

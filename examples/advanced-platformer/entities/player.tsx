@@ -1,4 +1,5 @@
 import { Damageable } from "@quintus/ai-prefabs";
+import { Camera } from "@quintus/camera";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { playerSheet } from "../sprites.js";
@@ -135,6 +136,12 @@ export class Player extends DamageableActor {
 		gameState.health = this.health;
 		if (this.isDead()) {
 			gameState.lives -= 1;
+		}
+
+		// Screen shake — stronger on death
+		const camera = this.scene?.findFirst(Camera);
+		if (camera) {
+			camera.shake(this.isDead() ? 8 : 4, 0.3);
 		}
 	}
 

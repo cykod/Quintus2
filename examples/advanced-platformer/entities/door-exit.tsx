@@ -2,6 +2,7 @@ import { signal } from "@quintus/core";
 import { CollisionShape, Sensor, Shape } from "@quintus/physics";
 import { Sprite } from "@quintus/sprites";
 import type { TileSpawnInfo } from "@quintus/tilemap";
+import { Ease } from "@quintus/tween";
 import { FRAME, tileAtlas } from "../sprites.js";
 
 /**
@@ -42,7 +43,12 @@ export class DoorExit extends Sensor {
 				this._triggered = true;
 				this.sprite.sourceRect = tileAtlas.getFrameOrThrow(FRAME.DOOR_OPEN);
 				this.game.audio.play("select", { bus: "sfx" });
-				this.levelComplete.emit();
+
+				// Scale bounce before completing the level
+				this.tween()
+					.to({ scale: { x: 1.1, y: 1.1 } }, 0.15, Ease.quadOut)
+					.to({ scale: { x: 1, y: 1 } }, 0.1)
+					.onComplete(() => this.levelComplete.emit());
 			}
 		});
 	}

@@ -18,7 +18,7 @@
 | 9 | Parallax Backgrounds & Camera | Done |
 | 10 | HUD, Menus & Audio | Done |
 | 11 | Level Design (3 Levels in Tiled) | Done |
-| 12 | Tests & Polish | Pending |
+| 12 | Tests & Polish | Done |
 
 ---
 
