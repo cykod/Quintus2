@@ -9,13 +9,13 @@ export class TitleScene extends Scene {
 		ui.fixed = true;
 
 		ui.add(Panel, {
-			width: 320,
-			height: 240,
+			width: this.game.width,
+			height: this.game.height,
 			backgroundColor: Color.fromHex("#1a1a2e"),
 		});
 
 		ui.add(Label, {
-			position: new Vec2(160, 50),
+			position: new Vec2(this.game.width / 2, 50),
 			text: "Quintus Platformer",
 			fontSize: 20,
 			color: Color.fromHex("#4fc3f7"),
@@ -23,7 +23,7 @@ export class TitleScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(160, 80),
+			position: new Vec2(this.game.width / 2, 80),
 			text: "A Quintus 2.0 Demo",
 			fontSize: 10,
 			color: Color.fromHex("#888888"),
@@ -31,7 +31,7 @@ export class TitleScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(160, 130),
+			position: new Vec2(this.game.width / 2, 130),
 			text: "Arrow keys to move, Up/Space to jump",
 			fontSize: 8,
 			color: Color.fromHex("#aaaaaa"),
@@ -39,7 +39,7 @@ export class TitleScene extends Scene {
 		});
 
 		const startBtn = ui.add(Button, {
-			position: new Vec2(110, 170),
+			position: new Vec2(this.game.width / 2 - 50, 170),
 			width: 100,
 			height: 32,
 			text: "Start",

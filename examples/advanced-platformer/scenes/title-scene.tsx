@@ -2,7 +2,6 @@ import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
 import { Sprite } from "@quintus/sprites";
 import { Button, Label, Layer } from "@quintus/ui";
-import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import { ParallaxBackground, ParallaxLayer } from "../parallax/parallax-background.js";
 import { charAtlas, FRAME } from "../sprites.js";
 import { gameState } from "../state.js";
@@ -12,7 +11,7 @@ import { gameState } from "../state.js";
  */
 export class TitleScene extends Scene {
 	override build() {
-		const cx = GAME_WIDTH / 2;
+		const cx = this.game.width / 2;
 		return (
 			<>
 				<ParallaxBackground>
@@ -21,7 +20,7 @@ export class TitleScene extends Scene {
 					<ParallaxLayer texture="bg_fade_hills" scrollFactor={0} screenY={250} zIndex={-98} />
 					<ParallaxLayer texture="bg_color_hills" scrollFactor={0} screenY={450} zIndex={-97} />
 				</ParallaxBackground>
-				<Camera position={[cx, GAME_HEIGHT / 2]} zoom={1} />
+				<Camera position={[cx, this.game.height / 2]} zoom={1} />
 				<Layer fixed zIndex={50}>
 					<Label
 						position={[cx, 160]}

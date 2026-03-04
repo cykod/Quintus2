@@ -20,7 +20,6 @@ const game = new Game({
 	height: 768,
 	canvas: "game",
 	scale: "fill",
-	baseHeight: 768,
 	backgroundColor: "#1a1a2e",
 	seed: 42,
 });

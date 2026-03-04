@@ -1,3 +1,17 @@
+## Rework fill mode: responsive scaling for desktop + mobile
+*Wednesday, March 4th at 8pm*
+Rewrote the scale: "fill" implementation to use responsive width with constant 
+height instead of raw viewport pixels. Desktop (fine pointer) now behaves 
+identically to "fit" mode with CSS letterboxing, preserving all hardcoded UI 
+positions. Mobile (coarse pointer) keeps the design height constant and adjusts 
+width to match the viewport aspect ratio, with CSS scaling the canvas to fill 
+the screen. Removed the baseHeight option in favor of using the design height 
+directly. Updated both platformer examples to use game.width/game.height for 
+all runtime UI positioning instead of hardcoded constants, and replaced 
+camera.autoZoom with fixed zoom values.
+
+---
+
 ## Add mobile enhancements: touch slide fix and fill scaling mode
 *Wednesday, March 4th at 6pm*
 Fix touch overlay dead-zone tracking so fingers can slide between virtual 

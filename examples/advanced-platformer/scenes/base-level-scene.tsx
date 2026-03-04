@@ -6,7 +6,6 @@ import type { Actor } from "@quintus/physics";
 import { TileMap } from "@quintus/tilemap";
 import { Ease } from "@quintus/tween";
 import { Layer, Panel } from "@quintus/ui";
-import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import {
 	BreakableBlock,
 	BrickBlock,
@@ -107,7 +106,7 @@ export abstract class BaseLevelScene extends Scene {
 				</ParallaxBackground>
 				<TileMap ref="map" tilesetImage="tiles" asset={this.tmxAsset} />
 				<Player ref="player" />
-				<Camera follow="$player" smoothing={0.08} offset={[0, -30]} autoZoom />
+				<Camera follow="$player" smoothing={0.08} offset={[0, -30]} zoom={1} />
 				<HUD />
 			</>
 		);
@@ -291,7 +290,7 @@ export abstract class BaseLevelScene extends Scene {
 	private _setupFadeOverlay(): void {
 		const fadeLayer = this.add(Layer, { fixed: true, zIndex: 200 });
 		this._fadeOverlay = fadeLayer.add(Panel, {
-			size: new Vec2(GAME_WIDTH, GAME_HEIGHT),
+			size: new Vec2(this.game.width, this.game.height),
 			backgroundColor: Color.BLACK,
 		});
 		// Fade in from black

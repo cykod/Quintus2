@@ -35,7 +35,7 @@ export class HUD extends Layer {
 		});
 
 		this.scoreLabel = this.add(Label, {
-			position: new Vec2(250, 4),
+			position: new Vec2(this.game.width - 70, 4),
 			text: `Score: ${gameState.score}`,
 			fontSize: 8,
 			color: Color.WHITE,

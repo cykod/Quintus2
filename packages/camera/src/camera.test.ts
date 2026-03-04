@@ -459,7 +459,27 @@ describe("Camera", () => {
 	});
 
 	describe("autoZoom", () => {
+		function mockCoarsePointer() {
+			vi.stubGlobal(
+				"matchMedia",
+				vi.fn((query: string) => ({
+					matches: query === "(pointer: coarse)",
+					media: query,
+					addEventListener: vi.fn(),
+					removeEventListener: vi.fn(),
+					addListener: vi.fn(),
+					removeListener: vi.fn(),
+					onchange: null,
+					dispatchEvent: vi.fn(),
+				})),
+			);
+		}
+
 		it("sets zoom to fillZoom on enter tree", () => {
+			vi.stubGlobal("innerWidth", 320);
+			vi.stubGlobal("innerHeight", 240);
+			mockCoarsePointer();
+
 			const game = new Game({
 				width: 320,
 				height: 240,
@@ -467,7 +487,6 @@ describe("Camera", () => {
 				renderer: null,
 				seed: 42,
 				scale: "fill",
-				baseHeight: 240,
 			});
 
 			let camera!: Camera;
@@ -481,11 +500,14 @@ describe("Camera", () => {
 			game.start(TestScene2);
 
 			expect(camera.zoom).toBe(game.fillZoom);
+
+			vi.unstubAllGlobals();
 		});
 
 		it("updates zoom when game.resized fires", () => {
 			vi.stubGlobal("innerWidth", 800);
 			vi.stubGlobal("innerHeight", 600);
+			mockCoarsePointer();
 
 			const game = new Game({
 				width: 800,
@@ -494,7 +516,6 @@ describe("Camera", () => {
 				renderer: null,
 				seed: 42,
 				scale: "fill",
-				baseHeight: 240,
 			});
 
 			let camera!: Camera;
@@ -508,14 +529,14 @@ describe("Camera", () => {
 			game.start(TestScene);
 
 			const initialZoom = camera.zoom;
-			expect(initialZoom).toBeCloseTo(600 / 240, 5);
+			expect(initialZoom).toBeCloseTo(600 / 600, 5);
 
 			// Simulate resize
 			vi.stubGlobal("innerWidth", 1024);
 			vi.stubGlobal("innerHeight", 768);
 			window.dispatchEvent(new Event("resize"));
 
-			expect(camera.zoom).toBeCloseTo(768 / 240, 5);
+			expect(camera.zoom).toBeCloseTo(768 / 600, 5);
 
 			vi.unstubAllGlobals();
 		});
@@ -523,6 +544,7 @@ describe("Camera", () => {
 		it("does not change zoom when autoZoom is false (default)", () => {
 			vi.stubGlobal("innerWidth", 800);
 			vi.stubGlobal("innerHeight", 600);
+			mockCoarsePointer();
 
 			const game = new Game({
 				width: 800,
@@ -531,7 +553,6 @@ describe("Camera", () => {
 				renderer: null,
 				seed: 42,
 				scale: "fill",
-				baseHeight: 240,
 			});
 
 			let camera!: Camera;
@@ -557,6 +578,7 @@ describe("Camera", () => {
 		it("cleans up resize listener on exit tree", () => {
 			vi.stubGlobal("innerWidth", 800);
 			vi.stubGlobal("innerHeight", 600);
+			mockCoarsePointer();
 
 			const game = new Game({
 				width: 800,
@@ -565,7 +587,6 @@ describe("Camera", () => {
 				renderer: null,
 				seed: 42,
 				scale: "fill",
-				baseHeight: 240,
 			});
 
 			let camera!: Camera;

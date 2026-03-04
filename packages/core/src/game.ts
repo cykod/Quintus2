@@ -39,12 +39,6 @@ export interface GameOptions {
 	renderer?: Renderer | null;
 	/** Start in debug mode (paused, bridge exposed). Default: auto-detect from ?debug URL param. */
 	debug?: boolean;
-	/**
-	 * Reference world-view height for `scale: "fill"`.
-	 * Used to compute `game.fillZoom = canvasHeight / baseHeight`.
-	 * Only meaningful when scale is "fill". Ignored otherwise.
-	 */
-	baseHeight?: number;
 }
 
 export class Game {
@@ -103,12 +97,12 @@ export class Game {
 		return this._fillZoom;
 	}
 	private _fillZoom = 1;
-	private _baseHeight: number | undefined;
+	private _designHeight: number;
 
 	constructor(options: GameOptions) {
 		this._width = options.width;
 		this._height = options.height;
-		this._baseHeight = options.baseHeight;
+		this._designHeight = options.height;
 		this.pixelArt = options.pixelArt ?? false;
 		this.backgroundColor = options.backgroundColor ?? "#000000";
 		this.fixedDeltaTime = options.fixedDeltaTime ?? 1 / 60;
@@ -447,27 +441,35 @@ export class Game {
 		canvas.style.touchAction = "none";
 
 		if (mode === "fill") {
+			const isMobile =
+				typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+
+			if (!isMobile) {
+				// Desktop: letterboxed fit, no dimension changes
+				this._setupFitScaling();
+				return;
+			}
+
+			// Mobile: keep design height, adjust width to viewport aspect
+			const designHeight = this._designHeight;
 			const resize = () => {
 				const vw = window.innerWidth;
 				const vh = window.innerHeight;
+				const responsiveWidth = Math.round(designHeight * (vw / vh));
 
-				// Set canvas to exact viewport pixel dimensions
-				this._width = vw;
-				this._height = vh;
-				canvas.width = vw;
-				canvas.height = vh;
+				this._width = responsiveWidth;
+				// this._height stays at designHeight (never mutated)
+				canvas.width = responsiveWidth;
+				canvas.height = designHeight;
 
-				// CSS fills viewport with no transform
-				canvas.style.width = "100vw";
-				canvas.style.height = "100vh";
+				// CSS fills entire viewport
+				canvas.style.width = `${vw}px`;
+				canvas.style.height = `${vh}px`;
 				canvas.style.position = "fixed";
 				canvas.style.left = "0";
 				canvas.style.top = "0";
 
-				// Compute recommended zoom
-				if (this._baseHeight) {
-					this._fillZoom = vh / this._baseHeight;
-				}
+				this._fillZoom = vh / designHeight;
 
 				// Re-apply pixel-art smoothing (canvas resize resets context state)
 				if (this.pixelArt) {
@@ -476,10 +478,10 @@ export class Game {
 				}
 
 				// Update renderer's cached dimensions
-				this.renderer?.resize?.(vw, vh);
+				this.renderer?.resize?.(responsiveWidth, designHeight);
 
 				// Notify listeners
-				this.resized.emit({ width: vw, height: vh });
+				this.resized.emit({ width: responsiveWidth, height: designHeight });
 			};
 
 			resize();
@@ -489,6 +491,13 @@ export class Game {
 			return;
 		}
 
+		// mode === "fit"
+		this._setupFitScaling();
+	}
+
+	/** CSS letterbox scaling — preserves internal resolution, centers on screen. */
+	private _setupFitScaling(): void {
+		const canvas = this.canvas;
 		const aspect = this._width / this._height;
 
 		const resize = () => {

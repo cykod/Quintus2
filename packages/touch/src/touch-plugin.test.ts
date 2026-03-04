@@ -230,6 +230,19 @@ describe("TouchPlugin lifecycle", () => {
 	it("rebuilds overlay on game.resized", () => {
 		vi.stubGlobal("innerWidth", 800);
 		vi.stubGlobal("innerHeight", 600);
+		vi.stubGlobal(
+			"matchMedia",
+			vi.fn((query: string) => ({
+				matches: query === "(pointer: coarse)",
+				media: query,
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+				addListener: vi.fn(),
+				removeListener: vi.fn(),
+				onchange: null,
+				dispatchEvent: vi.fn(),
+			})),
+		);
 
 		const canvas = document.createElement("canvas");
 		const game = new Game({
@@ -238,7 +251,6 @@ describe("TouchPlugin lifecycle", () => {
 			canvas,
 			renderer: null,
 			scale: "fill",
-			baseHeight: 240,
 		});
 		game.use(InputPlugin({ actions: {} }));
 

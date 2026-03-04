@@ -9,13 +9,13 @@ export class VictoryScene extends Scene {
 		ui.fixed = true;
 
 		ui.add(Panel, {
-			width: 320,
-			height: 240,
+			width: this.game.width,
+			height: this.game.height,
 			backgroundColor: Color.fromHex("#1a1a2e"),
 		});
 
 		ui.add(Label, {
-			position: new Vec2(160, 50),
+			position: new Vec2(this.game.width / 2, 50),
 			text: "Victory!",
 			fontSize: 28,
 			color: Color.fromHex("#81c784"),
@@ -23,7 +23,7 @@ export class VictoryScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(160, 100),
+			position: new Vec2(this.game.width / 2, 100),
 			text: `Final Score: ${gameState.score}`,
 			fontSize: 14,
 			color: Color.WHITE,
@@ -31,7 +31,7 @@ export class VictoryScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(160, 120),
+			position: new Vec2(this.game.width / 2, 120),
 			text: `Coins: ${gameState.coins}`,
 			fontSize: 12,
 			color: Color.fromHex("#ffd54f"),
@@ -39,7 +39,7 @@ export class VictoryScene extends Scene {
 		});
 
 		const playAgainBtn = ui.add(Button, {
-			position: new Vec2(100, 160),
+			position: new Vec2(this.game.width / 2 - 60, 160),
 			width: 120,
 			height: 30,
 			text: "Play Again",

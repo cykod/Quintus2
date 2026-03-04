@@ -17,7 +17,6 @@ const game = new Game({
 	height: 240,
 	canvas: "game",
 	scale: "fill",
-	baseHeight: 120,
 	pixelArt: true,
 	backgroundColor: "#1a1a2e",
 	seed: 42,

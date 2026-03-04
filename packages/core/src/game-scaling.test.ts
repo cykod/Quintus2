@@ -110,88 +110,142 @@ describe("Game scaling", () => {
 	});
 });
 
+function mockCoarsePointer() {
+	vi.stubGlobal(
+		"matchMedia",
+		vi.fn((query: string) => ({
+			matches: query === "(pointer: coarse)",
+			media: query,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			onchange: null,
+			dispatchEvent: vi.fn(),
+		})),
+	);
+}
+
+function mockFinePointer() {
+	vi.stubGlobal(
+		"matchMedia",
+		vi.fn((query: string) => ({
+			matches: query !== "(pointer: coarse)",
+			media: query,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			onchange: null,
+			dispatchEvent: vi.fn(),
+		})),
+	);
+}
+
 describe("Game scaling: fill mode", () => {
-	it("scale: 'fill' sets canvas dimensions to innerWidth/innerHeight", () => {
-		vi.stubGlobal("innerWidth", 750);
-		vi.stubGlobal("innerHeight", 1334);
+	it("fill on desktop (no coarse pointer): behaves like fit", () => {
+		vi.stubGlobal("innerWidth", 1920);
+		vi.stubGlobal("innerHeight", 1080);
 
 		const game = createGame({ scale: "fill" });
 
-		expect(game.canvas.width).toBe(750);
-		expect(game.canvas.height).toBe(1334);
-		expect(game.width).toBe(750);
-		expect(game.height).toBe(1334);
-
-		vi.unstubAllGlobals();
-	});
-
-	it("scale: 'fill' sets CSS to fill viewport", () => {
-		vi.stubGlobal("innerWidth", 750);
-		vi.stubGlobal("innerHeight", 1334);
-
-		const game = createGame({ scale: "fill" });
-
-		expect(game.canvas.style.width).toBe("100vw");
-		expect(game.canvas.style.height).toBe("100vh");
-		expect(game.canvas.style.position).toBe("fixed");
-		expect(game.canvas.style.left).toBe("0px");
-		expect(game.canvas.style.top).toBe("0px");
-
-		vi.unstubAllGlobals();
-	});
-
-	it("fillZoom equals viewportHeight / baseHeight", () => {
-		vi.stubGlobal("innerWidth", 750);
-		vi.stubGlobal("innerHeight", 1334);
-
-		const game = createGame({ scale: "fill", baseHeight: 240 });
-
-		expect(game.fillZoom).toBeCloseTo(1334 / 240, 5);
-
-		vi.unstubAllGlobals();
-	});
-
-	it("fillZoom is 1 when no baseHeight", () => {
-		vi.stubGlobal("innerWidth", 750);
-		vi.stubGlobal("innerHeight", 1334);
-
-		const game = createGame({ scale: "fill" });
-
+		// jsdom has no matchMedia by default → isMobile = false → fit path
+		expect(game.width).toBe(800);
+		expect(game.height).toBe(600);
+		expect(game.canvas.width).toBe(800);
+		expect(game.canvas.height).toBe(600);
+		expect(game.canvas.style.position).toBe("absolute");
 		expect(game.fillZoom).toBe(1);
 
 		vi.unstubAllGlobals();
 	});
 
-	it("game.resized signal fires on resize", () => {
-		vi.stubGlobal("innerWidth", 750);
-		vi.stubGlobal("innerHeight", 1334);
+	it("fill on desktop (fine pointer): behaves like fit", () => {
+		vi.stubGlobal("innerWidth", 1920);
+		vi.stubGlobal("innerHeight", 1080);
+		mockFinePointer();
 
-		const game = createGame({ scale: "fill", baseHeight: 240 });
-		const resizes: Array<{ width: number; height: number }> = [];
-		game.resized.connect((data) => resizes.push(data));
+		const game = createGame({ scale: "fill" });
 
-		// Initial construction fires resized once
-		// Now simulate a resize event
-		vi.stubGlobal("innerWidth", 1024);
-		vi.stubGlobal("innerHeight", 768);
-		window.dispatchEvent(new Event("resize"));
-
-		expect(resizes.length).toBeGreaterThanOrEqual(1);
-		const last = resizes[resizes.length - 1]!;
-		expect(last.width).toBe(1024);
-		expect(last.height).toBe(768);
-
-		// Verify game dimensions updated
-		expect(game.width).toBe(1024);
-		expect(game.height).toBe(768);
-		expect(game.fillZoom).toBeCloseTo(768 / 240, 5);
+		expect(game.width).toBe(800);
+		expect(game.height).toBe(600);
+		expect(game.canvas.style.position).toBe("absolute");
+		expect(game.fillZoom).toBe(1);
 
 		vi.unstubAllGlobals();
 	});
 
-	it("scale: 'fill' sets touch-action: none", () => {
+	it("fill on mobile (coarse pointer): keeps height, adjusts width", () => {
+		vi.stubGlobal("innerWidth", 667);
+		vi.stubGlobal("innerHeight", 375);
+		mockCoarsePointer();
+
+		const game = createGame({ scale: "fill" });
+
+		// Height stays at design value (600), width adapts to viewport aspect
+		expect(game.height).toBe(600);
+		expect(game.width).toBe(Math.round(600 * (667 / 375)));
+		expect(game.canvas.height).toBe(600);
+		expect(game.canvas.width).toBe(game.width);
+
+		// CSS fills viewport
+		expect(game.canvas.style.width).toBe("667px");
+		expect(game.canvas.style.height).toBe("375px");
+		expect(game.canvas.style.position).toBe("fixed");
+		expect(game.canvas.style.left).toBe("0px");
+		expect(game.canvas.style.top).toBe("0px");
+
+		// fillZoom = viewport height / design height
+		expect(game.fillZoom).toBeCloseTo(375 / 600, 5);
+
+		vi.unstubAllGlobals();
+	});
+
+	it("fill on mobile: resized signal fires on viewport resize", () => {
+		vi.stubGlobal("innerWidth", 667);
+		vi.stubGlobal("innerHeight", 375);
+		mockCoarsePointer();
+
+		const game = createGame({ scale: "fill" });
+		const resizes: Array<{ width: number; height: number }> = [];
+		game.resized.connect((data) => resizes.push(data));
+
+		// Simulate orientation change
+		vi.stubGlobal("innerWidth", 375);
+		vi.stubGlobal("innerHeight", 667);
+		window.dispatchEvent(new Event("resize"));
+
+		expect(resizes.length).toBeGreaterThanOrEqual(1);
+		const last = resizes[resizes.length - 1]!;
+		expect(last.height).toBe(600);
+		expect(last.width).toBe(Math.round(600 * (375 / 667)));
+		expect(game.width).toBe(last.width);
+		expect(game.height).toBe(600);
+
+		vi.unstubAllGlobals();
+	});
+
+	it("fill on desktop: resized signal does NOT fire", () => {
+		vi.stubGlobal("innerWidth", 1920);
+		vi.stubGlobal("innerHeight", 1080);
+
+		const game = createGame({ scale: "fill" });
+		const resizes: Array<{ width: number; height: number }> = [];
+		game.resized.connect((data) => resizes.push(data));
+
+		vi.stubGlobal("innerWidth", 1024);
+		vi.stubGlobal("innerHeight", 768);
+		window.dispatchEvent(new Event("resize"));
+
+		expect(resizes.length).toBe(0);
+
+		vi.unstubAllGlobals();
+	});
+
+	it("fill on mobile: sets touch-action: none", () => {
 		vi.stubGlobal("innerWidth", 750);
 		vi.stubGlobal("innerHeight", 1334);
+		mockCoarsePointer();
 
 		const game = createGame({ scale: "fill" });
 		expect(game.canvas.style.touchAction).toBe("none");

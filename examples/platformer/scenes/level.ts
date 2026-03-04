@@ -80,7 +80,7 @@ export abstract class Level extends Scene {
 		const camera = this.add(Camera);
 		camera.follow = this.player;
 		camera.smoothing = 0.1;
-		camera.autoZoom = true;
+		camera.zoom = 2;
 		camera.bounds = new Rect(0, 0, map.bounds.width, map.bounds.height);
 
 		// HUD (fixed layer, stays on screen)

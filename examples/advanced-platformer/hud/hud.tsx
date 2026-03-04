@@ -1,7 +1,6 @@
 import { Vec2 } from "@quintus/math";
 import { Sprite } from "@quintus/sprites";
 import { Label, Layer, ProgressBar } from "@quintus/ui";
-import { GAME_WIDTH } from "../config.js";
 import { FRAME, HUD_DIGITS, tileAtlas } from "../sprites.js";
 import { gameState } from "../state.js";
 
@@ -29,7 +28,7 @@ export class HUD extends Layer {
 			<>
 				<Label
 					ref="scoreLabel"
-					position={[GAME_WIDTH - 10, 12]}
+					position={[this.game.width - 10, 12]}
 					text={`Score: ${gameState.score}`}
 					fontSize={18}
 					color="#ffffff"
@@ -37,7 +36,7 @@ export class HUD extends Layer {
 				/>
 				<ProgressBar
 					ref="starBar"
-					position={[GAME_WIDTH / 2 - 80, 740]}
+					position={[this.game.width / 2 - 80, 740]}
 					width={160}
 					height={12}
 					maxValue={10}
@@ -108,7 +107,7 @@ export class HUD extends Layer {
 				texture: tileAtlas.texture,
 				sourceRect: tileAtlas.getFrameOrThrow(keyFrames[color]),
 				centered: false,
-				position: new Vec2(GAME_WIDTH - 150 + i * 36, 40),
+				position: new Vec2(this.game.width - 150 + i * 36, 40),
 				scale: new Vec2(0.5, 0.5),
 				visible: gameState.keys[color as keyof typeof gameState.keys],
 			});

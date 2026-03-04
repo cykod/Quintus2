@@ -1,6 +1,5 @@
 import { Scene } from "@quintus/core";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
-import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import { gameState } from "../state.js";
 
 /**
@@ -8,10 +7,10 @@ import { gameState } from "../state.js";
  */
 export class VictoryScene extends Scene {
 	override build() {
-		const cx = GAME_WIDTH / 2;
+		const cx = this.game.width / 2;
 		return (
 			<Layer fixed>
-				<Panel width={GAME_WIDTH} height={GAME_HEIGHT} backgroundColor="#0a1a0a" />
+				<Panel width={this.game.width} height={this.game.height} backgroundColor="#0a1a0a" />
 				<Label
 					position={[cx, 200]}
 					text="Victory!"
