@@ -598,3 +598,33 @@
 [IMPL] tue 3/3 3pm - Fix the flying gray spinning enemy in the advanced platformer to interact with the player
 
 [IMPL] tue 3/3 3pm - Implement Phase 7: Moving Platforms & Hazards for the advanced platformer
+
+[MILE] tue 3/3 3pm - Fixed saw hazard damage by introducing hazards collision group with onOverlap, and committed full enemy system with five enemy types and 25 tests
+
+[MILE] tue 3/3 4pm - Added moving platforms, spikes, and water zone hazards for advanced platformer Phase 7
+
+[IMPL] tue 3/3 4pm - Implement advanced platformer Phase 8: collectibles, power-ups, keys/locks
+
+[MILE] tue 3/3 5pm - Added collectibles, keys/locks, checkpoint flags, and door exits for advanced platformer Phase 8 with 18 new tests
+
+[IMPL] tue 3/3 5pm - Implement Phase 9: Parallax Backgrounds & Camera for advanced platformer
+
+[IMPL] tue 3/3 6pm - Implement Phase 10: HUD, Menus & Audio for the advanced platformer
+
+[MILE] tue 3/3 7pm - Added 4-layer parallax scrolling backgrounds to advanced platformer (Phase 9)
+
+[MILE] tue 3/3 7pm - Added HUD, menu scenes, and audio polish for advanced platformer Phase 10
+
+[IMPL] tue 3/3 7pm - Refactor enemy spawning to use enemies.xml tilesheet as a Tiled enemy layer in level1.tmx instead of object-layer spawning
+
+[IMPL] tue 3/3 7pm - Implement Phase 11: Level Design (3 Levels in Tiled)
+
+[MILE] tue 3/3 7pm - Spawned enemies from TMX tile layer with enemies-tileset.tsx instead of hardcoded positions in the advanced-platformer
+
+[IMPL] tue 3/3 7pm - Implement Phase 11 (Level Design — 3 levels in Tiled) for the advanced platformer
+
+[MILE] tue 3/3 9pm - Added 3-level progression to advanced platformer with BaseLevelScene extraction, themed levels (Grasslands, Desert Ruins, Dark Fortress), and full level transition system
+
+[ASKS] tue 3/3 9pm - Test all 3 levels of the advanced platformer using qdbg after completing Phase 11 level design
+
+[IMPL] wed 3/4 1am - Implement Phase 12 tests and polish for advanced platformer

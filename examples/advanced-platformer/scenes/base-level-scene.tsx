@@ -206,8 +206,8 @@ export abstract class BaseLevelScene extends Scene {
 				return;
 			}
 
-			// Stomp: player above and falling
-			if (info.normal.y < 0 && p.velocity.y > 0) {
+			// Stomp: player above the enemy (normal points up into player)
+			if (info.normal.y < 0) {
 				if (e instanceof Snail) {
 					e.direction = Math.sign(e.position.x - p.position.x) || 1;
 				}
@@ -235,6 +235,9 @@ export abstract class BaseLevelScene extends Scene {
 		} else {
 			this.player.position = this.map.getSpawnPoint("player_start");
 		}
+
+		// Set fall-death boundary below the map bottom
+		this.player.fallDeathY = this.map.bounds.height + 200;
 
 		// ── Wire player death → game-over or respawn ────────────────
 		this.player.died.connect(() => {

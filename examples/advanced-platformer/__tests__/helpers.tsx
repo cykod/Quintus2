@@ -599,8 +599,8 @@ export class EnemyArena extends Scene {
 				return;
 			}
 
-			// Stomp: player above and falling
-			if (info.normal.y < 0 && p.velocity.y > 0) {
+			// Stomp: player above the enemy (normal points up into player)
+			if (info.normal.y < 0) {
 				// For snails, set kick direction based on relative position
 				if (e instanceof Snail) {
 					e.direction = Math.sign(e.position.x - p.position.x) || 1;

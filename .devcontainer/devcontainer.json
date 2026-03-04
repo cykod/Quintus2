@@ -15,6 +15,9 @@
 		"IS_SANDBOX": "1",
 		"DEVCONTAINER": "1"
 	},
+	"mounts": [
+		"source=${localEnv:HOME}/.claude/skills,target=/root/.claude/skills,type=bind,readonly"
+	],
 	"forwardPorts": [3050],
 	"portsAttributes": {
 		"3050": {

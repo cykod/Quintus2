@@ -164,7 +164,7 @@ describe("Player", () => {
 		result.game.stop();
 	});
 
-	it("fall death when position.y > 800", async () => {
+	it("fall death when position.y > fallDeathY", async () => {
 		const result = await runArena(undefined, 0.1);
 		const player = result.game.currentScene?.findByType(Player);
 		expect(player).toBeDefined();
@@ -175,7 +175,7 @@ describe("Player", () => {
 		});
 
 		// Move player below the death threshold
-		player!.position.y = 801;
+		player!.position.y = player!.fallDeathY + 1;
 		// Advance a frame so onFixedUpdate fires
 		result.game.step();
 		expect(didDie).toBe(true);

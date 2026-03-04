@@ -22,6 +22,9 @@ export class Player extends DamageableActor {
 	override floorMaxAngle = Math.PI / 4 + 0.15;
 	override floorSnapLength = 32;
 
+	/** Y position below which the player dies from falling. Set by the level scene. */
+	fallDeathY = 2000;
+
 	private _canDoubleJump = false;
 	private _facing: "left" | "right" = "right";
 	private _isClimbing = false;
@@ -120,7 +123,7 @@ export class Player extends DamageableActor {
 		this._updateAnimation();
 
 		// Fall death
-		if (this.position.y > 800 && !this.isDead()) {
+		if (this.position.y > this.fallDeathY && !this.isDead()) {
 			this.takeDamage(this.health);
 		}
 	}

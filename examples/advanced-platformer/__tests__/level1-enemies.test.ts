@@ -5,8 +5,7 @@ import { Saw } from "../entities/enemies/saw.js";
 import { Slime } from "../entities/enemies/slime.js";
 import { Snail } from "../entities/enemies/snail.js";
 import { Player } from "../entities/player.js";
-import { Level1Scene } from "../scenes/test-scene.js";
-import { ENEMY_TILE_IDS } from "../scenes/test-scene.js";
+import { ENEMY_TILE_IDS, Level1Scene } from "../scenes/test-scene.js";
 import { runSceneWithMaps } from "./helpers.js";
 
 describe("Level1Scene — tile-layer enemy spawning", () => {

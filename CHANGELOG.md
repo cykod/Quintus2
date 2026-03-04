@@ -1,3 +1,15 @@
+## Fix fall-death boundary and stomp detection, clean up docs
+*Wednesday, March 4th at 3pm*
+Made the player's fall-death threshold configurable via a fallDeathY property 
+instead of a hardcoded 800px cutoff, with each level scene setting it from the 
+map bounds plus a 200px buffer. Fixed stomp detection by removing the 
+requirement that the player must be falling (velocity.y > 0) — now any 
+collision where the player is above the enemy counts as a stomp, which fixes 
+edge cases on slopes and at the apex of jumps. Also cleaned up old walkthrough 
+documentation directories and added a skills bind mount to the devcontainer.
+
+---
+
 ## Add 3-level progression to advanced platformer (Phase 11)
 *Tuesday, March 3rd at 9pm*
 Extract shared level logic into BaseLevelScene and create three themed levels 
