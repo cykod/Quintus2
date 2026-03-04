@@ -151,8 +151,8 @@ const baseOnDraw = Node2D.prototype.onDraw;
 export class Canvas2DRenderer implements Renderer {
 	private readonly ctx: CanvasRenderingContext2D;
 	private readonly drawContext: Canvas2DDrawContext;
-	private readonly gameWidth: number;
-	private readonly gameHeight: number;
+	private gameWidth: number;
+	private gameHeight: number;
 	private readonly backgroundColor: string;
 	private readonly pixelArt: boolean;
 
@@ -198,6 +198,16 @@ export class Canvas2DRenderer implements Renderer {
 
 	get renderListDirty(): boolean {
 		return this._renderListDirty;
+	}
+
+	/** Update cached dimensions after canvas resize. */
+	resize(width: number, height: number): void {
+		this.gameWidth = width;
+		this.gameHeight = height;
+		if (this.pixelArt) {
+			this.ctx.imageSmoothingEnabled = false;
+		}
+		this._renderListDirty = true;
 	}
 
 	/** Clear the canvas and render the entire scene tree. */

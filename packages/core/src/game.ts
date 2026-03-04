@@ -24,7 +24,7 @@ export interface GameOptions {
 	/** Canvas height in pixels. */
 	height: number;
 	/** How to fit the canvas to the page. Default: "fixed". */
-	scale?: "fit" | "fixed";
+	scale?: "fit" | "fixed" | "fill";
 	/** Enable pixel-art rendering (disables image smoothing). Default: false. */
 	pixelArt?: boolean;
 	/** Canvas background color. Default: "#000000". */
@@ -39,12 +39,24 @@ export interface GameOptions {
 	renderer?: Renderer | null;
 	/** Start in debug mode (paused, bridge exposed). Default: auto-detect from ?debug URL param. */
 	debug?: boolean;
+	/**
+	 * Reference world-view height for `scale: "fill"`.
+	 * Used to compute `game.fillZoom = canvasHeight / baseHeight`.
+	 * Only meaningful when scale is "fill". Ignored otherwise.
+	 */
+	baseHeight?: number;
 }
 
 export class Game {
 	// === Config ===
-	readonly width: number;
-	readonly height: number;
+	private _width: number;
+	private _height: number;
+	get width(): number {
+		return this._width;
+	}
+	get height(): number {
+		return this._height;
+	}
 	readonly canvas: HTMLCanvasElement;
 	readonly pixelArt: boolean;
 	readonly backgroundColor: string;
@@ -83,9 +95,20 @@ export class Game {
 	readonly postFixedUpdate: Signal<number> = signal<number>();
 	readonly postUpdate: Signal<number> = signal<number>();
 
+	/** Fires after canvas dimensions change (fill mode resize). */
+	readonly resized: Signal<{ width: number; height: number }> = signal();
+
+	/** Recommended camera zoom for fill mode. 1 if not in fill mode. */
+	get fillZoom(): number {
+		return this._fillZoom;
+	}
+	private _fillZoom = 1;
+	private _baseHeight: number | undefined;
+
 	constructor(options: GameOptions) {
-		this.width = options.width;
-		this.height = options.height;
+		this._width = options.width;
+		this._height = options.height;
+		this._baseHeight = options.baseHeight;
 		this.pixelArt = options.pixelArt ?? false;
 		this.backgroundColor = options.backgroundColor ?? "#000000";
 		this.fixedDeltaTime = options.fixedDeltaTime ?? 1 / 60;
@@ -417,13 +440,56 @@ export class Game {
 	}
 
 	/** Set up CSS-based canvas scaling. */
-	private _setupScaling(mode: "fit" | "fixed"): void {
+	private _setupScaling(mode: "fit" | "fixed" | "fill"): void {
 		if (mode === "fixed") return;
 
 		const canvas = this.canvas;
-		const aspect = this.width / this.height;
-
 		canvas.style.touchAction = "none";
+
+		if (mode === "fill") {
+			const resize = () => {
+				const vw = window.innerWidth;
+				const vh = window.innerHeight;
+
+				// Set canvas to exact viewport pixel dimensions
+				this._width = vw;
+				this._height = vh;
+				canvas.width = vw;
+				canvas.height = vh;
+
+				// CSS fills viewport with no transform
+				canvas.style.width = "100vw";
+				canvas.style.height = "100vh";
+				canvas.style.position = "fixed";
+				canvas.style.left = "0";
+				canvas.style.top = "0";
+
+				// Compute recommended zoom
+				if (this._baseHeight) {
+					this._fillZoom = vh / this._baseHeight;
+				}
+
+				// Re-apply pixel-art smoothing (canvas resize resets context state)
+				if (this.pixelArt) {
+					const ctx = canvas.getContext("2d");
+					if (ctx) ctx.imageSmoothingEnabled = false;
+				}
+
+				// Update renderer's cached dimensions
+				this.renderer?.resize?.(vw, vh);
+
+				// Notify listeners
+				this.resized.emit({ width: vw, height: vh });
+			};
+
+			resize();
+			window.addEventListener("resize", resize);
+			window.addEventListener("orientationchange", () => setTimeout(resize, 100));
+			this.stopped.connect(() => window.removeEventListener("resize", resize));
+			return;
+		}
+
+		const aspect = this._width / this._height;
 
 		const resize = () => {
 			const vw = window.innerWidth;

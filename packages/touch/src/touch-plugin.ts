@@ -163,6 +163,12 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 				});
 			}
 
+			// --- Resize Hook (fill mode) ---
+			game.resized.connect(() => {
+				_destroyOverlay(state);
+				_createOverlay(game, state);
+			});
+
 			// --- Scene Switch Hook ---
 			game.sceneSwitched.connect(() => {
 				_destroyOverlay(state);

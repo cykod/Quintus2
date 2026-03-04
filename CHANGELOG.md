@@ -1,3 +1,16 @@
+## Add mobile enhancements: touch slide fix and fill scaling mode
+*Wednesday, March 4th at 6pm*
+Fix touch overlay dead-zone tracking so fingers can slide between virtual 
+buttons via dead zones without losing pointer tracking. Add scale:"fill" mode 
+that sets the canvas to exact viewport pixel dimensions with camera autoZoom 
+for responsive mobile display. The fill mode exposes game.fillZoom 
+(viewportHeight/baseHeight), a resized signal, renderer resize support, and 
+automatic touch overlay rebuilding on resize. Both platformer examples updated 
+to use fill mode. Includes 25 new tests across touch, core, camera, and plugin 
+packages (2050 total, all passing).
+
+---
+
 ## Add integration tests and visual polish (Phase 12)
 *Wednesday, March 4th at 5pm*
 Complete Phase 12 of the advanced platformer with 6 integration tests (entity 

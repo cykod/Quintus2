@@ -765,6 +765,35 @@ describe("Canvas2DRenderer (pipeline edge cases)", () => {
 	});
 });
 
+// ─── Resize ──────────────────────────────────────────────────────────────────
+
+describe("Canvas2DRenderer resize()", () => {
+	it("updates dimensions and marks render dirty", () => {
+		const { renderer } = createTestSetup();
+		renderer.render(createTestSetup().scene); // clear dirty flag
+		expect(renderer.renderListDirty).toBe(false);
+
+		renderer.resize(1024, 768);
+
+		expect(renderer.renderListDirty).toBe(true);
+	});
+
+	it("re-applies imageSmoothingEnabled=false for pixelArt", () => {
+		const canvas = document.createElement("canvas");
+		canvas.width = 200;
+		canvas.height = 200;
+		const assets = new AssetLoader();
+		const renderer = new Canvas2DRenderer(canvas, 200, 200, "#000000", assets, true);
+
+		const ctx = canvas.getContext("2d")!;
+		// Simulate canvas reset
+		ctx.imageSmoothingEnabled = true;
+
+		renderer.resize(400, 300);
+		expect(ctx.imageSmoothingEnabled).toBe(false);
+	});
+});
+
 // ─── Y-Sort Rendering ────────────────────────────────────────────────────────
 
 describe("Canvas2DRenderer (Y-Sort)", () => {

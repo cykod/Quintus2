@@ -1,6 +1,6 @@
 import { Game, Node2D, Scene } from "@quintus/core";
 import { Rect, Vec2 } from "@quintus/math";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Camera } from "./camera.js";
 
 function createGame(width = 320, height = 240): Game {
@@ -455,6 +455,143 @@ describe("Camera", () => {
 			const rect = camera.visibleRect;
 			expect(rect.width).toBe(160);
 			expect(rect.height).toBe(120);
+		});
+	});
+
+	describe("autoZoom", () => {
+		it("sets zoom to fillZoom on enter tree", () => {
+			const game = new Game({
+				width: 320,
+				height: 240,
+				canvas: document.createElement("canvas"),
+				renderer: null,
+				seed: 42,
+				scale: "fill",
+				baseHeight: 240,
+			});
+
+			let camera!: Camera;
+			class TestScene2 extends Scene {
+				onReady() {
+					camera = new Camera();
+					camera.autoZoom = true;
+					this.add(camera);
+				}
+			}
+			game.start(TestScene2);
+
+			expect(camera.zoom).toBe(game.fillZoom);
+		});
+
+		it("updates zoom when game.resized fires", () => {
+			vi.stubGlobal("innerWidth", 800);
+			vi.stubGlobal("innerHeight", 600);
+
+			const game = new Game({
+				width: 800,
+				height: 600,
+				canvas: document.createElement("canvas"),
+				renderer: null,
+				seed: 42,
+				scale: "fill",
+				baseHeight: 240,
+			});
+
+			let camera!: Camera;
+			class TestScene extends Scene {
+				onReady() {
+					camera = new Camera();
+					camera.autoZoom = true;
+					this.add(camera);
+				}
+			}
+			game.start(TestScene);
+
+			const initialZoom = camera.zoom;
+			expect(initialZoom).toBeCloseTo(600 / 240, 5);
+
+			// Simulate resize
+			vi.stubGlobal("innerWidth", 1024);
+			vi.stubGlobal("innerHeight", 768);
+			window.dispatchEvent(new Event("resize"));
+
+			expect(camera.zoom).toBeCloseTo(768 / 240, 5);
+
+			vi.unstubAllGlobals();
+		});
+
+		it("does not change zoom when autoZoom is false (default)", () => {
+			vi.stubGlobal("innerWidth", 800);
+			vi.stubGlobal("innerHeight", 600);
+
+			const game = new Game({
+				width: 800,
+				height: 600,
+				canvas: document.createElement("canvas"),
+				renderer: null,
+				seed: 42,
+				scale: "fill",
+				baseHeight: 240,
+			});
+
+			let camera!: Camera;
+			class TestScene extends Scene {
+				onReady() {
+					camera = new Camera();
+					camera.zoom = 2;
+					this.add(camera);
+				}
+			}
+			game.start(TestScene);
+
+			// Simulate resize — zoom should not change
+			vi.stubGlobal("innerWidth", 1024);
+			vi.stubGlobal("innerHeight", 768);
+			window.dispatchEvent(new Event("resize"));
+
+			expect(camera.zoom).toBe(2);
+
+			vi.unstubAllGlobals();
+		});
+
+		it("cleans up resize listener on exit tree", () => {
+			vi.stubGlobal("innerWidth", 800);
+			vi.stubGlobal("innerHeight", 600);
+
+			const game = new Game({
+				width: 800,
+				height: 600,
+				canvas: document.createElement("canvas"),
+				renderer: null,
+				seed: 42,
+				scale: "fill",
+				baseHeight: 240,
+			});
+
+			let camera!: Camera;
+			class TestScene extends Scene {
+				onReady() {
+					camera = new Camera();
+					camera.autoZoom = true;
+					this.add(camera);
+				}
+			}
+			game.start(TestScene);
+
+			const zoomAfterAdd = camera.zoom;
+
+			// Remove camera from tree
+			camera.destroy();
+			game.step(); // process destroy
+
+			// Resize should not update zoom anymore
+			vi.stubGlobal("innerWidth", 1024);
+			vi.stubGlobal("innerHeight", 768);
+			window.dispatchEvent(new Event("resize"));
+
+			expect(camera.zoom).toBe(zoomAfterAdd);
+
+			vi.unstubAllGlobals();
 		});
 	});
 

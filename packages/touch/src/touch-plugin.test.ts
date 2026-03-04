@@ -1,7 +1,7 @@
 import { Game, type GameOptions, Scene } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { Vec2 } from "@quintus/math";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { TouchOverlay } from "./touch-overlay.js";
 import { getTouchState, type TouchLayout, TouchPlugin } from "./touch-plugin.js";
 import { VirtualButton } from "./virtual-button.js";
@@ -225,6 +225,51 @@ describe("TouchPlugin lifecycle", () => {
 		// Don't start any scene
 		const state = getTouchState(game)!;
 		expect(state.overlay).toBeNull();
+	});
+
+	it("rebuilds overlay on game.resized", () => {
+		vi.stubGlobal("innerWidth", 800);
+		vi.stubGlobal("innerHeight", 600);
+
+		const canvas = document.createElement("canvas");
+		const game = new Game({
+			width: 800,
+			height: 600,
+			canvas,
+			renderer: null,
+			scale: "fill",
+			baseHeight: 240,
+		});
+		game.use(InputPlugin({ actions: {} }));
+
+		let callCount = 0;
+		const layout = {
+			createControls: () => {
+				callCount++;
+				return [];
+			},
+		};
+
+		game.start(Scene);
+		game.use(TouchPlugin({ layout, visible: true }));
+
+		const initialCount = callCount;
+		const state = getTouchState(game)!;
+		const firstOverlay = state.overlay;
+
+		// Simulate resize
+		vi.stubGlobal("innerWidth", 1024);
+		vi.stubGlobal("innerHeight", 768);
+		window.dispatchEvent(new Event("resize"));
+
+		// createControls should have been called again
+		expect(callCount).toBe(initialCount + 1);
+		// Old overlay destroyed, new one created
+		expect(firstOverlay!.isDestroyed).toBe(true);
+		expect(state.overlay).not.toBeNull();
+
+		game.stop();
+		vi.unstubAllGlobals();
 	});
 
 	it("cleans up all resources on game.stop()", () => {

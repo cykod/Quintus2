@@ -9,7 +9,7 @@ import type { VirtualControl } from "./virtual-control.js";
  */
 export class TouchOverlay extends Node2D {
 	readonly controls: VirtualControl[] = [];
-	private _pointers = new Map<number, VirtualControl>();
+	private _pointers = new Map<number, VirtualControl | null>();
 
 	private _onPointerDown: ((e: PointerEvent) => void) | null = null;
 	private _onPointerMove: ((e: PointerEvent) => void) | null = null;
@@ -48,22 +48,24 @@ export class TouchOverlay extends Node2D {
 
 		this._onPointerMove = (e: PointerEvent) => {
 			if (e.pointerType !== "touch") return;
-			const current = this._pointers.get(e.pointerId);
-			if (!current) return;
+			if (!this._pointers.has(e.pointerId)) return;
+			const current = this._pointers.get(e.pointerId) ?? null;
 			const pos = this._toLocal(e);
 
-			// If pointer is still inside the current control, forward the move
-			if (current.containsPoint(pos.x, pos.y)) {
-				current._onTouchMove(pos.x, pos.y);
-				e.stopImmediatePropagation();
-				e.preventDefault();
-				return;
+			if (current !== null) {
+				// If pointer is still inside the current control, forward the move
+				if (current.containsPoint(pos.x, pos.y)) {
+					current._onTouchMove(pos.x, pos.y);
+					e.stopImmediatePropagation();
+					e.preventDefault();
+					return;
+				}
+
+				// Pointer slid outside current control — release it
+				current._onTouchEnd();
 			}
 
-			// Pointer slid outside current control — release it
-			current._onTouchEnd();
-
-			// Check if pointer entered a different control
+			// Check if pointer entered a (different) control
 			for (const control of this.controls) {
 				if (control !== current && control.containsPoint(pos.x, pos.y)) {
 					this._pointers.set(e.pointerId, control);
@@ -74,17 +76,17 @@ export class TouchOverlay extends Node2D {
 				}
 			}
 
-			// Pointer is in dead zone — untrack it
-			this._pointers.delete(e.pointerId);
+			// Pointer is in dead zone — keep tracking with null
+			this._pointers.set(e.pointerId, null);
 			e.stopImmediatePropagation();
 			e.preventDefault();
 		};
 
 		this._onPointerUp = (e: PointerEvent) => {
 			if (e.pointerType !== "touch") return;
-			const control = this._pointers.get(e.pointerId);
-			if (!control) return;
-			control._onTouchEnd();
+			if (!this._pointers.has(e.pointerId)) return;
+			const control = this._pointers.get(e.pointerId) ?? null;
+			if (control !== null) control._onTouchEnd();
 			this._pointers.delete(e.pointerId);
 			e.stopImmediatePropagation();
 			e.preventDefault();
@@ -92,9 +94,9 @@ export class TouchOverlay extends Node2D {
 
 		this._onPointerCancel = (e: PointerEvent) => {
 			if (e.pointerType !== "touch") return;
-			const control = this._pointers.get(e.pointerId);
-			if (!control) return;
-			control._onTouchEnd();
+			if (!this._pointers.has(e.pointerId)) return;
+			const control = this._pointers.get(e.pointerId) ?? null;
+			if (control !== null) control._onTouchEnd();
 			this._pointers.delete(e.pointerId);
 			e.stopImmediatePropagation();
 			e.preventDefault();

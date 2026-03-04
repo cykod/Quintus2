@@ -107,7 +107,7 @@ export abstract class BaseLevelScene extends Scene {
 				</ParallaxBackground>
 				<TileMap ref="map" tilesetImage="tiles" asset={this.tmxAsset} />
 				<Player ref="player" />
-				<Camera follow="$player" smoothing={0.08} offset={[0, -30]} zoom={1} />
+				<Camera follow="$player" smoothing={0.08} offset={[0, -30]} autoZoom />
 				<HUD />
 			</>
 		);

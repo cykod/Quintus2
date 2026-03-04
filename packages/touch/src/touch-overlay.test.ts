@@ -317,6 +317,161 @@ describe("TouchOverlay", () => {
 		expect(input.isPressed("jump")).toBe(true);
 	});
 
+	it("sliding from dead zone onto a button activates it", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump) at (700, 500)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Slide to dead zone
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 100, clientY: 100, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+
+		// Slide from dead zone onto button B (fire)
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 700, clientY: 400, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("fire")).toBe(true);
+	});
+
+	it("sliding from dead zone back onto original button re-activates it", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Slide to dead zone
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 100, clientY: 100, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+
+		// Slide back onto button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+	});
+
+	it("rapid slide across three controls", () => {
+		const { game, input, scene } = setup();
+		const canvas = game.canvas;
+
+		// Add a third button
+		const btnC = new VirtualButton({
+			position: new Vec2(700, 300),
+			radius: 30,
+			action: "fire",
+			label: "C",
+		});
+		// Override action to a distinct one — use "fire" for btnB
+		// btnA = jump at (700,500), btnB = fire at (700,400), btnC = fire at (700,300)
+		// We'll test transitions: A → dead zone → B → dead zone → C
+		scene.overlay.addControl(btnC);
+
+		// Touch down on button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Slide to dead zone between A and B
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 700, clientY: 450, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+
+		// Slide to button B (fire)
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 700, clientY: 400, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("fire")).toBe(true);
+	});
+
+	it("pointer in dead zone still tracked for pointermove", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+
+		// Slide to dead zone
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 100, clientY: 100, pointerId: 1 }),
+		);
+
+		// Move further in dead zone — should not throw, event should still be consumed
+		const moveEvent = makePointerEvent("pointermove", {
+			clientX: 200,
+			clientY: 200,
+			pointerId: 1,
+		});
+		const stopSpy = vi.spyOn(moveEvent, "stopImmediatePropagation");
+		canvas.dispatchEvent(moveEvent);
+		expect(stopSpy).toHaveBeenCalled();
+	});
+
+	it("pointerup in dead zone cleans up without error", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on button A (jump)
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Slide to dead zone
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 100, clientY: 100, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+
+		// Pointer up in dead zone — should not throw
+		const upEvent = makePointerEvent("pointerup", {
+			clientX: 100,
+			clientY: 100,
+			pointerId: 1,
+		});
+		const stopSpy = vi.spyOn(upEvent, "stopImmediatePropagation");
+		canvas.dispatchEvent(upEvent);
+		expect(stopSpy).toHaveBeenCalled();
+
+		// Subsequent move should not be tracked
+		const moveEvent = makePointerEvent("pointermove", {
+			clientX: 700,
+			clientY: 500,
+			pointerId: 1,
+		});
+		const moveStopSpy = vi.spyOn(moveEvent, "stopImmediatePropagation");
+		canvas.dispatchEvent(moveEvent);
+		expect(moveStopSpy).not.toHaveBeenCalled();
+	});
+
 	it("clears pointer tracking on exit tree", () => {
 		const { game, input, scene } = setup();
 		const canvas = game.canvas;

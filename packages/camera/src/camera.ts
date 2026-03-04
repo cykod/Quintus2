@@ -1,4 +1,4 @@
-import type { CameraSnapshot, Node2D } from "@quintus/core";
+import type { CameraSnapshot, Node2D, SignalConnection } from "@quintus/core";
 import { Node, type Signal, signal } from "@quintus/core";
 import { clamp, Matrix2D, Rect, Vec2 } from "@quintus/math";
 
@@ -32,6 +32,11 @@ export class Camera extends Node {
 
 	/** When true, zoom snaps to nearest integer. */
 	pixelPerfectZoom = false;
+
+	/** When true, auto-set zoom from game.fillZoom on resize. */
+	autoZoom = false;
+
+	private _resizeCleanup: SignalConnection | null = null;
 
 	// === Bounds ===
 
@@ -145,6 +150,20 @@ export class Camera extends Node {
 	}
 
 	// === Lifecycle ===
+
+	override onEnterTree(): void {
+		if (this.autoZoom) {
+			this.zoom = this.game.fillZoom;
+			this._resizeCleanup = this.game.resized.connect(() => {
+				this.zoom = this.game.fillZoom;
+			});
+		}
+	}
+
+	override onExitTree(): void {
+		this._resizeCleanup?.disconnect();
+		this._resizeCleanup = null;
+	}
 
 	onUpdate(dt: number): void {
 		// Check if follow target is destroyed
