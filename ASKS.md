@@ -628,3 +628,15 @@
 [ASKS] tue 3/3 9pm - Test all 3 levels of the advanced platformer using qdbg after completing Phase 11 level design
 
 [IMPL] wed 3/4 1am - Implement Phase 12 tests and polish for advanced platformer
+
+[MILE] wed 3/4 3pm - Fixed fall-death boundary and stomp detection, cleaned up old walkthrough docs
+
+[MILE] wed 3/4 5pm - Added integration tests and visual polish to complete all 12 phases of the advanced platformer
+
+[DSGN] wed 3/4 5pm - Design mobile enhancements: multitouch sliding buttons and opt-in fullscreen mode
+
+[IMPL] wed 3/4 5pm - Implement mobile enhancements: multitouch sliding fix, fill scaling mode, and enable in platformer examples
+
+[MILE] wed 3/4 6pm - Added mobile enhancements: fixed touch overlay dead-zone slide tracking and implemented fill scaling mode with camera autoZoom
+
+[MILE] wed 3/4 8pm - Reworked fill mode with responsive scaling: desktop uses letterboxed fit, mobile keeps constant height with adjusted width, removed baseHeight, updated UI positioning in both platformer examples

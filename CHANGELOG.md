@@ -1,3 +1,14 @@
+## Fix iOS touch selection and button slide switching
+*Thursday, March 5th at 11pm*
+Fix two iOS mobile touch bugs. First, prevent long-press canvas selection by 
+adding user-select/webkit-touch-callout CSS, contextmenu prevention, and 
+touchstart preventDefault in scroll-lock. Second, fix sliding between adjacent 
+directional buttons with overlapping hit zones by rewriting touch-overlay's 
+_onPointerMove to use nearest-control-by-distance matching instead of 
+stick-with-current logic. Added 5 new tests covering both fixes.
+
+---
+
 ## Rework fill mode: responsive scaling for desktop + mobile
 *Wednesday, March 4th at 8pm*
 Rewrote the scale: "fill" implementation to use responsive width with constant 

@@ -472,6 +472,63 @@ describe("TouchOverlay", () => {
 		expect(moveStopSpy).not.toHaveBeenCalled();
 	});
 
+	it("sliding between adjacent buttons with overlapping hit zones switches control", () => {
+		const game = createGame();
+		game.use(InputPlugin({ actions: { move_left: ["KeyA"], move_right: ["KeyD"] } }));
+		const input = getInput(game)!;
+
+		class OverlapScene extends Scene {
+			overlay!: TouchOverlay;
+			override onReady() {
+				this.overlay = new TouchOverlay();
+				this.add(this.overlay);
+				// Two buttons 50px apart, radius 30, generous = 39. Zones overlap.
+				this.overlay.addControl(
+					new VirtualButton({
+						position: new Vec2(100, 500),
+						radius: 30,
+						action: "move_left",
+						label: "L",
+					}),
+				);
+				this.overlay.addControl(
+					new VirtualButton({
+						position: new Vec2(150, 500),
+						radius: 30,
+						action: "move_right",
+						label: "R",
+					}),
+				);
+			}
+		}
+
+		game.start(OverlapScene);
+		const canvas = game.canvas;
+
+		// Touch down on left button center
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 100, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_left")).toBe(true);
+		expect(input.isPressed("move_right")).toBe(false);
+
+		// Slide to midpoint (125, 500) — overlap zone, but closer to right button
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 126, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_left")).toBe(false);
+		expect(input.isPressed("move_right")).toBe(true);
+
+		// Slide to right button center
+		canvas.dispatchEvent(
+			makePointerEvent("pointermove", { clientX: 150, clientY: 500, pointerId: 1 }),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
+	});
+
 	it("clears pointer tracking on exit tree", () => {
 		const { game, input, scene } = setup();
 		const canvas = game.canvas;

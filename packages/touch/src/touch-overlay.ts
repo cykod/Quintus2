@@ -52,32 +52,39 @@ export class TouchOverlay extends Node2D {
 			const current = this._pointers.get(e.pointerId) ?? null;
 			const pos = this._toLocal(e);
 
-			if (current !== null) {
-				// If pointer is still inside the current control, forward the move
-				if (current.containsPoint(pos.x, pos.y)) {
-					current._onTouchMove(pos.x, pos.y);
-					e.stopImmediatePropagation();
-					e.preventDefault();
-					return;
-				}
-
-				// Pointer slid outside current control — release it
-				current._onTouchEnd();
-			}
-
-			// Check if pointer entered a (different) control
+			// Find the nearest control whose hit zone contains the point
+			let nearest: VirtualControl | null = null;
+			let nearestDist = Infinity;
 			for (const control of this.controls) {
-				if (control !== current && control.containsPoint(pos.x, pos.y)) {
-					this._pointers.set(e.pointerId, control);
-					control._onTouchStart(pos.x, pos.y);
-					e.stopImmediatePropagation();
-					e.preventDefault();
-					return;
+				if (control.containsPoint(pos.x, pos.y)) {
+					const dx = pos.x - control.position.x;
+					const dy = pos.y - control.position.y;
+					const dist = dx * dx + dy * dy;
+					if (dist < nearestDist) {
+						nearest = control;
+						nearestDist = dist;
+					}
 				}
 			}
 
-			// Pointer is in dead zone — keep tracking with null
-			this._pointers.set(e.pointerId, null);
+			if (nearest === current) {
+				// Same control (or both null) — forward move if active
+				if (current !== null) {
+					current._onTouchMove(pos.x, pos.y);
+				}
+				e.stopImmediatePropagation();
+				e.preventDefault();
+				return;
+			}
+
+			// Control changed — release old, activate new
+			if (current !== null) current._onTouchEnd();
+			if (nearest !== null) {
+				this._pointers.set(e.pointerId, nearest);
+				nearest._onTouchStart(pos.x, pos.y);
+			} else {
+				this._pointers.set(e.pointerId, null);
+			}
 			e.stopImmediatePropagation();
 			e.preventDefault();
 		};

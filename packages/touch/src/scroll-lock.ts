@@ -7,6 +7,11 @@ export function lockScroll(canvas: HTMLCanvasElement): () => void {
 	// Prevent canvas touch from scrolling
 	canvas.style.touchAction = "none";
 
+	// Prevent iOS text selection and callout on canvas
+	canvas.style.userSelect = "none";
+	(canvas.style as unknown as Record<string, string>).webkitUserSelect = "none";
+	(canvas.style as unknown as Record<string, string>).webkitTouchCallout = "none";
+
 	// Preserve originals for cleanup
 	const origOverflow = document.body.style.overflow;
 	const origPosition = document.body.style.position;
@@ -20,19 +25,38 @@ export function lockScroll(canvas: HTMLCanvasElement): () => void {
 	document.body.style.height = "100%";
 
 	// Block touchmove on document (prevents pull-to-refresh, rubber-banding)
-	const prevent = (e: TouchEvent) => {
+	const preventTouchMove = (e: TouchEvent) => {
 		if (e.target === canvas || canvas.contains(e.target as Node)) {
 			e.preventDefault();
 		}
 	};
-	document.addEventListener("touchmove", prevent, { passive: false });
+	document.addEventListener("touchmove", preventTouchMove, { passive: false });
+
+	// Block contextmenu on canvas (prevents iOS long-press menu)
+	const preventContext = (e: Event) => {
+		e.preventDefault();
+	};
+	canvas.addEventListener("contextmenu", preventContext);
+
+	// Block touchstart default on canvas (prevents iOS selection gesture)
+	const preventTouchStart = (e: TouchEvent) => {
+		if (e.target === canvas || canvas.contains(e.target as Node)) {
+			e.preventDefault();
+		}
+	};
+	document.addEventListener("touchstart", preventTouchStart, { passive: false });
 
 	return () => {
 		canvas.style.touchAction = "";
+		canvas.style.userSelect = "";
+		(canvas.style as unknown as Record<string, string>).webkitUserSelect = "";
+		(canvas.style as unknown as Record<string, string>).webkitTouchCallout = "";
 		document.body.style.overflow = origOverflow;
 		document.body.style.position = origPosition;
 		document.body.style.width = origWidth;
 		document.body.style.height = origHeight;
-		document.removeEventListener("touchmove", prevent);
+		document.removeEventListener("touchmove", preventTouchMove);
+		canvas.removeEventListener("contextmenu", preventContext);
+		document.removeEventListener("touchstart", preventTouchStart);
 	};
 }
