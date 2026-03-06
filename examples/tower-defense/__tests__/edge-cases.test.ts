@@ -1,4 +1,4 @@
-import { WaveSpawner } from "@quintus/ai-prefabs";
+import { WaveSpawner } from "@quintus/prefabs";
 import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { describe, expect, it } from "vitest";

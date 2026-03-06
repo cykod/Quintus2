@@ -72,7 +72,7 @@ packages/
   headless/      @quintus/headless    ~5KB  — Node.js runtime, no browser
   test/          @quintus/test        ~8KB  — TestRunner, InputScript, assertions, scenarios
   snapshot/      @quintus/snapshot    ~4KB  — State serialization, filmstrip, visual diff
-  ai-prefabs/    @quintus/ai-prefabs  ~15KB — 30+ pre-built game components
+  prefabs/    @quintus/prefabs  ~15KB — 30+ pre-built game components
   quintus/       quintus              ~40KB — Meta-package (core + physics + sprites + tilemap + input + audio + ui + tween + camera)
 ```
 
@@ -863,7 +863,7 @@ The debug bridge is ~200 lines in `@quintus/core` (conditionally loaded behind `
 
 **Duration:** ~3 weeks
 
-### Package: `@quintus/ai-prefabs`
+### Package: `@quintus/prefabs`
 
 Pre-built, well-tested, LLM-composable game components. Each has:
 - Full TSDoc with `@example` blocks
@@ -937,7 +937,7 @@ test('player can reach the first checkpoint', async () => {
 - Each example game has at least 3 automated tests
 - An LLM can compose prefabs to create a new game scene
 - AI prefabs have complete TSDoc with examples
-- `@quintus/ai-prefabs` is under 15KB gzipped
+- `@quintus/prefabs` is under 15KB gzipped
 
 ---
 
@@ -1079,7 +1079,7 @@ Phase 7: headless ──► test ──► snapshot
     │
 Phase 8: debug-cli (depends on: core, uses Playwright externally)
     │
-Phase 9: ai-prefabs (depends on: quintus meta-package)
+Phase 9: prefabs (depends on: quintus meta-package)
     │
 Phase 10: three (depends on: core, peer dep on three.js)
     │

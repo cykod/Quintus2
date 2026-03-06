@@ -1,11 +1,11 @@
-import { Pickup } from "@quintus/ai-prefabs";
+import { Pickup } from "@quintus/prefabs";
 import type { Actor } from "@quintus/physics";
 import { CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
-// Coin uses the Pickup base class from @quintus/ai-prefabs which provides:
+// Coin uses the Pickup base class from @quintus/prefabs which provides:
 // - Sine-wave bob animation (replaces repeating tween)
 // - Tag-based collection with double-collect guard
 // - Pop scale effect + self-destruction on collect

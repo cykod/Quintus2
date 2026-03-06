@@ -1,4 +1,4 @@
-import { type WaveEntry, WaveSpawner } from "@quintus/ai-prefabs";
+import { type WaveEntry, WaveSpawner } from "@quintus/prefabs";
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";

@@ -1,4 +1,4 @@
-import { Damageable } from "@quintus/ai-prefabs";
+import { Damageable } from "@quintus/prefabs";
 import type { Poolable } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { Actor, type CollisionInfo, CollisionShape, Shape } from "@quintus/physics";

@@ -1,4 +1,4 @@
-import { Pickup } from "@quintus/ai-prefabs";
+import { Pickup } from "@quintus/prefabs";
 import type { Actor } from "@quintus/physics";
 import { CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";

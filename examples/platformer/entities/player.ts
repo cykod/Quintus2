@@ -1,4 +1,4 @@
-import { Damageable } from "@quintus/ai-prefabs";
+import { Damageable } from "@quintus/prefabs";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";

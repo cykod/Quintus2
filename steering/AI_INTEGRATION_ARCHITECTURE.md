@@ -19,7 +19,7 @@ The key packages:
 @quintus/snapshot    — State serialization, visual capture, diff tools
 @quintus/mcp        — MCP server exposing engine as AI-controllable tools
 @quintus/headless    — Node.js runtime (no canvas, no browser)
-@quintus/ai-prefabs  — LLM-generated component library
+@quintus/prefabs  — LLM-generated component library
 ```
 
 ---
@@ -748,7 +748,7 @@ Without rendering overhead, headless mode is fast:
 
 ---
 
-## Part 5: The AI-Aware Component Library (`@quintus/ai-prefabs`)
+## Part 5: The AI-Aware Component Library (`@quintus/prefabs`)
 
 ### What Are AI Prefabs?
 
@@ -808,7 +808,7 @@ export class PatrolEnemy extends Body {
 ### The Prefab Library (Ships with Quintus)
 
 ```
-@quintus/ai-prefabs/
+@quintus/prefabs/
   ├── characters/
   │   ├── PlatformerPlayer     — WASD/Arrow + jump + attack
   │   ├── TopDownPlayer        — 8-directional movement
@@ -884,7 +884,7 @@ import {
   Door,
   Key,
   WaveManager,
-} from '@quintus/ai-prefabs';
+} from '@quintus/prefabs';
 
 const Level1 = Scene.define('level1', (scene) => {
   const map = scene.add(TileMap, { asset: 'level1.json' });
@@ -1347,7 +1347,7 @@ Use deterministic seeds for reproducible results.
 | `@quintus/snapshot` | ~4KB | StateSnapshot, filmstrip, GIF export, visual regression |
 | `@quintus/mcp` | ~6KB | MCP server, tool definitions, bridge to browser/headless |
 | `@quintus/headless` | ~5KB | Node.js runtime, node-canvas rendering, asset loading from filesystem |
-| `@quintus/ai-prefabs` | ~15KB | 30+ pre-built game components with full docs and tests |
+| `@quintus/prefabs` | ~15KB | 30+ pre-built game components with full docs and tests |
 
 These are **in addition to** the core engine packages from the Godot-inspired architecture.
 

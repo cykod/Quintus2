@@ -1,6 +1,6 @@
 # Phase 9: AI Prefabs & Example Games — Detailed Design
 
-> **Goal:** Build 4 polished example games that exercise every engine system, then distill common patterns into a `@quintus/ai-prefabs` proposal for review.
+> **Goal:** Build 4 polished example games that exercise every engine system, then distill common patterns into a `@quintus/prefabs` proposal for review.
 > **Outcome:** Seven example games run and are playable (bouncing balls, basic platformer, tilemap, tween-ui already exist as minimal demos; platformer and dungeon are the two full games). Four new full example games — Breakout, Space Shooter, Tower Defense, and Puzzle (Sokoban) — are built incrementally, each with comprehensive integration tests. The object pooling system (from `steering/POOLING_PLAN.md`) is implemented between Breakout and Space Shooter to support high-volume entity lifecycle. After all games are complete, a `PREFABS_PROPOSAL.md` documents the reusable patterns extracted across all games, ready for review before implementation.
 
 ---
@@ -1950,7 +1950,7 @@ examples/sokoban/
 
 ### 10.1 Purpose
 
-After all six full example games are built and tested, review them holistically to identify reusable patterns. Write `steering/PREFABS_PROPOSAL.md` for human review before implementing `@quintus/ai-prefabs`.
+After all six full example games are built and tested, review them holistically to identify reusable patterns. Write `steering/PREFABS_PROPOSAL.md` for human review before implementing `@quintus/prefabs`.
 
 ### 10.2 Process
 
@@ -2039,7 +2039,7 @@ Write `steering/PREFABS_PROPOSAL.md` containing:
 - [x] Identify shared patterns and categorize by abstraction level
 - [x] Draft proposed prefab list (31 prefabs in 7 categories)
 - [x] Write API sketches with `static schema` for each proposed prefab
-- [x] Estimate size budget for `@quintus/ai-prefabs` package (~5.6KB gzipped, well within 15KB)
+- [x] Estimate size budget for `@quintus/prefabs` package (~5.6KB gzipped, well within 15KB)
 - [x] Write `steering/PREFABS_PROPOSAL.md` for human review
 - [x] Include recommendations for which patterns are NOT worth abstracting (~15 entities excluded)
 

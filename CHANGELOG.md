@@ -1,3 +1,13 @@
+## Rename ai-prefabs package to prefabs
+*Friday, March 6th at 7pm*
+Rename the @quintus/ai-prefabs package to @quintus/prefabs for brevity. 
+Directory renamed from packages/ai-prefabs/ to packages/prefabs/, npm package 
+name updated, and all import references updated across 30+ example game files, 
+vite config, steering docs, and CLAUDE.md. All 2063 tests pass with the new 
+name.
+
+---
+
 ## Use native touch events for reliable iOS slide input
 *Friday, March 6th at 5pm*
 Rewrite TouchOverlay to use native touch events as the primary input path for 

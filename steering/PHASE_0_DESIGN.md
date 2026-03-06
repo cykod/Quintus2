@@ -93,7 +93,7 @@ quintus/
 │   ├── test/              @quintus/test        ~8KB
 │   ├── snapshot/          @quintus/snapshot    ~4KB
 │   ├── mcp/               @quintus/mcp         ~6KB
-│   ├── ai-prefabs/        @quintus/ai-prefabs  ~15KB
+│   ├── prefabs/        @quintus/prefabs  ~15KB
 │   └── quintus-core/      @quintus/quintus-core ~40KB (meta-package)
 ├── examples/
 │   ├── vite.config.ts
@@ -308,7 +308,7 @@ export default defineConfig({
 | 15 | `packages/test` | `@quintus/test` | TestRunner, InputScript, game assertions, scenarios |
 | 16 | `packages/snapshot` | `@quintus/snapshot` | StateSnapshot, filmstrip, visual regression |
 | 17 | `packages/mcp` | `@quintus/mcp` | MCP server for AI tool integration |
-| 18 | `packages/ai-prefabs` | `@quintus/ai-prefabs` | 30+ pre-built game components |
+| 18 | `packages/prefabs` | `@quintus/prefabs` | 30+ pre-built game components |
 | 19 | `packages/quintus-core` | `@quintus/quintus-core` | Meta-package bundling core packages |
 
 ---
@@ -457,7 +457,7 @@ export default defineConfig({
       "@quintus/test": pkg("test"),
       "@quintus/snapshot": pkg("snapshot"),
       "@quintus/mcp": pkg("mcp"),
-      "@quintus/ai-prefabs": pkg("ai-prefabs"),
+      "@quintus/prefabs": pkg("prefabs"),
       "@quintus/quintus-core": pkg("quintus-core"),
     },
   },

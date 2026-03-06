@@ -1,4 +1,4 @@
-import type { WaveEntry } from "@quintus/ai-prefabs";
+import type { WaveEntry } from "@quintus/prefabs";
 import type { CollisionGroupsConfig } from "@quintus/physics";
 
 // === Game dimensions ===

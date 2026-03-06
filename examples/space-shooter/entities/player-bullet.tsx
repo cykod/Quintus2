@@ -1,4 +1,4 @@
-import { Bullet } from "@quintus/ai-prefabs";
+import { Bullet } from "@quintus/prefabs";
 import { NodePool } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { type Actor, type CollisionInfo, CollisionShape, Shape } from "@quintus/physics";

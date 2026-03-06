@@ -41,9 +41,6 @@ importers:
 
   examples:
     dependencies:
-      '@quintus/ai-prefabs':
-        specifier: workspace:*
-        version: link:../packages/ai-prefabs
       '@quintus/audio':
         specifier: workspace:*
         version: link:../packages/audio
@@ -68,6 +65,9 @@ importers:
       '@quintus/physics':
         specifier: workspace:*
         version: link:../packages/physics
+      '@quintus/prefabs':
+        specifier: workspace:*
+        version: link:../packages/prefabs
       '@quintus/snapshot':
         specifier: workspace:*
         version: link:../packages/snapshot
@@ -96,18 +96,6 @@ importers:
       vite:
         specifier: ^6.0.0
         version: 6.4.1(@types/node@22.19.11)(yaml@2.8.2)
-
-  packages/ai-prefabs:
-    dependencies:
-      '@quintus/core':
-        specifier: workspace:*
-        version: link:../core
-      '@quintus/math':
-        specifier: workspace:*
-        version: link:../math
-      '@quintus/physics':
-        specifier: workspace:*
-        version: link:../physics
 
   packages/audio:
     dependencies:
@@ -173,6 +161,18 @@ importers:
       '@quintus/math':
         specifier: workspace:*
         version: link:../math
+
+  packages/prefabs:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/math':
+        specifier: workspace:*
+        version: link:../math
+      '@quintus/physics':
+        specifier: workspace:*
+        version: link:../physics
 
   packages/quintus:
     dependencies:

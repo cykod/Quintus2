@@ -1,4 +1,4 @@
-import { type WaveEntry, WaveSpawner } from "@quintus/ai-prefabs";
+import { type WaveEntry, WaveSpawner } from "@quintus/prefabs";
 import { Node, NodePool, type Signal, signal } from "@quintus/core";
 import {
 	ARENA_BOTTOM,

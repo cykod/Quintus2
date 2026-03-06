@@ -6,7 +6,7 @@ import type { PathFollower } from "./path-follower.js";
 
 /**
  * A homing projectile that moves toward its target enemy.
- * Extends Node2D instead of Actor or ai-prefabs Bullet because homing projectiles
+ * Extends Node2D instead of Actor or prefabs Bullet because homing projectiles
  * change direction every frame — not suitable for fixed-angle Bullet class.
  * Purely positional movement, no physics collision response.
  */

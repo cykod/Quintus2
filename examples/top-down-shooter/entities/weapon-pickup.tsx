@@ -1,4 +1,4 @@
-import { Pickup } from "@quintus/ai-prefabs";
+import { Pickup } from "@quintus/prefabs";
 import type { DrawContext } from "@quintus/core";
 import { type Signal, signal } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";

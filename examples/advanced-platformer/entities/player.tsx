@@ -1,4 +1,4 @@
-import { Damageable } from "@quintus/ai-prefabs";
+import { Damageable } from "@quintus/prefabs";
 import { Camera } from "@quintus/camera";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
 import { AnimatedSprite } from "@quintus/sprites";

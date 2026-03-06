@@ -1,5 +1,5 @@
 {
-	"name": "@quintus/ai-prefabs",
+	"name": "@quintus/prefabs",
 	"version": "0.0.0",
 	"description": "Core game utilities — health, bullets, waves, pickups",
 	"type": "module",
@@ -35,6 +35,6 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/cykod/Quintus",
-		"directory": "packages/ai-prefabs"
+		"directory": "packages/prefabs"
 	}
 }

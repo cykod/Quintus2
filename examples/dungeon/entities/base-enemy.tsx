@@ -1,4 +1,4 @@
-import { Damageable } from "@quintus/ai-prefabs";
+import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import { Actor } from "@quintus/physics";
 import type { AnimatedSprite } from "@quintus/sprites";

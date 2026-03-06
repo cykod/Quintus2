@@ -1,4 +1,4 @@
-import { Bullet } from "@quintus/ai-prefabs";
+import { Bullet } from "@quintus/prefabs";
 import type { DrawContext } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { CollisionShape, Shape } from "@quintus/physics";

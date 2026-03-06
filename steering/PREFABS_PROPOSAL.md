@@ -19,7 +19,7 @@
 
 ### What We're Building
 
-4 engine-level utilities in `@quintus/ai-prefabs` that fill real gaps:
+4 engine-level utilities in `@quintus/prefabs` that fill real gaps:
 
 | Utility | Why It Belongs in the Engine |
 |---------|------------------------------|
@@ -52,7 +52,7 @@ Each example game gets a dedicated polish phase:
 
 ## 2. Core Game Utilities
 
-All 4 utilities live in `packages/ai-prefabs/src/` and are exported from `@quintus/ai-prefabs`.
+All 4 utilities live in `packages/prefabs/src/` and are exported from `@quintus/prefabs`.
 
 ### 2.1 Damageable — Health, Damage, and Invincibility Mixin
 

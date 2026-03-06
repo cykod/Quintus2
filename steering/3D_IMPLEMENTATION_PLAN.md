@@ -602,7 +602,7 @@ The `ThreeRenderer` renders the 3D scene first, then the `Canvas2DRenderer` comp
 | `@quintus/test` | Tests query the scene tree and simulate input. Works for Node3D |
 | `@quintus/snapshot` | Serializes node properties. Add Vec3/Quaternion serializers (additive) |
 | `@quintus/mcp` | Queries scene tree. Node3D is still a Node. AI tools work unchanged |
-| `@quintus/ai-prefabs` | 2D prefabs stay 2D. New 3D prefabs are additive |
+| `@quintus/prefabs` | 2D prefabs stay 2D. New 3D prefabs are additive |
 | `@quintus/debug` | FPS counter, node inspector work unchanged. Add 3D collision viz later |
 
 ### Packages with Additive Changes

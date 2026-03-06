@@ -69,7 +69,7 @@ export default defineConfig({
 			"@quintus/test": pkg("test"),
 			"@quintus/snapshot": pkg("snapshot"),
 			"@quintus/mcp": pkg("mcp"),
-			"@quintus/ai-prefabs": pkg("ai-prefabs"),
+			"@quintus/prefabs": pkg("prefabs"),
 			"@quintus/quintus-core": pkg("quintus-core"),
 		},
 	},

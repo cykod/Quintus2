@@ -48,7 +48,7 @@ pnpm workspace. 21 packages under `packages/`:
 | `particles` | `@quintus/particles` | ParticleEmitter | — |
 | `three` | `@quintus/three` | Three.js integration | — |
 | `debug` | `@quintus/debug` | FPS counter, collision viz, inspector | — |
-| `ai-prefabs` | `@quintus/ai-prefabs` | Pre-built game components | — |
+| `prefabs` | `@quintus/prefabs` | Pre-built game components | — |
 
 ## JSX / `build()` Pattern
 

@@ -1,4 +1,4 @@
-import { WaveSpawner } from "@quintus/ai-prefabs";
+import { WaveSpawner } from "@quintus/prefabs";
 import { Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
 import { SPAWN_INTERVAL, WAVE_DEFS, WAVE_DELAY } from "../config.js";
