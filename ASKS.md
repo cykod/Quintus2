@@ -640,3 +640,5 @@
 [MILE] wed 3/4 6pm - Added mobile enhancements: fixed touch overlay dead-zone slide tracking and implemented fill scaling mode with camera autoZoom
 
 [MILE] wed 3/4 8pm - Reworked fill mode with responsive scaling: desktop uses letterboxed fit, mobile keeps constant height with adjusted width, removed baseHeight, updated UI positioning in both platformer examples
+
+[MILE] thu 3/5 11pm - Fixed iOS touch selection prevention and button slide switching with nearest-control matching

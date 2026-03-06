@@ -1,3 +1,17 @@
+## Use native touch events for reliable iOS slide input
+*Friday, March 6th at 5pm*
+Rewrite TouchOverlay to use native touch events as the primary input path for 
+real touch devices, with pointer events as a fallback for jsdom tests and 
+Chrome DevTools emulation. On iOS Safari, calling preventDefault on touchstart 
+suppresses pointermove events, breaking all slide behavior — removed that 
+from scroll-lock and rely on CSS (user-select, webkit-touch-callout) for 
+selection prevention instead. Common logic extracted into shared helpers 
+(_findNearest, _handleStart, _handleMove, _handleEnd) used by both paths. Added 
+8 native touch event tests including a comprehensive multi-finger scenario 
+matching the exact user-described behavior.
+
+---
+
 ## Fix iOS touch selection and button slide switching
 *Thursday, March 5th at 11pm*
 Fix two iOS mobile touch bugs. First, prevent long-press canvas selection by 

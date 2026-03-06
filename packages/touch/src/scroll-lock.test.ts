@@ -63,22 +63,21 @@ describe("lockScroll", () => {
 		cleanup();
 	});
 
-	it("prevents touchstart on canvas", () => {
+	it("does not prevent touchstart (would suppress iOS pointermove)", () => {
 		const canvas = document.createElement("canvas");
 		document.body.appendChild(canvas);
 		const cleanup = lockScroll(canvas);
 		const event = new TouchEvent("touchstart", { cancelable: true });
 		Object.defineProperty(event, "target", { value: canvas });
-		// Dispatch on document since the listener is on document
 		document.dispatchEvent(event);
-		expect(event.defaultPrevented).toBe(true);
+		// touchstart should NOT be prevented — it suppresses pointermove on iOS Safari
+		expect(event.defaultPrevented).toBe(false);
 		cleanup();
 		document.body.removeChild(canvas);
 	});
 
-	it("cleanup removes contextmenu and touchstart listeners", () => {
+	it("cleanup removes contextmenu listener", () => {
 		const canvas = document.createElement("canvas");
-		document.body.appendChild(canvas);
 		const cleanup = lockScroll(canvas);
 		cleanup();
 
@@ -86,12 +85,5 @@ describe("lockScroll", () => {
 		const contextEvent = new Event("contextmenu", { cancelable: true });
 		canvas.dispatchEvent(contextEvent);
 		expect(contextEvent.defaultPrevented).toBe(false);
-
-		// After cleanup, touchstart should not be prevented
-		const touchEvent = new TouchEvent("touchstart", { cancelable: true });
-		Object.defineProperty(touchEvent, "target", { value: canvas });
-		document.dispatchEvent(touchEvent);
-		expect(touchEvent.defaultPrevented).toBe(false);
-		document.body.removeChild(canvas);
 	});
 });

@@ -87,14 +87,22 @@ describe("TouchOverlay", () => {
 		const spy = vi.spyOn(game.canvas, "addEventListener");
 		const overlay = new TouchOverlay();
 		game.currentScene!.add(overlay);
-		const calls = spy.mock.calls.filter(
+		const pointerCalls = spy.mock.calls.filter(
 			(c) =>
 				c[0] === "pointerdown" ||
 				c[0] === "pointermove" ||
 				c[0] === "pointerup" ||
 				c[0] === "pointercancel",
 		);
-		expect(calls.length).toBeGreaterThanOrEqual(4);
+		const touchCalls = spy.mock.calls.filter(
+			(c) =>
+				c[0] === "touchstart" ||
+				c[0] === "touchmove" ||
+				c[0] === "touchend" ||
+				c[0] === "touchcancel",
+		);
+		expect(pointerCalls.length).toBeGreaterThanOrEqual(4);
+		expect(touchCalls.length).toBeGreaterThanOrEqual(4);
 		spy.mockRestore();
 	});
 
@@ -247,13 +255,19 @@ describe("TouchOverlay", () => {
 		overlay.destroy();
 		game.step(); // process destroy
 
-		const removedEvents = removeSpy.mock.calls
+		const removedPointer = removeSpy.mock.calls
 			.map((c) => c[0])
 			.filter(
 				(e) =>
 					e === "pointerdown" || e === "pointermove" || e === "pointerup" || e === "pointercancel",
 			);
-		expect(removedEvents).toHaveLength(4);
+		const removedTouch = removeSpy.mock.calls
+			.map((c) => c[0])
+			.filter(
+				(e) => e === "touchstart" || e === "touchmove" || e === "touchend" || e === "touchcancel",
+			);
+		expect(removedPointer).toHaveLength(4);
+		expect(removedTouch).toHaveLength(4);
 		removeSpy.mockRestore();
 	});
 
@@ -551,5 +565,295 @@ describe("TouchOverlay", () => {
 		canvas.dispatchEvent(
 			makePointerEvent("pointerup", { clientX: 700, clientY: 500, pointerId: 1 }),
 		);
+	});
+});
+
+// --- Native touch event tests (simulating real iOS behavior) ---
+
+function makeTouchEvent(
+	type: string,
+	touches: { identifier: number; clientX: number; clientY: number }[],
+	opts: { cancelable?: boolean } = {},
+): TouchEvent {
+	const touchObjs = touches.map(
+		(t) =>
+			({
+				identifier: t.identifier,
+				clientX: t.clientX,
+				clientY: t.clientY,
+				target: null,
+			}) as unknown as Touch,
+	);
+	const event = new TouchEvent(type, {
+		changedTouches: touchObjs,
+		bubbles: true,
+		cancelable: opts.cancelable ?? true,
+	});
+	return event;
+}
+
+describe("TouchOverlay (native touch events)", () => {
+	it("activates control on touchstart", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+		expect(input.isPressed("fire")).toBe(false);
+	});
+
+	it("deactivates control on touchend", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		canvas.dispatchEvent(
+			makeTouchEvent("touchend", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+	});
+
+	it("sliding off button deactivates, sliding back reactivates", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on jump button
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Slide off into dead zone
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 100, clientY: 100 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+
+		// Slide back onto jump button
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+	});
+
+	it("sliding between two buttons switches control", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch down on jump button (700, 500)
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+		expect(input.isPressed("fire")).toBe(false);
+
+		// Slide to fire button (700, 400)
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 700, clientY: 400 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+		expect(input.isPressed("fire")).toBe(true);
+
+		// Slide back to jump button
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("fire")).toBe(false);
+		expect(input.isPressed("jump")).toBe(true);
+	});
+
+	it("multi-touch: two fingers on different buttons simultaneously", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Finger 1 on jump
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		// Finger 2 on fire
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 1, clientX: 700, clientY: 400 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+		expect(input.isPressed("fire")).toBe(true);
+
+		// Lift finger 1
+		canvas.dispatchEvent(
+			makeTouchEvent("touchend", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+		expect(input.isPressed("fire")).toBe(true);
+	});
+
+	it("touch events prevent pointer events from double-handling", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		// Touch event fires first (like real iOS)
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// Corresponding pointer event fires — should be skipped
+		canvas.dispatchEvent(
+			makePointerEvent("pointerdown", { clientX: 700, clientY: 400, pointerId: 1 }),
+		);
+		input._beginFrame();
+		// fire should NOT activate because pointer events are skipped after touch
+		expect(input.isPressed("fire")).toBe(false);
+	});
+
+	it("touchcancel releases control", () => {
+		const { game, input } = setup();
+		const canvas = game.canvas;
+
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		canvas.dispatchEvent(
+			makeTouchEvent("touchcancel", [{ identifier: 0, clientX: 700, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+	});
+
+	it("full user scenario: slide between direction buttons + jump with other finger", () => {
+		const game = createGame();
+		game.use(
+			InputPlugin({
+				actions: { move_left: ["KeyA"], move_right: ["KeyD"], jump: ["Space"] },
+			}),
+		);
+		const input = getInput(game)!;
+
+		class DirectionScene extends Scene {
+			overlay!: TouchOverlay;
+			override onReady() {
+				this.overlay = new TouchOverlay();
+				this.add(this.overlay);
+				// Left and right buttons close together (like platformer layout)
+				this.overlay.addControl(
+					new VirtualButton({
+						position: new Vec2(60, 550),
+						radius: 30,
+						action: "move_left",
+						label: "L",
+					}),
+				);
+				this.overlay.addControl(
+					new VirtualButton({
+						position: new Vec2(150, 550),
+						radius: 30,
+						action: "move_right",
+						label: "R",
+					}),
+				);
+				this.overlay.addControl(
+					new VirtualButton({
+						position: new Vec2(700, 550),
+						radius: 40,
+						action: "jump",
+						label: "A",
+					}),
+				);
+			}
+		}
+
+		game.start(DirectionScene);
+		const canvas = game.canvas;
+
+		// 1. Touch right button with finger 0
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 150, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
+
+		// 2. Slide finger 0 up off the button
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 150, clientY: 400 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(false);
+
+		// 3. Slide finger 0 back onto right button
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 150, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
+
+		// 4. Slide finger 0 left to left button
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 60, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(false);
+		expect(input.isPressed("move_left")).toBe(true);
+
+		// 5. Meanwhile, tap jump with finger 1
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 1, clientX: 700, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+		expect(input.isPressed("move_left")).toBe(true); // still held
+
+		// 6. Slide finger 1 off jump
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 1, clientX: 700, clientY: 300 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(false);
+		expect(input.isPressed("move_left")).toBe(true); // finger 0 still on left
+
+		// 7. Slide finger 1 back onto jump
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 1, clientX: 700, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("jump")).toBe(true);
+
+		// 8. Slide finger 0 back to right
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 150, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_left")).toBe(false);
+		expect(input.isPressed("move_right")).toBe(true);
+		expect(input.isPressed("jump")).toBe(true); // finger 1 still on jump
+
+		// 9. Lift both fingers
+		canvas.dispatchEvent(
+			makeTouchEvent("touchend", [{ identifier: 0, clientX: 150, clientY: 550 }]),
+		);
+		canvas.dispatchEvent(
+			makeTouchEvent("touchend", [{ identifier: 1, clientX: 700, clientY: 550 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(false);
+		expect(input.isPressed("jump")).toBe(false);
 	});
 });

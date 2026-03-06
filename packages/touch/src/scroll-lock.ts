@@ -38,13 +38,10 @@ export function lockScroll(canvas: HTMLCanvasElement): () => void {
 	};
 	canvas.addEventListener("contextmenu", preventContext);
 
-	// Block touchstart default on canvas (prevents iOS selection gesture)
-	const preventTouchStart = (e: TouchEvent) => {
-		if (e.target === canvas || canvas.contains(e.target as Node)) {
-			e.preventDefault();
-		}
-	};
-	document.addEventListener("touchstart", preventTouchStart, { passive: false });
+	// NOTE: We intentionally do NOT preventDefault on touchstart here.
+	// On iOS Safari, touchstart preventDefault suppresses pointermove events,
+	// which breaks pointer-based input. Selection prevention is handled by
+	// the CSS properties above (user-select, webkit-touch-callout).
 
 	return () => {
 		canvas.style.touchAction = "";
@@ -57,6 +54,5 @@ export function lockScroll(canvas: HTMLCanvasElement): () => void {
 		document.body.style.height = origHeight;
 		document.removeEventListener("touchmove", preventTouchMove);
 		canvas.removeEventListener("contextmenu", preventContext);
-		document.removeEventListener("touchstart", preventTouchStart);
 	};
 }
