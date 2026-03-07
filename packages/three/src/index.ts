@@ -9,6 +9,7 @@ export { ThreeContext, type ThreePluginConfig } from "./three-context.js";
 export { ThreeLayer } from "./three-layer.js";
 export { getThreeContext, ThreePlugin } from "./three-plugin.js";
 export { ThreeRenderer } from "./three-renderer.js";
+export { type TileDef3D, TileMap3D } from "./tilemap3d.js";
 
 // Side-effect import: adds game.three accessor via module augmentation
 import "./augment.js";

@@ -377,6 +377,78 @@ export class AnimationAction {
 	}
 }
 
+export class Matrix4 {
+	elements: number[] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+	identity(): Matrix4 {
+		this.elements = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+		return this;
+	}
+
+	makeTranslation(x: number, y: number, z: number): Matrix4 {
+		this.elements = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1];
+		return this;
+	}
+
+	makeRotationY(theta: number): Matrix4 {
+		const c = Math.cos(theta);
+		const s = Math.sin(theta);
+		this.elements = [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1];
+		return this;
+	}
+
+	multiply(m: Matrix4): Matrix4 {
+		const a = this.elements;
+		const b = m.elements;
+		const r = new Array(16);
+		for (let i = 0; i < 4; i++) {
+			for (let j = 0; j < 4; j++) {
+				r[i * 4 + j] =
+					a[i * 4] * b[j] +
+					a[i * 4 + 1] * b[4 + j] +
+					a[i * 4 + 2] * b[8 + j] +
+					a[i * 4 + 3] * b[12 + j];
+			}
+		}
+		this.elements = r;
+		return this;
+	}
+
+	clone(): Matrix4 {
+		const m = new Matrix4();
+		m.elements = [...this.elements];
+		return m;
+	}
+}
+
+export class InstancedMesh extends Mesh {
+	count: number;
+	instanceMatrix: { needsUpdate: boolean; array: Float32Array };
+	private _matrices: Matrix4[] = [];
+
+	constructor(geometry?: BufferGeometry, material?: Material, count = 0) {
+		super(geometry, material);
+		this.count = count;
+		this.instanceMatrix = {
+			needsUpdate: false,
+			array: new Float32Array(count * 16),
+		};
+		this._matrices = Array.from({ length: count }, () => new Matrix4());
+	}
+
+	setMatrixAt(index: number, matrix: Matrix4): void {
+		this._matrices[index] = matrix;
+		this.instanceMatrix.array.set(matrix.elements, index * 16);
+	}
+
+	getMatrixAt(index: number, matrix: Matrix4): void {
+		const offset = index * 16;
+		for (let i = 0; i < 16; i++) {
+			matrix.elements[i] = this.instanceMatrix.array[offset + i];
+		}
+	}
+}
+
 // Enum-like constants
 export const LoopRepeat = 2201;
 export const LoopOnce = 2200;

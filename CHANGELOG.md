@@ -1,3 +1,14 @@
+## Add TileMap3D with instanced rendering and 26 tests
+*Saturday, March 7th at 4pm*
+Implements TileMap3D for the @quintus/three package — a grid-based 3D tilemap 
+that renders tiles as GPU-instanced meshes. Supports tile registration from 
+geometry/material or GLTF scenes, string-based grid parsing, grid-to-world 
+coordinate conversion, and automatic rebuild of InstancedMesh objects. Includes 
+Matrix4 and InstancedMesh in the three-mock test utilities. Marks Phase 0 of 
+the 3D example game design as done.
+
+---
+
 ## Implement Phase 10: Three.js integration
 *Saturday, March 7th at 3am*
 Add the @quintus/three package with full 3D and hybrid 2D+3D rendering modes 
