@@ -1,10 +1,9 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import type { Shape2D } from "@quintus/physics";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import {
-	GAME_HEIGHT,
 	WEAVER_AMPLITUDE,
 	WEAVER_ENEMY_HP,
 	WEAVER_ENEMY_POINTS,
@@ -68,7 +67,7 @@ export class WeaverEnemy extends DamageableActor {
 		this.move(dt);
 
 		// Wrap to top when off-screen bottom
-		if (this.position.y > GAME_HEIGHT + 40) {
+		if (this.position.y > this.game.height + 40) {
 			this.position._set(this.startX, -30);
 			this._elapsed = 0;
 			const world = this._getWorld();

@@ -1,9 +1,9 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import type { Shape2D } from "@quintus/physics";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
-import { BASIC_ENEMY_HP, BASIC_ENEMY_POINTS, BASIC_ENEMY_SPEED, GAME_HEIGHT } from "../config.js";
+import { BASIC_ENEMY_HP, BASIC_ENEMY_POINTS, BASIC_ENEMY_SPEED } from "../config.js";
 import { BASIC_ENEMY_SCALE_X, BASIC_ENEMY_SCALE_Y, FRAME, tilesetAtlas } from "../sprites.js";
 import { spawnFlash } from "./explosion.js";
 
@@ -51,7 +51,7 @@ export class BasicEnemy extends DamageableActor {
 		this.move(dt);
 
 		// Wrap to top when off-screen bottom
-		if (this.position.y > GAME_HEIGHT + 40) {
+		if (this.position.y > this.game.height + 40) {
 			this.position._set(this.position.x, -30);
 			const world = this._getWorld();
 			if (world) world.updatePosition(this);

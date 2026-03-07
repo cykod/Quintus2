@@ -28,6 +28,7 @@ export class VirtualDPad extends VirtualControl {
 
 	constructor(config: VirtualDPadConfig) {
 		super();
+		this.sticky = true;
 		this.position = config.position;
 		this.buttonSize = config.buttonSize ?? 30;
 		this.actions = config.actions;

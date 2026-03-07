@@ -1,12 +1,6 @@
-import { type WaveEntry, WaveSpawner } from "@quintus/prefabs";
 import { Node, NodePool, type Signal, signal } from "@quintus/core";
-import {
-	ARENA_BOTTOM,
-	ARENA_LEFT,
-	ARENA_RIGHT,
-	ARENA_TOP,
-	ENEMY_SPAWN_MIN_DISTANCE,
-} from "../config.js";
+import { type WaveEntry, WaveSpawner } from "@quintus/prefabs";
+import { ENEMY_SPAWN_MIN_DISTANCE, WALL_THICKNESS } from "../config.js";
 import { gameState } from "../state.js";
 import type { BaseEnemy } from "./base-enemy.js";
 import type { BulletManager } from "./bullet-manager.js";
@@ -126,6 +120,11 @@ export class EnemyManager extends Node {
 		const px = this.playerRef?.position.x ?? 400;
 		const py = this.playerRef?.position.y ?? 300;
 
+		const aLeft = WALL_THICKNESS;
+		const aTop = WALL_THICKNESS;
+		const aRight = this.game.width - WALL_THICKNESS;
+		const aBottom = this.game.height - WALL_THICKNESS;
+
 		// Try random edge positions until one is far enough from the player
 		for (let attempts = 0; attempts < 20; attempts++) {
 			const edge = Math.floor(Math.random() * 4);
@@ -134,20 +133,20 @@ export class EnemyManager extends Node {
 
 			switch (edge) {
 				case 0: // top
-					x = ARENA_LEFT + Math.random() * (ARENA_RIGHT - ARENA_LEFT);
-					y = ARENA_TOP + 20;
+					x = aLeft + Math.random() * (aRight - aLeft);
+					y = aTop + 20;
 					break;
 				case 1: // bottom
-					x = ARENA_LEFT + Math.random() * (ARENA_RIGHT - ARENA_LEFT);
-					y = ARENA_BOTTOM - 20;
+					x = aLeft + Math.random() * (aRight - aLeft);
+					y = aBottom - 20;
 					break;
 				case 2: // left
-					x = ARENA_LEFT + 20;
-					y = ARENA_TOP + Math.random() * (ARENA_BOTTOM - ARENA_TOP);
+					x = aLeft + 20;
+					y = aTop + Math.random() * (aBottom - aTop);
 					break;
 				default: // right
-					x = ARENA_RIGHT - 20;
-					y = ARENA_TOP + Math.random() * (ARENA_BOTTOM - ARENA_TOP);
+					x = aRight - 20;
+					y = aTop + Math.random() * (aBottom - aTop);
 					break;
 			}
 
@@ -161,8 +160,8 @@ export class EnemyManager extends Node {
 		}
 
 		// Fallback: top-left corner
-		enemy.position.x = ARENA_LEFT + 20;
-		enemy.position.y = ARENA_TOP + 20;
+		enemy.position.x = aLeft + 20;
+		enemy.position.y = aTop + 20;
 	}
 
 	private _onEnemyDied(enemy: BaseEnemy, pool: NodePool<BaseEnemy>): void {

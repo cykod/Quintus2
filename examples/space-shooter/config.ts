@@ -1,6 +1,6 @@
 import type { CollisionGroupsConfig } from "@quintus/physics";
 
-// === Game dimensions ===
+/** Design-time reference. Use game.width/game.height for runtime positioning. */
 export const GAME_WIDTH = 480;
 export const GAME_HEIGHT = 640;
 

@@ -1,12 +1,10 @@
-import { type WaveEntry, WaveSpawner } from "@quintus/prefabs";
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import type { CollisionInfo } from "@quintus/physics";
+import { type WaveEntry, WaveSpawner } from "@quintus/prefabs";
 import {
 	BOSS_WAVE_INTERVAL,
-	GAME_HEIGHT,
-	GAME_WIDTH,
 	POWERUP_DROP_CHANCE,
 	RAPID_FIRE_DURATION,
 	SHIELD_DURATION,
@@ -34,10 +32,10 @@ export class ShooterLevel extends Scene {
 		return (
 			<>
 				<Starfield />
-				<Player ref="_player" position={[GAME_WIDTH / 2, GAME_HEIGHT - 60]} />
+				<Player ref="_player" position={[this.game.width / 2, this.game.height - 60]} />
 				<WaveSpawner ref="_spawner" />
 				<HUD />
-				<Camera position={[GAME_WIDTH / 2, GAME_HEIGHT / 2]} />
+				<Camera position={[this.game.width / 2, this.game.height / 2]} />
 			</>
 		);
 	}
@@ -97,7 +95,7 @@ export class ShooterLevel extends Scene {
 	}
 
 	private _spawnEnemy(type: string): void {
-		const x = 40 + this.game.random.next() * (GAME_WIDTH - 80);
+		const x = 40 + this.game.random.next() * (this.game.width - 80);
 
 		switch (type) {
 			case "basic": {
@@ -117,7 +115,7 @@ export class ShooterLevel extends Scene {
 			}
 			case "boss": {
 				const e = this.add(Boss, {
-					position: new Vec2(GAME_WIDTH / 2, 60),
+					position: new Vec2(this.game.width / 2, 60),
 				});
 				this._connectEnemy(e);
 				break;

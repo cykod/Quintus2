@@ -1,11 +1,9 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import type { Shape2D } from "@quintus/physics";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import {
-	GAME_HEIGHT,
-	GAME_WIDTH,
 	PLAYER_BULLET_SPEED,
 	PLAYER_FIRE_RATE,
 	PLAYER_INVINCIBILITY_DURATION,
@@ -79,8 +77,8 @@ export class Player extends DamageableActor {
 		this.move(dt);
 
 		// Clamp to screen
-		const px = Math.max(HALF_WIDTH, Math.min(GAME_WIDTH - HALF_WIDTH, this.position.x));
-		const py = Math.max(HALF_HEIGHT, Math.min(GAME_HEIGHT - HALF_HEIGHT, this.position.y));
+		const px = Math.max(HALF_WIDTH, Math.min(this.game.width - HALF_WIDTH, this.position.x));
+		const py = Math.max(HALF_HEIGHT, Math.min(this.game.height - HALF_HEIGHT, this.position.y));
 		if (px !== this.position.x || py !== this.position.y) {
 			this.position._set(px, py);
 			const world = this._getWorld();

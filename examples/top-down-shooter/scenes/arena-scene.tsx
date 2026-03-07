@@ -1,6 +1,5 @@
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
-import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import { Arena } from "../entities/arena.js";
 import { BulletManager } from "../entities/bullet-manager.js";
 import { EnemyManager } from "../entities/enemy-manager.js";
@@ -20,7 +19,7 @@ export class ArenaScene extends Scene {
 		return (
 			<>
 				<Arena />
-				<Player ref="player" position={[GAME_WIDTH / 2, GAME_HEIGHT / 2]} />
+				<Player ref="player" position={[this.game.width / 2, this.game.height / 2]} />
 				<BulletManager ref="bulletManager" />
 				<EnemyManager ref="enemyManager" />
 				<HUD ref="hud" />
@@ -31,8 +30,8 @@ export class ArenaScene extends Scene {
 
 	override onReady() {
 		// Set camera position
-		this.camera.position.x = GAME_WIDTH / 2;
-		this.camera.position.y = GAME_HEIGHT / 2;
+		this.camera.position.x = this.game.width / 2;
+		this.camera.position.y = this.game.height / 2;
 
 		// Wire cross-references
 		this.player.bulletManager = this.bulletManager;

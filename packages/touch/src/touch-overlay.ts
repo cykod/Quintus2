@@ -203,6 +203,13 @@ export class TouchOverlay extends Node2D {
 	/** Handle a tracked touch/pointer moving. Switches controls via nearest-match. */
 	private _handleMove(id: number, x: number, y: number): void {
 		const current = this._pointers.get(id) ?? null;
+
+		// Sticky controls (joysticks, d-pads) keep tracking regardless of position
+		if (current !== null && current.sticky) {
+			current._onTouchMove(x, y);
+			return;
+		}
+
 		const nearest = this._findNearest(x, y);
 
 		if (nearest === current) {

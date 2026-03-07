@@ -7,6 +7,12 @@ import { getInput, type Input } from "@quintus/input";
  * into the engine's Input system via injection.
  */
 export abstract class VirtualControl extends Node2D {
+	/**
+	 * When true, this control keeps tracking the finger even when it moves
+	 * outside the hit zone. Used by joysticks to prevent accidental release.
+	 */
+	sticky = false;
+
 	constructor() {
 		super();
 		this.renderFixed = true;

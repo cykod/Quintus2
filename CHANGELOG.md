@@ -1,3 +1,16 @@
+## Add mobile fill mode and sticky joystick tracking
+*Saturday, March 7th at 8pm*
+Switch space shooter and top-down shooter from scale:"fit" to scale:"fill" for 
+responsive mobile display. Replace hardcoded GAME_WIDTH/GAME_HEIGHT constants 
+with runtime this.game.width/this.game.height across all scenes, HUD, and 
+entity code (21 files). Add sticky property to VirtualControl so joysticks, aim 
+sticks, and d-pads keep tracking the finger even when it drifts outside the hit 
+zone — only touchend releases them. Buttons retain their existing 
+slide-between behavior. Includes 2 new overlay tests (162 total touch tests 
+passing).
+
+---
+
 ## Add TileMap3D with instanced rendering and 26 tests
 *Saturday, March 7th at 4pm*
 Implements TileMap3D for the @quintus/three package — a grid-based 3D tilemap 

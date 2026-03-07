@@ -1,6 +1,6 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import {
 	BOSS_FIRE_INTERVAL,
@@ -8,7 +8,6 @@ import {
 	BOSS_POINTS,
 	BOSS_SPEED,
 	ENEMY_BULLET_SPEED,
-	GAME_WIDTH,
 } from "../config.js";
 import { BOSS_SCALE, FRAME, tilesetAtlas } from "../sprites.js";
 import { enemyBulletPool } from "./enemy-bullet.js";
@@ -61,7 +60,7 @@ export class Boss extends DamageableActor {
 		// Horizontal patrol
 		if (this._movingRight) {
 			this.velocity = new Vec2(BOSS_SPEED, 0);
-			if (this.position.x >= GAME_WIDTH - BOSS_HALF_WIDTH) {
+			if (this.position.x >= this.game.width - BOSS_HALF_WIDTH) {
 				this._movingRight = false;
 			}
 		} else {

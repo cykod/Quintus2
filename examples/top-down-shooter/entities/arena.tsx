@@ -1,18 +1,8 @@
 import { type DrawContext, Node, Node2D } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { CollisionShape, Shape, StaticCollider } from "@quintus/physics";
-import {
-	ARENA_BOTTOM,
-	ARENA_LEFT,
-	ARENA_RIGHT,
-	ARENA_TOP,
-	GAME_HEIGHT,
-	GAME_WIDTH,
-	WALL_THICKNESS,
-} from "../config.js";
+import { WALL_THICKNESS } from "../config.js";
 
-const HALF_W = GAME_WIDTH / 2;
-const HALF_H = GAME_HEIGHT / 2;
 const HALF_THICK = WALL_THICKNESS / 2;
 
 const FLOOR_COLOR = Color.fromHex("#2a2a3e");
@@ -25,24 +15,31 @@ class Floor extends Node2D {
 	override zIndex = -10;
 
 	onDraw(ctx: DrawContext): void {
+		const w = this.game.width;
+		const h = this.game.height;
+		const aLeft = WALL_THICKNESS;
+		const aTop = WALL_THICKNESS;
+		const aRight = w - WALL_THICKNESS;
+		const aBottom = h - WALL_THICKNESS;
+
 		_pos.x = 0;
 		_pos.y = 0;
-		_size.x = GAME_WIDTH;
-		_size.y = GAME_HEIGHT;
+		_size.x = w;
+		_size.y = h;
 		ctx.rect(_pos, _size, { fill: FLOOR_COLOR });
 
 		ctx.setAlpha(0.1);
-		for (let x = ARENA_LEFT; x <= ARENA_RIGHT; x += 32) {
+		for (let x = aLeft; x <= aRight; x += 32) {
 			_pos.x = x;
-			_pos.y = ARENA_TOP;
+			_pos.y = aTop;
 			_size.x = 1;
-			_size.y = ARENA_BOTTOM - ARENA_TOP;
+			_size.y = aBottom - aTop;
 			ctx.rect(_pos, _size, { fill: GRID_COLOR });
 		}
-		for (let y = ARENA_TOP; y <= ARENA_BOTTOM; y += 32) {
-			_pos.x = ARENA_LEFT;
+		for (let y = aTop; y <= aBottom; y += 32) {
+			_pos.x = aLeft;
 			_pos.y = y;
-			_size.x = ARENA_RIGHT - ARENA_LEFT;
+			_size.x = aRight - aLeft;
 			_size.y = 1;
 			ctx.rect(_pos, _size, { fill: GRID_COLOR });
 		}
@@ -66,28 +63,33 @@ class CoverWall extends StaticCollider {
 
 export class Arena extends Node {
 	override build() {
+		const w = this.game.width;
+		const h = this.game.height;
+		const halfW = w / 2;
+		const halfH = h / 2;
+
 		return (
 			<>
 				<Floor />
 
 				{/* Top wall */}
-				<StaticCollider collisionGroup="walls" position={[HALF_W, HALF_THICK]}>
-					<CollisionShape shape={Shape.rect(GAME_WIDTH, WALL_THICKNESS)} />
+				<StaticCollider collisionGroup="walls" position={[halfW, HALF_THICK]}>
+					<CollisionShape shape={Shape.rect(w, WALL_THICKNESS)} />
 				</StaticCollider>
 
 				{/* Bottom wall */}
-				<StaticCollider collisionGroup="walls" position={[HALF_W, GAME_HEIGHT - HALF_THICK]}>
-					<CollisionShape shape={Shape.rect(GAME_WIDTH, WALL_THICKNESS)} />
+				<StaticCollider collisionGroup="walls" position={[halfW, h - HALF_THICK]}>
+					<CollisionShape shape={Shape.rect(w, WALL_THICKNESS)} />
 				</StaticCollider>
 
 				{/* Left wall */}
-				<StaticCollider collisionGroup="walls" position={[HALF_THICK, HALF_H]}>
-					<CollisionShape shape={Shape.rect(WALL_THICKNESS, GAME_HEIGHT)} />
+				<StaticCollider collisionGroup="walls" position={[HALF_THICK, halfH]}>
+					<CollisionShape shape={Shape.rect(WALL_THICKNESS, h)} />
 				</StaticCollider>
 
 				{/* Right wall */}
-				<StaticCollider collisionGroup="walls" position={[GAME_WIDTH - HALF_THICK, HALF_H]}>
-					<CollisionShape shape={Shape.rect(WALL_THICKNESS, GAME_HEIGHT)} />
+				<StaticCollider collisionGroup="walls" position={[w - HALF_THICK, halfH]}>
+					<CollisionShape shape={Shape.rect(WALL_THICKNESS, h)} />
 				</StaticCollider>
 
 				{/* Interior cover walls — visible and offset from player spawn */}

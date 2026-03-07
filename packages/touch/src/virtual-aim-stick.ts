@@ -29,6 +29,7 @@ export class VirtualAimStick extends VirtualControl {
 
 	constructor(config: VirtualAimStickConfig) {
 		super();
+		this.sticky = true;
 		this.position = config.position;
 		this.radius = config.radius ?? 50;
 		this.deadZone = config.deadZone ?? 0.2;

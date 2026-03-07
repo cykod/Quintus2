@@ -1,7 +1,7 @@
-import { Pickup } from "@quintus/prefabs";
 import { CollisionShape, Shape } from "@quintus/physics";
+import { Pickup } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
-import { GAME_HEIGHT, POWERUP_FALL_SPEED } from "../config.js";
+import { POWERUP_FALL_SPEED } from "../config.js";
 import { FRAME, POWERUP_SCALE, tilesetAtlas } from "../sprites.js";
 
 export type PowerUpType = "shield" | "rapid" | "spread";
@@ -46,7 +46,7 @@ export class PowerUp extends Pickup {
 		if (world) world.updatePosition(this);
 
 		// Remove if off-screen
-		if (this.position.y > GAME_HEIGHT + 20) {
+		if (this.position.y > this.game.height + 20) {
 			this.destroy();
 		}
 	}

@@ -4,6 +4,7 @@ import { Vec2 } from "@quintus/math";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { TouchOverlay } from "./touch-overlay.js";
 import { VirtualButton } from "./virtual-button.js";
+import { VirtualJoystick } from "./virtual-joystick.js";
 
 // jsdom does not provide PointerEvent — polyfill for tests
 beforeAll(() => {
@@ -855,5 +856,109 @@ describe("TouchOverlay (native touch events)", () => {
 		input._beginFrame();
 		expect(input.isPressed("move_right")).toBe(false);
 		expect(input.isPressed("jump")).toBe(false);
+	});
+});
+
+describe("TouchOverlay (sticky controls)", () => {
+	function setupWithJoystick() {
+		const game = createGame();
+		game.use(
+			InputPlugin({
+				actions: {
+					move_left: ["ArrowLeft"],
+					move_right: ["ArrowRight"],
+					move_up: ["ArrowUp"],
+					move_down: ["ArrowDown"],
+				},
+			}),
+		);
+		const input = getInput(game)!;
+		class TestScene extends Scene {
+			overlay!: TouchOverlay;
+			joy!: VirtualJoystick;
+
+			override onReady() {
+				this.overlay = new TouchOverlay();
+				this.add(this.overlay);
+				this.joy = new VirtualJoystick({
+					position: new Vec2(100, 500),
+					radius: 50,
+					deadZone: 0.2,
+					actions: {
+						left: "move_left",
+						right: "move_right",
+						up: "move_up",
+						down: "move_down",
+					},
+				});
+				this.overlay.addControl(this.joy);
+			}
+		}
+
+		game.start(TestScene);
+		return { game, input, scene: game.currentScene as TestScene };
+	}
+
+	it("sticky joystick keeps tracking when finger moves far outside hit zone", () => {
+		const { game, input, scene } = setupWithJoystick();
+		const canvas = game.canvas;
+
+		// Touch starts on the joystick (center at 100, 500, radius 50)
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 130, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
+
+		// Move finger far outside joystick radius (way to the right, well beyond 1.3x radius)
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 400, clientY: 500 }]),
+		);
+		input._beginFrame();
+		// Joystick should still be active and clamped to max right
+		expect(input.isPressed("move_right")).toBe(true);
+		expect(scene.joy.active).toBe(true);
+
+		// Move back inside
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 130, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
+
+		// Only touchend releases
+		canvas.dispatchEvent(
+			makeTouchEvent("touchend", [{ identifier: 0, clientX: 130, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(false);
+		expect(scene.joy.active).toBe(false);
+	});
+
+	it("sticky joystick does not release when finger drifts into dead zone", () => {
+		const { game, input, scene } = setupWithJoystick();
+		const canvas = game.canvas;
+
+		// Start on joystick moving right
+		canvas.dispatchEvent(
+			makeTouchEvent("touchstart", [{ identifier: 0, clientX: 140, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
+
+		// Move to center (dead zone) — direction drops but joystick stays active
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 100, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(false); // in dead zone
+		expect(scene.joy.active).toBe(true); // still tracking
+
+		// Move right again — should resume
+		canvas.dispatchEvent(
+			makeTouchEvent("touchmove", [{ identifier: 0, clientX: 140, clientY: 500 }]),
+		);
+		input._beginFrame();
+		expect(input.isPressed("move_right")).toBe(true);
 	});
 });

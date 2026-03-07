@@ -1,17 +1,11 @@
 import type { CollisionGroupsConfig } from "@quintus/physics";
 
-// === Game dimensions ===
+/** Design-time reference. Use game.width/game.height for runtime positioning. */
 export const GAME_WIDTH = 800;
 export const GAME_HEIGHT = 600;
 
 // === Arena ===
 export const WALL_THICKNESS = 16;
-export const ARENA_LEFT = WALL_THICKNESS;
-export const ARENA_TOP = WALL_THICKNESS;
-export const ARENA_RIGHT = GAME_WIDTH - WALL_THICKNESS;
-export const ARENA_BOTTOM = GAME_HEIGHT - WALL_THICKNESS;
-export const ARENA_WIDTH = ARENA_RIGHT - ARENA_LEFT;
-export const ARENA_HEIGHT = ARENA_BOTTOM - ARENA_TOP;
 
 // === Player ===
 export const PLAYER_SPEED = 150;

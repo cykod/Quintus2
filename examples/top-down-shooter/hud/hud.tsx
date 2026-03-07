@@ -1,6 +1,5 @@
 import { Color } from "@quintus/math";
 import { Label, Layer } from "@quintus/ui";
-import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import type { BulletManager } from "../entities/bullet-manager.js";
 import { gameState } from "../state.js";
 
@@ -37,7 +36,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="waveLabel"
-					position={[GAME_WIDTH / 2, 6]}
+					position={[this.game.width / 2, 6]}
 					text={`Wave ${gameState.wave}`}
 					fontSize={14}
 					color="#4fc3f7"
@@ -45,7 +44,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="healthLabel"
-					position={[GAME_WIDTH - 10, 6]}
+					position={[this.game.width - 10, 6]}
 					text={`HP: ${gameState.health}/${gameState.maxHealth}`}
 					fontSize={14}
 					color="#44ff44"
@@ -60,7 +59,7 @@ export class HUD extends Layer {
 					align="left"
 				/>
 				<Label
-					position={[GAME_WIDTH / 2, GAME_HEIGHT - 10]}
+					position={[this.game.width / 2, this.game.height - 10]}
 					text="[1/2/3] or scroll wheel to switch weapons"
 					fontSize={10}
 					color="#666666"
@@ -68,7 +67,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="poolLabel"
-					position={[GAME_WIDTH - 10, 24]}
+					position={[this.game.width - 10, 24]}
 					text=""
 					fontSize={10}
 					color="#666666"
