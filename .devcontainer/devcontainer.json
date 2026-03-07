@@ -6,14 +6,18 @@
 			"version": "22",
 			"installYarnUsingApt": false
 		},
-		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
+		"ghcr.io/tailscale/devcontainer/tailscale:1": {}
 	},
 	"postCreateCommand": "corepack enable && corepack prepare pnpm@10.28.1 --activate && pnpm install && npm install -g @playwright/cli@latest && playwright-cli install",
 	"remoteUser": "root",
 	"containerEnv": {
 		"PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
 		"IS_SANDBOX": "1",
-		"DEVCONTAINER": "1"
+		"DEVCONTAINER": "1",
+		"npm_config_yes": "true",
+		"PNPM_YES": "true",
+		"FORCE_COLOR": "1"
 	},
 	"mounts": [
 		"source=${localEnv:HOME}/.claude/skills,target=/root/.claude/skills,type=bind,readonly"
