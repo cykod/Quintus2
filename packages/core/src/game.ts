@@ -80,6 +80,11 @@ export class Game {
 	private readonly loop: GameLoop;
 	private renderer: Renderer | null = null;
 
+	/** Whether a renderer is currently installed. Used by ThreePlugin for mode auto-detection. */
+	get hasRenderer(): boolean {
+		return this.renderer !== null;
+	}
+
 	// === Signals ===
 	readonly started: Signal<void> = signal<void>();
 	readonly stopped: Signal<void> = signal<void>();

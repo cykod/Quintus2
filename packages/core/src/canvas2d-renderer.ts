@@ -12,9 +12,9 @@ import { Node2D } from "./node2d.js";
 import type { Renderer } from "./renderer.js";
 import type { Scene } from "./scene.js";
 
-class Canvas2DDrawContext implements DrawContext {
+export class Canvas2DDrawContext implements DrawContext {
 	constructor(
-		private readonly ctx: CanvasRenderingContext2D,
+		readonly ctx: CanvasRenderingContext2D,
 		readonly assets: AssetLoader,
 	) {}
 
@@ -138,6 +138,20 @@ class Canvas2DDrawContext implements DrawContext {
 	}
 	setImageSmoothing(enabled: boolean): void {
 		this.ctx.imageSmoothingEnabled = enabled;
+	}
+
+	drawCanvas(
+		canvas: HTMLCanvasElement | OffscreenCanvas,
+		x: number,
+		y: number,
+		width?: number,
+		height?: number,
+	): void {
+		if (width != null && height != null) {
+			this.ctx.drawImage(canvas, x, y, width, height);
+		} else {
+			this.ctx.drawImage(canvas, x, y);
+		}
 	}
 }
 

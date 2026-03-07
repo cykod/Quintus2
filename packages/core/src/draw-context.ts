@@ -50,6 +50,16 @@ export interface DrawContext {
 	// === Images ===
 	image(name: string, pos: Vec2, options?: SpriteDrawOptions): void;
 
+	// === Canvas compositing ===
+	/** Draw an HTMLCanvasElement or OffscreenCanvas at the given position. */
+	drawCanvas?(
+		canvas: HTMLCanvasElement | OffscreenCanvas,
+		x: number,
+		y: number,
+		width?: number,
+		height?: number,
+	): void;
+
 	// === State ===
 	save(): void;
 	restore(): void;

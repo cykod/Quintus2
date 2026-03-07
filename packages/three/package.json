@@ -23,13 +23,23 @@
 	"keywords": [
 		"game-engine",
 		"quintus",
-		"html5",
-		"2d"
+		"three",
+		"3d"
 	],
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/cykod/Quintus",
 		"directory": "packages/three"
+	},
+	"peerDependencies": {
+		"three": ">=0.160.0"
+	},
+	"dependencies": {
+		"@quintus/core": "workspace:*"
+	},
+	"devDependencies": {
+		"three": "^0.172.0",
+		"@types/three": "^0.172.0"
 	}
 }

@@ -9,12 +9,12 @@
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Package setup + ThreePlugin + ThreeContext | Pending |
-| 2 | Node3D + ThreeRenderer (scene graph sync) | Pending |
-| 3 | MeshNode + Camera3D + Lights | Pending |
-| 4 | GLTFModel + Billboard + asset integration | Pending |
-| 5 | ThreeLayer (hybrid 2D+3D compositing) | Pending |
-| 6 | Example game + integration tests | Pending |
+| 1 | Package setup + ThreePlugin + ThreeContext | Done |
+| 2 | Node3D + ThreeRenderer (scene graph sync) | Done |
+| 3 | MeshNode + Camera3D + Lights | Done |
+| 4 | GLTFModel + Billboard + asset integration | Done |
+| 5 | ThreeLayer (hybrid 2D+3D compositing) | Done |
+| 6 | Example game + integration tests | Done |
 
 ---
 
@@ -234,6 +234,8 @@ The `PHASE_1_3D_DESIGN.md` documented a `Vec3`/`Quaternion` with the `_onChange`
 
 **Trade-off:** Node3D's API uses Three.js types (`THREE.Vector3`) while Node2D uses Quintus types (`Vec2`). This is an intentional asymmetry — 2D is the Quintus-native dimension, 3D is the Three.js-native dimension. Users who adopt 3D already import Three.js and work in its idiom.
 
+**Future implication: `@quintus/physics3d`.** Because Node3D uses Three.js types and lives in `@quintus/three`, a future `@quintus/physics3d` package would need to depend on `@quintus/three` (and transitively require Three.js as a peer dep) even for headless physics simulation. If this becomes a problem, the mitigation path is: add lightweight `Vec3`/`Quaternion`/`Matrix4` to `@quintus/math`, move a "core" Node3D (using Quintus math types) into `@quintus/core`, and have `@quintus/three`'s Node3D subclasses bridge to Three.js objects. The sync cost of copying 3–12 floats per node per frame is negligible relative to GPU draw calls. This refactor is deferred until a concrete need arises — for now, the Three.js-native approach minimizes API surface and implementation effort. Note: the earlier `3D_IMPLEMENTATION_PLAN.md` proposed the independent math types approach; this design intentionally diverges for pragmatic reasons.
+
 ### Design Decision: Lazy Object3D Creation
 
 Node3D subclasses use **lazy creation** of their underlying Three.js objects. The `object3d` is not created in the constructor — it's created on first access via a `_createObject3D()` factory method. This enables the standard `add(Class, { props })` API:
@@ -291,14 +293,15 @@ class Spinner extends Node3D {
 
 ### 4.1 Deliverables
 
-- [ ] Add `three` as peer dependency to `packages/three/package.json`
-- [ ] Add `@quintus/core` as workspace dependency
-- [ ] Create `ThreeContext` class holding Three.js rendering state
-- [ ] Create `ThreePlugin` factory with auto-detection of full vs hybrid mode
-- [ ] Create `augment.ts` with `game.three` module augmentation
-- [ ] Export all public API from `src/index.ts`
-- [ ] Export `Canvas2DDrawContext` from `@quintus/core` (needed for 2D overlay in Phase 2)
-- [ ] Verify `pnpm build` succeeds
+- [x]Add `three` as peer dependency to `packages/three/package.json`
+- [x]Add `@quintus/core` as workspace dependency
+- [x]Create `ThreeContext` class holding Three.js rendering state
+- [x]Create `ThreePlugin` factory with auto-detection of full vs hybrid mode
+- [x]Create `augment.ts` with `game.three` module augmentation
+- [x]Export all public API from `src/index.ts`
+- [x]Export `Canvas2DDrawContext` from `@quintus/core` (needed for 2D overlay in Phase 2)
+- [x]Add public `get hasRenderer(): boolean` to `Game` (needed for mode auto-detection)
+- [x]Verify `pnpm build` succeeds
 
 ### 4.2 Package Dependencies
 
@@ -351,17 +354,22 @@ export class ThreeContext {
   /** The currently active 3D camera. Set by Camera3D nodes. */
   activeCamera: THREE.Camera | null = null;
 
+  /** Whether this context is in hybrid mode (offscreen canvas for compositing). */
+  readonly hybridMode: boolean;
+
   private _disposed = false;
 
-  constructor(canvas: HTMLCanvasElement, width: number, height: number, config: ThreePluginConfig = {}) {
+  constructor(canvas: HTMLCanvasElement, width: number, height: number, config: ThreePluginConfig = {}, hybridMode = false) {
     this.scene = new THREE.Scene();
+    this.hybridMode = hybridMode;
 
     this.webglRenderer = new THREE.WebGLRenderer({
       canvas,
       antialias: config.antialias ?? true,
       alpha: config.background === null,
-      // preserveDrawingBuffer needed for hybrid mode (drawImage compositing)
-      preserveDrawingBuffer: true,
+      // preserveDrawingBuffer needed only in hybrid mode for drawImage compositing.
+      // In full 3D mode, omitting it allows GPU back-buffer optimizations.
+      preserveDrawingBuffer: hybridMode,
     });
     this.webglRenderer.setSize(width, height, false);
     this.webglRenderer.setPixelRatio(config.pixelRatio ?? (typeof window !== "undefined" ? window.devicePixelRatio : 1));
@@ -392,10 +400,10 @@ export class ThreeContext {
 
 **File:** `packages/three/src/three-plugin.ts`
 
-ThreePlugin **auto-detects** the rendering mode based on whether a renderer already exists:
+ThreePlugin **auto-detects** the rendering mode based on whether a renderer already exists. Since `Game.renderer` is private, we use the public `game.hasRenderer` getter (added as a core change in Phase 1):
 
-- **Full 3D** (`game.renderer === null`): Uses `game.canvas` directly for WebGL (no 2D context was acquired since `renderer: null` skipped Canvas2DRenderer creation). Installs ThreeRenderer automatically.
-- **Hybrid** (`game.renderer` exists): Creates a shared offscreen canvas for WebGL. Canvas2DRenderer stays active. ThreeLayer nodes use the shared WebGL context.
+- **Full 3D** (`!game.hasRenderer`): Uses `game.canvas` directly for WebGL (no 2D context was acquired since `renderer: null` skipped Canvas2DRenderer creation). Installs ThreeRenderer automatically.
+- **Hybrid** (`game.hasRenderer`): Creates a shared offscreen canvas for WebGL. Canvas2DRenderer stays active. ThreeLayer nodes use the shared WebGL context.
 
 ```typescript
 import type { Game, Plugin } from "@quintus/core";
@@ -414,7 +422,7 @@ export function ThreePlugin(config: ThreePluginConfig = {}): Plugin {
   return definePlugin({
     name: "three",
     install(game: Game) {
-      const fullMode = game.renderer === null;
+      const fullMode = !game.hasRenderer;
 
       let canvas: HTMLCanvasElement;
       if (fullMode) {
@@ -427,7 +435,7 @@ export function ThreePlugin(config: ThreePluginConfig = {}): Plugin {
         canvas.height = game.height;
       }
 
-      const ctx = new ThreeContext(canvas, game.width, game.height, config);
+      const ctx = new ThreeContext(canvas, game.width, game.height, config, !fullMode /* hybridMode */);
       contextMap.set(game, ctx);
 
       if (fullMode) {
@@ -494,7 +502,20 @@ declare module "@quintus/core" {
 }
 ```
 
-### 4.6 Core Change: Export Canvas2DDrawContext
+### 4.6 Core Change: Add `hasRenderer` to Game
+
+**File:** `packages/core/src/game.ts`
+
+`Game.renderer` is private. ThreePlugin needs to detect whether a renderer is already installed (to choose full-3D vs hybrid mode). Add a public read-only getter:
+
+```typescript
+/** Whether a renderer is currently installed. Used by ThreePlugin for mode auto-detection. */
+get hasRenderer(): boolean {
+  return this.renderer !== null;
+}
+```
+
+### 4.7 Core Change: Export Canvas2DDrawContext
 
 **File:** `packages/core/src/canvas2d-renderer.ts`
 
@@ -505,7 +526,7 @@ Export `Canvas2DDrawContext` so ThreeRenderer can create one for 2D overlay rend
 export class Canvas2DDrawContext implements DrawContext { ... }
 ```
 
-### 4.7 Core Change: Add `drawCanvas` to DrawContext
+### 4.8 Core Change: Add `drawCanvas` to DrawContext
 
 **File:** `packages/core/src/draw-context.ts` (addition)
 
@@ -527,7 +548,7 @@ drawCanvas(canvas: HTMLCanvasElement | OffscreenCanvas, x: number, y: number, wi
 }
 ```
 
-### 4.8 Exports
+### 4.9 Exports
 
 **File:** `packages/three/src/index.ts`
 
@@ -544,13 +565,13 @@ import "./augment.js";
 
 ### 5.1 Deliverables
 
-- [ ] Create `Node3D` base class extending `Node`, with lazy `_createObject3D()` pattern
-- [ ] Implement `Node3D.serialize()` for debug system compatibility
-- [ ] Add Node2D-under-Node3D runtime warning
-- [ ] Create `ThreeRenderer` implementing `Renderer`
-- [ ] Implement Quintus scene tree → Three.js scene graph synchronization
-- [ ] Handle `renderFixed` Node2D nodes via a Canvas2D overlay layer
-- [ ] Write tests for Node3D lifecycle and ThreeRenderer sync
+- [x]Create `Node3D` base class extending `Node`, with lazy `_createObject3D()` pattern
+- [x]Implement `Node3D.serialize()` for debug system compatibility
+- [x]Add Node2D-under-Node3D runtime warning
+- [x]Create `ThreeRenderer` implementing `Renderer`
+- [x]Implement Quintus scene tree → Three.js scene graph synchronization
+- [x]Handle `renderFixed` Node2D nodes via a Canvas2D overlay layer
+- [x]Write tests for Node3D lifecycle and ThreeRenderer sync
 
 ### 5.2 Node3D
 
@@ -583,6 +604,7 @@ export class Node3D extends Node {
     if (!this._object3d) {
       this._object3d = this._createObject3D();
       this._object3d.userData.quintusNodeId = this.id;
+      this._object3d.visible = this._visible; // sync backing field
     }
     return this._object3d;
   }
@@ -596,12 +618,21 @@ export class Node3D extends Node {
     return new THREE.Object3D();
   }
 
-  /** If true, this node is visible in the 3D scene. */
+  /**
+   * Visible state. Stored as a backing field to avoid triggering
+   * lazy object3d creation during Object.assign (which would break
+   * the add(Class, { visible: false, intensity: 0.4 }) pattern
+   * by creating the Three.js object before all props are applied).
+   * Synced to object3d in _createObject3D() and on set.
+   */
+  private _visible = true;
+
   get visible(): boolean {
-    return this.object3d.visible;
+    return this._object3d ? this._object3d.visible : this._visible;
   }
   set visible(v: boolean) {
-    this.object3d.visible = v;
+    this._visible = v;
+    if (this._object3d) this._object3d.visible = v;
   }
 
   // === Transform Accessors ===
@@ -749,6 +780,11 @@ export class ThreeRenderer implements Renderer {
    * Walk the Quintus scene tree and sync Node3D instances into the
    * Three.js scene graph. Handles add and reparent.
    * Removal is handled by Node3D.onExitTree().
+   *
+   * NOTE: This traverses ALL nodes including non-3D subtrees. In full 3D mode
+   * this is acceptable (most nodes are Node3D). If profiling shows this is a
+   * bottleneck for scenes with large non-3D subtrees, optimize by maintaining
+   * a dirty set of Node3D nodes registered via onEnterTree/onExitTree hooks.
    */
   private _walkSync(node: Node, threeParent: THREE.Object3D): void {
     if (node instanceof Node3D) {
@@ -803,18 +839,31 @@ export class ThreeRenderer implements Renderer {
       return;
     }
 
-    // Ensure overlay canvas exists
+    // Ensure overlay canvas exists.
+    // Both canvases are wrapped in a positioned container div so CSS scaling
+    // (fit/fill mode) applied by Game._setupScaling() affects both equally.
     if (!this.overlayCanvas) {
       this.overlayCanvas = document.createElement("canvas");
       const webglCanvas = this.ctx.webglRenderer.domElement;
       this.overlayCanvas.width = webglCanvas.width;
       this.overlayCanvas.height = webglCanvas.height;
+
+      // Wrap both canvases in a positioned container so absolute positioning
+      // and any CSS transforms (fit/fill scaling) apply to both.
+      let container = webglCanvas.parentElement;
+      if (!container?.dataset.threeOverlayContainer) {
+        container = document.createElement("div");
+        container.dataset.threeOverlayContainer = "1";
+        container.style.cssText = "position: relative; width: 100%; height: 100%;";
+        webglCanvas.parentElement?.insertBefore(container, webglCanvas);
+        container.appendChild(webglCanvas);
+      }
       this.overlayCanvas.style.cssText = `
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
         pointer-events: none;
       `;
-      webglCanvas.parentElement?.appendChild(this.overlayCanvas);
+      container.appendChild(this.overlayCanvas);
       const ctx2d = this.overlayCanvas.getContext("2d")!;
       // Canvas2DDrawContext is exported from @quintus/core for this purpose
       this.overlayDrawContext = new Canvas2DDrawContext(ctx2d, scene.game.assets);
@@ -839,9 +888,20 @@ export class ThreeRenderer implements Renderer {
     }
   }
 
+  private _warnedNode2DIds = new Set<number>();
+
   private _collectOverlayNodes(node: Node, list: Node2D[]): void {
-    if (node instanceof Node2D && node.renderFixed && node.visible) {
-      list.push(node);
+    if (node instanceof Node2D && node.visible) {
+      if (node.renderFixed) {
+        list.push(node);
+      } else if (!this._warnedNode2DIds.has(node.id)) {
+        // Warn once per node: non-renderFixed Node2D is invisible in full-3D mode
+        this._warnedNode2DIds.add(node.id);
+        console.warn(
+          `Node2D "${node.name || node.constructor.name}" will not render in full-3D mode. ` +
+          `Set renderFixed=true for HUD/overlay elements, or use Node3D for 3D content.`,
+        );
+      }
     }
     for (const child of node.children) {
       this._collectOverlayNodes(child, list);
@@ -898,12 +958,14 @@ game.start(MainScene);
 
 ### 6.1 Deliverables
 
-- [ ] Create `MeshNode` — Node3D with lazy `THREE.Mesh` creation
-- [ ] Create `PointsNode` — Node3D with lazy `THREE.Points` creation
-- [ ] Create `Camera3D` — Node3D with lazy `THREE.PerspectiveCamera` or `THREE.OrthographicCamera`
-- [ ] Create `DirectionalLight`, `PointLight`, `AmbientLight` — Node3D wrappers with lazy creation
-- [ ] Camera3D auto-registers as `ThreeContext.activeCamera` when added to tree
-- [ ] Write tests for all node types
+- [x]Create `MeshNode` — Node3D with lazy `THREE.Mesh` creation
+- [x]Create `PointsNode` — Node3D with lazy `THREE.Points` creation
+- [x]Create `Camera3D` — Node3D with lazy `THREE.PerspectiveCamera` or `THREE.OrthographicCamera`
+- [x]Create `DirectionalLight`, `PointLight`, `AmbientLight` — Node3D wrappers with lazy creation
+- [x]Camera3D auto-registers as `ThreeContext.activeCamera` when added to tree
+- [x]Camera3D updates aspect ratio on game resize
+- [x]Light nodes dispose shadow maps in `onDestroy()`
+- [x]Write tests for all node types
 
 ### 6.2 MeshNode
 
@@ -1045,6 +1107,19 @@ export class Camera3D extends Node3D {
   }
 
   override onUpdate(dt: number): void {
+    // Update aspect ratio on resize (set once in onEnterTree but needs
+    // updating if window/canvas dimensions change at runtime)
+    if (this.camera instanceof THREE.PerspectiveCamera) {
+      const game = this.gameOrNull;
+      if (game) {
+        const aspect = game.width / game.height;
+        if (Math.abs(this.camera.aspect - aspect) > 0.001) {
+          this.camera.aspect = aspect;
+          this.camera.updateProjectionMatrix();
+        }
+      }
+    }
+
     if (this.follow) {
       const target = this.follow.object3d.position;
       const desired = target.clone().add(this.followOffset);
@@ -1103,6 +1178,11 @@ export class DirectionalLight extends Node3D {
   get light(): THREE.DirectionalLight {
     return this.object3d as THREE.DirectionalLight;
   }
+
+  override onDestroy(): void {
+    // Dispose shadow map render target if shadows were enabled
+    this.light.shadow?.map?.dispose();
+  }
 }
 
 export class PointLight extends Node3D {
@@ -1123,6 +1203,10 @@ export class PointLight extends Node3D {
   get light(): THREE.PointLight {
     return this.object3d as THREE.PointLight;
   }
+
+  override onDestroy(): void {
+    this.light.shadow?.map?.dispose();
+  }
 }
 ```
 
@@ -1132,10 +1216,13 @@ export class PointLight extends Node3D {
 
 ### 7.1 Deliverables
 
-- [ ] Create `GLTFModel` — GLTF/GLB node loading from the asset system
-- [ ] Create `Billboard` — sprite in 3D space, always faces camera
-- [ ] GLTF asset loaders registered by ThreePlugin (done in Phase 1)
-- [ ] Write tests for GLTF loading (mock) and Billboard orientation
+- [x]Create `GLTFModel` — GLTF/GLB node loading from the asset system
+- [x]GLTFModel uses `SkeletonUtils.clone()` for correct skinned mesh cloning
+- [x]GLTFModel `onDestroy()` recursively disposes all GPU resources (geometry, material, textures)
+- [x]Create `Billboard` — sprite in 3D space, always faces camera
+- [x]Billboard `onDestroy()` disposes both material and texture
+- [x]GLTF asset loaders registered by ThreePlugin (done in Phase 1)
+- [x]Write tests for GLTF loading (mock) and Billboard orientation
 
 ### 7.2 GLTFModel
 
@@ -1146,10 +1233,15 @@ GLTFModel loads models from the **asset system**. Models must be preloaded via `
 ```typescript
 import * as THREE from "three";
 import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { Node3D } from "./node3d.js";
 
 export class GLTFModel extends Node3D {
-  /** Asset name (loaded via game.assets.load({ glb: ["path.glb"] })). */
+  /**
+   * Asset name — the key returned by nameFromPath(). AssetLoader strips the
+   * directory prefix and file extension, so "models/character.glb" becomes "character".
+   * Use the stripped name: `src: "character"` (not the full path).
+   */
   src = "";
   /** Auto-play the first animation. Default: false. */
   autoplay = false;
@@ -1198,12 +1290,16 @@ export class GLTFModel extends Node3D {
   override onReady(): void {
     if (!this.src) return;
 
-    // Get pre-loaded GLTF from asset system
+    // Get pre-loaded GLTF from asset system.
+    // AssetLoader.nameFromPath() strips directory and extension:
+    //   "models/character.glb" → stored as "character"
+    // So this.src should be the stripped name (e.g., "character").
     const gltf = this.game.assets.get<GLTF>(this.src);
     if (!gltf) {
       console.warn(
         `GLTFModel: asset "${this.src}" not found. ` +
-        `Preload with game.assets.load({ glb: ["${this.src}"] }).`,
+        `Ensure asset was preloaded and src uses the stripped name ` +
+        `(e.g., "character" for "models/character.glb").`,
       );
       return;
     }
@@ -1218,11 +1314,36 @@ export class GLTFModel extends Node3D {
     if (this._mixer) {
       this._mixer.stopAllAction();
     }
+    // Dispose all GPU resources from the loaded model to prevent memory leaks.
+    // THREE.Scene.clear() only removes children — it does NOT dispose resources.
+    this._disposeRecursive(this.object3d);
+  }
+
+  /** Recursively traverse and dispose all geometries, materials, and textures. */
+  private _disposeRecursive(obj: THREE.Object3D): void {
+    for (const child of [...obj.children]) {
+      this._disposeRecursive(child);
+    }
+    if (obj instanceof THREE.Mesh) {
+      obj.geometry?.dispose();
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const mat of mats) {
+        // Dispose all texture maps on the material
+        for (const value of Object.values(mat)) {
+          if (value instanceof THREE.Texture) value.dispose();
+        }
+        mat.dispose();
+      }
+    }
   }
 
   private _applyModel(gltf: GLTF): void {
-    // Clone the scene so the same asset can be used by multiple GLTFModel instances
-    const model = gltf.scene.clone();
+    // Use SkeletonUtils.clone so skinned meshes correctly clone skeleton + bone
+    // bindings. For non-skinned models this works identically to scene.clone().
+    // Note: materials are shared across clones by default. If per-instance material
+    // changes are needed (e.g., damage tint), users must call material.clone()
+    // on the specific meshes they want to modify.
+    const model = SkeletonUtils.clone(gltf.scene);
     if (this.modelScale !== 1) {
       model.scale.setScalar(this.modelScale);
     }
@@ -1262,9 +1383,10 @@ class Level1 extends Scene {
       images: ["tiles.png"],
     });
 
-    // GLTFModel reads from the asset cache synchronously
-    const player = this.add(GLTFModel, { src: "models/character.glb", autoplay: true });
-    const enemy = this.add(GLTFModel, { src: "models/enemy.glb" });
+    // GLTFModel reads from the asset cache synchronously.
+    // AssetLoader strips directory + extension: "models/character.glb" → "character"
+    const player = this.add(GLTFModel, { src: "character", autoplay: true });
+    const enemy = this.add(GLTFModel, { src: "enemy" });
   }
 }
 ```
@@ -1334,7 +1456,9 @@ export class Billboard extends Node3D {
   }
 
   override onDestroy(): void {
-    (this.sprite.material as THREE.SpriteMaterial).dispose();
+    const mat = this.sprite.material as THREE.SpriteMaterial;
+    mat.map?.dispose(); // dispose texture if one was set via setTexture()
+    mat.dispose();
   }
 }
 ```
@@ -1350,9 +1474,11 @@ await game.assets.load({
   images: ["tiles.png"],
 });
 
-// Asset names are derived from paths via nameFromPath()
-// "models/character.glb" → "models/character.glb"
-const gltf = game.assets.get<GLTF>("models/character.glb");
+// Asset names are derived from paths via nameFromPath(), which strips
+// the directory prefix and file extension:
+// "models/character.glb" → "character"
+// "models/enemy.glb" → "enemy"
+const gltf = game.assets.get<GLTF>("character");
 ```
 
 ---
@@ -1361,12 +1487,12 @@ const gltf = game.assets.get<GLTF>("models/character.glb");
 
 ### 8.1 Deliverables
 
-- [ ] Create `ThreeLayer` — Node2D that hosts a Three.js sub-scene
-- [ ] ThreeLayer renders via the shared WebGLRenderer (one WebGL context for all layers)
-- [ ] Support `zIndex` to control whether 3D renders behind or in front of 2D content
-- [ ] Node3D children of ThreeLayer are rendered in its local Three.js scene
-- [ ] Composite via `drawCanvas()` on the DrawContext
-- [ ] Write tests for ThreeLayer compositing
+- [x]Create `ThreeLayer` — Node2D that hosts a Three.js sub-scene
+- [x]ThreeLayer renders via the shared WebGLRenderer (one WebGL context for all layers)
+- [x]Support `zIndex` to control whether 3D renders behind or in front of 2D content
+- [x]Node3D children of ThreeLayer are rendered in its local Three.js scene
+- [x]Composite via `drawCanvas()` on the DrawContext
+- [x]Write tests for ThreeLayer compositing
 
 ### 8.2 ThreeLayer Design
 
@@ -1375,6 +1501,8 @@ const gltf = game.assets.get<GLTF>("models/character.glb");
 ThreeLayer is a Node2D that hosts its own Three.js scene. It's used in Mode 2 (2D game + 3D effects) where the Canvas2DRenderer remains the primary renderer.
 
 **Key design:** All ThreeLayer instances share the **single WebGLRenderer** from ThreeContext (created as an offscreen canvas in hybrid mode). Each layer renders to the shared canvas during its `onDraw()` call, then composites it onto the 2D canvas via `drawCanvas()`. This avoids creating multiple WebGL contexts (browsers limit to 8-16 per page).
+
+**Multiple ThreeLayers caveat:** Each ThreeLayer performs a full WebGL render pass (setClearColor + clear + render) on the shared renderer, then composites via `drawImage`. The Canvas2DRenderer's z-sort ensures layers are drawn in zIndex order. However, each layer resets WebGL state (clear color, viewport size), so ordering is critical. Performance scales linearly with the number of ThreeLayers — 2 layers = 2 full render passes + 2 compositing operations. Keep the number of ThreeLayers low (1-2 per scene).
 
 ```
 Canvas2DRenderer output:
@@ -1412,6 +1540,9 @@ export class ThreeLayer extends Node2D {
   private _height: number;
   private _clearColor: THREE.Color;
   private _clearAlpha: number;
+  /** Cached last setSize values to avoid calling setSize every frame. */
+  private _lastSetW = 0;
+  private _lastSetH = 0;
 
   constructor() {
     super();
@@ -1442,8 +1573,13 @@ export class ThreeLayer extends Node2D {
     const w = this._width || this.game.width;
     const h = this._height || this.game.height;
 
-    // Render this layer's 3D scene to the shared WebGL canvas
-    renderer.setSize(w, h, false);
+    // Only call setSize when dimensions actually change (setSize is not trivial —
+    // it updates canvas dimensions and the WebGL viewport).
+    if (w !== this._lastSetW || h !== this._lastSetH) {
+      renderer.setSize(w, h, false);
+      this._lastSetW = w;
+      this._lastSetH = h;
+    }
     renderer.setClearColor(this._clearColor, this._clearAlpha);
     renderer.clear();
     renderer.render(this.threeScene, camera);
@@ -1526,12 +1662,12 @@ game.start(Level1);
 
 ### 9.1 Deliverables
 
-- [ ] Create `examples/3d-cube/` — minimal 3D rotating cube example
-- [ ] Create `examples/3d-platformer/` — hybrid 2D game + 3D background
-- [ ] Write integration tests (headless mocking for Three.js)
-- [ ] Verify `pnpm build` succeeds for `@quintus/three`
-- [ ] Verify `pnpm lint` passes
-- [ ] Document the Three.js integration in code comments
+- [x]Create `examples/3d-cube/` — minimal 3D rotating cube example
+- [x]Create `examples/3d-platformer/` — hybrid 2D game + 3D background
+- [x]Write integration tests (headless mocking for Three.js)
+- [x]Verify `pnpm build` succeeds for `@quintus/three`
+- [x]Verify `pnpm lint` passes
+- [x]Document the Three.js integration in code comments
 
 ### 9.2 Example: 3D Rotating Cube
 
@@ -1777,6 +1913,25 @@ Three.js requires WebGL, which isn't available in jsdom/Node.js. Tests use two s
 | `ThreeLayer finds child Camera3D` | Auto-detects camera from children |
 | `Multiple ThreeLayers share context` | Single WebGL context used by all |
 
+### Error Path Tests
+
+**File:** `packages/three/src/error-paths.test.ts`
+
+These tests cover failure modes and edge cases not covered by the happy-path tests above:
+
+| Test | What It Verifies |
+|------|------------------|
+| `ThreePlugin double-install is idempotent` | Second `game.use(ThreePlugin())` does not create a second context or overwrite the first |
+| `Camera3D destroyed while active` | Destroying the active Camera3D sets `ctx.activeCamera = null`, renderer falls back to default |
+| `GLTFModel with wrong src shows warning` | Helpful console warning when `game.assets.get()` returns null |
+| `_createObject3D throw is contained` | A subclass that throws in `_createObject3D` does not crash the renderer |
+| `game.stop() during render` | No errors if game is stopped mid-frame |
+| `Node2D without renderFixed in 3D scene warns` | ThreeRenderer emits console warning (once per node) |
+| `GLTFModel.onDestroy disposes recursively` | All geometries, materials, textures disposed (spy on dispose calls) |
+| `Light shadow map disposed on destroy` | DirectionalLight/PointLight shadow render targets cleaned up |
+| `Billboard texture disposed on destroy` | SpriteMaterial and its map texture both disposed |
+| `Camera3D aspect updates on resize` | Aspect ratio corrected after game dimensions change |
+
 ### Mock Strategy
 
 For tests that need Three.js without WebGL (most unit tests), use a minimal mock:
@@ -1810,40 +1965,48 @@ Alternatively, use `vitest.mock("three")` with auto-mocking for simpler cases.
 
 ### All Phases Complete
 
-- [ ] `@quintus/three` package compiles with `pnpm build`
-- [ ] `pnpm test` passes for all `@quintus/three` tests
-- [ ] `pnpm lint` clean
-- [ ] `three` is a peer dependency (NOT bundled)
-- [ ] Zero impact on 2D-only games (no Three.js code loaded unless imported)
-- [ ] `Canvas2DDrawContext` exported from `@quintus/core`
-- [ ] `drawCanvas()` added to `DrawContext` interface
+- [x]`@quintus/three` package compiles with `pnpm build`
+- [x]`pnpm test` passes for all `@quintus/three` tests
+- [x]`pnpm lint` clean
+- [x]`three` is a peer dependency (NOT bundled)
+- [x]Zero impact on 2D-only games (no Three.js code loaded unless imported)
+- [x]`Canvas2DDrawContext` exported from `@quintus/core`
+- [x]`drawCanvas()` added to `DrawContext` interface
+- [x]`game.hasRenderer` public getter added to `Game`
 
 ### Feature Checklist
 
-- [ ] `ThreePlugin` installs, auto-detects full vs hybrid mode, and provides `game.three` accessor
-- [ ] `ThreeRenderer` implements `Renderer` and syncs Quintus → Three.js scene graph
-- [ ] `Node3D` extends `Node` with lazy `_createObject3D()` pattern and serialize()
-- [ ] `MeshNode` renders THREE.Mesh with geometry + material
-- [ ] `PointsNode` renders THREE.Points for particle effects
-- [ ] `Camera3D` supports perspective and orthographic modes with follow
-- [ ] `AmbientLight`, `DirectionalLight`, `PointLight` all functional
-- [ ] `GLTFModel` loads .glb/.gltf from the asset system and plays animations
-- [ ] `Billboard` renders sprites in 3D space, always faces camera
-- [ ] `ThreeLayer` composites 3D content within a 2D Canvas2DRenderer game (shared WebGL context)
-- [ ] 2D UI overlay works in full-3D mode (`renderFixed` Node2D nodes via Canvas2DDrawContext)
-- [ ] Scene transitions clear Three.js scene via `game.sceneSwitched` signal
-- [ ] Node2D-under-Node3D validated with runtime warning
-- [ ] Two example games run in browser via `pnpm dev`
+- [x]`ThreePlugin` installs, auto-detects full vs hybrid mode, and provides `game.three` accessor
+- [x]`ThreeRenderer` implements `Renderer` and syncs Quintus → Three.js scene graph
+- [x]`Node3D` extends `Node` with lazy `_createObject3D()` pattern and serialize()
+- [x]`MeshNode` renders THREE.Mesh with geometry + material
+- [x]`PointsNode` renders THREE.Points for particle effects
+- [x]`Camera3D` supports perspective and orthographic modes with follow
+- [x]`AmbientLight`, `DirectionalLight`, `PointLight` all functional
+- [x]`GLTFModel` loads .glb/.gltf from the asset system, plays animations, disposes GPU resources on destroy
+- [x]`Billboard` renders sprites in 3D space, always faces camera, disposes material + texture on destroy
+- [x]`ThreeLayer` composites 3D content within a 2D Canvas2DRenderer game (shared WebGL context)
+- [x]2D UI overlay works in full-3D mode (`renderFixed` Node2D nodes via Canvas2DDrawContext)
+- [x]Scene transitions clear Three.js scene via `game.sceneSwitched` signal
+- [x]Node2D-under-Node3D validated with runtime warning
+- [x]Non-renderFixed Node2D in full-3D scene emits console warning
+- [x]Two example games run in browser via `pnpm dev`
 
 ### Size Budget
 
 - `@quintus/three` package: **<5KB gzipped** (Three.js itself is a peer dep, not counted)
 - Three.js peer dep: ~600KB (user's responsibility)
 
+### What's NOT In Scope (But Planned for Follow-Up)
+
+- **3D raycasting / picking** — screen-to-world ray conversion for clicking 3D objects (`THREE.Raycaster` + `setFromCamera`). Essential for interactive 3D games. Planned as a `Camera3D.raycastFromScreen(screenX, screenY)` convenience method or a `ThreeContext.raycast()` helper in a follow-up. Users can access `THREE.Raycaster` directly via `game.three.scene` in the meantime.
+- **Post-processing** — `EffectComposer` integration for bloom, SSAO, etc. Requires a separate render target.
+- **Fog, skybox, environment maps** — configurable directly via `game.three.scene.fog = new THREE.Fog(...)`.
+
 ### What's NOT In Scope
 
 - WebGPU renderer (Three.js has experimental WebGPU support, but it's not stable enough)
 - 3D physics (Rapier, Cannon.js, Ammo.js) — users compose their own
 - 3D audio (positional audio with Three.js AudioListener) — could be a separate plugin
-- Node3D in `@quintus/core` — stays in `@quintus/three` since it requires Three.js types
-- Custom Vec3/Quaternion in `@quintus/math` — Three.js types used directly
+- Node3D in `@quintus/core` — stays in `@quintus/three` since it requires Three.js types (see math types trade-off in Section 3)
+- Custom Vec3/Quaternion in `@quintus/math` — Three.js types used directly (revisit if `@quintus/physics3d` is built)

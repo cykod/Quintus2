@@ -1,3 +1,16 @@
+## Implement Phase 10: Three.js integration
+*Saturday, March 7th at 3am*
+Add the @quintus/three package with full 3D and hybrid 2D+3D rendering modes 
+via Three.js as a peer dependency. The package provides Node3D (lazy Object3D 
+creation), ThreeRenderer (scene graph sync), MeshNode, PointsNode, Camera3D, 
+lights (ambient/directional/point), GLTFModel (asset system + animations), 
+Billboard, and ThreeLayer (2D canvas compositing). Core changes add 
+Game.hasRenderer, DrawContext.drawCanvas(), and export Canvas2DDrawContext. 
+Includes 70 tests with a hand-written Three.js mock, two example demos 
+(3d-cube, 3d-hybrid), and marks all 6 design phases as Done.
+
+---
+
 ## Rename ai-prefabs package to prefabs
 *Friday, March 6th at 7pm*
 Rename the @quintus/ai-prefabs package to @quintus/prefabs for brevity. 

@@ -18,10 +18,12 @@
 		"@quintus/snapshot": "workspace:*",
 		"@quintus/sprites": "workspace:*",
 		"@quintus/test": "workspace:*",
+		"@quintus/three": "workspace:*",
 		"@quintus/tilemap": "workspace:*",
 		"@quintus/touch": "workspace:*",
 		"@quintus/tween": "workspace:*",
-		"@quintus/ui": "workspace:*"
+		"@quintus/ui": "workspace:*",
+		"three": "^0.172.0"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",

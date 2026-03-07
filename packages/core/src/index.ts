@@ -3,7 +3,7 @@
 export type { AssetManifest, LoaderFn } from "./asset-loader.js";
 // Assets
 export { AssetLoader } from "./asset-loader.js";
-export { Canvas2DRenderer } from "./canvas2d-renderer.js";
+export { Canvas2DDrawContext, Canvas2DRenderer } from "./canvas2d-renderer.js";
 // Constants
 export type { ConstantDef } from "./constants.js";
 export { ConstantsRegistry } from "./constants.js";
