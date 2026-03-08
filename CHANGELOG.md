@@ -1,3 +1,15 @@
+## Add items, traps, and exit stairs to 3D dungeon (Phase 4)
+*Sunday, March 8th at 6pm*
+Adds Phase 4 of the 3D dungeon example with three new entity types: CoinItem 
+(spinning/bobbing GLTF coin with fallback yellow box), TrapTile (static GLTF 
+trap with fallback red box), and ExitStairs (GLTF stairs with fallback green 
+box). All entities spawn from the grid's character data and use GLTF models 
+when available or procedural geometry as fallback. Coin collection destroys the 
+coin node, increments the score, and clears the grid cell. Trap damage and exit 
+detection were already wired in Phase 3's PlayerCharacter signals.
+
+---
+
 ## Add 3D dungeon player character with grid movement and camera follow
 *Sunday, March 8th at 6pm*
 Adds Phase 3 of the 3D dungeon example: a PlayerCharacter entity extending 

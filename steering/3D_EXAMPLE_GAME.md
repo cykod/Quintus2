@@ -13,7 +13,7 @@
 | 1 | Asset pipeline + project setup | DONE |
 | 2 | Dungeon grid + instanced floor/wall rendering | DONE |
 | 3 | Player character + movement + camera | DONE |
-| 4 | Items, traps, and scoring | Pending |
+| 4 | Items, traps, and scoring | DONE |
 | 5 | HUD overlay + game flow (title/win/lose) | Pending |
 | 6 | Tests + polish | Pending |
 
@@ -915,11 +915,11 @@ cam.position.set(startCell.gridX * TILE_SIZE, 12, startCell.gridZ * TILE_SIZE + 
 
 ## 8. Phase 4: Items, Traps, and Scoring
 
-- [ ] Create `entities/coin-item.ts` — spinning coin model, removed on collect
-- [ ] Create `entities/trap-tile.ts` — spike model with visual indicator
-- [ ] Place exit stairs (GLTFModel or MeshNode) at "E" tiles
-- [ ] Wire coin collection → score update → coin destroy
-- [ ] Wire trap → damage → invincibility flash
+- [x] Create `entities/coin-item.ts` — spinning coin model, removed on collect
+- [x] Create `entities/trap-tile.ts` — spike model with visual indicator
+- [x] Place exit stairs (GLTFModel or MeshNode) at "E" tiles — created `entities/exit-stairs.ts`
+- [x] Wire coin collection → score update → coin destroy
+- [x] Wire trap → damage → invincibility flash
 
 ### `entities/coin-item.ts`
 
