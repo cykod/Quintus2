@@ -17,42 +17,51 @@ export const TRAP_DAMAGE = 1;
 
 // === Level data ===
 export const LEVELS: string[][] = [
-	// Level 1 (8×8)
-	["########", "#P.....#", "#..C...#", "#......#", "#...T..#", "#......#", "#....CE#", "########"],
-	// Level 2 (10×10)
-	[
-		"##########",
-		"#P.......#",
-		"#..##.C..#",
-		"#..##....#",
-		"#...T....#",
-		"#....##..#",
-		"#.C..##.E#",
-		"#........#",
-		"##########",
-	],
-	// Level 3 (12×12)
-	[
-		"############",
-		"#P.........#",
-		"#..###..C..#",
-		"#..#.T..#..#",
-		"#....C..#..#",
-		"#.####.....#",
-		"#......T...#",
-		"#..##.##...#",
-		"#..##......#",
-		"#.....C..T.#",
-		"#.........E#",
-		"############",
-	],
+    // Level 1 (8×8)
+    [
+        "########",
+        "#P....E#",
+        "#..C...#",
+        "#......#",
+        "#...T..#",
+        "#......#",
+        "#....C.#",
+        "########",
+    ],
+    // Level 2 (10×10)
+    [
+        "##########",
+        "#P.......#",
+        "#..##.C..#",
+        "#..##....#",
+        "#...T....#",
+        "#....##..#",
+        "#.C..##.E#",
+        "#........#",
+        "##########",
+    ],
+    // Level 3 (12×12)
+    [
+        "############",
+        "#P.........#",
+        "#..###..C..#",
+        "#..#.T..#..#",
+        "#....C..#..#",
+        "#.####.....#",
+        "#......T...#",
+        "#..##.##...#",
+        "#..##......#",
+        "#.....C..T.#",
+        "#.........E#",
+        "############",
+    ],
 ];
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	move_up: ["KeyW", "ArrowUp", "gamepad:left-stick-up"],
-	move_down: ["KeyS", "ArrowDown", "gamepad:left-stick-down"],
-	move_left: ["KeyA", "ArrowLeft", "gamepad:left-stick-left"],
-	move_right: ["KeyD", "ArrowRight", "gamepad:left-stick-right"],
-	interact: ["KeyE", "Space", "gamepad:a"],
+    move_up: ["KeyW", "ArrowUp", "gamepad:left-stick-up"],
+    move_down: ["KeyS", "ArrowDown", "gamepad:left-stick-down"],
+    move_left: ["KeyA", "ArrowLeft", "gamepad:left-stick-left"],
+    move_right: ["KeyD", "ArrowRight", "gamepad:left-stick-right"],
+    interact: ["KeyE", "Space", "gamepad:a"],
 };

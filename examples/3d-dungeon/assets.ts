@@ -1,5 +1,3 @@
-import type { Game } from "@quintus/core";
-
 export const MODEL_PATHS = [
 	"assets/models/floor.glb",
 	"assets/models/wall.glb",
@@ -10,7 +8,3 @@ export const MODEL_PATHS = [
 	"assets/models/chest.glb",
 	"assets/models/barrel.glb",
 ];
-
-export function hasModels(game: Game): boolean {
-	return game.assets.get("floor") != null;
-}

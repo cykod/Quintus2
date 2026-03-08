@@ -1,6 +1,4 @@
-import { GLTFModel, MeshNode, Node3D } from "@quintus/three";
-import * as THREE from "three";
-import { hasModels } from "../assets.js";
+import { GLTFModel, Node3D } from "@quintus/three";
 import { TILE_SIZE } from "../config.js";
 
 export class CoinItem extends Node3D {
@@ -10,16 +8,7 @@ export class CoinItem extends Node3D {
 	private _elapsed = 0;
 
 	override onReady(): void {
-		if (hasModels(this.game)) {
-			this.add(GLTFModel, { src: "coin" });
-		} else {
-			this.add(MeshNode, {
-				geometry: new THREE.BoxGeometry(0.4, 0.1, 0.4),
-				material: new THREE.MeshStandardMaterial({ color: 0xffdd44 }),
-				castShadow: true,
-			});
-		}
-
+		this.add(GLTFModel, { src: "coin" });
 		this.position.set(this.gridX * TILE_SIZE, 0.5, this.gridZ * TILE_SIZE);
 	}
 

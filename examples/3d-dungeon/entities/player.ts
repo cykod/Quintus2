@@ -1,8 +1,7 @@
 import { signal } from "@quintus/core";
 import { GLTFModel } from "@quintus/three";
 import * as THREE from "three";
-import { hasModels } from "../assets.js";
-import { MOVE_DURATION, PLAYER_INVINCIBILITY, TILE_SIZE, TRAP_DAMAGE } from "../config.js";
+import { MOVE_DURATION, PLAYER_INVINCIBILITY, TRAP_DAMAGE } from "../config.js";
 import { gameState } from "../state.js";
 import type { DungeonGrid } from "./dungeon-grid.js";
 
@@ -27,15 +26,6 @@ export class PlayerCharacter extends GLTFModel {
 
 	override onReady(): void {
 		super.onReady();
-
-		// Fallback: if no GLTF models, add a blue cube
-		if (!hasModels(this.game)) {
-			const geo = new THREE.BoxGeometry(TILE_SIZE * 0.6, TILE_SIZE * 0.8, TILE_SIZE * 0.6);
-			const mat = new THREE.MeshStandardMaterial({ color: 0x4488ff });
-			const mesh = new THREE.Mesh(geo, mat);
-			mesh.position.y = TILE_SIZE * 0.4;
-			this.object3d.add(mesh);
-		}
 
 		// Place at grid position
 		const worldPos = this.dungeonGrid.gridToWorld(this.gridX, this.gridZ);

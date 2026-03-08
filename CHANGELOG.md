@@ -1,3 +1,14 @@
+## Remove hasModels fallback code from 3D dungeon example
+*Sunday, March 8th at 6pm*
+Removes all defensive hasModels/fallback geometry code from the 3D dungeon 
+example since models are always available. This simplifies six entity files by 
+removing conditional branches that created procedural BoxGeometry/PlaneGeometry 
+substitutes, deletes the hasModels utility function from assets.ts, and removes 
+the .catch fallback in main.ts that started the game without models. The 
+entities now directly use GLTFModel for all visual representation.
+
+---
+
 ## Add items, traps, and exit stairs to 3D dungeon (Phase 4)
 *Sunday, March 8th at 6pm*
 Adds Phase 4 of the 3D dungeon example with three new entity types: CoinItem 

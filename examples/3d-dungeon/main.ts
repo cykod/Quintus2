@@ -100,12 +100,6 @@ const game = new Game({
 game.use(ThreePlugin({ antialias: true, background: 0x1a1a2e }));
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 
-game.assets
-	.load({ glb: MODEL_PATHS })
-	.then(() => {
-		game.start(TestScene);
-	})
-	.catch(() => {
-		// Models not found (e.g. test env) — start with fallback geometry
-		game.start(TestScene);
-	});
+game.assets.load({ glb: MODEL_PATHS }).then(() => {
+	game.start(TestScene);
+});

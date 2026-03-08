@@ -1,7 +1,5 @@
 import { TileMap3D } from "@quintus/three";
-import * as THREE from "three";
 import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
-import { hasModels } from "../assets.js";
 import { TILE_SIZE } from "../config.js";
 
 const TILE_FLOOR = 1;
@@ -80,31 +78,15 @@ export class DungeonGrid extends TileMap3D {
 	}
 
 	private _defineTiles(): void {
-		if (hasModels(this.game)) {
-			const floorGltf = this.game.assets.get<GLTF>("floor");
-			const wallGltf = this.game.assets.get<GLTF>("wall");
-			if (floorGltf) {
-				this.defineTileFromGLTF(TILE_FLOOR, floorGltf.scene, {
-					receiveShadow: true,
-				});
-			}
-			if (wallGltf) {
-				this.defineTileFromGLTF(TILE_WALL, wallGltf.scene, {
-					castShadow: true,
-					receiveShadow: true,
-				});
-			}
-		} else {
-			this.defineTile(TILE_FLOOR, {
-				geometry: new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE),
-				material: new THREE.MeshStandardMaterial({ color: 0x555566 }),
+		const floorGltf = this.game.assets.get<GLTF>("floor");
+		const wallGltf = this.game.assets.get<GLTF>("wall");
+		if (floorGltf) {
+			this.defineTileFromGLTF(TILE_FLOOR, floorGltf.scene, {
 				receiveShadow: true,
-				rotationY: -Math.PI / 2,
 			});
-			this.defineTile(TILE_WALL, {
-				geometry: new THREE.BoxGeometry(TILE_SIZE, TILE_SIZE * 1.5, TILE_SIZE),
-				material: new THREE.MeshStandardMaterial({ color: 0x665544 }),
-				offsetY: TILE_SIZE * 0.75,
+		}
+		if (wallGltf) {
+			this.defineTileFromGLTF(TILE_WALL, wallGltf.scene, {
 				castShadow: true,
 				receiveShadow: true,
 			});
