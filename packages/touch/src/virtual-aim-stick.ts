@@ -9,6 +9,13 @@ export interface VirtualAimStickConfig {
 	fireAction?: string;
 	aimFrom?: string;
 	aimDistance?: number;
+	/** Direction actions to inject based on aim stick direction (same as VirtualJoystick). */
+	aimActions?: {
+		left?: string;
+		right?: string;
+		up?: string;
+		down?: string;
+	};
 }
 
 /**
@@ -22,10 +29,12 @@ export class VirtualAimStick extends VirtualControl {
 	readonly fireAction: string | undefined;
 	readonly aimFrom: string | undefined;
 	readonly aimDistance: number;
+	readonly aimActions: { left?: string; right?: string; up?: string; down?: string } | undefined;
 
 	private _knobOffset = new Vec2(0, 0);
 	private _active = false;
 	private _firing = false;
+	private _injectedAim = new Set<string>();
 
 	constructor(config: VirtualAimStickConfig) {
 		super();
@@ -36,6 +45,7 @@ export class VirtualAimStick extends VirtualControl {
 		this.fireAction = config.fireAction;
 		this.aimFrom = config.aimFrom;
 		this.aimDistance = config.aimDistance ?? 200;
+		this.aimActions = config.aimActions;
 	}
 
 	get knobOffset(): Vec2 {
@@ -70,6 +80,10 @@ export class VirtualAimStick extends VirtualControl {
 			this.input.inject(this.fireAction, false);
 			this._firing = false;
 		}
+		for (const action of this._injectedAim) {
+			this.input.inject(action, false);
+		}
+		this._injectedAim.clear();
 	}
 
 	private _updateFromTouch(x: number, y: number): void {
@@ -111,6 +125,43 @@ export class VirtualAimStick extends VirtualControl {
 			} else if (inDeadZone && this._firing) {
 				this.input.inject(this.fireAction, false);
 				this._firing = false;
+			}
+		}
+
+		// Aim direction actions
+		if (this.aimActions) {
+			const nx = dx / this.radius;
+			const ny = dy / this.radius;
+			this._injectAimDirection(this.aimActions.left, this.aimActions.right, nx);
+			this._injectAimDirection(this.aimActions.up, this.aimActions.down, ny);
+		}
+	}
+
+	private _injectAimDirection(
+		negAction: string | undefined,
+		posAction: string | undefined,
+		value: number,
+	): void {
+		const absValue = Math.abs(value);
+		const inDeadZone = absValue < this.deadZone;
+
+		if (negAction) {
+			if (!inDeadZone && value < 0) {
+				this.input.inject(negAction, true);
+				this._injectedAim.add(negAction);
+			} else if (this._injectedAim.has(negAction)) {
+				this.input.inject(negAction, false);
+				this._injectedAim.delete(negAction);
+			}
+		}
+
+		if (posAction) {
+			if (!inDeadZone && value > 0) {
+				this.input.inject(posAction, true);
+				this._injectedAim.add(posAction);
+			} else if (this._injectedAim.has(posAction)) {
+				this.input.inject(posAction, false);
+				this._injectedAim.delete(posAction);
 			}
 		}
 	}

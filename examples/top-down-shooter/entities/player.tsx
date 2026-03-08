@@ -1,8 +1,9 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import type { CollisionInfo } from "@quintus/physics";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
+import { getTouchState } from "@quintus/touch";
 import {
 	PLAYER_CAPSULE_HEIGHT,
 	PLAYER_INVINCIBILITY_DURATION,
@@ -107,14 +108,18 @@ export class Player extends DamageableActor {
 		this.velocity.y = vy * this._speed;
 		this.move(dt);
 
-		// Aiming: prefer right stick if active, otherwise fall back to mouse
+		// Aiming: prefer aim axes (gamepad right stick / touch aim stick),
+		// fall back to mouse position only when not using touch input
 		const aimX = input.getAxis("aim_left", "aim_right");
 		const aimY = input.getAxis("aim_up", "aim_down");
 		if (Math.abs(aimX) > 0.1 || Math.abs(aimY) > 0.1) {
 			this.rotation = Math.atan2(aimY, aimX);
 		} else {
-			const mouse = input.mousePosition;
-			this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x);
+			const touchState = getTouchState(this.game);
+			if (!touchState || touchState.inputMethod !== "touch") {
+				const mouse = input.mousePosition;
+				this.rotation = Math.atan2(mouse.y - this.position.y, mouse.x - this.position.x);
+			}
 		}
 
 		// Fire cooldown

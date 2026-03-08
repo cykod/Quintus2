@@ -46,9 +46,7 @@ export function InputPlugin(config: InputConfig): Plugin {
 				};
 
 				const onPointerDown = (e: PointerEvent) => {
-					// Skip mouse position update for touch — virtual controls
-					// (aim stick, follow zone) call setMousePosition() explicitly.
-					if (e.pointerType !== "touch" && game.canvas) {
+					if (game.canvas) {
 						const rect = game.canvas.getBoundingClientRect();
 						const scaleX = game.width / rect.width;
 						const scaleY = game.height / rect.height;
@@ -65,9 +63,6 @@ export function InputPlugin(config: InputConfig): Plugin {
 				};
 
 				const onPointerMove = (e: PointerEvent) => {
-					// Skip mouse position update for touch — virtual controls
-					// (aim stick, follow zone) call setMousePosition() explicitly.
-					if (e.pointerType === "touch") return;
 					if (!game.canvas) return;
 					const rect = game.canvas.getBoundingClientRect();
 					const scaleX = game.width / rect.width;

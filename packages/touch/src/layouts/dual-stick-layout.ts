@@ -12,6 +12,8 @@ export interface DualStickLayoutConfig {
 	aimFrom?: string;
 	/** Distance from aim node to place the virtual crosshair. Default: 200 */
 	aimDistance?: number;
+	/** Direction actions to inject based on aim stick direction. */
+	aimActions?: { left?: string; right?: string; up?: string; down?: string };
 	/** Optional weapon/ability buttons positioned above the move stick. */
 	weaponButtons?: Array<{ action: string; label: string }>;
 }
@@ -49,6 +51,7 @@ export function dualStickLayout(config?: DualStickLayoutConfig): TouchLayoutFact
 					fireAction: config?.fireAction,
 					aimFrom: config?.aimFrom,
 					aimDistance: config?.aimDistance,
+					aimActions: config?.aimActions,
 				}),
 			];
 

@@ -1,3 +1,15 @@
+## Fix touch input: axis-based aim, simple pointer handling
+*Sunday, March 8th at 2am*
+Reverts InputPlugin to treat all pointer types equally for mousePosition 
+updates, removing the touch-specific filtering that broke tower defense taps. 
+Adds optional aimActions to VirtualAimStick so it injects directional actions 
+(like VirtualJoystick), giving the top-down shooter a clean axis-based aiming 
+pathway on mobile. Updates the shooter player to use getAxis for aim direction 
+and only fall back to mousePosition on desktop. Removes the mousePosition 
+forwarding hack from TouchOverlay. All 2165 tests pass.
+
+---
+
 ## Fix touch pointer hijacking mousePosition for dual-stick aiming
 *Sunday, March 8th at 1am*
 Prevent touch pointer events from updating mousePosition in InputPlugin — 

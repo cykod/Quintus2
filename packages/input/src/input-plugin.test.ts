@@ -290,7 +290,7 @@ describe("InputPlugin", () => {
 			game.stop();
 		});
 
-		it("pointerdown sets mouse position for non-touch pointers", () => {
+		it("pointerdown sets mouse position for all pointers", () => {
 			const game = createGame();
 			game.use(InputPlugin({ actions: { select: ["mouse:left"] } }));
 			class TestScene extends Scene {}
@@ -312,7 +312,7 @@ describe("InputPlugin", () => {
 			game.stop();
 		});
 
-		it("touch pointer events do not update mousePosition", () => {
+		it("touch pointer events update mousePosition like any other pointer", () => {
 			const game = createGame();
 			game.use(InputPlugin({ actions: { fire: ["mouse:left"] } }));
 			class TestScene extends Scene {}
@@ -323,14 +323,7 @@ describe("InputPlugin", () => {
 			game.canvas.getBoundingClientRect = () =>
 				({ left: 0, top: 0, width: 800, height: 600 }) as DOMRect;
 
-			// Set initial mouse position via a non-touch pointer
-			game.canvas.dispatchEvent(
-				new MouseEvent("pointermove", { clientX: 400, clientY: 300 }),
-			);
-			expect(input.mousePosition.x).toBe(400);
-			expect(input.mousePosition.y).toBe(300);
-
-			// Touch pointer events should NOT override mousePosition
+			// Touch pointerdown should set mousePosition
 			const touchDown = new PointerEvent("pointerdown", {
 				button: 0,
 				clientX: 50,
@@ -339,9 +332,10 @@ describe("InputPlugin", () => {
 				bubbles: true,
 			});
 			game.canvas.dispatchEvent(touchDown);
-			expect(input.mousePosition.x).toBe(400); // unchanged
-			expect(input.mousePosition.y).toBe(300); // unchanged
+			expect(input.mousePosition.x).toBe(50);
+			expect(input.mousePosition.y).toBe(500);
 
+			// Touch pointermove should also update mousePosition
 			const touchMove = new PointerEvent("pointermove", {
 				clientX: 60,
 				clientY: 510,
@@ -349,10 +343,10 @@ describe("InputPlugin", () => {
 				bubbles: true,
 			});
 			game.canvas.dispatchEvent(touchMove);
-			expect(input.mousePosition.x).toBe(400); // still unchanged
-			expect(input.mousePosition.y).toBe(300);
+			expect(input.mousePosition.x).toBe(60);
+			expect(input.mousePosition.y).toBe(510);
 
-			// But touch pointerdown should still buffer the mouse button press
+			// Touch pointerdown should also buffer the mouse button press
 			game.step();
 			expect(input.isPressed("fire")).toBe(true);
 

@@ -218,4 +218,97 @@ describe("VirtualAimStick", () => {
 
 		game.stop();
 	});
+
+	it("injects aim direction actions when configured", () => {
+		const game = createGame();
+		game.use(
+			InputPlugin({
+				actions: { aim_left: [], aim_right: [], aim_up: [], aim_down: [] },
+			}),
+		);
+		const input = getInput(game)!;
+
+		class TestScene extends Scene {
+			aim!: VirtualAimStick;
+			override onReady() {
+				this.aim = new VirtualAimStick({
+					position: new Vec2(700, 500),
+					radius: 50,
+					deadZone: 0.2,
+					aimActions: {
+						left: "aim_left",
+						right: "aim_right",
+						up: "aim_up",
+						down: "aim_down",
+					},
+				});
+				this.add(this.aim);
+			}
+		}
+
+		game.start(TestScene);
+		const aim = (game.currentScene as TestScene).aim;
+
+		// Touch to the right of center (outside dead zone)
+		aim._onTouchStart(740, 500);
+		input._beginFrame();
+		expect(input.isPressed("aim_right")).toBe(true);
+		expect(input.isPressed("aim_left")).toBe(false);
+
+		// Move down-left
+		aim._onTouchMove(670, 540);
+		input._beginFrame();
+		expect(input.isPressed("aim_left")).toBe(true);
+		expect(input.isPressed("aim_down")).toBe(true);
+		expect(input.isPressed("aim_right")).toBe(false);
+
+		game.stop();
+	});
+
+	it("releases aim actions on touch end", () => {
+		const game = createGame();
+		game.use(
+			InputPlugin({
+				actions: { aim_left: [], aim_right: [] },
+			}),
+		);
+		const input = getInput(game)!;
+
+		class TestScene extends Scene {
+			aim!: VirtualAimStick;
+			override onReady() {
+				this.aim = new VirtualAimStick({
+					position: new Vec2(700, 500),
+					radius: 50,
+					deadZone: 0.2,
+					aimActions: { left: "aim_left", right: "aim_right" },
+				});
+				this.add(this.aim);
+			}
+		}
+
+		game.start(TestScene);
+		const aim = (game.currentScene as TestScene).aim;
+
+		aim._onTouchStart(740, 500);
+		input._beginFrame();
+		expect(input.isPressed("aim_right")).toBe(true);
+
+		aim._onTouchEnd();
+		input._beginFrame();
+		expect(input.isPressed("aim_right")).toBe(false);
+
+		game.stop();
+	});
+
+	it("does not inject aim actions when aimActions not configured", () => {
+		const { input, scene } = setup();
+		const aim = scene.aim;
+
+		// Touch outside dead zone — should not throw or inject anything
+		aim._onTouchStart(740, 500);
+		input._beginFrame();
+		// No aim actions configured — nothing should be pressed
+		expect(aim.active).toBe(true);
+	});
 });

@@ -35,6 +35,12 @@ game.use(
 			fireAction: "fire",
 			aimFrom: "Player",
 			aimDistance: 120,
+			aimActions: {
+				left: "aim_left",
+				right: "aim_right",
+				up: "aim_up",
+				down: "aim_down",
+			},
 		}),
 		fullscreen: true,
 	}),

@@ -53,7 +53,9 @@ export class TouchOverlay extends Node2D {
 				const touch = e.changedTouches[i];
 				if (!touch) continue;
 				const pos = this._toLocal(touch);
-				if (this._handleStart(touch.identifier, pos.x, pos.y)) hit = true;
+				if (this._handleStart(touch.identifier, pos.x, pos.y)) {
+					hit = true;
+				}
 			}
 			if (hit) e.preventDefault();
 		};
