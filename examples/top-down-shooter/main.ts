@@ -35,11 +35,6 @@ game.use(
 			fireAction: "fire",
 			aimFrom: "Player",
 			aimDistance: 120,
-			weaponButtons: [
-				{ action: "weapon1", label: "1" },
-				{ action: "weapon2", label: "2" },
-				{ action: "weapon3", label: "3" },
-			],
 		}),
 		fullscreen: true,
 	}),

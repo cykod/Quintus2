@@ -1,3 +1,16 @@
+## Fix touch pointer hijacking mousePosition for dual-stick aiming
+*Sunday, March 8th at 1am*
+Prevent touch pointer events from updating mousePosition in InputPlugin — 
+only actual mouse movement sets it now. Virtual controls (aim stick, follow 
+zone) already call setMousePosition() explicitly, so touch aiming still works. 
+This fixes the top-down shooter's dual-stick layout where touching the left 
+movement joystick would override the aim direction. Also removed weapon buttons 
+from the dual-stick mobile layout since the aim stick handles firing. Includes 
+a new test verifying touch pointers skip mousePosition while still buffering 
+button presses (2162 total tests passing).
+
+---
+
 ## Add mobile fill mode and sticky joystick tracking
 *Saturday, March 7th at 8pm*
 Switch space shooter and top-down shooter from scale:"fit" to scale:"fill" for 

@@ -662,3 +662,5 @@
 [MILE] sat 3/7 4pm - Added TileMap3D with instanced rendering, GLTF support, grid parsing, and 26 tests
 
 [IMPL] sat 3/7 5pm - Add mobile full screen enhancements to the top down shooter and space shooter examples
+
+[MILE] sat 3/7 8pm - Added mobile fill mode to both shooters and fixed sticky joystick tracking for continuous touch input

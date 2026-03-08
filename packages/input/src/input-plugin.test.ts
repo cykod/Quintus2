@@ -1,5 +1,20 @@
 import { Game, Node2D, Scene } from "@quintus/core";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
+// jsdom does not provide PointerEvent — polyfill for tests
+beforeAll(() => {
+	if (typeof globalThis.PointerEvent === "undefined") {
+		(globalThis as Record<string, unknown>).PointerEvent = class PointerEvent extends MouseEvent {
+			readonly pointerId: number;
+			readonly pointerType: string;
+			constructor(type: string, init: PointerEventInit & { pointerId?: number } = {}) {
+				super(type, init);
+				this.pointerId = init.pointerId ?? 0;
+				this.pointerType = init.pointerType ?? "";
+			}
+		};
+	}
+});
 import type { Input } from "./input.js";
 import type { InputEvent } from "./input-event.js";
 import { getInput, InputPlugin } from "./input-plugin.js";
@@ -275,7 +290,7 @@ describe("InputPlugin", () => {
 			game.stop();
 		});
 
-		it("pointerdown sets mouse position (touch has no preceding pointermove)", () => {
+		it("pointerdown sets mouse position for non-touch pointers", () => {
 			const game = createGame();
 			game.use(InputPlugin({ actions: { select: ["mouse:left"] } }));
 			class TestScene extends Scene {}
@@ -287,12 +302,59 @@ describe("InputPlugin", () => {
 			game.canvas.getBoundingClientRect = () =>
 				({ left: 0, top: 0, width: 800, height: 600 }) as DOMRect;
 
-			// Simulate a touch: pointerdown with no preceding pointermove
+			// Simulate a mouse click: pointerdown with no pointerType (defaults to non-touch)
 			game.canvas.dispatchEvent(
 				new MouseEvent("pointerdown", { button: 0, clientX: 200, clientY: 150 }),
 			);
 			expect(input.mousePosition.x).toBe(200);
 			expect(input.mousePosition.y).toBe(150);
+
+			game.stop();
+		});
+
+		it("touch pointer events do not update mousePosition", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { fire: ["mouse:left"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			const input = getInput(game) as Input;
+
+			game.canvas.getBoundingClientRect = () =>
+				({ left: 0, top: 0, width: 800, height: 600 }) as DOMRect;
+
+			// Set initial mouse position via a non-touch pointer
+			game.canvas.dispatchEvent(
+				new MouseEvent("pointermove", { clientX: 400, clientY: 300 }),
+			);
+			expect(input.mousePosition.x).toBe(400);
+			expect(input.mousePosition.y).toBe(300);
+
+			// Touch pointer events should NOT override mousePosition
+			const touchDown = new PointerEvent("pointerdown", {
+				button: 0,
+				clientX: 50,
+				clientY: 500,
+				pointerType: "touch",
+				bubbles: true,
+			});
+			game.canvas.dispatchEvent(touchDown);
+			expect(input.mousePosition.x).toBe(400); // unchanged
+			expect(input.mousePosition.y).toBe(300); // unchanged
+
+			const touchMove = new PointerEvent("pointermove", {
+				clientX: 60,
+				clientY: 510,
+				pointerType: "touch",
+				bubbles: true,
+			});
+			game.canvas.dispatchEvent(touchMove);
+			expect(input.mousePosition.x).toBe(400); // still unchanged
+			expect(input.mousePosition.y).toBe(300);
+
+			// But touch pointerdown should still buffer the mouse button press
+			game.step();
+			expect(input.isPressed("fire")).toBe(true);
 
 			game.stop();
 		});
