@@ -10,8 +10,8 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | TileMap3D engine class (prerequisite) | DONE |
-| 1 | Asset pipeline + project setup | Pending |
-| 2 | Dungeon grid + instanced floor/wall rendering | Pending |
+| 1 | Asset pipeline + project setup | DONE |
+| 2 | Dungeon grid + instanced floor/wall rendering | DONE |
 | 3 | Player character + movement + camera | Pending |
 | 4 | Items, traps, and scoring | Pending |
 | 5 | HUD overlay + game flow (title/win/lose) | Pending |
@@ -442,15 +442,15 @@ export class InstancedMesh extends Mesh {
 
 ## 5. Phase 1: Asset Pipeline + Project Setup
 
-- [ ] Copy needed GLB files from `tmp/kenney_mini-dungeon/Models/GLB format/` to `examples/3d-dungeon/assets/models/`
-- [ ] Add `LICENSE-KENNEY.txt` crediting Kenney (CC0) to the assets directory
-- [ ] Create `examples/3d-dungeon/` directory structure
-- [ ] Create `index.html` with canvas, mobile viewport, dark background
-- [ ] Create `tsconfig.json` extending `../../tsconfig.base.json`
-- [ ] Create `assets.ts` with model manifest and fallback mesh factory
-- [ ] Create `config.ts` with game constants and input bindings
-- [ ] Create `state.ts` with reactive game state
-- [ ] Create `main.ts` with game initialization (placeholder scene)
+- [x] Copy needed GLB files from `tmp/kenney_mini-dungeon/Models/GLB format/` to `examples/3d-dungeon/assets/models/`
+- [x] Add `LICENSE-KENNEY.txt` crediting Kenney (CC0) to the assets directory
+- [x] Create `examples/3d-dungeon/` directory structure
+- [x] Create `index.html` with canvas, mobile viewport, dark background
+- [x] Create `tsconfig.json` extending `../../tsconfig.base.json`
+- [x] Create `assets.ts` with model manifest and fallback mesh factory
+- [x] Create `config.ts` with game constants and input bindings
+- [x] Create `state.ts` with reactive game state
+- [x] Create `main.ts` with game initialization (placeholder scene)
 - [ ] Verify `pnpm dev` serves the example at `http://localhost:3050/3d-dungeon/`
 
 ### `config.ts`
@@ -587,9 +587,9 @@ game.assets.load({ glb: MODEL_PATHS }).then(() => {
 
 ## 6. Phase 2: Dungeon Grid + Instanced Rendering
 
-- [ ] Create `entities/dungeon-grid.ts` — extends `TileMap3D`, defines floor/wall tiles from GLTF or fallback
-- [ ] Implement `parseLevel()` that defines tiles, parses grid, and auto-rebuilds
-- [ ] Add game-logic helpers (isWalkable, findChar, findAllChars) on top of TileMap3D base
+- [x] Create `entities/dungeon-grid.ts` — extends `TileMap3D`, defines floor/wall tiles from GLTF or fallback
+- [x] Implement `parseLevel()` that defines tiles, parses grid, and auto-rebuilds
+- [x] Add game-logic helpers (isWalkable, findChar, findAllChars) on top of TileMap3D base
 - [ ] Verify dungeon renders in browser (2 draw calls for all floor+wall tiles)
 
 ### Why TileMap3D?

@@ -1,3 +1,17 @@
+## Add 3D dungeon example (Phases 1-2) and qdbg 3D support
+*Sunday, March 8th at 4pm*
+Creates the 3d-dungeon example game with Kenney Mini Dungeon GLB assets (floor,
+wall, character, coin, trap, stairs, chest, barrel) plus colormap texture.
+Implements DungeonGrid entity extending TileMap3D with game-logic helpers
+(parseLevel, isWalkable, findChar, clearCell). Includes 3 level grids, reactive
+game state, config constants, and a test scene that renders Level 1 with instanced
+floor+wall tiles. Extends the qdbg debugger and debug-format.ts for full 3D
+support: tree/layout/physics/query/nearby commands now display xyz positions,
+Euler rotation in degrees, and 3D scale. TILE_SIZE set to 1 to match Kenney model
+geometry. All 2167 tests pass.
+
+---
+
 ## Fix touch input: axis-based aim, simple pointer handling
 *Sunday, March 8th at 2am*
 Reverts InputPlugin to treat all pointer types equally for mousePosition 

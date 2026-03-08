@@ -264,18 +264,26 @@ cmd_layout() {
 		var snap = d.tree();
 		if (!snap) return '(no scene)';
 		var nodes = [];
+		function fmtPos(p) {
+			if (typeof p.z === 'number') return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) + ')';
+			return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
+		}
 		function walk(n, depth) {
 			var p = n.position;
 			if (p) {
 				var line = '  '.repeat(depth) + n.type;
 				if (n.name !== n.type) line += ' \"' + n.name + '\"';
-				line += '  pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
+				line += '  ' + fmtPos(p);
 				if (n.velocity) line += '  vel=(' + n.velocity.x.toFixed(1) + ',' + n.velocity.y.toFixed(1) + ')';
 				if (n.isOnFloor) line += '  [floor]';
 				if (n.isOnWall) line += '  [wall]';
 				if (n.isOnCeiling) line += '  [ceiling]';
 				if (n.collisionGroup) line += '  group=' + n.collisionGroup;
 				if (n.shape) line += '  shape=' + JSON.stringify(n.shape);
+				if (n.rotation && typeof n.rotation === 'object' && typeof n.rotation.order === 'string') {
+					var r = n.rotation;
+					line += '  rot=(' + (r.x*180/Math.PI).toFixed(0) + ',' + (r.y*180/Math.PI).toFixed(0) + ',' + (r.z*180/Math.PI).toFixed(0) + ')deg';
+				}
 				nodes.push(line);
 			}
 			(n.children || []).forEach(function(c) { walk(c, depth + 1); });
@@ -308,7 +316,10 @@ cmd_query() {
 			var line = n.type;
 			if (n.name !== n.type) line += ' \"' + n.name + '\"';
 			var p = n.position;
-			if (p) line += ' (' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
+			if (p) {
+				if (typeof p.z === 'number') line += ' (' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) + ')';
+				else line += ' (' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
+			}
 			if (n.tags && n.tags.length) line += ' [' + n.tags.join(',') + ']';
 			return line;
 		}).join('\n');
@@ -324,8 +335,27 @@ cmd_physics() {
 		if (!snap) return 'Node not found: ${target}';
 		var lines = [];
 		lines.push('Node: ' + snap.type + ' \"' + snap.name + '\"');
-		if (snap.position) lines.push('Position: (' + snap.position.x.toFixed(2) + ', ' + snap.position.y.toFixed(2) + ')');
+		if (snap.position) {
+			var p = snap.position;
+			if (typeof p.z === 'number') {
+				lines.push('Position: (' + p.x.toFixed(2) + ', ' + p.y.toFixed(2) + ', ' + p.z.toFixed(2) + ')');
+			} else {
+				lines.push('Position: (' + p.x.toFixed(2) + ', ' + p.y.toFixed(2) + ')');
+			}
+		}
 		if (snap.globalPosition) lines.push('Global:   (' + snap.globalPosition.x.toFixed(2) + ', ' + snap.globalPosition.y.toFixed(2) + ')');
+		if (snap.rotation && typeof snap.rotation === 'object' && typeof snap.rotation.order === 'string') {
+			var r = snap.rotation;
+			lines.push('Rotation: (' + (r.x*180/Math.PI).toFixed(1) + ', ' + (r.y*180/Math.PI).toFixed(1) + ', ' + (r.z*180/Math.PI).toFixed(1) + ') deg ' + r.order);
+		} else if (typeof snap.rotation === 'number') {
+			lines.push('Rotation: ' + (snap.rotation * 180 / Math.PI).toFixed(1) + ' deg');
+		}
+		if (snap.scale) {
+			var sc = snap.scale;
+			if (typeof sc.z === 'number') {
+				lines.push('Scale:    (' + sc.x.toFixed(2) + ', ' + sc.y.toFixed(2) + ', ' + sc.z.toFixed(2) + ')');
+			}
+		}
 		if (snap.velocity) lines.push('Velocity: (' + snap.velocity.x.toFixed(2) + ', ' + snap.velocity.y.toFixed(2) + ')');
 		if (snap.gravity !== undefined) lines.push('Gravity:  ' + snap.gravity);
 		if (snap.isOnFloor !== undefined) lines.push('OnFloor:  ' + snap.isOnFloor);
@@ -333,6 +363,7 @@ cmd_physics() {
 		if (snap.isOnCeiling !== undefined) lines.push('OnCeil:   ' + snap.isOnCeiling);
 		if (snap.collisionGroup) lines.push('Group:    ' + snap.collisionGroup);
 		if (snap.shape) lines.push('Shape:    ' + JSON.stringify(snap.shape));
+		if (snap.visible === false) lines.push('Visible:  false');
 		if (snap.tags && snap.tags.length) lines.push('Tags:     ' + snap.tags.join(', '));
 		return lines.join('\n');
 	"
@@ -690,26 +721,33 @@ cmd_nearby() {
 		if (!snap.position) return 'Node has no position: ${target}';
 		var px = snap.position.x;
 		var py = snap.position.y;
+		var pz = typeof snap.position.z === 'number' ? snap.position.z : null;
+		var is3d = pz !== null;
 		var r = ${radius};
 
 		var tree = d.tree();
 		if (!tree) return '(no scene)';
 
 		var results = [];
+		function fmtPos(p) {
+			if (typeof p.z === 'number') return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) + ')';
+			return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
+		}
 		function walk(n) {
 			if (!n.position) { (n.children || []).forEach(walk); return; }
 			if (n.id === snap.id) { (n.children || []).forEach(walk); return; }
 			var dx = n.position.x - px;
 			var dy = n.position.y - py;
-			var dist = Math.sqrt(dx * dx + dy * dy);
+			var dz = is3d && typeof n.position.z === 'number' ? n.position.z - pz : 0;
+			var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (dist <= r) {
 				var line = n.type;
 				if (n.name !== n.type) line += ' \"' + n.name + '\"';
-				line += '  pos=(' + n.position.x.toFixed(1) + ',' + n.position.y.toFixed(1) + ')';
+				line += '  ' + fmtPos(n.position);
 				line += '  dist=' + dist.toFixed(1);
-				line += '  delta=(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ')';
+				if (is3d) line += '  delta=(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ',' + dz.toFixed(1) + ')';
+				else line += '  delta=(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ')';
 				if (n.collisionGroup) line += '  group=' + n.collisionGroup;
-				// Find collision shape in children
 				var shapes = (n.children || []).filter(function(c) { return c.shapeDesc; });
 				if (shapes.length > 0) line += '  shape=' + shapes[0].shapeDesc;
 				if (n.bodyType) line += '  [' + n.bodyType + ']';
@@ -720,10 +758,11 @@ cmd_nearby() {
 		}
 		walk(tree);
 
-		if (results.length === 0) return 'No nodes within ' + r + 'px of ${target} at (' + px.toFixed(1) + ',' + py.toFixed(1) + ')';
+		var posStr = is3d ? '(' + px.toFixed(1) + ',' + py.toFixed(1) + ',' + pz.toFixed(1) + ')' : '(' + px.toFixed(1) + ',' + py.toFixed(1) + ')';
+		if (results.length === 0) return 'No nodes within ' + r + ' of ${target} at ' + posStr;
 
 		results.sort(function(a, b) { return a.dist - b.dist; });
-		var header = 'Nearby ${target} (' + px.toFixed(1) + ',' + py.toFixed(1) + ') within ' + r + 'px:';
+		var header = 'Nearby ${target} ' + posStr + ' within ' + r + ':';
 		return header + '\n' + results.map(function(r) { return '  ' + r.line; }).join('\n');
 	"
 }

@@ -48,11 +48,15 @@ function formatNodeLine(snap: NodeSnapshot): string {
 		parts.push(`"${snap.name}"`);
 	}
 
-	// Show position if it's a Node2D+ snapshot
+	// Show position if it's a Node2D+ or Node3D+ snapshot
 	const s = snap as unknown as Record<string, unknown>;
 	if (s.position && typeof s.position === "object") {
-		const pos = s.position as { x: number; y: number };
-		parts.push(`(${pos.x.toFixed(0)}, ${pos.y.toFixed(0)})`);
+		const pos = s.position as { x: number; y: number; z?: number };
+		if (typeof pos.z === "number") {
+			parts.push(`(${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`);
+		} else {
+			parts.push(`(${pos.x.toFixed(0)}, ${pos.y.toFixed(0)})`);
+		}
 	}
 
 	// Show shape description if present (CollisionShape)
@@ -133,7 +137,10 @@ function formatValue(v: unknown): string {
 	if (v === null || v === undefined) return String(v);
 	if (typeof v === "object") {
 		if ("x" in v && "y" in v) {
-			const obj = v as { x: number; y: number };
+			const obj = v as { x: number; y: number; z?: number };
+			if ("z" in v && typeof obj.z === "number") {
+				return `(${obj.x},${obj.y},${obj.z})`;
+			}
 			return `(${obj.x},${obj.y})`;
 		}
 		return JSON.stringify(v);
