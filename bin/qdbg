@@ -261,35 +261,10 @@ cmd_layout() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
 		var snap = d.tree();
 		if (!snap) return '(no scene)';
-		var nodes = [];
-		function fmtPos(p) {
-			if (typeof p.z === 'number') return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) + ')';
-			return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
-		}
-		function walk(n, depth) {
-			var p = n.position;
-			if (p) {
-				var line = '  '.repeat(depth) + n.type;
-				if (n.name !== n.type) line += ' \"' + n.name + '\"';
-				line += '  ' + fmtPos(p);
-				if (n.velocity) line += '  vel=(' + n.velocity.x.toFixed(1) + ',' + n.velocity.y.toFixed(1) + ')';
-				if (n.isOnFloor) line += '  [floor]';
-				if (n.isOnWall) line += '  [wall]';
-				if (n.isOnCeiling) line += '  [ceiling]';
-				if (n.collisionGroup) line += '  group=' + n.collisionGroup;
-				if (n.shape) line += '  shape=' + JSON.stringify(n.shape);
-				if (n.rotation && typeof n.rotation === 'object' && typeof n.rotation.order === 'string') {
-					var r = n.rotation;
-					line += '  rot=(' + (r.x*180/Math.PI).toFixed(0) + ',' + (r.y*180/Math.PI).toFixed(0) + ',' + (r.z*180/Math.PI).toFixed(0) + ')deg';
-				}
-				nodes.push(line);
-			}
-			(n.children || []).forEach(function(c) { walk(c, depth + 1); });
-		}
-		walk(snap, 0);
-		return nodes.length > 0 ? nodes.join('\n') : '(no spatial nodes)';
+		return f.formatLayout(snap);
 	"
 }
 
@@ -310,19 +285,9 @@ cmd_query() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
 		var results = d.query('${q}');
-		if (results.length === 0) return 'No matches for: ${q}';
-		return results.map(function(n) {
-			var line = n.type;
-			if (n.name !== n.type) line += ' \"' + n.name + '\"';
-			var p = n.position;
-			if (p) {
-				if (typeof p.z === 'number') line += ' (' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) + ')';
-				else line += ' (' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
-			}
-			if (n.tags && n.tags.length) line += ' [' + n.tags.join(',') + ']';
-			return line;
-		}).join('\n');
+		return f.formatQueryResults(results, '${q}');
 	"
 }
 
@@ -331,41 +296,10 @@ cmd_physics() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
 		var snap = d.inspect('${target}');
 		if (!snap) return 'Node not found: ${target}';
-		var lines = [];
-		lines.push('Node: ' + snap.type + ' \"' + snap.name + '\"');
-		if (snap.position) {
-			var p = snap.position;
-			if (typeof p.z === 'number') {
-				lines.push('Position: (' + p.x.toFixed(2) + ', ' + p.y.toFixed(2) + ', ' + p.z.toFixed(2) + ')');
-			} else {
-				lines.push('Position: (' + p.x.toFixed(2) + ', ' + p.y.toFixed(2) + ')');
-			}
-		}
-		if (snap.globalPosition) lines.push('Global:   (' + snap.globalPosition.x.toFixed(2) + ', ' + snap.globalPosition.y.toFixed(2) + ')');
-		if (snap.rotation && typeof snap.rotation === 'object' && typeof snap.rotation.order === 'string') {
-			var r = snap.rotation;
-			lines.push('Rotation: (' + (r.x*180/Math.PI).toFixed(1) + ', ' + (r.y*180/Math.PI).toFixed(1) + ', ' + (r.z*180/Math.PI).toFixed(1) + ') deg ' + r.order);
-		} else if (typeof snap.rotation === 'number') {
-			lines.push('Rotation: ' + (snap.rotation * 180 / Math.PI).toFixed(1) + ' deg');
-		}
-		if (snap.scale) {
-			var sc = snap.scale;
-			if (typeof sc.z === 'number') {
-				lines.push('Scale:    (' + sc.x.toFixed(2) + ', ' + sc.y.toFixed(2) + ', ' + sc.z.toFixed(2) + ')');
-			}
-		}
-		if (snap.velocity) lines.push('Velocity: (' + snap.velocity.x.toFixed(2) + ', ' + snap.velocity.y.toFixed(2) + ')');
-		if (snap.gravity !== undefined) lines.push('Gravity:  ' + snap.gravity);
-		if (snap.isOnFloor !== undefined) lines.push('OnFloor:  ' + snap.isOnFloor);
-		if (snap.isOnWall !== undefined) lines.push('OnWall:   ' + snap.isOnWall);
-		if (snap.isOnCeiling !== undefined) lines.push('OnCeil:   ' + snap.isOnCeiling);
-		if (snap.collisionGroup) lines.push('Group:    ' + snap.collisionGroup);
-		if (snap.shape) lines.push('Shape:    ' + JSON.stringify(snap.shape));
-		if (snap.visible === false) lines.push('Visible:  false');
-		if (snap.tags && snap.tags.length) lines.push('Tags:     ' + snap.tags.join(', '));
-		return lines.join('\n');
+		return f.formatPhysics(snap);
 	"
 }
 
@@ -555,27 +489,9 @@ cmd_track() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
-		var rows = [];
-		rows.push('Frame  X         Y         Vx        Vy        Floor  Wall   Ceil');
-		rows.push('---');
-		for (var i = 0; i < ${frames}; i++) {
-			d.step(1);
-			var s = d.inspect('${target}');
-			if (!s) { rows.push('(node lost at step ' + (i+1) + ')'); break; }
-			var p = s.position || {x:0,y:0};
-			var v = s.velocity || {x:0,y:0};
-			rows.push(
-				String(d.frame).padStart(5) + '  ' +
-				p.x.toFixed(2).padStart(8) + '  ' +
-				p.y.toFixed(2).padStart(8) + '  ' +
-				v.x.toFixed(2).padStart(8) + '  ' +
-				v.y.toFixed(2).padStart(8) + '  ' +
-				String(!!s.isOnFloor).padEnd(6) + ' ' +
-				String(!!s.isOnWall).padEnd(6) + ' ' +
-				String(!!s.isOnCeiling)
-			);
-		}
-		return rows.join('\n');
+		var f = window.__quintusFormatters;
+		var result = d.track('${target}', ${frames});
+		return f.formatTrack(result);
 	"
 }
 
@@ -584,69 +500,10 @@ cmd_jump_analysis() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
-		var before = d.inspect('${target}');
-		if (!before) return 'Node not found: ${target}';
-		if (!before.isOnFloor) return '${target} is not on the floor. Land first, then retry.';
-
-		var startY = before.position.y;
-		var startFrame = d.frame;
-		var gravity = before.gravity || 0;
-
-		d.press('jump');
-		d.step(1);
-		d.release('jump');
-
-		var afterJump = d.inspect('${target}');
-		var jumpVy = afterJump ? afterJump.velocity.y : 0;
-
-		var minY = startY;
-		var apexFrame = d.frame;
-		var landFrame = 0;
-		var maxFrames = 300;
-
-		for (var i = 0; i < maxFrames; i++) {
-			d.step(1);
-			var s = d.inspect('${target}');
-			if (!s) break;
-			if (s.position.y < minY) {
-				minY = s.position.y;
-				apexFrame = d.frame;
-			}
-			if (s.isOnFloor && d.frame > startFrame + 2) {
-				landFrame = d.frame;
-				break;
-			}
-		}
-
-		var jumpHeight = startY - minY;
-		var totalFrames = landFrame > 0 ? landFrame - startFrame : d.frame - startFrame;
-		var apexFrameRel = apexFrame - startFrame;
-		var airTimeSec = totalFrames / 60;
-
-		var absJumpForce = Math.abs(jumpVy);
-		var theoreticalHeight = gravity > 0 ? (absJumpForce * absJumpForce) / (2 * gravity) : 0;
-		var theoreticalAirFrames = gravity > 0 ? (2 * absJumpForce / gravity) * 60 : 0;
-
-		var lines = [];
-		lines.push('=== Jump Analysis: ${target} ===');
-		lines.push('Start Y:       ' + startY.toFixed(2));
-		lines.push('Jump Vy:       ' + jumpVy.toFixed(2));
-		lines.push('Gravity:       ' + gravity);
-		lines.push('');
-		lines.push('--- Measured ---');
-		lines.push('Jump Height:   ' + jumpHeight.toFixed(2) + ' px');
-		lines.push('Apex Frame:    +' + apexFrameRel + ' frames');
-		lines.push('Air Time:      ' + totalFrames + ' frames (' + airTimeSec.toFixed(3) + 's)');
-		lines.push('Landed:        ' + (landFrame > 0 ? 'yes (frame ' + landFrame + ')' : 'no (still airborne)'));
-		lines.push('');
-		lines.push('--- Theoretical ---');
-		lines.push('Height:        ' + theoreticalHeight.toFixed(2) + ' px');
-		lines.push('Air Frames:    ' + theoreticalAirFrames.toFixed(1));
-		if (theoreticalHeight > 0) {
-			var pct = ((jumpHeight / theoreticalHeight) * 100).toFixed(1);
-			lines.push('Efficiency:    ' + pct + '%');
-		}
-		return lines.join('\n');
+		var f = window.__quintusFormatters;
+		var result = d.jumpAnalysis('${target}');
+		if (typeof result === 'string') return result;
+		return f.formatJumpAnalysis(result, '${target}');
 	"
 }
 
@@ -665,47 +522,19 @@ cmd_move_to() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
-		var snap = d.inspect('${target}');
-		if (!snap) return 'Node not found: ${target}';
-		if (!snap.position) return 'Node has no position: ${target}';
-
-		var actionList = '${actions}'.split(',');
-		var tx = '${tx}' === '-' ? null : Number('${tx}');
-		var ty = '${ty}' === '-' ? null : Number('${ty}');
-		if (tx === null && ty === null) return 'Error: both x and y are \"-\". Specify at least one threshold.';
-
-		var startX = snap.position.x;
-		var startY = snap.position.y;
-		var startFrame = d.frame;
-
-		for (var i = 0; i < actionList.length; i++) d.press(actionList[i].trim());
-
-		var reached = false;
-		var frames = 0;
-		for (frames = 0; frames < ${max_frames}; frames++) {
-			d.step(1);
-			snap = d.inspect('${target}');
-			if (!snap) { break; }
-			var px = snap.position.x;
-			var py = snap.position.y;
-			var xOk = tx === null || (tx >= startX ? px >= tx : px <= tx);
-			var yOk = ty === null || (ty >= startY ? py >= ty : py <= ty);
-			if (xOk && yOk) { reached = true; break; }
-		}
-
-		for (var i = 0; i < actionList.length; i++) d.release(actionList[i].trim());
-
-		var endSnap = d.inspect('${target}');
-		var ex = endSnap ? endSnap.position.x.toFixed(2) : '?';
-		var ey = endSnap ? endSnap.position.y.toFixed(2) : '?';
-		var vx = endSnap && endSnap.velocity ? endSnap.velocity.x.toFixed(2) : '?';
-		var vy = endSnap && endSnap.velocity ? endSnap.velocity.y.toFixed(2) : '?';
-		var floor = endSnap && endSnap.isOnFloor ? ' [floor]' : '';
-
-		if (reached) {
-			return 'Reached (' + ex + ', ' + ey + ') in ' + (frames + 1) + ' frames. vel=(' + vx + ', ' + vy + ')' + floor + '  Frame: ' + d.frame;
+		var result = d.moveTo({
+			target: '${target}',
+			actions: '${actions}'.split(','),
+			targetX: '${tx}' === '-' ? null : Number('${tx}'),
+			targetY: '${ty}' === '-' ? null : Number('${ty}'),
+			maxFrames: ${max_frames}
+		});
+		if (typeof result === 'string') return result;
+		var floor = result.onFloor ? ' [floor]' : '';
+		if (result.reached) {
+			return 'Reached (' + result.endX.toFixed(2) + ', ' + result.endY.toFixed(2) + ') in ' + result.frames + ' frames. vel=(' + result.endVx.toFixed(2) + ', ' + result.endVy.toFixed(2) + ')' + floor + '  Frame: ' + result.bridgeFrame;
 		} else {
-			return 'Stopped at (' + ex + ', ' + ey + ') after ' + frames + ' frames (limit). vel=(' + vx + ', ' + vy + ')' + floor + '  Frame: ' + d.frame;
+			return 'Stopped at (' + result.endX.toFixed(2) + ', ' + result.endY.toFixed(2) + ') after ' + result.frames + ' frames (limit). vel=(' + result.endVx.toFixed(2) + ', ' + result.endVy.toFixed(2) + ')' + floor + '  Frame: ' + result.bridgeFrame;
 		}
 	"
 }
@@ -716,54 +545,10 @@ cmd_nearby() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
-		var snap = d.inspect('${target}');
-		if (!snap) return 'Node not found: ${target}';
-		if (!snap.position) return 'Node has no position: ${target}';
-		var px = snap.position.x;
-		var py = snap.position.y;
-		var pz = typeof snap.position.z === 'number' ? snap.position.z : null;
-		var is3d = pz !== null;
-		var r = ${radius};
-
-		var tree = d.tree();
-		if (!tree) return '(no scene)';
-
-		var results = [];
-		function fmtPos(p) {
-			if (typeof p.z === 'number') return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) + ')';
-			return 'pos=(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')';
-		}
-		function walk(n) {
-			if (!n.position) { (n.children || []).forEach(walk); return; }
-			if (n.id === snap.id) { (n.children || []).forEach(walk); return; }
-			var dx = n.position.x - px;
-			var dy = n.position.y - py;
-			var dz = is3d && typeof n.position.z === 'number' ? n.position.z - pz : 0;
-			var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-			if (dist <= r) {
-				var line = n.type;
-				if (n.name !== n.type) line += ' \"' + n.name + '\"';
-				line += '  ' + fmtPos(n.position);
-				line += '  dist=' + dist.toFixed(1);
-				if (is3d) line += '  delta=(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ',' + dz.toFixed(1) + ')';
-				else line += '  delta=(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ')';
-				if (n.collisionGroup) line += '  group=' + n.collisionGroup;
-				var shapes = (n.children || []).filter(function(c) { return c.shapeDesc; });
-				if (shapes.length > 0) line += '  shape=' + shapes[0].shapeDesc;
-				if (n.bodyType) line += '  [' + n.bodyType + ']';
-				if (n.tags && n.tags.length) line += '  tags=' + n.tags.join(',');
-				results.push({ dist: dist, line: line });
-			}
-			(n.children || []).forEach(walk);
-		}
-		walk(tree);
-
-		var posStr = is3d ? '(' + px.toFixed(1) + ',' + py.toFixed(1) + ',' + pz.toFixed(1) + ')' : '(' + px.toFixed(1) + ',' + py.toFixed(1) + ')';
-		if (results.length === 0) return 'No nodes within ' + r + ' of ${target} at ' + posStr;
-
-		results.sort(function(a, b) { return a.dist - b.dist; });
-		var header = 'Nearby ${target} ' + posStr + ' within ' + r + ':';
-		return header + '\n' + results.map(function(r) { return '  ' + r.line; }).join('\n');
+		var f = window.__quintusFormatters;
+		var result = d.nearby('${target}', ${radius});
+		if (typeof result === 'string') return result;
+		return f.formatNearby(result);
 	"
 }
 

@@ -575,6 +575,145 @@ describe("DebugBridge", () => {
 		});
 	});
 
+	describe("track()", () => {
+		it("tracks position over N frames", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const n = new Node2D();
+					n.name = "Mover";
+					n.position._set(10, 20);
+					this.add(n);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const result = bridge.track("Mover", 5);
+			expect(result.target).toBe("Mover");
+			expect(result.frames).toHaveLength(5);
+			expect(result.frames[0]!.x).toBe(10);
+			expect(result.frames[0]!.y).toBe(20);
+			expect(result.frames[0]!.lost).toBe(false);
+		});
+
+		it("marks lost when node is destroyed", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const n = new Node2D();
+					n.name = "Ephemeral";
+					this.add(n);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+			// Destroy the node
+			bridge.destroy("Ephemeral");
+			game.step();
+
+			const result = bridge.track("Ephemeral", 3);
+			expect(result.frames.length).toBe(1);
+			expect(result.frames[0]!.lost).toBe(true);
+		});
+	});
+
+	describe("nearby()", () => {
+		it("finds nearby nodes within radius", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const a = new Node2D();
+					a.name = "Player";
+					a.position._set(100, 100);
+					this.add(a);
+
+					const b = new Node2D();
+					b.name = "Close";
+					b.position._set(120, 100);
+					this.add(b);
+
+					const c = new Node2D();
+					c.name = "Far";
+					c.position._set(500, 500);
+					this.add(c);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+
+			const result = bridge.nearby("Player", 50);
+			expect(typeof result).not.toBe("string");
+			if (typeof result === "string") return;
+			expect(result.nodes.length).toBe(1);
+			expect(result.nodes[0]!.line).toContain("Close");
+		});
+
+		it("returns error string for missing node", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+			const result = bridge.nearby("Missing");
+			expect(typeof result).toBe("string");
+		});
+	});
+
+	describe("moveTo()", () => {
+		it("returns error for missing node", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+			const result = bridge.moveTo({
+				target: "Missing",
+				actions: ["right"],
+				targetX: 200,
+				targetY: null,
+			});
+			expect(typeof result).toBe("string");
+		});
+
+		it("returns error when both thresholds are null", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const n = new Node2D();
+					n.name = "Player";
+					n.position._set(100, 100);
+					this.add(n);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+			const result = bridge.moveTo({
+				target: "Player",
+				actions: ["right"],
+				targetX: null,
+				targetY: null,
+			});
+			expect(typeof result).toBe("string");
+			expect(result).toContain("both x and y");
+		});
+	});
+
+	describe("jumpAnalysis()", () => {
+		it("returns error for missing node", () => {
+			const game = createDebugGame();
+			const bridge = startWithBridge(game);
+			const result = bridge.jumpAnalysis("Missing");
+			expect(typeof result).toBe("string");
+		});
+
+		it("returns error when not on floor", () => {
+			const game = createDebugGame();
+			class TestScene extends Scene {
+				onReady() {
+					const n = new Node2D();
+					n.name = "Player";
+					this.add(n);
+				}
+			}
+			const bridge = startWithBridge(game, TestScene);
+			// Node2D doesn't have isOnFloor, so inspect won't show it
+			const result = bridge.jumpAnalysis("Player");
+			expect(typeof result).toBe("string");
+			expect(result).toContain("not on the floor");
+		});
+	});
+
 	describe("events with filter", () => {
 		it("events() supports category filter", () => {
 			const game = createDebugGame();

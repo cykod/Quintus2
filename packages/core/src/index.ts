@@ -13,6 +13,15 @@ export { installDebugBridge } from "./debug-bridge.js";
 export { formatEvents, formatTree } from "./debug-format.js";
 export type { DebugEvent, EventFilter } from "./debug-log.js";
 export { DebugLog } from "./debug-log.js";
+export type {
+	JumpAnalysisResult,
+	MoveToOptions,
+	MoveToResult,
+	NearbyNode,
+	NearbyResult,
+	TrackFrame,
+	TrackResult,
+} from "./debug-types.js";
 // Rendering
 export type {
 	DrawContext,

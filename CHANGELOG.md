@@ -1,3 +1,16 @@
+## Add @quintus/debug package with formatters, commands, and headless API
+*Sunday, March 8th at 7pm*
+Extract debug logic from bin/qdbg's embedded JavaScript into the @quintus/debug 
+TypeScript package. Adds 6 new formatters (formatLayout, formatPhysics, 
+formatQueryResults, formatTrack, formatJumpAnalysis, formatNearby), 4 new 
+DebugBridge methods (track, jumpAnalysis, moveTo, nearby), a programmatic 
+executeCommand() CLI runner, and an attachDebug() headless API. Thins qdbg from 
+870 to 654 lines by delegating heavy commands to bridge methods and formatters. 
+Includes 55 new tests across 3 test files, all passing alongside the existing 
+2175 tests.
+
+---
+
 ## Remove hasModels fallback code from 3D dungeon example
 *Sunday, March 8th at 6pm*
 Removes all defensive hasModels/fallback geometry code from the 3D dungeon 

@@ -124,7 +124,14 @@ importers:
         specifier: workspace:*
         version: link:../math
 
-  packages/debug: {}
+  packages/debug:
+    dependencies:
+      '@quintus/core':
+        specifier: workspace:*
+        version: link:../core
+      '@quintus/headless':
+        specifier: workspace:*
+        version: link:../headless
 
   packages/headless:
     dependencies:

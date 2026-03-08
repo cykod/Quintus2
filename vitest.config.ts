@@ -30,7 +30,6 @@ export default defineConfig({
 				"packages/physics/src/collision-info.ts",
 				"packages/physics/src/query-types.ts",
 				"packages/physics/src/snapshot-types.ts",
-				"packages/debug/src/**",
 				"packages/mcp/src/**",
 				"packages/particles/src/**",
 				"packages/three/src/**",

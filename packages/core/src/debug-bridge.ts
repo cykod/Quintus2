@@ -1,5 +1,12 @@
 import { formatEvents, formatTree } from "./debug-format.js";
 import type { DebugEvent, EventFilter } from "./debug-log.js";
+import type {
+	JumpAnalysisResult,
+	MoveToOptions,
+	MoveToResult,
+	NearbyResult,
+	TrackResult,
+} from "./debug-types.js";
 import type { Game } from "./game.js";
 import type { Node } from "./node.js";
 import type { NodeSnapshot } from "./snapshot-types.js";
@@ -45,11 +52,25 @@ export interface DebugBridge {
 	setMousePosition(x: number, y: number): void;
 	/** Get the current mouse/pointer position. */
 	getMousePosition(): { x: number; y: number };
+	/** Track a node's position/velocity over N frames. */
+	track(target: string, frames?: number): TrackResult;
+	/** Perform a full jump analysis (press jump, measure arc). */
+	jumpAnalysis(target: string): JumpAnalysisResult | string;
+	/** Hold actions until node reaches a position threshold. */
+	moveTo(options: MoveToOptions): MoveToResult | string;
+	/** Find nodes near a target node within a radius. */
+	nearby(target: string, radius?: number): NearbyResult | string;
 }
 
 export interface DebugFormatters {
 	formatTree: typeof formatTree;
 	formatEvents: typeof formatEvents;
+	formatLayout: (snapshot: NodeSnapshot) => string;
+	formatPhysics: (snapshot: NodeSnapshot) => string;
+	formatQueryResults: (results: NodeSnapshot[], query: string) => string;
+	formatTrack: (result: TrackResult) => string;
+	formatJumpAnalysis: (result: JumpAnalysisResult, nodeName: string) => string;
+	formatNearby: (result: NearbyResult) => string;
 }
 
 declare global {
@@ -266,11 +287,239 @@ export function installDebugBridge(game: Game): DebugBridge {
 			if (!input) return { x: 0, y: 0 };
 			return { x: input.mousePosition.x, y: input.mousePosition.y };
 		},
+
+		track(target: string, frames = 30): TrackResult {
+			const trackFrames: TrackResult["frames"] = [];
+			for (let i = 0; i < frames; i++) {
+				bridge.step(1);
+				const s = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+				if (!s) {
+					trackFrames.push({
+						step: i + 1,
+						frame: bridge.frame,
+						x: 0,
+						y: 0,
+						vx: 0,
+						vy: 0,
+						onFloor: false,
+						onWall: false,
+						onCeiling: false,
+						lost: true,
+					});
+					break;
+				}
+				const p = (s.position as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
+				const v = (s.velocity as { x: number; y: number } | undefined) ?? { x: 0, y: 0 };
+				trackFrames.push({
+					step: i + 1,
+					frame: bridge.frame,
+					x: p.x,
+					y: p.y,
+					vx: v.x,
+					vy: v.y,
+					onFloor: !!s.isOnFloor,
+					onWall: !!s.isOnWall,
+					onCeiling: !!s.isOnCeiling,
+					lost: false,
+				});
+			}
+			return { target, frames: trackFrames };
+		},
+
+		jumpAnalysis(target: string): JumpAnalysisResult | string {
+			const before = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+			if (!before) return `Node not found: ${target}`;
+			if (!before.isOnFloor) return `${target} is not on the floor. Land first, then retry.`;
+
+			const startY = (before.position as { x: number; y: number }).y;
+			const startFrame = bridge.frame;
+			const gravity = (before.gravity as number) ?? 0;
+
+			bridge.press("jump");
+			bridge.step(1);
+			bridge.release("jump");
+
+			const afterJump = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+			const jumpVy = afterJump ? (afterJump.velocity as { x: number; y: number }).y : 0;
+
+			let minY = startY;
+			let apexFrame = bridge.frame;
+			let landFrame = 0;
+			const maxFrames = 300;
+
+			for (let i = 0; i < maxFrames; i++) {
+				bridge.step(1);
+				const s = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+				if (!s) break;
+				const py = (s.position as { x: number; y: number }).y;
+				if (py < minY) {
+					minY = py;
+					apexFrame = bridge.frame;
+				}
+				if (s.isOnFloor && bridge.frame > startFrame + 2) {
+					landFrame = bridge.frame;
+					break;
+				}
+			}
+
+			const jumpHeight = startY - minY;
+			const totalFrames = landFrame > 0 ? landFrame - startFrame : bridge.frame - startFrame;
+			const apexFrameRel = apexFrame - startFrame;
+			const airTimeSec = totalFrames / 60;
+
+			const absJumpForce = Math.abs(jumpVy);
+			const theoreticalHeight = gravity > 0 ? (absJumpForce * absJumpForce) / (2 * gravity) : 0;
+			const theoreticalAirFrames = gravity > 0 ? ((2 * absJumpForce) / gravity) * 60 : 0;
+
+			return {
+				startY,
+				jumpVy,
+				gravity,
+				jumpHeight,
+				apexFrame: apexFrameRel,
+				totalFrames,
+				airTimeSec,
+				landed: landFrame > 0,
+				landFrame,
+				theoreticalHeight,
+				theoreticalAirFrames,
+			};
+		},
+
+		moveTo(options: MoveToOptions): MoveToResult | string {
+			const { target, actions, targetX, targetY, maxFrames = 600 } = options;
+			const snap = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+			if (!snap) return `Node not found: ${target}`;
+			if (!snap.position) return `Node has no position: ${target}`;
+			if (targetX === null && targetY === null) {
+				return 'Error: both x and y are "-". Specify at least one threshold.';
+			}
+
+			const startX = (snap.position as { x: number; y: number }).x;
+			const startY = (snap.position as { x: number; y: number }).y;
+
+			for (const action of actions) bridge.press(action.trim());
+
+			let reached = false;
+			let frames = 0;
+			for (frames = 0; frames < maxFrames; frames++) {
+				bridge.step(1);
+				const s = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+				if (!s) break;
+				const px = (s.position as { x: number; y: number }).x;
+				const py = (s.position as { x: number; y: number }).y;
+				const xOk = targetX === null || (targetX >= startX ? px >= targetX : px <= targetX);
+				const yOk = targetY === null || (targetY >= startY ? py >= targetY : py <= targetY);
+				if (xOk && yOk) {
+					reached = true;
+					break;
+				}
+			}
+
+			for (const action of actions) bridge.release(action.trim());
+
+			const endSnap = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+			const endPos = endSnap?.position as { x: number; y: number } | undefined;
+			const endVel = endSnap?.velocity as { x: number; y: number } | undefined;
+
+			return {
+				reached,
+				frames: reached ? frames + 1 : frames,
+				endX: endPos?.x ?? 0,
+				endY: endPos?.y ?? 0,
+				endVx: endVel?.x ?? 0,
+				endVy: endVel?.y ?? 0,
+				onFloor: !!endSnap?.isOnFloor,
+				bridgeFrame: bridge.frame,
+			};
+		},
+
+		nearby(target: string, radius = 100): NearbyResult | string {
+			const snap = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
+			if (!snap) return `Node not found: ${target}`;
+			if (!snap.position) return `Node has no position: ${target}`;
+
+			const p = snap.position as { x: number; y: number; z?: number };
+			const px = p.x;
+			const py = p.y;
+			const pz = typeof p.z === "number" ? p.z : null;
+			const is3d = pz !== null;
+
+			const tree = bridge.tree();
+			if (!tree) return "(no scene)";
+
+			const results: { dist: number; line: string }[] = [];
+
+			function fmtPos(pos: { x: number; y: number; z?: number }): string {
+				if (typeof pos.z === "number")
+					return `pos=(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)})`;
+				return `pos=(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`;
+			}
+
+			function walk(n: NodeSnapshot & Record<string, unknown>): void {
+				const np = n.position as { x: number; y: number; z?: number } | undefined;
+				if (!np) {
+					for (const c of n.children) walk(c as NodeSnapshot & Record<string, unknown>);
+					return;
+				}
+				if (n.id === snap?.id) {
+					for (const c of n.children) walk(c as NodeSnapshot & Record<string, unknown>);
+					return;
+				}
+				const dx = np.x - px;
+				const dy = np.y - py;
+				const dz = is3d && typeof np.z === "number" && pz !== null ? np.z - pz : 0;
+				const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+				if (dist <= radius) {
+					let line = n.type as string;
+					if (n.name !== n.type) line += ` "${n.name}"`;
+					line += `  ${fmtPos(np)}`;
+					line += `  dist=${dist.toFixed(1)}`;
+					if (is3d) line += `  delta=(${dx.toFixed(1)},${dy.toFixed(1)},${dz.toFixed(1)})`;
+					else line += `  delta=(${dx.toFixed(1)},${dy.toFixed(1)})`;
+					if (n.collisionGroup) line += `  group=${n.collisionGroup}`;
+					const shapes = (n.children || []).filter(
+						(c: NodeSnapshot) => (c as NodeSnapshot & Record<string, unknown>).shapeDesc,
+					);
+					if (shapes.length > 0)
+						line += `  shape=${(shapes[0] as NodeSnapshot & Record<string, unknown>).shapeDesc}`;
+					if (n.bodyType) line += `  [${n.bodyType}]`;
+					if (n.tags && Array.isArray(n.tags) && (n.tags as string[]).length > 0) {
+						line += `  tags=${(n.tags as string[]).join(",")}`;
+					}
+					results.push({ dist, line });
+				}
+				for (const c of n.children) walk(c as NodeSnapshot & Record<string, unknown>);
+			}
+
+			walk(tree as NodeSnapshot & Record<string, unknown>);
+
+			results.sort((a, b) => a.dist - b.dist);
+			const posStr = is3d
+				? `(${px.toFixed(1)},${py.toFixed(1)},${pz?.toFixed(1)})`
+				: `(${px.toFixed(1)},${py.toFixed(1)})`;
+
+			return {
+				targetName: target,
+				targetPos: posStr,
+				radius,
+				nodes: results,
+			};
+		},
 	};
 
 	if (typeof window !== "undefined") {
 		window.__quintusDebug = bridge;
-		window.__quintusFormatters = { formatTree, formatEvents };
+		window.__quintusFormatters = {
+			formatTree,
+			formatEvents,
+			formatLayout: _formatLayout,
+			formatPhysics: _formatPhysics,
+			formatQueryResults: _formatQueryResults,
+			formatTrack: _formatTrack,
+			formatJumpAnalysis: _formatJumpAnalysis,
+			formatNearby: _formatNearby,
+		};
 		// Expose game for debugging (debug mode only)
 		(window as unknown as Record<string, unknown>).__quintusGame = game;
 	}
@@ -371,4 +620,187 @@ function walkAndCollect(node: Node, q: string, results: Node[]): void {
 	for (const child of node.children) {
 		walkAndCollect(child, q, results);
 	}
+}
+
+// ── Inline formatters for window.__quintusFormatters ────────────────────────
+
+type Snap = NodeSnapshot & Record<string, unknown>;
+
+function _snapPos(s: Snap): { x: number; y: number; z?: number } | null {
+	const p = s.position;
+	if (p && typeof p === "object") return p as { x: number; y: number; z?: number };
+	return null;
+}
+
+function _fmtPos(p: { x: number; y: number; z?: number }): string {
+	if (typeof p.z === "number") return `pos=(${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)})`;
+	return `pos=(${p.x.toFixed(1)},${p.y.toFixed(1)})`;
+}
+
+function _fmtPosParens(p: { x: number; y: number; z?: number }): string {
+	if (typeof p.z === "number") return `(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`;
+	return `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`;
+}
+
+function _formatLayout(snapshot: NodeSnapshot): string {
+	const lines: string[] = [];
+	function walk(n: Snap, depth: number): void {
+		const p = _snapPos(n);
+		if (p) {
+			let line = "  ".repeat(depth) + n.type;
+			if (n.name !== n.type) line += ` "${n.name}"`;
+			line += `  ${_fmtPos(p)}`;
+			if (n.velocity && typeof n.velocity === "object") {
+				const v = n.velocity as { x: number; y: number };
+				line += `  vel=(${v.x.toFixed(1)},${v.y.toFixed(1)})`;
+			}
+			if (n.isOnFloor) line += "  [floor]";
+			if (n.isOnWall) line += "  [wall]";
+			if (n.isOnCeiling) line += "  [ceiling]";
+			if (n.collisionGroup) line += `  group=${n.collisionGroup}`;
+			if (n.shape) line += `  shape=${JSON.stringify(n.shape)}`;
+			if (
+				n.rotation &&
+				typeof n.rotation === "object" &&
+				typeof (n.rotation as Record<string, unknown>).order === "string"
+			) {
+				const r = n.rotation as { x: number; y: number; z: number };
+				line += `  rot=(${((r.x * 180) / Math.PI).toFixed(0)},${((r.y * 180) / Math.PI).toFixed(0)},${((r.z * 180) / Math.PI).toFixed(0)})deg`;
+			}
+			lines.push(line);
+		}
+		for (const c of n.children) walk(c as Snap, depth + 1);
+	}
+	walk(snapshot as Snap, 0);
+	return lines.length > 0 ? lines.join("\n") : "(no spatial nodes)";
+}
+
+function _formatPhysics(snapshot: NodeSnapshot): string {
+	const s = snapshot as Snap;
+	const lines: string[] = [];
+	lines.push(`Node: ${s.type} "${s.name}"`);
+	const p = _snapPos(s);
+	if (p) lines.push(`Position: ${_fmtPosParens(p)}`);
+	if (s.globalPosition && typeof s.globalPosition === "object") {
+		const gp = s.globalPosition as { x: number; y: number };
+		lines.push(`Global:   (${gp.x.toFixed(2)}, ${gp.y.toFixed(2)})`);
+	}
+	if (
+		s.rotation &&
+		typeof s.rotation === "object" &&
+		typeof (s.rotation as Record<string, unknown>).order === "string"
+	) {
+		const r = s.rotation as { x: number; y: number; z: number; order: string };
+		lines.push(
+			`Rotation: (${((r.x * 180) / Math.PI).toFixed(1)}, ${((r.y * 180) / Math.PI).toFixed(1)}, ${((r.z * 180) / Math.PI).toFixed(1)}) deg ${r.order}`,
+		);
+	} else if (typeof s.rotation === "number") {
+		lines.push(`Rotation: ${((s.rotation * 180) / Math.PI).toFixed(1)} deg`);
+	}
+	if (s.scale && typeof s.scale === "object") {
+		const sc = s.scale as { x: number; y: number; z?: number };
+		if (typeof sc.z === "number") {
+			lines.push(`Scale:    (${sc.x.toFixed(2)}, ${sc.y.toFixed(2)}, ${sc.z.toFixed(2)})`);
+		}
+	}
+	if (s.velocity && typeof s.velocity === "object") {
+		const v = s.velocity as { x: number; y: number };
+		lines.push(`Velocity: (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`);
+	}
+	if (s.gravity !== undefined) lines.push(`Gravity:  ${s.gravity}`);
+	if (s.isOnFloor !== undefined) lines.push(`OnFloor:  ${s.isOnFloor}`);
+	if (s.isOnWall !== undefined) lines.push(`OnWall:   ${s.isOnWall}`);
+	if (s.isOnCeiling !== undefined) lines.push(`OnCeil:   ${s.isOnCeiling}`);
+	if (s.collisionGroup) lines.push(`Group:    ${s.collisionGroup}`);
+	if (s.shape) lines.push(`Shape:    ${JSON.stringify(s.shape)}`);
+	if (s.visible === false) lines.push("Visible:  false");
+	if (s.tags && Array.isArray(s.tags) && s.tags.length > 0) {
+		lines.push(`Tags:     ${(s.tags as string[]).join(", ")}`);
+	}
+	return lines.join("\n");
+}
+
+function _formatQueryResults(results: NodeSnapshot[], query: string): string {
+	if (results.length === 0) return `No matches for: ${query}`;
+	return results
+		.map((n) => {
+			const s = n as Snap;
+			let line = s.type as string;
+			if (s.name !== s.type) line += ` "${s.name}"`;
+			const p = _snapPos(s);
+			if (p) {
+				if (typeof p.z === "number")
+					line += ` (${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)})`;
+				else line += ` (${p.x.toFixed(1)},${p.y.toFixed(1)})`;
+			}
+			if (s.tags && Array.isArray(s.tags) && (s.tags as string[]).length > 0) {
+				line += ` [${(s.tags as string[]).join(",")}]`;
+			}
+			return line;
+		})
+		.join("\n");
+}
+
+function _formatTrack(result: TrackResult): string {
+	const rows: string[] = [];
+	rows.push("Frame  X         Y         Vx        Vy        Floor  Wall   Ceil");
+	rows.push("---");
+	for (const f of result.frames) {
+		if (f.lost) {
+			rows.push(`(node lost at step ${f.step})`);
+			break;
+		}
+		rows.push(
+			String(f.frame).padStart(5) +
+				"  " +
+				f.x.toFixed(2).padStart(8) +
+				"  " +
+				f.y.toFixed(2).padStart(8) +
+				"  " +
+				f.vx.toFixed(2).padStart(8) +
+				"  " +
+				f.vy.toFixed(2).padStart(8) +
+				"  " +
+				String(f.onFloor).padEnd(6) +
+				" " +
+				String(f.onWall).padEnd(6) +
+				" " +
+				String(f.onCeiling),
+		);
+	}
+	return rows.join("\n");
+}
+
+function _formatJumpAnalysis(result: JumpAnalysisResult, nodeName: string): string {
+	const lines: string[] = [];
+	lines.push(`=== Jump Analysis: ${nodeName} ===`);
+	lines.push(`Start Y:       ${result.startY.toFixed(2)}`);
+	lines.push(`Jump Vy:       ${result.jumpVy.toFixed(2)}`);
+	lines.push(`Gravity:       ${result.gravity}`);
+	lines.push("");
+	lines.push("--- Measured ---");
+	lines.push(`Jump Height:   ${result.jumpHeight.toFixed(2)} px`);
+	lines.push(`Apex Frame:    +${result.apexFrame} frames`);
+	lines.push(`Air Time:      ${result.totalFrames} frames (${result.airTimeSec.toFixed(3)}s)`);
+	lines.push(
+		`Landed:        ${result.landed ? `yes (frame ${result.landFrame})` : "no (still airborne)"}`,
+	);
+	lines.push("");
+	lines.push("--- Theoretical ---");
+	lines.push(`Height:        ${result.theoreticalHeight.toFixed(2)} px`);
+	lines.push(`Air Frames:    ${result.theoreticalAirFrames.toFixed(1)}`);
+	if (result.theoreticalHeight > 0) {
+		const pct = ((result.jumpHeight / result.theoreticalHeight) * 100).toFixed(1);
+		lines.push(`Efficiency:    ${pct}%`);
+	}
+	return lines.join("\n");
+}
+
+function _formatNearby(result: NearbyResult): string {
+	if (result.nodes.length === 0) {
+		return `No nodes within ${result.radius} of ${result.targetName} at ${result.targetPos}`;
+	}
+	const header = `Nearby ${result.targetName} ${result.targetPos} within ${result.radius}:`;
+	const lines = result.nodes.map((n) => `  ${n.line}`);
+	return `${header}\n${lines.join("\n")}`;
 }
