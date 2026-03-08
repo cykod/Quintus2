@@ -1,7 +1,7 @@
-import { Bullet } from "@quintus/prefabs";
 import { NodePool } from "@quintus/core";
 import type { CollisionInfo } from "@quintus/physics";
 import { CollisionShape, Shape } from "@quintus/physics";
+import { Bullet } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import { ENEMY_BULLET_SCALE_X, ENEMY_BULLET_SCALE_Y, FRAME, tilesetAtlas } from "../sprites.js";
 import type { Player } from "./player.js";

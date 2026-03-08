@@ -1,6 +1,6 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { AnimatedSprite } from "@quintus/sprites";
 import { showToast } from "../hud/toast.js";
 import { entitySheet, TILE } from "../sprites.js";

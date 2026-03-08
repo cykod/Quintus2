@@ -1,5 +1,5 @@
-import { WaveSpawner } from "@quintus/prefabs";
 import { Scene } from "@quintus/core";
+import { WaveSpawner } from "@quintus/prefabs";
 import { describe, expect, it } from "vitest";
 import { SPAWN_INTERVAL, WAVE_DEFS, WAVE_DELAY } from "../config.js";
 import { runScene } from "./helpers.js";

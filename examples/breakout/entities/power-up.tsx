@@ -1,5 +1,5 @@
-import { Pickup } from "@quintus/prefabs";
 import { CollisionShape, Shape } from "@quintus/physics";
+import { Pickup } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import { GAME_HEIGHT, POWERUP_FALL_SPEED, POWERUP_SIZE } from "../config.js";
 import { COIN_SCALE, coinsAtlas, FRAME } from "../sprites.js";

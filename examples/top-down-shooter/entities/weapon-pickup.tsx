@@ -1,9 +1,9 @@
-import { Pickup } from "@quintus/prefabs";
 import type { DrawContext } from "@quintus/core";
 import { type Signal, signal } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import type { Actor } from "@quintus/physics";
 import { CollisionShape, Shape } from "@quintus/physics";
+import { Pickup } from "@quintus/prefabs";
 import { WEAPONS } from "./weapons.js";
 
 const PICKUP_RADIUS = 10;

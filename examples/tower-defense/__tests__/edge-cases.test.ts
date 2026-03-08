@@ -1,6 +1,6 @@
-import { WaveSpawner } from "@quintus/prefabs";
 import { Scene } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
+import { WaveSpawner } from "@quintus/prefabs";
 import { describe, expect, it } from "vitest";
 import { SPAWN_INTERVAL, WAVE_DEFS, WAVE_DELAY } from "../config.js";
 import { ArrowTower } from "../entities/arrow-tower.js";

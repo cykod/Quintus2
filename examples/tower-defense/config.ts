@@ -1,5 +1,5 @@
-import type { WaveEntry } from "@quintus/prefabs";
 import type { CollisionGroupsConfig } from "@quintus/physics";
+import type { WaveEntry } from "@quintus/prefabs";
 
 // === Game dimensions ===
 export const GAME_WIDTH = 480;

@@ -1,7 +1,7 @@
-import { Damageable } from "@quintus/prefabs";
 import type { Poolable } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { Actor, type CollisionInfo, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import { ENEMY_CAPSULE_HEIGHT, ENEMY_RADIUS } from "../config.js";
 import { CHARACTER_SCALE, charactersAtlas } from "../sprites.js";

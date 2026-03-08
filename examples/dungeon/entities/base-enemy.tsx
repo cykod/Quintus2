@@ -1,6 +1,6 @@
-import { Damageable } from "@quintus/prefabs";
 import { Vec2 } from "@quintus/math";
 import { Actor } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import type { AnimatedSprite } from "@quintus/sprites";
 import { Ease } from "@quintus/tween";
 import { gameState } from "../state.js";

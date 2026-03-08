@@ -1,3 +1,13 @@
+## Sort imports across examples to satisfy Biome linter
+*Sunday, March 8th at 8pm*
+Reorder imports alphabetically in 17 files across all example games and one 
+test file to satisfy Biome's import sorting rules. The @quintus/prefabs imports 
+(Damageable, Pickup, Bullet, WaveSpawner) were consistently placed before other 
+@quintus/* imports; this sorts them into proper alphabetical position. Also 
+adds a missing blank line after beforeAll in input-plugin.test.ts.
+
+---
+
 ## Add HUD, game flow, and tests to 3D dungeon (Phases 5-6)
 *Sunday, March 8th at 7pm*
 Complete the 3D dungeon example with full game flow (title → 3 levels → 

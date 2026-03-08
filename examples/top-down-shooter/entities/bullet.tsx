@@ -1,7 +1,7 @@
-import { Bullet } from "@quintus/prefabs";
 import type { DrawContext } from "@quintus/core";
 import { Color, Vec2 } from "@quintus/math";
 import { CollisionShape, Shape } from "@quintus/physics";
+import { Bullet } from "@quintus/prefabs";
 
 const BULLET_RADIUS = 3;
 const PLAYER_BULLET_COLOR = Color.fromHex("#ffdd44");

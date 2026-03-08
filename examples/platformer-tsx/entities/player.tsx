@@ -1,5 +1,5 @@
-import { Damageable } from "@quintus/prefabs";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { AnimatedSprite } from "@quintus/sprites";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";

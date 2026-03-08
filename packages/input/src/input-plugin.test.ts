@@ -15,6 +15,7 @@ beforeAll(() => {
 		};
 	}
 });
+
 import type { Input } from "./input.js";
 import type { InputEvent } from "./input-event.js";
 import { getInput, InputPlugin } from "./input-plugin.js";

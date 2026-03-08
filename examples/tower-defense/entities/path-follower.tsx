@@ -1,7 +1,7 @@
-import { Damageable } from "@quintus/prefabs";
 import { type Signal, signal } from "@quintus/core";
 import type { Vec2 } from "@quintus/math";
 import { Actor, CollisionShape, Shape } from "@quintus/physics";
+import { Damageable } from "@quintus/prefabs";
 import { Sprite } from "@quintus/sprites";
 import { CELL_SIZE } from "../config.js";
 import { gridToWorld, type PathDef } from "../path.js";
