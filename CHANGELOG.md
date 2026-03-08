@@ -1,3 +1,15 @@
+## Add 3D dungeon player character with grid movement and camera follow
+*Sunday, March 8th at 6pm*
+Adds Phase 3 of the 3D dungeon example: a PlayerCharacter entity extending 
+GLTFModel with grid-based movement, smooth ease-in-out interpolation, 
+directional facing, animation support (walk/idle), trap damage with 
+invincibility blinking, and signal-based coin collection and exit detection. 
+The camera now follows the player with a smooth overhead offset. Props are 
+passed via add() to avoid the onReady timing issue where dungeonGrid would be 
+undefined if set after scene insertion.
+
+---
+
 ## Fix mobile scaling and camera across all example games
 *Sunday, March 8th at 4pm*
 Adds a fillAxis option to Game's fill scaling mode so portrait games (like 

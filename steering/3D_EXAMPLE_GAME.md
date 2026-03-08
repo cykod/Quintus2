@@ -12,7 +12,7 @@
 | 0 | TileMap3D engine class (prerequisite) | DONE |
 | 1 | Asset pipeline + project setup | DONE |
 | 2 | Dungeon grid + instanced floor/wall rendering | DONE |
-| 3 | Player character + movement + camera | Pending |
+| 3 | Player character + movement + camera | DONE |
 | 4 | Items, traps, and scoring | Pending |
 | 5 | HUD overlay + game flow (title/win/lose) | Pending |
 | 6 | Tests + polish | Pending |
