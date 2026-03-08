@@ -7,6 +7,6 @@ export class TrapTile extends Node3D {
 
 	override onReady(): void {
 		this.add(GLTFModel, { src: "trap" });
-		this.position.set(this.gridX * TILE_SIZE, 0.15, this.gridZ * TILE_SIZE);
+		this.position.set(this.gridX * TILE_SIZE, 0.0, this.gridZ * TILE_SIZE);
 	}
 }

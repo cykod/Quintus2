@@ -1,3 +1,15 @@
+## Add HUD, game flow, and tests to 3D dungeon (Phases 5-6)
+*Sunday, March 8th at 7pm*
+Complete the 3D dungeon example with full game flow (title → 3 levels → 
+win/game-over), a reactive HUD showing score, health hearts, and level 
+indicator, and 26 automated tests covering grid logic, player mechanics, and 
+game state. Touch controls are filtered to gameplay scenes only, the camera 
+starts at its follow target to eliminate convergence delay, and scale mode uses 
+"fit" for correct mobile/desktop rendering. Design doc status updated to mark 
+all phases DONE.
+
+---
+
 ## Add @quintus/debug package with formatters, commands, and headless API
 *Sunday, March 8th at 7pm*
 Extract debug logic from bin/qdbg's embedded JavaScript into the @quintus/debug 

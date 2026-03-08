@@ -7,6 +7,6 @@ export class ExitStairs extends Node3D {
 
 	override onReady(): void {
 		this.add(GLTFModel, { src: "stairs" });
-		this.position.set(this.gridX * TILE_SIZE, 0.25, this.gridZ * TILE_SIZE);
+		this.position.set(this.gridX * TILE_SIZE, 0.0, this.gridZ * TILE_SIZE);
 	}
 }

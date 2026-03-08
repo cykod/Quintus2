@@ -14,8 +14,8 @@
 | 2 | Dungeon grid + instanced floor/wall rendering | DONE |
 | 3 | Player character + movement + camera | DONE |
 | 4 | Items, traps, and scoring | DONE |
-| 5 | HUD overlay + game flow (title/win/lose) | Pending |
-| 6 | Tests + polish | Pending |
+| 5 | HUD overlay + game flow (title/win/lose) | DONE |
+| 6 | Tests + polish | DONE |
 
 ---
 
@@ -94,13 +94,13 @@ Start → Title Scene → Level 1 → Level 2 → Level 3 → Win Scene
 
 ### Controls
 
-| Action | Keys | Gamepad |
-|--------|------|---------|
-| Move up | W / ArrowUp | Left stick up |
-| Move down | S / ArrowDown | Left stick down |
-| Move left | A / ArrowLeft | Left stick left |
-| Move right | D / ArrowRight | Left stick right |
-| Interact | E / Space | A button |
+| Action | Keys | Gamepad | Touch |
+|--------|------|---------|-------|
+| Move up | W / ArrowUp | Left stick up | Virtual joystick up |
+| Move down | S / ArrowDown | Left stick down | Virtual joystick down |
+| Move left | A / ArrowLeft | Left stick left | Virtual joystick left |
+| Move right | D / ArrowRight | Left stick right | Virtual joystick right |
+| Interact | E / Space | A button | Virtual button (right side) |
 
 ### Core Mechanics
 
@@ -207,6 +207,7 @@ examples/3d-dungeon/
 @quintus/core       ← Game, Scene, Node, signals, reactiveState
 @quintus/three      ← ThreePlugin, TileMap3D, GLTFModel, Camera3D, lights, MeshNode
 @quintus/input      ← InputPlugin, keyboard/gamepad bindings
+@quintus/touch      ← TouchPlugin, topDownLayout, fullscreen, isTouchDevice
 @quintus/ui         ← Label, Layer for HUD
 @quintus/math       ← Vec2, Color
 three               ← Three.js peer dep
@@ -537,6 +538,8 @@ export function hasModels(game: Game): boolean {
 import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { ThreePlugin } from "@quintus/three";
+import { TouchPlugin } from "@quintus/touch";
+import { topDownLayout } from "@quintus/touch/layouts";
 import { GAME_WIDTH, GAME_HEIGHT, INPUT_BINDINGS } from "./config.js";
 import { MODEL_PATHS } from "./assets.js";
 import { TitleScene } from "./scenes/title-scene.js";
@@ -551,7 +554,7 @@ const game = new Game({
 	height: GAME_HEIGHT,
 	canvas: "game",
 	renderer: null,       // Full 3D mode
-	scale: "fit",
+	scale: "fill",        // Full-viewport on mobile
 	seed: 42,
 });
 
@@ -561,6 +564,13 @@ game.use(ThreePlugin({
 	shadows: true,
 }));
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
+game.use(TouchPlugin({
+	layout: topDownLayout({
+		actions: [{ action: "interact", icon: "✦" }],
+	}),
+	fullscreen: true,        // Auto-fullscreen on first touch
+	orientation: "landscape",
+}));
 
 game.registerScenes({
 	title: TitleScene,
@@ -921,6 +931,8 @@ cam.position.set(startCell.gridX * TILE_SIZE, 12, startCell.gridZ * TILE_SIZE + 
 - [x] Wire coin collection → score update → coin destroy
 - [x] Wire trap → damage → invincibility flash
 
+> **Placement note:** All items (coins, traps, exit stairs) are placed at `y = 0`. The Kenney GLB models already have correct vertical offsets baked into their geometry — coins sit above the floor, traps rise from the ground, etc. No manual `offsetY` adjustment is needed.
+
 ### `entities/coin-item.ts`
 
 ```typescript
@@ -1052,16 +1064,20 @@ this.player.collected.connect(({ gridX, gridZ }) => {
 
 ---
 
-## 9. Phase 5: HUD Overlay + Game Flow
+## 9. Phase 5: HUD Overlay + Game Flow + Mobile Touch
 
 - [ ] Create `hud/hud.ts` — renderFixed Layer with health hearts, score, level
 - [ ] Create `scenes/dungeon-level.ts` — abstract base scene
 - [ ] Create `scenes/level1.ts`, `level2.ts`, `level3.ts` with grid data
-- [ ] Create `scenes/title-scene.ts` — 3D visual with "Press Space" overlay
+- [ ] Create `scenes/title-scene.ts` — 3D visual with "Press Space / Tap" overlay
 - [ ] Create `scenes/win-scene.ts` — victory display with final score
 - [ ] Create `scenes/game-over-scene.ts` — game over with restart
 - [ ] Wire player.reachedExit → next level
 - [ ] Wire player.died → game over scene
+- [ ] Add `TouchPlugin` with `topDownLayout` for mobile controls
+- [ ] Enable `fullscreen: true` for auto-fullscreen on first touch
+- [ ] Switch `scale` from `"fit"` to `"fill"` for full-viewport mobile display
+- [ ] Update Controls table in Game Design section with Touch column
 
 ### `hud/hud.ts`
 
@@ -1453,6 +1469,58 @@ export class GameOverScene extends Scene {
 	}
 }
 ```
+
+### Mobile Touch Support
+
+The 3D dungeon uses the existing `@quintus/touch` package with the `topDownLayout` — a 4-way virtual joystick (lower-left) plus an interact button (lower-right). Fullscreen is requested automatically on first touch.
+
+#### `main.ts` — Touch Plugin Integration
+
+```typescript
+import { TouchPlugin } from "@quintus/touch";
+import { topDownLayout } from "@quintus/touch/layouts";
+
+const game = new Game({
+	width: GAME_WIDTH,
+	height: GAME_HEIGHT,
+	renderer: null,
+	scale: "fill",          // Full-viewport on mobile (was "fit")
+});
+
+game.use(ThreePlugin({ antialias: true, background: 0x1a1a2e }));
+game.use(InputPlugin({ actions: INPUT_BINDINGS }));
+game.use(TouchPlugin({
+	layout: topDownLayout({
+		actions: [{ action: "interact", icon: "✦" }],
+	}),
+	fullscreen: true,        // Auto-fullscreen on first touch
+	orientation: "landscape", // Lock landscape in fullscreen
+}));
+```
+
+#### How It Works
+
+- **`topDownLayout`** creates a `VirtualJoystick` on the lower-left that maps to `move_up`, `move_down`, `move_left`, `move_right` — the same action names used by keyboard/gamepad, so the `PlayerCharacter` input handling works unchanged.
+- **One action button** on the lower-right is mapped to `interact` (used for "Press Space to Start" on title/win/game-over scenes).
+- **`fullscreen: true`** auto-requests fullscreen on first click/tap, using the cross-browser API in `@quintus/touch/fullscreen.ts` (handles Safari `-webkit` prefix). Orientation is locked to landscape.
+- **`scale: "fill"`** ensures the canvas fills the entire viewport on mobile instead of letterboxing.
+- **Auto-detection** — virtual controls only appear on touch devices and auto-hide when a mouse is detected, so desktop users see no difference.
+- **Scroll prevention** — `TouchPlugin` automatically locks the page (`touchAction: none`, body fixed positioning, contextmenu disabled) to prevent accidental mobile gestures.
+
+#### Title/Win/GameOver Touch Prompts
+
+Scenes with "Press Space to Start" text should show "Tap to Start" on touch devices:
+
+```typescript
+// In title-scene.ts onReady():
+import { isTouchDevice } from "@quintus/touch";
+
+const promptText = isTouchDevice()
+	? "Tap to Start"
+	: "Press Space to Start";
+```
+
+This applies to all three prompt scenes (title, win, game-over).
 
 ---
 

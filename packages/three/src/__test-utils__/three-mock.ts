@@ -47,6 +47,12 @@ export class Vector3 {
 		this.z = v.z;
 		return this;
 	}
+	lerpVectors(v1: Vector3, v2: Vector3, alpha: number) {
+		this.x = v1.x + (v2.x - v1.x) * alpha;
+		this.y = v1.y + (v2.y - v1.y) * alpha;
+		this.z = v1.z + (v2.z - v1.z) * alpha;
+		return this;
+	}
 }
 
 export class Euler {
