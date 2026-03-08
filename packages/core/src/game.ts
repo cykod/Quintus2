@@ -25,6 +25,12 @@ export interface GameOptions {
 	height: number;
 	/** How to fit the canvas to the page. Default: "fixed". */
 	scale?: "fit" | "fixed" | "fill";
+	/**
+	 * Which axis stays fixed in fill mode. Default: "height".
+	 *   - "height" — keeps design height, adjusts width (landscape games)
+	 *   - "width"  — keeps design width, adjusts height (portrait games like breakout)
+	 */
+	fillAxis?: "height" | "width";
 	/** Enable pixel-art rendering (disables image smoothing). Default: false. */
 	pixelArt?: boolean;
 	/** Canvas background color. Default: "#000000". */
@@ -103,11 +109,15 @@ export class Game {
 	}
 	private _fillZoom = 1;
 	private _designHeight: number;
+	private _designWidth: number;
+	private _fillAxis: "height" | "width";
 
 	constructor(options: GameOptions) {
 		this._width = options.width;
 		this._height = options.height;
 		this._designHeight = options.height;
+		this._designWidth = options.width;
+		this._fillAxis = options.fillAxis ?? "height";
 		this.pixelArt = options.pixelArt ?? false;
 		this.backgroundColor = options.backgroundColor ?? "#000000";
 		this.fixedDeltaTime = options.fixedDeltaTime ?? 1 / 60;
@@ -455,17 +465,31 @@ export class Game {
 				return;
 			}
 
-			// Mobile: keep design height, adjust width to viewport aspect
+			const fillAxis = this._fillAxis;
 			const designHeight = this._designHeight;
+			const designWidth = this._designWidth;
 			const resize = () => {
 				const vw = window.innerWidth;
 				const vh = window.innerHeight;
-				const responsiveWidth = Math.round(designHeight * (vw / vh));
 
-				this._width = responsiveWidth;
-				// this._height stays at designHeight (never mutated)
-				canvas.width = responsiveWidth;
-				canvas.height = designHeight;
+				let newWidth: number;
+				let newHeight: number;
+				if (fillAxis === "width") {
+					// Portrait: keep design width, adjust height
+					newWidth = designWidth;
+					newHeight = Math.round(designWidth * (vh / vw));
+					this._fillZoom = vw / designWidth;
+				} else {
+					// Landscape (default): keep design height, adjust width
+					newWidth = Math.round(designHeight * (vw / vh));
+					newHeight = designHeight;
+					this._fillZoom = vh / designHeight;
+				}
+
+				this._width = newWidth;
+				this._height = newHeight;
+				canvas.width = newWidth;
+				canvas.height = newHeight;
 
 				// CSS fills entire viewport
 				canvas.style.width = `${vw}px`;
@@ -474,8 +498,6 @@ export class Game {
 				canvas.style.left = "0";
 				canvas.style.top = "0";
 
-				this._fillZoom = vh / designHeight;
-
 				// Re-apply pixel-art smoothing (canvas resize resets context state)
 				if (this.pixelArt) {
 					const ctx = canvas.getContext("2d");
@@ -483,10 +505,10 @@ export class Game {
 				}
 
 				// Update renderer's cached dimensions
-				this.renderer?.resize?.(responsiveWidth, designHeight);
+				this.renderer?.resize?.(newWidth, newHeight);
 
 				// Notify listeners
-				this.resized.emit({ width: responsiveWidth, height: designHeight });
+				this.resized.emit({ width: newWidth, height: newHeight });
 			};
 
 			resize();

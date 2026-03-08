@@ -64,8 +64,8 @@ export class EnemyManager extends Node {
 			}
 		});
 
-		this._spawner.waveCleared.connect((wave) => {
-			this.waveComplete.emit(wave + 1);
+		this._spawner.waveCleared.connect(() => {
+			this.waveComplete.emit(gameState.wave);
 		});
 	}
 

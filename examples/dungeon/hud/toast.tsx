@@ -41,9 +41,9 @@ class Toast extends Layer {
 	}
 }
 
-/** Show a toast message centered near the bottom of the 320×240 canvas. */
+/** Show a toast message centered near the bottom of the canvas. */
 export function showToast(parent: Node2D, message: string): void {
 	const toast = parent.add(Toast, { message });
-	toast.position.x = 160;
-	toast.position.y = 200;
+	toast.position.x = parent.game.width / 2;
+	toast.position.y = parent.game.height - 40;
 }

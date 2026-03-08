@@ -1,3 +1,18 @@
+## Fix mobile scaling and camera across all example games
+*Sunday, March 8th at 4pm*
+Adds a fillAxis option to Game's fill scaling mode so portrait games (like 
+breakout) can lock their design width while adapting height to the viewport 
+aspect ratio. Fixes sprite texture bleeding in Canvas2DRenderer by rounding 
+source rectangle coordinates in drawImage calls. Updates breakout, dungeon, 
+top-down shooter, and advanced platformer examples for proper mobile support: 
+breakout and dungeon use dynamic game.width/height instead of hardcoded 
+constants, the shooter gets mobile camera follow with bounds and a 
+wave-complete signal fix, and the advanced platformer enables a 4-way joystick 
+for ladder climbing. Includes two new fill-mode tests and a Tailscale 
+devcontainer fix.
+
+---
+
 ## Add 3D dungeon example (Phases 1-2) and qdbg 3D support
 *Sunday, March 8th at 4pm*
 Creates the 3d-dungeon example game with Kenney Mini Dungeon GLB assets (floor,

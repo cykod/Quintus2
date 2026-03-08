@@ -1,5 +1,8 @@
 import { Camera } from "@quintus/camera";
 import { Scene } from "@quintus/core";
+import { Rect } from "@quintus/math";
+import { isTouchDevice } from "@quintus/touch";
+import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import { Arena } from "../entities/arena.js";
 import { BulletManager } from "../entities/bullet-manager.js";
 import { EnemyManager } from "../entities/enemy-manager.js";
@@ -29,9 +32,16 @@ export class ArenaScene extends Scene {
 	}
 
 	override onReady() {
-		// Set camera position
-		this.camera.position.x = this.game.width / 2;
-		this.camera.position.y = this.game.height / 2;
+		if (isTouchDevice()) {
+			// Mobile: follow the player so the full arena is navigable
+			this.camera.follow = this.player;
+			this.camera.smoothing = 0.08;
+			this.camera.bounds = new Rect(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT);
+		} else {
+			// Desktop: static camera showing the full arena
+			this.camera.position.x = this.game.width / 2;
+			this.camera.position.y = this.game.height / 2;
+		}
 
 		// Wire cross-references
 		this.player.bulletManager = this.bulletManager;

@@ -1,5 +1,4 @@
 import { Label, Layer } from "@quintus/ui";
-import { GAME_WIDTH } from "../config.js";
 import { gameState } from "../state.js";
 
 export class HUD extends Layer {
@@ -27,7 +26,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="levelLabel"
-					position={[GAME_WIDTH / 2, 6]}
+					position={[this.game.width / 2, 6]}
 					text={`Level ${gameState.level}`}
 					fontSize={14}
 					color="#4fc3f7"
@@ -35,7 +34,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="livesLabel"
-					position={[GAME_WIDTH - 10, 6]}
+					position={[this.game.width - 10, 6]}
 					text={`Lives: ${gameState.lives}`}
 					fontSize={14}
 					color="#ffffff"

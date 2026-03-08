@@ -120,7 +120,17 @@ export class Canvas2DDrawContext implements DrawContext {
 		}
 
 		if (src) {
-			ctx.drawImage(img, src.x, src.y, src.width, src.height, drawX, drawY, dw, dh);
+			ctx.drawImage(
+				img,
+				Math.round(src.x),
+				Math.round(src.y),
+				Math.round(src.width),
+				Math.round(src.height),
+				drawX,
+				drawY,
+				dw,
+				dh,
+			);
 		} else {
 			ctx.drawImage(img, drawX, drawY, dw, dh);
 		}

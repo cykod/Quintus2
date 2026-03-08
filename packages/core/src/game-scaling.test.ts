@@ -272,4 +272,67 @@ describe("Game scaling: fill mode", () => {
 		expect(game.width).toBe(800);
 		expect(game.height).toBe(600);
 	});
+
+	it("fill on mobile with fillAxis 'width': keeps width, adjusts height", () => {
+		vi.stubGlobal("innerWidth", 375);
+		vi.stubGlobal("innerHeight", 812);
+		mockCoarsePointer();
+
+		const canvas = document.createElement("canvas");
+		const game = new Game({
+			width: 480,
+			height: 640,
+			canvas,
+			renderer: null,
+			scale: "fill",
+			fillAxis: "width",
+		});
+
+		// Width stays at design value (480), height adapts to viewport aspect
+		expect(game.width).toBe(480);
+		expect(game.height).toBe(Math.round(480 * (812 / 375)));
+		expect(game.canvas.width).toBe(480);
+		expect(game.canvas.height).toBe(game.height);
+
+		// CSS fills viewport
+		expect(game.canvas.style.width).toBe("375px");
+		expect(game.canvas.style.height).toBe("812px");
+		expect(game.canvas.style.position).toBe("fixed");
+
+		// fillZoom = viewport width / design width
+		expect(game.fillZoom).toBeCloseTo(375 / 480, 5);
+
+		vi.unstubAllGlobals();
+	});
+
+	it("fill on mobile with fillAxis 'width': resized signal fires on resize", () => {
+		vi.stubGlobal("innerWidth", 375);
+		vi.stubGlobal("innerHeight", 812);
+		mockCoarsePointer();
+
+		const canvas = document.createElement("canvas");
+		const game = new Game({
+			width: 480,
+			height: 640,
+			canvas,
+			renderer: null,
+			scale: "fill",
+			fillAxis: "width",
+		});
+		const resizes: Array<{ width: number; height: number }> = [];
+		game.resized.connect((data) => resizes.push(data));
+
+		// Simulate orientation change to landscape
+		vi.stubGlobal("innerWidth", 812);
+		vi.stubGlobal("innerHeight", 375);
+		window.dispatchEvent(new Event("resize"));
+
+		expect(resizes.length).toBeGreaterThanOrEqual(1);
+		const last = resizes[resizes.length - 1]!;
+		expect(last.width).toBe(480);
+		expect(last.height).toBe(Math.round(480 * (375 / 812)));
+		expect(game.width).toBe(480);
+
+		vi.unstubAllGlobals();
+	});
 });

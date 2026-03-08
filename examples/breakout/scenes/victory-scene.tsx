@@ -1,31 +1,37 @@
 import { Scene } from "@quintus/core";
 import { Button, Label, Layer, Panel } from "@quintus/ui";
-import { GAME_HEIGHT, GAME_WIDTH } from "../config.js";
 import { gameState } from "../state.js";
 
 export class VictoryScene extends Scene {
 	override build() {
-		const cx = GAME_WIDTH / 2;
+		const cx = this.game.width / 2;
+		const cy = this.game.height / 2;
 		return (
 			<Layer fixed>
-				<Panel width={GAME_WIDTH} height={GAME_HEIGHT} backgroundColor="#0a0a2e" />
-				<Label position={[cx, 180]} text="You Win!" fontSize={36} color="#81c784" align="center" />
+				<Panel width={this.game.width} height={this.game.height} backgroundColor="#0a0a2e" />
 				<Label
-					position={[cx, 230]}
+					position={[cx, cy - 140]}
+					text="You Win!"
+					fontSize={36}
+					color="#81c784"
+					align="center"
+				/>
+				<Label
+					position={[cx, cy - 90]}
 					text="All levels cleared!"
 					fontSize={12}
 					color="#aaaaaa"
 					align="center"
 				/>
 				<Label
-					position={[cx, 270]}
+					position={[cx, cy - 50]}
 					text={`Final Score: ${gameState.score}`}
 					fontSize={18}
 					color="#ffffff"
 					align="center"
 				/>
 				<Button
-					position={[cx - 60, 360]}
+					position={[cx - 60, cy + 40]}
 					width={120}
 					height={36}
 					text="Play Again"

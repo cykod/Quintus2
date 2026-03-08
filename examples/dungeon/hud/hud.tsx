@@ -70,7 +70,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="scoreLabel"
-					position={[250, 4]}
+					position={[this.game.width - 6, 4]}
 					text={`Score: ${gameState.score}`}
 					fontSize={8}
 					color="#ffffff"
@@ -78,7 +78,7 @@ export class HUD extends Layer {
 				/>
 				<Label
 					ref="keyLabel"
-					position={[250, 16]}
+					position={[this.game.width - 6, 16]}
 					text={gameState.keys > 0 ? `Keys: ${gameState.keys}` : ""}
 					fontSize={8}
 					color="#ffd54f"
