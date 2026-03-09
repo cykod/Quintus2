@@ -35,10 +35,10 @@ export abstract class DungeonLevel extends Scene {
 		const cam = this.add(Camera3D, {
 			fov: 50,
 			follow: player,
-			followOffset: new THREE.Vector3(0, 4, 4),
+			followOffset: new THREE.Vector3(0, 12, 8),
 			followSmoothing: 4,
 		});
-		cam.position.set(startWorld.x, startWorld.y + 4, startWorld.z + 4);
+		cam.position.set(startWorld.x, startWorld.y + 12, startWorld.z + 8);
 
 		// Coins
 		const coins = new Map<string, CoinItem>();

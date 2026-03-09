@@ -30,7 +30,6 @@ game.use(
 				{ action: "menu", label: "Menu" },
 			],
 		}),
-		fullscreen: true,
 		scenes: [SokobanLevel],
 	}),
 );

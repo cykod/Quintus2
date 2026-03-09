@@ -42,7 +42,6 @@ game.use(
 				down: "aim_down",
 			},
 		}),
-		fullscreen: true,
 	}),
 );
 game.use(TweenPlugin());

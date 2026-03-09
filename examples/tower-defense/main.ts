@@ -29,7 +29,7 @@ game.use(
 	}),
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
-game.use(TouchPlugin({ layout: pointClickLayout(), fullscreen: true }));
+game.use(TouchPlugin({ layout: pointClickLayout() }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

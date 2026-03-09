@@ -43,7 +43,6 @@ game.use(
 				{ action: "use_potion", label: "Pot", icon: "🧪" },
 			],
 		}),
-		fullscreen: true,
 	}),
 );
 game.use(TweenPlugin());

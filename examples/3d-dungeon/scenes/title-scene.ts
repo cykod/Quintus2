@@ -9,6 +9,9 @@ export class TitleScene extends Scene {
 		const ui = this.add(Layer);
 		ui.fixed = true;
 
+		const cx = this.game.width / 2;
+		const cy = this.game.height / 2;
+
 		ui.add(Panel, {
 			width: this.game.width,
 			height: this.game.height,
@@ -16,7 +19,7 @@ export class TitleScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(this.game.width / 2, 120),
+			position: new Vec2(cx, cy - 90),
 			text: "3D Dungeon",
 			fontSize: 32,
 			color: Color.fromHex("#ffd54f"),
@@ -24,7 +27,7 @@ export class TitleScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(this.game.width / 2, 180),
+			position: new Vec2(cx, cy - 30),
 			text: "Collect coins and find the exit!",
 			fontSize: 12,
 			color: Color.WHITE,
@@ -33,7 +36,7 @@ export class TitleScene extends Scene {
 
 		const prompt = isTouchDevice() ? "Tap to Start" : "Press Space to Start";
 		ui.add(Label, {
-			position: new Vec2(this.game.width / 2, 240),
+			position: new Vec2(cx, cy + 30),
 			text: prompt,
 			fontSize: 14,
 			color: Color.fromHex("#42a5f5"),
@@ -41,7 +44,7 @@ export class TitleScene extends Scene {
 		});
 
 		const startBtn = ui.add(Button, {
-			position: new Vec2(this.game.width / 2 - 60, 300),
+			position: new Vec2(cx - 60, cy + 90),
 			width: 120,
 			height: 36,
 			text: "Start",

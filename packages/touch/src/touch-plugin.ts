@@ -1,6 +1,5 @@
 import { definePlugin, type Game, type Node2D, type Plugin, type Scene } from "@quintus/core";
 import { onInputMethodChange } from "./detect.js";
-import { requestFullscreen } from "./fullscreen.js";
 import { lockScroll } from "./scroll-lock.js";
 import { TouchOverlay } from "./touch-overlay.js";
 import type { VirtualControl } from "./virtual-control.js";
@@ -9,16 +8,12 @@ import type { VirtualControl } from "./virtual-control.js";
 export interface TouchPluginConfig {
 	/** Control layout to use. Provide a factory function or a layout object. */
 	layout: TouchLayout | TouchLayoutFactory;
-	/** Auto-request fullscreen on first touch. Default: false. */
-	fullscreen?: boolean;
 	/** Prevent page scroll when touching the canvas. Default: true. */
 	preventScroll?: boolean;
 	/** Force controls visible (true), hidden (false), or auto-detect (undefined). */
 	visible?: boolean;
 	/** Opacity of virtual controls. Default: 0.4. */
 	opacity?: number;
-	/** Preferred orientation when fullscreen. Default: "landscape". Set "any" to skip locking. */
-	orientation?: "landscape" | "portrait" | "any";
 	/** Only show controls on these scene classes. If undefined, controls appear on all scenes. */
 	scenes?: Array<new (...args: unknown[]) => Scene>;
 }
@@ -124,43 +119,6 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 					}
 				});
 				cleanups.push(removeDetection);
-			}
-
-			// --- Fullscreen on First Touch ---
-			if (config.fullscreen && typeof document !== "undefined") {
-				let requested = false;
-				// Use "click" — it is the most universally accepted user activation
-				// event across all browsers. touchstart and pointerdown do NOT
-				// reliably grant user activation on mobile Chrome.
-				// Register on document in capture phase so virtual control handlers
-				// that call stopImmediatePropagation() cannot block this.
-				const onFirstClick = (e: Event) => {
-					// Only trigger on touch devices (mouse users don't need auto-fullscreen)
-					if (e instanceof PointerEvent && e.pointerType === "mouse") return;
-					if (requested) return;
-					requested = true;
-					document.removeEventListener("click", onFirstClick, true);
-					requestFullscreen(game.canvas)
-						.then(() => {
-							// Try to lock orientation (not in all TS type defs)
-							const orientation = config.orientation ?? "landscape";
-							if (orientation !== "any") {
-								const so = screen.orientation as ScreenOrientation & {
-									lock?: (o: string) => Promise<void>;
-								};
-								so.lock?.(orientation)?.catch(() => {
-									// Silently ignore — not all browsers support this
-								});
-							}
-						})
-						.catch(() => {
-							// Fullscreen may be blocked by browser
-						});
-				};
-				document.addEventListener("click", onFirstClick, true);
-				cleanups.push(() => {
-					document.removeEventListener("click", onFirstClick, true);
-				});
 			}
 
 			// --- Resize Hook (fill mode) ---

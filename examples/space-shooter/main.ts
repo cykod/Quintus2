@@ -35,7 +35,6 @@ game.use(
 			moveActions: { left: "left", right: "right", up: "up", down: "down" },
 			actions: [{ action: "fire", label: "Fire" }],
 		}),
-		fullscreen: true,
 	}),
 );
 game.use(TweenPlugin());

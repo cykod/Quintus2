@@ -30,7 +30,7 @@ game.use(
 	}),
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
-game.use(TouchPlugin({ layout: platformerLayout(), fullscreen: true }));
+game.use(TouchPlugin({ layout: platformerLayout() }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

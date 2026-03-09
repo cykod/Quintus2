@@ -55,6 +55,13 @@ export class ThreeRenderer implements Renderer {
 		if (this.overlayCanvas?.parentElement) {
 			this.overlayCanvas.remove();
 		}
+		// Remove the wrapper div if we created one, restoring the webgl canvas to its original parent
+		const webglCanvas = this.ctx.webglRenderer.domElement;
+		const container = webglCanvas.parentElement;
+		if (container?.dataset.threeOverlayContainer) {
+			container.parentElement?.insertBefore(webglCanvas, container);
+			container.remove();
+		}
 	}
 
 	// === Internal: Tree Sync ===
@@ -103,27 +110,31 @@ export class ThreeRenderer implements Renderer {
 			return;
 		}
 
+		const webglCanvas = this.ctx.webglRenderer.domElement;
+
 		if (!this.overlayCanvas) {
 			this.overlayCanvas = document.createElement("canvas");
-			const webglCanvas = this.ctx.webglRenderer.domElement;
-			this.overlayCanvas.width = webglCanvas.width;
-			this.overlayCanvas.height = webglCanvas.height;
-
-			let container = webglCanvas.parentElement;
-			if (!container?.dataset.threeOverlayContainer) {
-				container = document.createElement("div");
-				container.dataset.threeOverlayContainer = "1";
-				container.style.cssText = "position: relative; width: 100%; height: 100%;";
-				webglCanvas.parentElement?.insertBefore(container, webglCanvas);
-				container.appendChild(webglCanvas);
-			}
-			this.overlayCanvas.style.cssText =
-				"position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;";
-			container.appendChild(this.overlayCanvas);
+			// Use game logical dimensions, not webgl physical pixels (which include devicePixelRatio)
+			this.overlayCanvas.width = scene.game.width;
+			this.overlayCanvas.height = scene.game.height;
+			this.overlayCanvas.style.pointerEvents = "none";
+			// Place as sibling right after the webgl canvas (no wrapper div needed)
+			webglCanvas.after(this.overlayCanvas);
 			const ctx2d = this.overlayCanvas.getContext("2d");
 			if (!ctx2d) return;
 			this.overlayDrawContext = new Canvas2DDrawContext(ctx2d, scene.game.assets);
 		}
+
+		// Sync overlay CSS to match the webgl canvas position and size each frame.
+		// The Game's scaling system (fit/fill) sets inline styles on the webgl canvas;
+		// we mirror them so the overlay lines up exactly.
+		const ws = webglCanvas.style;
+		const os = this.overlayCanvas.style;
+		os.position = ws.position;
+		os.left = ws.left;
+		os.top = ws.top;
+		os.width = ws.width;
+		os.height = ws.height;
 
 		this.overlayCanvas.style.display = "";
 		const drawCtx = this.overlayDrawContext;
@@ -146,7 +157,8 @@ export class ThreeRenderer implements Renderer {
 	private _warnedNode2DIds = new Set<number>();
 
 	private _collectOverlayNodes(node: Node, list: Node2D[]): void {
-		if (node instanceof Node2D && node.visible) {
+		if (node instanceof Node2D) {
+			if (!node.visible) return; // Skip invisible subtrees (matches Canvas2DRenderer)
 			if (node.renderFixed) {
 				list.push(node);
 			} else if (!this._warnedNode2DIds.has(node.id)) {

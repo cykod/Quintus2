@@ -1,3 +1,18 @@
+## Fix ThreeRenderer overlay scaling and improve 3D dungeon UX
+*Monday, March 9th at 12pm*
+Fixed a critical bug in ThreeRenderer where the 2D overlay canvas (used for 
+HUD, title screens, and touch controls) was wrapped in a container div that 
+expanded to fill the full viewport, causing overlay content to render at wrong 
+aspect ratios and sizes on non-4:3 screens. The overlay now places as a sibling 
+of the WebGL canvas with CSS synced each frame, and uses game logical 
+dimensions instead of WebGL physical pixels (which include devicePixelRatio). 
+Also raised the 3D dungeon camera offset from (0,4,4) to (0,12,8) for a proper 
+overhead view, centered all menu screen UI, removed the unused 
+fullscreen-on-mobile feature from TouchPlugin, and added invisible subtree 
+skipping to prevent touch controls from rendering on desktop.
+
+---
+
 ## Sort imports across examples to satisfy Biome linter
 *Sunday, March 8th at 8pm*
 Reorder imports alphabetically in 17 files across all example games and one 

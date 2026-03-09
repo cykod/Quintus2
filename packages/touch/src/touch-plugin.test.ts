@@ -98,15 +98,11 @@ describe("TouchPlugin", () => {
 		game.use(
 			TouchPlugin({
 				layout: dummyLayout(),
-				fullscreen: true,
 				opacity: 0.8,
-				orientation: "portrait",
 			}),
 		);
 		const state = getTouchState(game);
-		expect(state!.config.fullscreen).toBe(true);
 		expect(state!.config.opacity).toBe(0.8);
-		expect(state!.config.orientation).toBe("portrait");
 	});
 });
 

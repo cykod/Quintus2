@@ -33,7 +33,7 @@ game.use(
 	}),
 );
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
-game.use(TouchPlugin({ layout: breakoutLayout({ followY: PADDLE_Y }), fullscreen: true }));
+game.use(TouchPlugin({ layout: breakoutLayout({ followY: PADDLE_Y }) }));
 game.use(TweenPlugin());
 game.use(AudioPlugin());
 

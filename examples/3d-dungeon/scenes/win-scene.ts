@@ -8,6 +8,9 @@ export class WinScene extends Scene {
 		const ui = this.add(Layer);
 		ui.fixed = true;
 
+		const cx = this.game.width / 2;
+		const cy = this.game.height / 2;
+
 		ui.add(Panel, {
 			width: this.game.width,
 			height: this.game.height,
@@ -15,7 +18,7 @@ export class WinScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(this.game.width / 2, 100),
+			position: new Vec2(cx, cy - 60),
 			text: "Dungeon Cleared!",
 			fontSize: 28,
 			color: Color.fromHex("#66bb6a"),
@@ -23,7 +26,7 @@ export class WinScene extends Scene {
 		});
 
 		ui.add(Label, {
-			position: new Vec2(this.game.width / 2, 160),
+			position: new Vec2(cx, cy),
 			text: `Final Score: ${gameState.score}`,
 			fontSize: 16,
 			color: Color.WHITE,
@@ -31,7 +34,7 @@ export class WinScene extends Scene {
 		});
 
 		const playAgainBtn = ui.add(Button, {
-			position: new Vec2(this.game.width / 2 - 60, 220),
+			position: new Vec2(cx - 60, cy + 60),
 			width: 120,
 			height: 36,
 			text: "Play Again",

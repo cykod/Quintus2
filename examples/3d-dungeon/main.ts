@@ -31,7 +31,6 @@ game.use(
 			},
 			actions: [{ action: "interact", label: "Act", icon: "\u2726" }],
 		}),
-		fullscreen: true,
 		scenes: [Level1, Level2, Level3],
 	}),
 );
