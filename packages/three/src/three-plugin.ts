@@ -43,10 +43,13 @@ export function ThreePlugin(config: ThreePluginConfig = {}): Plugin {
 				return loader.loadAsync(path);
 			});
 
-			// Clear Three.js scene on scene transitions
+			// Clear stale Three.js objects on scene transitions.
+			// Node3D.onExitTree removes objects individually, but this is a
+			// safety net for any orphans.  Do NOT null activeCamera here —
+			// sceneSwitched fires AFTER the new scene's onReady, so the new
+			// Camera3D has already registered itself via onEnterTree.
 			game.sceneSwitched.connect(() => {
 				ctx.scene.clear();
-				ctx.activeCamera = null;
 			});
 
 			// Clean up on game stop

@@ -12,38 +12,38 @@ import { TitleScene } from "./scenes/title-scene.js";
 import { WinScene } from "./scenes/win-scene.js";
 
 const game = new Game({
-	width: GAME_WIDTH,
-	height: GAME_HEIGHT,
-	renderer: null,
-	scale: "fit",
+    width: GAME_WIDTH,
+    height: GAME_HEIGHT,
+    renderer: null,
+    scale: "fill",
 });
 
-game.use(ThreePlugin({ antialias: true, background: 0x1a1a2e }));
+game.use(ThreePlugin({ antialias: true, background: 0x1a1a2e, shadows: true }));
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(
-	TouchPlugin({
-		layout: topDownLayout({
-			moveActions: {
-				left: "move_left",
-				right: "move_right",
-				up: "move_up",
-				down: "move_down",
-			},
-			actions: [{ action: "interact", label: "Act", icon: "\u2726" }],
-		}),
-		scenes: [Level1, Level2, Level3],
-	}),
+    TouchPlugin({
+        layout: topDownLayout({
+            moveActions: {
+                left: "turn_left",
+                right: "turn_right",
+                up: "move_forward",
+                down: "move_backward",
+            },
+            actions: [{ action: "interact", label: "Act", icon: "\u2726" }],
+        }),
+        scenes: [Level1, Level2, Level3],
+    }),
 );
 
 game.registerScenes({
-	title: TitleScene,
-	level1: Level1,
-	level2: Level2,
-	level3: Level3,
-	win: WinScene,
-	"game-over": GameOverScene,
+    title: TitleScene,
+    level1: Level1,
+    level2: Level2,
+    level3: Level3,
+    win: WinScene,
+    "game-over": GameOverScene,
 });
 
 game.assets.load({ glb: MODEL_PATHS }).then(() => {
-	game.start("title");
+    game.start("title");
 });

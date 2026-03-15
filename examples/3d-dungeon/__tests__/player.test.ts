@@ -129,10 +129,18 @@ describe("PlayerCharacter", () => {
 		expect(gameState.health).toBe(PLAYER_HEALTH);
 	});
 
+	// Player starts facing south (_facing=2): forward = +Z, right = West, left = East.
+	// Turn left → East (+X). Turn right → West (-X).
+	// TURN_DURATION=0.15s ~9 frames; MOVE_DURATION=0.2s ~12 frames.
+
 	it("movement updates gridX", async () => {
 		const { InputScript } = await import("@quintus/test");
-		// Tap right, then wait for move to complete (MOVE_DURATION=0.2s ~12 frames)
-		const input = InputScript.create().tap("move_right", 1).wait(15);
+		// Turn left (face east), move forward → (2,1)
+		const input = InputScript.create()
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
+			.wait(15);
 		const result = await runScene(PlayerTestScene, input);
 		const player = result.game.currentScene!.findByType(PlayerCharacter);
 		expect(player!.gridX).toBe(2);
@@ -140,8 +148,14 @@ describe("PlayerCharacter", () => {
 
 	it("cannot walk through walls", async () => {
 		const { InputScript } = await import("@quintus/test");
-		// Try to move up into a wall
-		const input = InputScript.create().tap("move_up", 1).wait(15);
+		// Turn left twice (face north), move forward into wall row z=0
+		const input = InputScript.create()
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
+			.wait(15);
 		const result = await runScene(PlayerTestScene, input);
 		const player = result.game.currentScene!.findByType(PlayerCharacter);
 		expect(player!.gridX).toBe(1);
@@ -150,21 +164,29 @@ describe("PlayerCharacter", () => {
 
 	it("coin collection increases score", async () => {
 		const { InputScript } = await import("@quintus/test");
-		// Move right twice to reach coin at (3,1): right → wait → right → wait
-		const input = InputScript.create().tap("move_right", 1).wait(15).tap("move_right", 1).wait(15);
+		// Turn left (face east), move forward twice to reach coin at (3,1)
+		const input = InputScript.create()
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
+			.wait(15)
+			.tap("move_forward", 1)
+			.wait(15);
 		await runScene(PlayerTestScene, input);
 		expect(gameState.score).toBe(COIN_SCORE);
 	});
 
 	it("trap reduces health", async () => {
 		const { InputScript } = await import("@quintus/test");
-		// Move right 3 times to reach trap at (4,1)
+		// Turn left (face east), move forward 3 times to reach trap at (4,1)
 		const input = InputScript.create()
-			.tap("move_right", 1)
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("move_forward", 1)
 			.wait(15);
 		await runScene(PlayerTestScene, input);
 		expect(gameState.health).toBe(PLAYER_HEALTH - TRAP_DAMAGE);
@@ -172,15 +194,18 @@ describe("PlayerCharacter", () => {
 
 	it("exit triggers reachedExit signal", async () => {
 		const { InputScript } = await import("@quintus/test");
-		// Move down then right to reach exit at (4,2)
+		// Move forward (south to row 2), turn left (face east),
+		// move forward 3 times to reach exit at (4,2)
 		const input = InputScript.create()
-			.tap("move_down", 1)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("move_forward", 1)
 			.wait(15);
 		await runScene(PlayerTestScene, input);
 		expect(gameState.level).toBe(99); // sentinel set by reachedExit handler
@@ -188,13 +213,15 @@ describe("PlayerCharacter", () => {
 
 	it("death at health 0 emits died signal", async () => {
 		const { InputScript } = await import("@quintus/test");
-		// Move right 3 times to reach trap at (4,1), with health set to 1 after reset
+		// Turn left (face east), move forward 3 times to reach trap at (4,1)
 		const input = InputScript.create()
-			.tap("move_right", 1)
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("move_forward", 1)
 			.wait(15)
-			.tap("move_right", 1)
+			.tap("move_forward", 1)
 			.wait(15);
 		await runScene(PlayerTestScene, input, undefined, () => {
 			gameState.health = 1;

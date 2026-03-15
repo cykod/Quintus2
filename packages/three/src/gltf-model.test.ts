@@ -127,6 +127,39 @@ describe("GLTFModel", () => {
 		expect(model.loaded).toBe(false);
 	});
 
+	it("destroy removes cloned scene without disposing shared resources", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		const mockGltf = {
+			scene: new THREE.Object3D(),
+			animations: [],
+		};
+		game.assets._storeCustom("shared", mockGltf);
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel, { src: "shared" });
+				this.add(GLTFModel, { src: "shared" });
+			}
+		}
+		game.start(TestScene);
+		game.step();
+
+		const models = game.currentScene!.children.filter(
+			(c) => c instanceof GLTFModel,
+		) as GLTFModel[];
+		expect(models).toHaveLength(2);
+		expect(models[0].loaded).toBe(true);
+		expect(models[1].loaded).toBe(true);
+
+		// Destroy first — second should still be loaded and have its 3D children
+		const secondChildCount = models[1].object3d.children.length;
+		models[0].destroy();
+		expect(models[1].loaded).toBe(true);
+		expect(models[1].object3d.children.length).toBe(secondChildCount);
+	});
+
 	it("applies modelScale", () => {
 		const game = new Game({ width: 800, height: 600, renderer: null });
 		game.use(ThreePlugin());

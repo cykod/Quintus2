@@ -34,6 +34,30 @@ describe("DirectionalLight", () => {
 		expect(light.castShadow).toBe(true);
 	});
 
+	it("configures shadow camera frustum from properties", () => {
+		const node = new DirectionalLight();
+		node.castShadow = true;
+		node.shadowExtent = 20;
+		node.shadowNear = 1;
+		node.shadowFar = 100;
+		const light = node.light;
+		const cam = light.shadow.camera;
+		expect(cam.left).toBe(-20);
+		expect(cam.right).toBe(20);
+		expect(cam.top).toBe(20);
+		expect(cam.bottom).toBe(-20);
+		expect(cam.near).toBe(1);
+		expect(cam.far).toBe(100);
+	});
+
+	it("uses default shadow extent of 15", () => {
+		const node = new DirectionalLight();
+		node.castShadow = true;
+		const cam = node.light.shadow.camera;
+		expect(cam.left).toBe(-15);
+		expect(cam.right).toBe(15);
+	});
+
 	it("disposes shadow map on destroy", () => {
 		const node = new DirectionalLight();
 		node.castShadow = true;

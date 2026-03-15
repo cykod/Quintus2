@@ -19,12 +19,26 @@ export class DirectionalLight extends Node3D {
 	intensity = 1;
 	castShadow = false;
 	shadowMapSize = 1024;
+	/** Shadow camera frustum extent. Default covers a 30×30 unit area. */
+	shadowExtent = 15;
+	/** Shadow camera near plane. */
+	shadowNear = 0.5;
+	/** Shadow camera far plane. */
+	shadowFar = 50;
 
 	protected override _createObject3D(): THREE.DirectionalLight {
 		const light = new THREE.DirectionalLight(this.color, this.intensity);
 		if (this.castShadow) {
 			light.castShadow = true;
 			light.shadow.mapSize.set(this.shadowMapSize, this.shadowMapSize);
+			const cam = light.shadow.camera;
+			cam.left = -this.shadowExtent;
+			cam.right = this.shadowExtent;
+			cam.top = this.shadowExtent;
+			cam.bottom = -this.shadowExtent;
+			cam.near = this.shadowNear;
+			cam.far = this.shadowFar;
+			cam.updateProjectionMatrix();
 		}
 		return light;
 	}

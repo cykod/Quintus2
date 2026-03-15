@@ -76,23 +76,17 @@ export class GLTFModel extends Node3D {
 	override onDestroy(): void {
 		if (this._mixer) {
 			this._mixer.stopAllAction();
+			this._mixer = null;
 		}
-		this._disposeRecursive(this.object3d);
-	}
+		this._currentAction = null;
+		this._animations.clear();
 
-	private _disposeRecursive(obj: THREE.Object3D): void {
-		for (const child of [...obj.children]) {
-			this._disposeRecursive(child);
-		}
-		if (obj instanceof THREE.Mesh) {
-			obj.geometry?.dispose();
-			const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-			for (const mat of mats) {
-				for (const value of Object.values(mat)) {
-					if (value instanceof THREE.Texture) value.dispose();
-				}
-				mat.dispose();
-			}
+		// Remove the cloned scene from the 3D parent but do NOT dispose
+		// geometry, materials, or textures — SkeletonUtils.clone shares
+		// these with the original GLTF asset and other clones.
+		// Disposing here would break all other instances of the same model.
+		for (const child of [...this.object3d.children]) {
+			this.object3d.remove(child);
 		}
 	}
 

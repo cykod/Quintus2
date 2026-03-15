@@ -1,3 +1,16 @@
+## Add 3D dungeon tank controls, shadows, and fix engine footguns
+*Sunday, March 15th at 8pm*
+Overhaul the 3D dungeon example with relative tank controls (forward/backward + 
+smooth turning), an overhead third-person camera parented to the player, shadow 
+casting on all entities, and a GLTF model rotation fix for the +Z forward 
+convention. Fix two engine-level footguns in @quintus/three: 
+GLTFModel.onDestroy no longer disposes shared geometry/materials/textures from 
+SkeletonUtils clones (which broke sibling instances), and DirectionalLight now 
+exposes shadowExtent/shadowNear/shadowFar properties with sensible defaults so 
+shadow cameras work out of the box without reaching into Three.js internals.
+
+---
+
 ## Fix ThreeRenderer overlay scaling and improve 3D dungeon UX
 *Monday, March 9th at 12pm*
 Fixed a critical bug in ThreeRenderer where the 2D overlay canvas (used for 

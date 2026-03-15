@@ -1,6 +1,5 @@
 import { Scene } from "@quintus/core";
 import { AmbientLight, Camera3D, DirectionalLight } from "@quintus/three";
-import * as THREE from "three";
 import { COIN_SCORE } from "../config.js";
 import { CoinItem } from "../entities/coin-item.js";
 import { DungeonGrid } from "../entities/dungeon-grid.js";
@@ -28,17 +27,16 @@ export abstract class DungeonLevel extends Scene {
 			dungeonGrid: grid,
 			gridX: spawn?.gridX ?? 1,
 			gridZ: spawn?.gridZ ?? 1,
+			castShadow: true,
+			receiveShadow: true,
 		});
 
-		// Camera — start at follow target so there's no convergence delay
-		const startWorld = grid.gridToWorld(player.gridX, player.gridZ);
-		const cam = this.add(Camera3D, {
-			fov: 50,
-			follow: player,
-			followOffset: new THREE.Vector3(0, 12, 8),
-			followSmoothing: 4,
-		});
-		cam.position.set(startWorld.x, startWorld.y + 12, startWorld.z + 8);
+		// Camera — child of player so it inherits position and rotation.
+		// Local +Z is behind the player (Three.js forward is -Z).
+		// High up and tilted steeply down for an overhead third-person view.
+		const cam = player.add(Camera3D, { fov: 50 });
+		cam.position.set(0, 5, 2.5);
+		cam.rotation.x = -0.9;
 
 		// Coins
 		const coins = new Map<string, CoinItem>();
@@ -46,6 +44,7 @@ export abstract class DungeonLevel extends Scene {
 			const coin = this.add(CoinItem, {
 				gridX: cell.gridX,
 				gridZ: cell.gridZ,
+				castShadow: true,
 			});
 			coins.set(`${cell.gridX},${cell.gridZ}`, coin);
 		}
@@ -66,8 +65,12 @@ export abstract class DungeonLevel extends Scene {
 
 		// Lighting
 		this.add(AmbientLight, { intensity: 0.4 });
-		const sun = this.add(DirectionalLight, { intensity: 0.8 });
-		sun.position.set(startWorld.x + 3, 8, startWorld.z - 3);
+		const sun = this.add(DirectionalLight, {
+			intensity: 0.8,
+			castShadow: true,
+			shadowMapSize: 2048,
+		});
+		sun.position.set(5, 10, -5);
 
 		// HUD
 		this.add(HUD);

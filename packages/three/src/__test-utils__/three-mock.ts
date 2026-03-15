@@ -149,6 +149,7 @@ export class Color {
 class MockShadow {
 	mapSize = new Vector3(512, 512, 0);
 	map: { dispose: () => void } | null = null;
+	camera = new OrthographicCamera(-5, 5, 5, -5, 0.5, 500);
 }
 
 export class Camera extends Object3D {

@@ -7,6 +7,7 @@ export const TILE_SIZE = 1;
 
 // === Player ===
 export const MOVE_DURATION = 0.2;
+export const TURN_DURATION = 0.15;
 export const PLAYER_HEALTH = 3;
 export const PLAYER_INVINCIBILITY = 1.0;
 
@@ -50,9 +51,9 @@ export const LEVELS: string[][] = [
 
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
-	move_up: ["KeyW", "ArrowUp", "gamepad:left-stick-up"],
-	move_down: ["KeyS", "ArrowDown", "gamepad:left-stick-down"],
-	move_left: ["KeyA", "ArrowLeft", "gamepad:left-stick-left"],
-	move_right: ["KeyD", "ArrowRight", "gamepad:left-stick-right"],
+	move_forward: ["KeyW", "ArrowUp", "gamepad:left-stick-up"],
+	move_backward: ["KeyS", "ArrowDown", "gamepad:left-stick-down"],
+	turn_left: ["KeyA", "ArrowLeft", "gamepad:left-stick-left"],
+	turn_right: ["KeyD", "ArrowRight", "gamepad:left-stick-right"],
 	interact: ["KeyE", "Space", "gamepad:a"],
 };
