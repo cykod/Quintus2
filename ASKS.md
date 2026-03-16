@@ -746,3 +746,25 @@
 [DEVL] mon 3/16 6pm - Review PARTICLE_SYSTEMS.md design document for potential issues and risks
 
 [IMPL] mon 3/16 6pm - Implement particle systems phases 1-5: core simulation, Canvas2D rendering, emitter node, property curves, and preset library
+
+[MILE] mon 3/16 8pm - Added particle system phases 1-5 with 15 presets, 146 tests, and interactive viewer example
+
+[IMPL] mon 3/16 8pm - Implement Phase 6: Three.js 3D particle system with ParticlePool3D, ParticleSimulator3D, and ParticleEmitter3D
+
+[IMPL] mon 3/16 8pm - Modify the particles example to use a leaf texture image for the leaf preset and update its title to 'leaf (with texture)'
+
+[MILE] mon 3/16 8pm - Added snowflake texture to snow particle preset in the particles viewer example
+
+[MILE] mon 3/16 8pm - Added 3D particle system with Three.js integration including ParticlePool3D, ParticleSimulator3D, ParticleEmitter3D, 6 presets, and subpath export
+
+[IMPL] mon 3/16 8pm - Implement Phase 7 particle system tests and 3D particles demo
+
+[DSGN] mon 3/16 8pm - Design 3D dungeon polish: camera shake, particles, death anims, screen flash, fog of war, health pickups, torches, level transitions
+
+[MILE] mon 3/16 9pm - Added 3D particle demo with projected labels, integration tests for lifecycle/burst/local-space, and Vite subpath alias fix
+
+[IMPL] mon 3/16 9pm - Implement dungeon polish phases 1-9: camera shake, blood particles, enemy death animation, screen flash, coin burst, footstep dust, health pickup, enemy hit stagger, and torches
+
+[MILE] mon 3/16 10pm - Added dungeon polish phases 1-9: camera shake, blood/coin/dust/heal particles, enemy death animation, damage flash overlay, enemy hit stagger, health potions, footstep dust, and wall-mounted torches
+
+[IMPL] mon 3/16 10pm - Implement Phase 10 fog of war for 3D dungeon

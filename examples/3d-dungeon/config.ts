@@ -62,6 +62,11 @@ export const LEVELS: string[][] = [
 	],
 ];
 
+// === Fog of War ===
+export const FOG_SIGHT_RANGE = 3;
+export const FOG_VISITED_OPACITY = 0.5;
+export const FOG_HIDDEN_OPACITY = 1.0;
+
 // === Camera ===
 export const CAMERA_ORBIT_DURATION = 0.2;
 

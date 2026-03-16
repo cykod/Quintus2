@@ -1,3 +1,14 @@
+## Add fog of war with opaque cubes to 3D dungeon
+*Monday, March 16th at 11pm*
+Add fog of war system to the 3D dungeon (Phase 10). Unexplored tiles are 
+covered by fully opaque black cubes that block vision completely, visited tiles 
+outside sight range show semi-transparent cubes, and tiles within the player's 
+sight range (manhattan distance 3) are fully revealed. The fog updates on every 
+player move via the existing moved signal. Includes 5 tests, Three.js mock 
+additions (MeshBasicMaterial, PlaneGeometry.rotateX), and config constants.
+
+---
+
 ## Add dungeon polish: particles, shake, torches, and health potions
 *Monday, March 16th at 10pm*
 Implements phases 1–9 of the dungeon polish design: camera shake on damage, 

@@ -849,10 +849,10 @@ this.add(AmbientLight, { intensity: 0.15 }); // was 0.4
 
 Darken tiles beyond a certain distance from the player. Uses a large flat plane above the floor with per-tile opacity controlled by distance. Tiles the player has visited stay partially revealed.
 
-- [ ] Create `examples/3d-dungeon/entities/fog-of-war.ts`
-- [ ] Track visited tiles
-- [ ] Update fog each frame based on player position
-- [ ] Write tests
+- [x] Create `examples/3d-dungeon/entities/fog-of-war.ts`
+- [x] Track visited tiles
+- [x] Update fog each frame based on player position
+- [x] Write tests
 
 ### Implementation Approach
 

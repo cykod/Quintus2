@@ -235,7 +235,17 @@ export class BoxGeometry extends BufferGeometry {
 	}
 }
 
-export class PlaneGeometry extends BufferGeometry {}
+export class PlaneGeometry extends BufferGeometry {
+	constructor(
+		public width = 1,
+		public height = 1,
+	) {
+		super();
+	}
+	rotateX(_angle: number) {
+		return this;
+	}
+}
 
 export class BufferAttribute {
 	array: Float32Array;
@@ -314,6 +324,25 @@ export class SpriteMaterial extends Material {
 		super();
 		this.transparent = params?.transparent ?? false;
 		this.opacity = params?.opacity ?? 1;
+	}
+}
+
+export class MeshBasicMaterial extends Material {
+	color: Color;
+	transparent: boolean;
+	opacity: number;
+	depthWrite: boolean;
+	constructor(params?: {
+		color?: number;
+		transparent?: boolean;
+		opacity?: number;
+		depthWrite?: boolean;
+	}) {
+		super();
+		this.color = new Color(params?.color ?? 0xffffff);
+		this.transparent = params?.transparent ?? false;
+		this.opacity = params?.opacity ?? 1;
+		this.depthWrite = params?.depthWrite ?? true;
 	}
 }
 

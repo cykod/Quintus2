@@ -14,6 +14,7 @@ import {
 } from "../entities/effects.js";
 import { Enemy } from "../entities/enemy.js";
 import { ExitStairs } from "../entities/exit-stairs.js";
+import { FogOfWar } from "../entities/fog-of-war.js";
 import { HealthPotion } from "../entities/health-potion.js";
 import { PlayerCharacter } from "../entities/player.js";
 import { Torch } from "../entities/torch.js";
@@ -108,6 +109,12 @@ export abstract class DungeonLevel extends Scene {
 			grid.setOccupied(cell.gridX, cell.gridZ);
 		}
 
+		// Fog of war
+		const fogOfWar = this.add(FogOfWar);
+		const wallGrid = this.levelData.map((line) => line.split("").map((ch) => ch === "#"));
+		fogOfWar.init(this.levelData[0].length, this.levelData.length, wallGrid);
+		fogOfWar.updatePlayerPosition(player.gridX, player.gridZ);
+
 		// Lighting — reduced ambient for torch atmosphere
 		this.add(AmbientLight, { intensity: 0.15 });
 		const sun = this.add(DirectionalLight, {
@@ -122,11 +129,7 @@ export abstract class DungeonLevel extends Scene {
 			const wallWorld = grid.gridToWorld(pos.x, pos.z);
 			// Offset torch toward the floor side so it sits on the wall surface
 			const torch = this.add(Torch);
-			torch.position.set(
-				wallWorld.x + pos.offsetX * 0.55,
-				0,
-				wallWorld.z + pos.offsetZ * 0.55,
-			);
+			torch.position.set(wallWorld.x + pos.offsetX * 0.55, 0, wallWorld.z + pos.offsetZ * 0.55);
 		}
 
 		// HUD
@@ -173,10 +176,11 @@ export abstract class DungeonLevel extends Scene {
 			}
 		});
 
-		// Footstep dust
+		// Footstep dust + fog of war update
 		player.moved.connect(({ fromX, fromZ }) => {
 			const pos = grid.gridToWorld(fromX, fromZ);
 			spawnDustPuff(this, pos.x, 0.02, pos.z);
+			fogOfWar.updatePlayerPosition(player.gridX, player.gridZ);
 		});
 
 		// Enemy turn orchestration
