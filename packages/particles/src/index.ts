@@ -30,6 +30,19 @@ export {
 	type GradientStop,
 	type PropertyCurves,
 } from "./curve.js";
+export {
+	degToRad3D,
+	type EmissionShape3D,
+	type ParticleConfig3D,
+	type Range3D,
+	type ResolvedParticleConfig3D,
+	resolveConfig3D,
+	resolveRange3D,
+} from "./particle-config-3d.js";
 
+// Phase 6: 3D particle support (Three.js-free types and simulation)
+export { ParticlePool3D } from "./particle-pool-3d.js";
+export { type BufferAttributeLike, ParticleSimulator3D } from "./particle-simulator-3d.js";
 // Phase 5: Presets
 export { Particles } from "./presets.js";
+export { Particles3D } from "./presets-3d.js";

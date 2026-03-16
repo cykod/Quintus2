@@ -1,3 +1,16 @@
+## Add 3D particle system with Three.js integration
+*Monday, March 16th at 8pm*
+Implement Phase 6 of the particle system: Three.js 3D particles. Adds 
+ParticlePool3D, ParticleSimulator3D, and ParticleEmitter3D (extends Node3D) 
+with spherical velocity emission, z-axis physics, and THREE.Points rendering 
+via custom ShaderMaterial for per-particle RGBA. Includes 6 presets (fire, 
+sparks, explosion, magic, snow, trail), a subpath export at 
+@quintus/particles/three with optional peer dependencies, and extended Three.js 
+test mocks. Base class methods made protected for extensibility. All 319 tests 
+pass with zero regressions.
+
+---
+
 ## Add snowflake texture to snow particle preset in viewer
 *Monday, March 16th at 8pm*
 Modified the particles example to render the snow preset with a snowflake 

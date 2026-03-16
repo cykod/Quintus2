@@ -93,7 +93,7 @@ export class ParticlePool {
 		this.alive--;
 	}
 
-	private _swap(dst: number, src: number): void {
+	protected _swap(dst: number, src: number): void {
 		this.x[dst] = this.x[src] as number;
 		this.y[dst] = this.y[src] as number;
 		this.vx[dst] = this.vx[src] as number;

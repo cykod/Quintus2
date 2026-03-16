@@ -19,8 +19,8 @@ export class ParticleSimulator {
 	private _emissionAccumulator = 0;
 	private _prevConfig: ResolvedParticleConfig | null = null;
 
-	constructor(capacity: number) {
-		this.pool = new ParticlePool(capacity);
+	constructor(capacity: number, pool?: ParticlePool) {
+		this.pool = pool ?? new ParticlePool(capacity);
 	}
 
 	/** Emit new particles based on config emission rate and dt */
@@ -121,7 +121,7 @@ export class ParticleSimulator {
 		this._emissionAccumulator = 0;
 	}
 
-	private _spawnParticle(
+	protected _spawnParticle(
 		config: ResolvedParticleConfig,
 		emitterX: number,
 		emitterY: number,
@@ -171,7 +171,7 @@ export class ParticleSimulator {
 		pool.aEnd[idx] = config.colorEnd.a;
 	}
 
-	private _emissionOffset(config: ResolvedParticleConfig, rng: SeededRandom): [number, number] {
+	protected _emissionOffset(config: ResolvedParticleConfig, rng: SeededRandom): [number, number] {
 		switch (config.emissionShape) {
 			case "point":
 				return [0, 0];

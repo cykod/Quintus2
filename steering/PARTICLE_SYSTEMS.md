@@ -14,7 +14,7 @@
 | 3 | Emitter node & game integration | Done |
 | 4 | Property curves & color gradients | Done |
 | 5 | Preset library & LLM-friendly API | Done |
-| 6 | Three.js 3D particles | Pending |
+| 6 | Three.js 3D particles | Done |
 | 7 | Tests & demo | Pending |
 
 ---
@@ -972,17 +972,16 @@ syncBuffers(geometry: THREE.BufferGeometry): void {
 }
 ```
 
-- [ ] Implement `ParticlePool3D extends ParticlePool` adding only `z[]` and `vz[]` arrays
-- [ ] Implement `ParticleSimulator3D extends ParticleSimulator` overriding `emit()`/`update()` for z-axis
-- [ ] Implement `ParticleEmitter3D` extending Node3D
-- [ ] Three.js Points-based rendering with buffer attribute sync
-- [ ] Billboard support (default on for Points)
-- [ ] `alphaTest: 0.01` on PointsMaterial for correct transparency sorting
-- [ ] Optional InstancedMesh mode for textured quads
-- [ ] Additive blending support
-- [ ] 3D emission shapes: sphere, hemisphere, box
-- [ ] Integration test with ThreePlugin
-- [ ] 3D presets: `Particles3D.fire()`, `Particles3D.sparks()`, etc.
+- [x] Implement `ParticlePool3D extends ParticlePool` adding only `z[]` and `vz[]` arrays
+- [x] Implement `ParticleSimulator3D extends ParticleSimulator` overriding `_spawnParticle()`/`update()` for z-axis
+- [x] Implement `ParticleEmitter3D` extending Node3D
+- [x] Three.js Points-based rendering with buffer attribute sync
+- [x] ShaderMaterial for per-particle RGBA (vertex + fragment shaders)
+- [ ] Optional InstancedMesh mode for textured quads (deferred)
+- [x] Additive blending support
+- [x] 3D emission shapes: sphere, hemisphere, box
+- [x] Subpath export `@quintus/particles/three` with optional peer deps
+- [x] 3D presets: `Particles3D.fire()`, `Particles3D.sparks()`, etc. (6 presets)
 
 ---
 

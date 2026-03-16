@@ -206,9 +206,22 @@ export class OrthographicCamera extends Camera {
 }
 
 export class BufferGeometry {
+	private _attributes: Record<string, BufferAttribute> = {};
+
 	dispose() {}
-	setAttribute(_name: string, _attr: BufferAttribute) {
+
+	setAttribute(name: string, attr: BufferAttribute) {
+		this._attributes[name] = attr;
 		return this;
+	}
+
+	getAttribute(name: string): BufferAttribute | undefined {
+		return this._attributes[name];
+	}
+
+	setDrawRange(start: number, count: number) {
+		(this as Record<string, unknown>).drawRangeStart = start;
+		(this as Record<string, unknown>).drawRangeCount = count;
 	}
 }
 
@@ -227,9 +240,16 @@ export class PlaneGeometry extends BufferGeometry {}
 export class BufferAttribute {
 	array: Float32Array;
 	itemSize: number;
+	needsUpdate = false;
 	constructor(array: Float32Array, itemSize: number) {
 		this.array = array;
 		this.itemSize = itemSize;
+	}
+}
+
+export class Float32BufferAttribute extends BufferAttribute {
+	constructor(array: Float32Array | number[], itemSize: number) {
+		super(array instanceof Float32Array ? array : new Float32Array(array), itemSize);
 	}
 }
 
@@ -249,10 +269,40 @@ export class MeshStandardMaterial extends Material {
 export class PointsMaterial extends Material {
 	color: Color;
 	size: number;
-	constructor(params?: { color?: number; size?: number }) {
+	vertexColors: boolean;
+	transparent: boolean;
+	depthWrite: boolean;
+	blending: number;
+	sizeAttenuation: boolean;
+	alphaTest: number;
+	constructor(params?: Record<string, unknown>) {
 		super();
-		this.color = new Color(params?.color ?? 0xffffff);
-		this.size = params?.size ?? 1;
+		this.color = new Color((params?.color as number) ?? 0xffffff);
+		this.size = (params?.size as number) ?? 1;
+		this.vertexColors = (params?.vertexColors as boolean) ?? false;
+		this.transparent = (params?.transparent as boolean) ?? false;
+		this.depthWrite = (params?.depthWrite as boolean) ?? true;
+		this.blending = (params?.blending as number) ?? NormalBlending;
+		this.sizeAttenuation = (params?.sizeAttenuation as boolean) ?? true;
+		this.alphaTest = (params?.alphaTest as number) ?? 0;
+	}
+}
+
+export class ShaderMaterial extends Material {
+	uniforms: Record<string, { value: unknown }>;
+	vertexShader: string;
+	fragmentShader: string;
+	transparent: boolean;
+	depthWrite: boolean;
+	blending: number;
+	constructor(params?: Record<string, unknown>) {
+		super();
+		this.uniforms = (params?.uniforms as Record<string, { value: unknown }>) ?? {};
+		this.vertexShader = (params?.vertexShader as string) ?? "";
+		this.fragmentShader = (params?.fragmentShader as string) ?? "";
+		this.transparent = (params?.transparent as boolean) ?? false;
+		this.depthWrite = (params?.depthWrite as boolean) ?? true;
+		this.blending = (params?.blending as number) ?? NormalBlending;
 	}
 }
 
@@ -389,7 +439,8 @@ export class AnimationMixer {
 	}
 	addEventListener(type: string, listener: (e: unknown) => void) {
 		if (!this._listeners.has(type)) this._listeners.set(type, []);
-		this._listeners.get(type)!.push(listener);
+		const arr = this._listeners.get(type);
+		if (arr) arr.push(listener);
 	}
 	removeEventListener(type: string, listener: (e: unknown) => void) {
 		const arr = this._listeners.get(type);
@@ -525,5 +576,7 @@ export const LoopRepeat = 2201;
 export const LoopOnce = 2200;
 export const PCFSoftShadowMap = 2;
 export const NoToneMapping = 0;
+export const AdditiveBlending = 2;
+export const NormalBlending = 1;
 export type ColorRepresentation = number | string | Color;
 export type ToneMapping = number;
