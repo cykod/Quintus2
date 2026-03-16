@@ -52,6 +52,7 @@ export default defineConfig({
 			"@quintus/jsx/jsx-dev-runtime": subpath("jsx", "jsx-dev-runtime"),
 			"@quintus/jsx": pkg("jsx"),
 			"@quintus/tilemap/physics": subpath("tilemap", "physics"),
+			"@quintus/particles/three": subpath("particles", "three"),
 			"@quintus/core": pkg("core"),
 			"@quintus/math": pkg("math"),
 			"@quintus/physics": pkg("physics"),

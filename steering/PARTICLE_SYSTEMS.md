@@ -15,7 +15,7 @@
 | 4 | Property curves & color gradients | Done |
 | 5 | Preset library & LLM-friendly API | Done |
 | 6 | Three.js 3D particles | Done |
-| 7 | Tests & demo | Pending |
+| 7 | Tests & demo | Done |
 
 ---
 
@@ -1046,13 +1046,13 @@ Scene (ParticleShowcase)
     └── FPSLabel
 ```
 
-- [ ] Create `examples/particles/` directory with showcase scene
-- [ ] Fire torch (continuous emitter)
-- [ ] Rain (wide emission rect, downward)
-- [ ] Click-to-explode (one-shot burst)
-- [ ] Moving trail (emitter follows Actor)
-- [ ] FPS counter showing performance with 500+ simultaneous particles
-- [ ] Add to example index
+- [x] Create `examples/particles/` directory with showcase scene
+- [x] Fire torch (continuous emitter)
+- [x] Rain (wide emission rect, downward)
+- [x] Click-to-explode (one-shot burst)
+- [x] Moving trail (emitter follows Actor)
+- [x] FPS counter showing performance with 500+ simultaneous particles
+- [x] Add to example index
 
 ---
 

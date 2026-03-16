@@ -1,3 +1,16 @@
+## Add 3D particle demo, integration tests, and Vite alias fix
+*Monday, March 16th at 9pm*
+Add the 3D particle viewer example at examples/3d-particles/ with a 3x2 grid of 
+all six Particles3D presets rendered via Three.js Points, 2D label overlay 
+using real-time 3D-to-screen projection, focus view with config overlay, and 
+the same keyboard controls as the 2D viewer. Add three missing integration 
+tests covering 60-frame lifecycle, burst position accuracy, and local 
+simulation space tracking. Register the @quintus/particles/three subpath export 
+in the Vite config. Mark Phase 7 (Tests & Demo) as Done in the particle systems 
+design doc.
+
+---
+
 ## Add 3D particle system with Three.js integration
 *Monday, March 16th at 8pm*
 Implement Phase 6 of the particle system: Three.js 3D particles. Adds 
