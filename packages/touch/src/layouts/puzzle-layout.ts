@@ -5,6 +5,8 @@ import { VirtualButton } from "../virtual-button.js";
 import { VirtualDPad } from "../virtual-dpad.js";
 
 export interface PuzzleLayoutConfig {
+	/** Override the default D-pad action names (move_left, move_right, move_up, move_down). */
+	actions?: { left?: string; right?: string; up?: string; down?: string };
 	/** Extra utility buttons on the lower-left (e.g., undo, reset, menu). */
 	buttons?: Array<{ action: string; label: string }>;
 }
@@ -13,7 +15,7 @@ export interface PuzzleLayoutConfig {
  * Puzzle game layout: 4-way D-pad on the lower-right,
  * optional utility buttons on the lower-left.
  *
- * Used by: Sokoban
+ * Used by: Sokoban, 3D Dungeon
  */
 export function puzzleLayout(config?: PuzzleLayoutConfig): TouchLayoutFactory {
 	return (game: Game) => ({
@@ -30,10 +32,10 @@ export function puzzleLayout(config?: PuzzleLayoutConfig): TouchLayoutFactory {
 					position: new Vec2(w - margin - dpadSize * 1.5, h - margin - dpadSize * 1.5),
 					buttonSize: dpadSize,
 					actions: {
-						left: "move_left",
-						right: "move_right",
-						up: "move_up",
-						down: "move_down",
+						left: config?.actions?.left ?? "move_left",
+						right: config?.actions?.right ?? "move_right",
+						up: config?.actions?.up ?? "move_up",
+						down: config?.actions?.down ?? "move_down",
 					},
 				}),
 			];

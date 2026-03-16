@@ -1,11 +1,13 @@
 import { Scene } from "@quintus/core";
 import { AmbientLight, Camera3D, DirectionalLight } from "@quintus/three";
 import { COIN_SCORE } from "../config.js";
+import { CameraOrbit } from "../entities/camera-orbit.js";
 import { CoinItem } from "../entities/coin-item.js";
 import { DungeonGrid } from "../entities/dungeon-grid.js";
 import { ExitStairs } from "../entities/exit-stairs.js";
 import { PlayerCharacter } from "../entities/player.js";
 import { TrapTile } from "../entities/trap-tile.js";
+import { TurnManager } from "../entities/turn-manager.js";
 import { HUD } from "../hud/hud.js";
 import { gameState } from "../state.js";
 
@@ -17,6 +19,9 @@ export abstract class DungeonLevel extends Scene {
 	override onReady() {
 		gameState.level = this.levelNumber;
 
+		// Turn manager
+		const turnManager = this.add(TurnManager);
+
 		// Dungeon grid
 		const grid = this.add(DungeonGrid);
 		grid.parseLevel(this.levelData);
@@ -25,16 +30,20 @@ export abstract class DungeonLevel extends Scene {
 		const spawn = grid.findChar("P");
 		const player = this.add(PlayerCharacter, {
 			dungeonGrid: grid,
+			turnManager,
 			gridX: spawn?.gridX ?? 1,
 			gridZ: spawn?.gridZ ?? 1,
 			castShadow: true,
 			receiveShadow: true,
 		});
 
-		// Camera — child of player so it inherits position and rotation.
-		// Local +Z is behind the player (Three.js forward is -Z).
-		// High up and tilted steeply down for an overhead third-person view.
-		const cam = player.add(Camera3D, { fov: 50 });
+		// Camera orbit pivot — child of player, parent of camera.
+		// Q/E rotate this pivot in 90° steps for inspection.
+		const orbit = player.add(CameraOrbit);
+
+		// Camera — child of orbit so it inherits player position/rotation
+		// plus the orbit offset. High up and tilted steeply down.
+		const cam = orbit.add(Camera3D, { fov: 50 });
 		cam.position.set(0, 5, 2.5);
 		cam.rotation.x = -0.9;
 

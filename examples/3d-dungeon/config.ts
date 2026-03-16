@@ -9,7 +9,11 @@ export const TILE_SIZE = 1;
 export const MOVE_DURATION = 0.2;
 export const TURN_DURATION = 0.15;
 export const PLAYER_HEALTH = 3;
+export const PLAYER_ATTACK_DAMAGE = 1;
 export const PLAYER_INVINCIBILITY = 1.0;
+
+// === Turns ===
+export const ENEMY_TURN_INTERVAL = 2;
 
 // === Scoring ===
 export const COIN_SCORE = 10;
@@ -49,11 +53,16 @@ export const LEVELS: string[][] = [
 	],
 ];
 
+// === Camera ===
+export const CAMERA_ORBIT_DURATION = 0.2;
+
 // === Input bindings ===
 export const INPUT_BINDINGS: Record<string, string[]> = {
 	move_forward: ["KeyW", "ArrowUp", "gamepad:left-stick-up"],
 	move_backward: ["KeyS", "ArrowDown", "gamepad:left-stick-down"],
 	turn_left: ["KeyA", "ArrowLeft", "gamepad:left-stick-left"],
 	turn_right: ["KeyD", "ArrowRight", "gamepad:left-stick-right"],
-	interact: ["KeyE", "Space", "gamepad:a"],
+	interact: ["Space", "gamepad:a"],
+	camera_left: ["KeyQ", "gamepad:left-bumper"],
+	camera_right: ["KeyE", "gamepad:right-bumper"],
 };

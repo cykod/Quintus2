@@ -22,6 +22,7 @@ export class GLTFModel extends Node3D {
 	private _mixer: THREE.AnimationMixer | null = null;
 	private _animations: Map<string, THREE.AnimationClip> = new Map();
 	private _currentAction: THREE.AnimationAction | null = null;
+	private _model: THREE.Object3D | null = null;
 	private _loaded = false;
 
 	get loaded(): boolean {
@@ -48,10 +49,51 @@ export class GLTFModel extends Node3D {
 		this._currentAction = action;
 	}
 
+	/**
+	 * Play a named animation once, then call onComplete.
+	 * The animation crossfades in/out like `play()` but automatically
+	 * stops when finished.
+	 */
+	playOneShot(name: string, onComplete?: () => void): void {
+		const clip = this._animations.get(name);
+		if (!clip || !this._mixer) {
+			onComplete?.();
+			return;
+		}
+
+		if (this._currentAction) {
+			this._currentAction.fadeOut(0.3);
+		}
+
+		const action = this._mixer.clipAction(clip);
+		action.setLoop(THREE.LoopOnce, 1);
+		action.clampWhenFinished = true;
+		action.reset().fadeIn(0.3).play();
+		this._currentAction = action;
+
+		if (onComplete) {
+			const handler = (e: { action: THREE.AnimationAction }) => {
+				if (e.action === action) {
+					this._mixer?.removeEventListener("finished", handler);
+					onComplete();
+				}
+			};
+			this._mixer.addEventListener("finished", handler);
+		}
+	}
+
 	/** Stop all animations. */
 	stop(): void {
 		this._mixer?.stopAllAction();
 		this._currentAction = null;
+	}
+
+	/**
+	 * Find a bone/joint in the loaded model by name.
+	 * Returns the Object3D if found, or null.
+	 */
+	findBone(name: string): THREE.Object3D | null {
+		return this._model?.getObjectByName(name) ?? null;
 	}
 
 	override onReady(): void {
@@ -79,6 +121,7 @@ export class GLTFModel extends Node3D {
 			this._mixer = null;
 		}
 		this._currentAction = null;
+		this._model = null;
 		this._animations.clear();
 
 		// Remove the cloned scene from the 3D parent but do NOT dispose
@@ -92,6 +135,7 @@ export class GLTFModel extends Node3D {
 
 	private _applyModel(gltf: GLTF): void {
 		const model = SkeletonUtils.clone(gltf.scene);
+		this._model = model;
 		if (this.modelScale !== 1) {
 			model.scale.setScalar(this.modelScale);
 		}

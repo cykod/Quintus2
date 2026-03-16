@@ -1,3 +1,17 @@
+## Add turn manager, sword attack, and camera orbit to 3D dungeon
+*Monday, March 16th at 3pm*
+Implement Phases 1-2 of the 3D dungeon turn-based combat design. Added a 
+TurnManager node that gates player input during animations and enemy turns, 
+tracking a global turn counter with configurable enemy turn interval. Player 
+can now attack with a sword (interact key) that emits a directional attacked 
+signal for the target tile. The sword model attaches to the player's arm-right 
+bone via the new GLTFModel.findBone() and playOneShot() APIs. Also added a 
+camera orbit pivot (Q/E keys) for inspecting the scene, switched touch layout 
+to puzzleLayout with configurable D-pad actions, and added 6 new tests covering 
+turn counting, attack signals, and input gating.
+
+---
+
 ## Add 3D examples to index and remove phase prefixes
 *Monday, March 16th at 3pm*
 Add 3D Cube, 3D Hybrid, and 3D Dungeon example cards to the examples index 

@@ -1,9 +1,12 @@
 import { signal } from "@quintus/core";
 import { GLTFModel } from "@quintus/three";
 import * as THREE from "three";
+import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { MOVE_DURATION, PLAYER_INVINCIBILITY, TRAP_DAMAGE, TURN_DURATION } from "../config.js";
 import { gameState } from "../state.js";
 import type { DungeonGrid } from "./dungeon-grid.js";
+import type { TurnManager } from "./turn-manager.js";
 
 /**
  * Cardinal directions derived from Three.js conventions.
@@ -24,13 +27,20 @@ export class PlayerCharacter extends GLTFModel {
 	gridX = 0;
 	gridZ = 0;
 	dungeonGrid!: DungeonGrid;
+	turnManager!: TurnManager;
 
 	readonly reachedExit = signal<void>();
 	readonly collected = signal<{ gridX: number; gridZ: number }>();
 	readonly died = signal<void>();
+	readonly attacked = signal<{ gridX: number; gridZ: number }>();
 
 	/** Cardinal direction index: 0=North, 1=East, 2=South, 3=West. Starts facing south. */
 	private _facing = 2;
+
+	/** Read-only access to the current facing direction index. */
+	get facing(): number {
+		return this._facing;
+	}
 
 	private _moving = false;
 	private _moveStart = new THREE.Vector3();
@@ -41,6 +51,8 @@ export class PlayerCharacter extends GLTFModel {
 	private _turnStart = 0;
 	private _turnEnd = 0;
 	private _turnElapsed = 0;
+
+	private _attacking = false;
 
 	private _invincibleTimer = 0;
 
@@ -57,7 +69,20 @@ export class PlayerCharacter extends GLTFModel {
 		this.position.set(worldPos.x, 0, worldPos.z);
 		this.rotation.y = DIR_ANGLE[this._facing];
 
-		this._tryPlay("idle");
+		// Attach sword GLTF to the right hand bone.
+		// The arm-right bone origin is at the shoulder; offset to the hand
+		// (~0.15 units along -Y in bone-local). Push slightly outward on X
+		// so the blade clears the body mesh.
+		const armRight = this.findBone("arm-right");
+		const swordGltf = this.game.assets.get<GLTF>("weapon-sword");
+		if (armRight && swordGltf) {
+			const swordModel = SkeletonUtils.clone(swordGltf.scene);
+			swordModel.position.set(0, -0.08, -0.05);
+			armRight.add(swordModel);
+		}
+
+		// holding-right poses the arm outward for carrying the sword
+		this._tryPlay("holding-right");
 	}
 
 	override onFixedUpdate(dt: number): void {
@@ -74,6 +99,9 @@ export class PlayerCharacter extends GLTFModel {
 			}
 		}
 
+		// Attack animation driven by playOneShot — just block input
+		if (this._attacking) return;
+
 		// Smooth turn in progress
 		if (this._turning) {
 			this._turnElapsed += dt;
@@ -85,6 +113,7 @@ export class PlayerCharacter extends GLTFModel {
 			if (t >= 1) {
 				this._turning = false;
 				this.rotation.y = this._turnEnd;
+				this.turnManager.playerAnimDone();
 			}
 			return;
 		}
@@ -100,13 +129,15 @@ export class PlayerCharacter extends GLTFModel {
 			if (t >= 1) {
 				this._moving = false;
 				this.position.copy(this._moveEnd);
-				this._tryPlay("idle");
+				this._tryPlay("holding-right");
 				this._checkTile();
+				this.turnManager.playerAnimDone();
 			}
 			return;
 		}
 
 		// Check input
+		if (!this.turnManager.isPlayerInputAllowed()) return;
 		const input = this.game.input;
 
 		if (input.isJustPressed("turn_left")) {
@@ -126,9 +157,30 @@ export class PlayerCharacter extends GLTFModel {
 			this._startMove(-1);
 			return;
 		}
+
+		if (input.isJustPressed("interact")) {
+			this._startAttack();
+			return;
+		}
+	}
+
+	private _startAttack(): void {
+		const targetX = this.gridX + DIR_DX[this._facing];
+		const targetZ = this.gridZ + DIR_DZ[this._facing];
+
+		this.turnManager.commitPlayerAction();
+		this.attacked.emit({ gridX: targetX, gridZ: targetZ });
+
+		this._attacking = true;
+		this.playOneShot("attack-melee-right", () => {
+			this._attacking = false;
+			this._tryPlay("holding-right");
+			this.turnManager.playerAnimDone();
+		});
 	}
 
 	private _startTurn(direction: number): void {
+		this.turnManager.commitPlayerAction();
 		this._facing = (this._facing + direction + 4) % 4;
 		this._turnStart = this.rotation.y;
 		this._turnEnd = DIR_ANGLE[this._facing];
@@ -152,6 +204,7 @@ export class PlayerCharacter extends GLTFModel {
 
 		if (!this.dungeonGrid.isWalkable(newX, newZ)) return;
 
+		this.turnManager.commitPlayerAction();
 		this.gridX = newX;
 		this.gridZ = newZ;
 		this._moveStart.copy(this.position);

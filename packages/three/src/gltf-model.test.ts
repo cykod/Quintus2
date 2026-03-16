@@ -146,9 +146,7 @@ describe("GLTFModel", () => {
 		game.start(TestScene);
 		game.step();
 
-		const models = game.currentScene!.children.filter(
-			(c) => c instanceof GLTFModel,
-		) as GLTFModel[];
+		const models = game.currentScene!.children.filter((c) => c instanceof GLTFModel) as GLTFModel[];
 		expect(models).toHaveLength(2);
 		expect(models[0].loaded).toBe(true);
 		expect(models[1].loaded).toBe(true);

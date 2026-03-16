@@ -82,6 +82,7 @@ export class Quaternion {
 }
 
 export class Object3D {
+	name = "";
 	position = new Vector3();
 	rotation = new Euler();
 	quaternion = new Quaternion();
@@ -122,6 +123,15 @@ export class Object3D {
 	traverse(fn: (o: Object3D) => void) {
 		fn(this);
 		for (const c of this.children) c.traverse(fn);
+	}
+
+	getObjectByName(name: string): Object3D | undefined {
+		if (this.name === name) return this;
+		for (const c of this.children) {
+			const found = c.getObjectByName(name);
+			if (found) return found;
+		}
+		return undefined;
 	}
 }
 
@@ -347,11 +357,49 @@ export class WebGLRenderer {
 }
 
 export class AnimationMixer {
-	clipAction(_clip: AnimationClip): AnimationAction {
-		return new AnimationAction();
+	private _listeners: Map<string, Array<(e: unknown) => void>> = new Map();
+	private _activeActions: Array<{ action: AnimationAction; elapsed: number; clip: AnimationClip }> =
+		[];
+
+	clipAction(clip: AnimationClip): AnimationAction {
+		const action = new AnimationAction();
+		(action as unknown as { _clip: AnimationClip })._clip = clip;
+		(action as unknown as { _mixer: AnimationMixer })._mixer = this;
+		return action;
 	}
-	update(_dt: number) {}
-	stopAllAction() {}
+	update(dt: number) {
+		for (let i = this._activeActions.length - 1; i >= 0; i--) {
+			const entry = this._activeActions[i];
+			entry.elapsed += dt;
+			if (entry.elapsed >= entry.clip.duration) {
+				this._activeActions.splice(i, 1);
+				this._dispatch("finished", { action: entry.action });
+			}
+		}
+	}
+	stopAllAction() {
+		this._activeActions.length = 0;
+	}
+	addEventListener(type: string, listener: (e: unknown) => void) {
+		if (!this._listeners.has(type)) this._listeners.set(type, []);
+		this._listeners.get(type)!.push(listener);
+	}
+	removeEventListener(type: string, listener: (e: unknown) => void) {
+		const arr = this._listeners.get(type);
+		if (arr) {
+			const i = arr.indexOf(listener);
+			if (i >= 0) arr.splice(i, 1);
+		}
+	}
+	_trackAction(action: AnimationAction, clip: AnimationClip) {
+		this._activeActions.push({ action, elapsed: 0, clip });
+	}
+	private _dispatch(type: string, event: unknown) {
+		const arr = this._listeners.get(type);
+		if (arr) {
+			for (const fn of [...arr]) fn(event);
+		}
+	}
 }
 
 export class AnimationClip {
@@ -364,7 +412,12 @@ export class AnimationClip {
 }
 
 export class AnimationAction {
-	setLoop(_mode: number, _count: number) {
+	clampWhenFinished = false;
+	private _loopMode: number = LoopRepeat;
+	private _clip?: AnimationClip;
+	private _mixer?: AnimationMixer;
+	setLoop(mode: number, _count: number) {
+		this._loopMode = mode;
 		return this;
 	}
 	reset() {
@@ -377,6 +430,10 @@ export class AnimationAction {
 		return this;
 	}
 	play() {
+		// Track one-shot actions so the mixer can fire 'finished'
+		if (this._loopMode === LoopOnce && this._mixer && this._clip) {
+			this._mixer._trackAction(this, this._clip);
+		}
 		return this;
 	}
 	stop() {

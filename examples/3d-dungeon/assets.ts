@@ -7,4 +7,5 @@ export const MODEL_PATHS = [
 	"assets/models/stairs.glb",
 	"assets/models/chest.glb",
 	"assets/models/barrel.glb",
+	"assets/models/weapon-sword.glb",
 ];
