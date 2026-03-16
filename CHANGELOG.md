@@ -1,3 +1,16 @@
+## Add dungeon polish: particles, shake, torches, and health potions
+*Monday, March 16th at 10pm*
+Implements phases 1–9 of the dungeon polish design: camera shake on damage, 
+blood/coin/dust/heal particle bursts via ParticleEmitter3D, enemy death 
+animation (shrink+sink+spin), full-screen red damage flash overlay, enemy hit 
+stagger with per-instance material cloning, health potion pickups with new 
+level character H, footstep dust on player movement, and flickering 
+wall-mounted torches with point lights and fire particles. Exports 
+ParticleEmitter3D from @quintus/particles and adds it as an examples 
+dependency. Includes 16 new tests across 5 test files covering all new systems.
+
+---
+
 ## Add 3D particle demo, integration tests, and Vite alias fix
 *Monday, March 16th at 9pm*
 Add the 3D particle viewer example at examples/3d-particles/ with a 3x2 grid of 

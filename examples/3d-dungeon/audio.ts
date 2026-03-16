@@ -24,4 +24,5 @@ export const SFX = {
 	coinCollect: () => pickRandom(["handleCoins", "handleCoins2"]),
 	exitDoor: () => pickRandom(["doorOpen_1", "doorOpen_2"]),
 	trap: () => "metalClick",
+	healPickup: () => pickRandom(["handleCoins", "handleCoins2"]),
 } as const;

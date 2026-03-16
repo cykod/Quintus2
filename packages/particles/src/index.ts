@@ -41,6 +41,7 @@ export {
 } from "./particle-config-3d.js";
 
 // Phase 6: 3D particle support (Three.js-free types and simulation)
+export { ParticleEmitter3D } from "./particle-emitter-3d.js";
 export { ParticlePool3D } from "./particle-pool-3d.js";
 export { type BufferAttributeLike, ParticleSimulator3D } from "./particle-simulator-3d.js";
 // Phase 5: Presets

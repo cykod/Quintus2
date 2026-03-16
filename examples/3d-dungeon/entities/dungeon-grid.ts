@@ -15,6 +15,7 @@ const CHAR_MAP: Record<string, number> = {
 	T: TILE_FLOOR,
 	E: TILE_FLOOR,
 	G: TILE_FLOOR,
+	H: TILE_FLOOR,
 };
 
 export class DungeonGrid extends TileMap3D {

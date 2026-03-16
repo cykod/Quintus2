@@ -31,6 +31,13 @@ export class Enemy extends GLTFModel {
 	readonly attackedPlayer = signal<void>();
 	readonly actionComplete = signal<void>();
 
+	private _dying = false;
+	private _deathElapsed = 0;
+	private _deathDuration = 0.5;
+
+	private _hitFlashTimer = 0;
+	private _originalEmissives: Map<THREE.Material, THREE.Color> = new Map();
+
 	private _animating = false;
 	private _animElapsed = 0;
 	private _animDuration = 0;
@@ -128,8 +135,71 @@ export class Enemy extends GLTFModel {
 		}
 	}
 
+	/** Begin death animation. Called instead of immediate destroy. */
+	playDeath(): void {
+		this._dying = true;
+		this._deathElapsed = 0;
+		this._tryPlay("idle");
+	}
+
+	/** Flash red on hit. */
+	flashHit(): void {
+		this._hitFlashTimer = 0.2;
+		this._setEmissive(new THREE.Color(0xff0000));
+	}
+
+	/** Clone shared materials so each enemy has its own copies. */
+	private _ensureOwnMaterials(): void {
+		if (this._originalEmissives.size > 0) return; // already cloned
+		this.object3d.traverse((child) => {
+			if (child instanceof THREE.Mesh && child.material) {
+				const original = child.material as THREE.MeshStandardMaterial;
+				if (original.emissive) {
+					const cloned = original.clone() as THREE.MeshStandardMaterial;
+					child.material = cloned;
+					this._originalEmissives.set(cloned, cloned.emissive.clone());
+				}
+			}
+		});
+	}
+
+	private _setEmissive(color: THREE.Color): void {
+		this._ensureOwnMaterials();
+		for (const [mat] of this._originalEmissives) {
+			(mat as THREE.MeshStandardMaterial).emissive.copy(color);
+		}
+	}
+
+	private _clearEmissive(): void {
+		for (const [mat, original] of this._originalEmissives) {
+			(mat as THREE.MeshStandardMaterial).emissive.copy(original);
+		}
+	}
+
 	override onFixedUpdate(dt: number): void {
 		super.onUpdate(dt);
+
+		// Death animation: shrink, sink, spin
+		if (this._dying) {
+			this._deathElapsed += dt;
+			const t = Math.min(this._deathElapsed / this._deathDuration, 1);
+			const scale = 1 - t;
+			this.scale.set(scale, scale, scale);
+			this.position.y = -t * 0.5;
+			this.rotation.y += dt * 8;
+			if (t >= 1) {
+				this.destroy();
+			}
+			return;
+		}
+
+		// Hit flash timer
+		if (this._hitFlashTimer > 0) {
+			this._hitFlashTimer -= dt;
+			if (this._hitFlashTimer <= 0) {
+				this._clearEmissive();
+			}
+		}
 
 		if (!this._animating) return;
 

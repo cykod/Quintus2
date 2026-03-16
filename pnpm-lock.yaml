@@ -62,6 +62,9 @@ importers:
       '@quintus/math':
         specifier: workspace:*
         version: link:../packages/math
+      '@quintus/particles':
+        specifier: workspace:*
+        version: link:../packages/particles
       '@quintus/physics':
         specifier: workspace:*
         version: link:../packages/physics

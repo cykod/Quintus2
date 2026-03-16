@@ -37,8 +37,10 @@ export class PlayerCharacter extends GLTFModel {
 
 	readonly reachedExit = signal<void>();
 	readonly collected = signal<{ gridX: number; gridZ: number }>();
+	readonly collectedPotion = signal<{ gridX: number; gridZ: number }>();
 	readonly died = signal<void>();
 	readonly attacked = signal<{ gridX: number; gridZ: number }>();
+	readonly moved = signal<{ fromX: number; fromZ: number }>();
 
 	/** Cardinal direction index: 0=North, 1=East, 2=South, 3=West. Starts facing south. */
 	private _facing = 2;
@@ -248,8 +250,11 @@ export class PlayerCharacter extends GLTFModel {
 		if (!this.dungeonGrid.isWalkableAndFree(newX, newZ)) return;
 
 		this.turnManager.commitPlayerAction();
+		const fromX = this.gridX;
+		const fromZ = this.gridZ;
 		this.gridX = newX;
 		this.gridZ = newZ;
+		this.moved.emit({ fromX, fromZ });
 		this._moveStart.copy(this.position);
 		const target = this.dungeonGrid.gridToWorld(newX, newZ);
 		this._moveEnd.set(target.x, 0, target.z);
@@ -271,6 +276,9 @@ export class PlayerCharacter extends GLTFModel {
 				break;
 			case "T":
 				this._takeDamage();
+				break;
+			case "H":
+				this.collectedPotion.emit({ gridX: this.gridX, gridZ: this.gridZ });
 				break;
 		}
 	}
