@@ -61,6 +61,21 @@ class Background extends Node2D {
 	}
 }
 
+// Display names — override specific presets for the viewer title
+const DISPLAY_NAMES: Partial<Record<PresetName, string>> = {
+	snow: "snow (with texture)",
+};
+
+// Snow texture overrides applied in the viewer (preset itself stays texture-free)
+const SNOW_TEXTURE_OVERRIDES: Partial<ParticleConfig> = {
+	shape: "texture",
+	texture: "snowflake",
+};
+
+function displayName(name: PresetName): string {
+	return DISPLAY_NAMES[name] ?? name;
+}
+
 // ── Build a grid-friendly config: clamp wide emitters to cell size ──
 function gridConfig(name: PresetName): ParticleConfig {
 	const config = Particles[name]();
@@ -69,6 +84,7 @@ function gridConfig(name: PresetName): ParticleConfig {
 		config.emissionWidth = CELL_W * 0.5;
 		if (config.emissionHeight != null) config.emissionHeight = 0;
 	}
+	if (name === "snow") Object.assign(config, SNOW_TEXTURE_OVERRIDES);
 	return config;
 }
 
@@ -121,7 +137,7 @@ class PresetCell extends Node2D {
 			lineWidth: 1,
 		});
 		// Label at top
-		ctx.text(this.presetName, new Vec2(CELL_W / 2, 10), {
+		ctx.text(displayName(this.presetName), new Vec2(CELL_W / 2, 10), {
 			size: 12,
 			color: Color.fromHex("#888888"),
 			align: "center",
@@ -176,6 +192,7 @@ class FocusView extends Node2D {
 
 		const name = PRESET_NAMES[index] as PresetName;
 		const config = Particles[name](); // full-size config for focus view
+		if (name === "snow") Object.assign(config, SNOW_TEXTURE_OVERRIDES);
 		this._isBurst = BURST_PRESETS.has(name);
 		this._burstTimer = 0;
 
@@ -201,7 +218,7 @@ class FocusView extends Node2D {
 			this._nameLabel.position = new Vec2(CANVAS_W / 2, 30);
 			this.add(this._nameLabel);
 		}
-		this._nameLabel.text = name;
+		this._nameLabel.text = displayName(name);
 
 		// Config overlay
 		if (!this._configOverlay) {
@@ -456,4 +473,6 @@ const game = new Game({
 
 game.use(InputPlugin({ actions: INPUT_ACTIONS }));
 
-game.start(ParticleScene);
+game.assets.load({ images: ["assets/snowflake.png"] }).then(() => {
+	game.start(ParticleScene);
+});

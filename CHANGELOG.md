@@ -1,3 +1,13 @@
+## Add snowflake texture to snow particle preset in viewer
+*Monday, March 16th at 8pm*
+Modified the particles example to render the snow preset with a snowflake 
+texture image instead of the default circle shape. The preset definition itself 
+remains unchanged — the texture override is applied only in the viewer's grid 
+and focus views. The title displays as 'snow (with texture)' to distinguish it 
+from the base preset.
+
+---
+
 ## Add particle system with 15 presets and interactive viewer
 *Monday, March 16th at 8pm*
 Implement @quintus/particles phases 1-5: SoA particle pool with swap-remove, 
