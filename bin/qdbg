@@ -63,6 +63,8 @@ COMMANDS
     inspect <name|id>     Detailed node snapshot (JSON)
     query <q>             Find nodes by type/name/tag
     physics <name>        Physics state summary for one node
+    bones <name|id>       3D bone hierarchy tree with positions
+    bone-info <name> <bone>  Detailed info for a specific bone
 
   Scene:
     scene <name>          Switch to a registered scene by name
@@ -584,6 +586,106 @@ cmd_mouse_get() {
 	"
 }
 
+cmd_bones() {
+	local target="${1:?Usage: qdbg bones <name|id>}"
+	local safe_target="${target//\'/\\\'}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var game = window.__quintusGame;
+		var snap = d.inspect('${safe_target}');
+		if (!snap) snap = d.inspect(Number('${safe_target}'));
+		if (!snap) return 'Node not found: ${safe_target}';
+		var scene = game.currentScene;
+		if (!scene) return 'No active scene';
+		var node = null;
+		function findById(n, id) {
+			if (n.id === id) return n;
+			var kids = n.children || [];
+			for (var i = 0; i < kids.length; i++) {
+				var found = findById(kids[i], id);
+				if (found) return found;
+			}
+			return null;
+		}
+		node = findById(scene, snap.id);
+		if (!node || !node.object3d) return 'Node has no object3d: ${safe_target}';
+		node.object3d.updateMatrixWorld(true);
+		var lines = [];
+		function walk(obj, depth) {
+			var indent = '';
+			for (var i = 0; i < depth; i++) indent += '  ';
+			var isBone = obj.isBone || (obj.type && obj.type === 'Bone');
+			var marker = isBone ? '* ' : '  ';
+			var lp = obj.position;
+			var wp = new (Object.getPrototypeOf(lp).constructor)(0, 0, 0);
+			if (obj.getWorldPosition) { obj.getWorldPosition(wp); }
+			else { wp.x = lp.x; wp.y = lp.y; wp.z = lp.z; }
+			var name = obj.name || obj.type || '(unnamed)';
+			var childCount = obj.children ? obj.children.length : 0;
+			lines.push(indent + marker + name +
+				'  local=(' + lp.x.toFixed(3) + ', ' + lp.y.toFixed(3) + ', ' + lp.z.toFixed(3) + ')' +
+				'  world=(' + wp.x.toFixed(3) + ', ' + wp.y.toFixed(3) + ', ' + wp.z.toFixed(3) + ')' +
+				'  [' + childCount + ' children]');
+			if (obj.children) {
+				for (var c = 0; c < obj.children.length; c++) walk(obj.children[c], depth + 1);
+			}
+		}
+		walk(node.object3d, 0);
+		return lines.join('\n');
+	"
+}
+
+cmd_bone_info() {
+	local target="${1:?Usage: qdbg bone-info <name|id> <bone-name>}"
+	local bone_name="${2:?Usage: qdbg bone-info <name|id> <bone-name>}"
+	local safe_target="${target//\'/\\\'}"
+	local safe_bone="${bone_name//\'/\\\'}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var game = window.__quintusGame;
+		var snap = d.inspect('${safe_target}');
+		if (!snap) snap = d.inspect(Number('${safe_target}'));
+		if (!snap) return 'Node not found: ${safe_target}';
+		var scene = game.currentScene;
+		if (!scene) return 'No active scene';
+		function findById(n, id) {
+			if (n.id === id) return n;
+			var kids = n.children || [];
+			for (var i = 0; i < kids.length; i++) {
+				var found = findById(kids[i], id);
+				if (found) return found;
+			}
+			return null;
+		}
+		var node = findById(scene, snap.id);
+		if (!node || !node.object3d) return 'Node has no object3d: ${safe_target}';
+		node.object3d.updateMatrixWorld(true);
+		var bone = node.object3d.getObjectByName('${safe_bone}');
+		if (!bone) return 'Bone not found: ${safe_bone}';
+		var lp = bone.position;
+		var wp = new (Object.getPrototypeOf(lp).constructor)(0, 0, 0);
+		if (bone.getWorldPosition) bone.getWorldPosition(wp);
+		else { wp.x = lp.x; wp.y = lp.y; wp.z = lp.z; }
+		var r = bone.rotation;
+		var q = bone.quaternion;
+		var s = bone.scale;
+		var parentName = bone.parent ? (bone.parent.name || bone.parent.type || '(unnamed)') : '(none)';
+		var childNames = (bone.children || []).map(function(c) { return c.name || c.type || '(unnamed)'; });
+		return JSON.stringify({
+			name: bone.name,
+			localPosition: { x: lp.x, y: lp.y, z: lp.z },
+			worldPosition: { x: wp.x, y: wp.y, z: wp.z },
+			rotation: { x: r.x, y: r.y, z: r.z, order: r.order },
+			quaternion: { x: q.x, y: q.y, z: q.z, w: q.w },
+			scale: { x: s.x, y: s.y, z: s.z },
+			parent: parentName,
+			children: childNames
+		}, null, 2);
+	"
+}
+
 cmd_screenshot() {
 	local file="${1:-/tmp/quintus-screenshot.png}"
 	need_bridge
@@ -644,6 +746,8 @@ case "$cmd" in
 	destroy)      check_playwright_cli; cmd_destroy "$@" ;;
 	mouse)        check_playwright_cli; cmd_mouse "$@" ;;
 	mouse-get)    check_playwright_cli; cmd_mouse_get ;;
+	bones)        check_playwright_cli; cmd_bones "$@" ;;
+	bone-info)    check_playwright_cli; cmd_bone_info "$@" ;;
 	screenshot)   check_playwright_cli; cmd_screenshot "$@" ;;
 	*)
 		echo "Error: Unknown command '$cmd'" >&2

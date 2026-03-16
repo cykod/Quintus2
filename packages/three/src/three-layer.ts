@@ -63,7 +63,7 @@ export class ThreeLayer extends Node2D {
 
 	private _syncNode(node: Node, parent: THREE.Object3D): void {
 		if (node instanceof Node3D) {
-			if (node.object3d.parent !== parent) {
+			if (!node._boneParented && node.object3d.parent !== parent) {
 				parent.add(node.object3d);
 			}
 			for (const child of node.children) {

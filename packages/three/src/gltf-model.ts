@@ -54,7 +54,7 @@ export class GLTFModel extends Node3D {
 	 * The animation crossfades in/out like `play()` but automatically
 	 * stops when finished.
 	 */
-	playOneShot(name: string, onComplete?: () => void): void {
+	playOneShot(name: string, onComplete?: () => void, timeScale = 1): void {
 		const clip = this._animations.get(name);
 		if (!clip || !this._mixer) {
 			onComplete?.();
@@ -68,6 +68,7 @@ export class GLTFModel extends Node3D {
 		const action = this._mixer.clipAction(clip);
 		action.setLoop(THREE.LoopOnce, 1);
 		action.clampWhenFinished = true;
+		action.timeScale = timeScale;
 		action.reset().fadeIn(0.3).play();
 		this._currentAction = action;
 

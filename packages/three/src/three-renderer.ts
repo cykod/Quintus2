@@ -68,11 +68,13 @@ export class ThreeRenderer implements Renderer {
 
 	private _walkSync(node: Node, threeParent: THREE.Object3D): void {
 		if (node instanceof Node3D) {
-			const prevParent = this.parentMap.get(node);
-			if (prevParent !== threeParent) {
-				if (prevParent) prevParent.remove(node.object3d);
-				threeParent.add(node.object3d);
-				this.parentMap.set(node, threeParent);
+			if (!node._boneParented) {
+				const prevParent = this.parentMap.get(node);
+				if (prevParent !== threeParent) {
+					if (prevParent) prevParent.remove(node.object3d);
+					threeParent.add(node.object3d);
+					this.parentMap.set(node, threeParent);
+				}
 			}
 
 			for (const child of node.children) {

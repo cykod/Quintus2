@@ -11,6 +11,9 @@ export interface Node3DSnapshot extends NodeSnapshot {
 }
 
 export class Node3D extends Node {
+	/** @internal Used by BoneAttachment to prevent ThreeLayer from re-parenting. */
+	_boneParented = false;
+
 	/**
 	 * The underlying Three.js object. Created lazily via _createObject3D()
 	 * on first access. Subclasses override _createObject3D() to return

@@ -66,6 +66,13 @@ export class Euler {
 		this.z = z;
 		this.order = order;
 	}
+	set(x: number, y: number, z: number, order?: string) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		if (order) this.order = order;
+		return this;
+	}
 }
 
 export class Quaternion {

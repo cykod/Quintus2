@@ -69,6 +69,23 @@ describe("ThreeLayer", () => {
 		expect(ctx!.hybridMode).toBe(true);
 	});
 
+	it("does not reparent bone-parented nodes", () => {
+		const layer = new ThreeLayer();
+		const child = new Node3D();
+		child._boneParented = true;
+
+		// Manually parent the object3d elsewhere (simulating bone attachment)
+		const fakeBone = new THREE.Object3D();
+		fakeBone.add(child.object3d);
+
+		layer.add(child);
+		layer.onUpdate(1 / 60);
+
+		// Should NOT have been moved to threeScene
+		expect(child.object3d.parent).toBe(fakeBone);
+		expect(layer.threeScene.children).not.toContain(child.object3d);
+	});
+
 	it("clears its Three.js scene on destroy", () => {
 		const layer = new ThreeLayer();
 		const child = new Node3D();

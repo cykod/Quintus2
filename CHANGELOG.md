@@ -1,3 +1,15 @@
+## Add BoneAttachment primitive, qdbg bone commands, and fix sword
+*Monday, March 16th at 4pm*
+Add BoneAttachment engine primitive to @quintus/three for declaratively 
+attaching models to skeleton bones. Includes _boneParented opt-out flag on 
+Node3D respected by both ThreeLayer and ThreeRenderer sync loops. Add qdbg 
+bones and bone-info commands for runtime skeleton inspection. Fix sword 
+attachment in 3D dungeon to use BoneAttachment with correct offset and 
+rotation. Add playOneShot timeScale parameter to GLTFModel for animation speed 
+control.
+
+---
+
 ## Add turn manager, sword attack, and camera orbit to 3D dungeon
 *Monday, March 16th at 3pm*
 Implement Phases 1-2 of the 3D dungeon turn-based combat design. Added a 

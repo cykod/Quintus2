@@ -88,6 +88,29 @@ describe("ThreeRenderer", () => {
 		// Should not throw — just sets internal flag
 	});
 
+	it("does not reparent bone-parented nodes", () => {
+		const game = makeFullGame();
+		const THREE = require("three");
+
+		class TestScene extends Scene {
+			onReady() {
+				const parent = this.add(Node3D);
+				const child = parent.add(Node3D);
+				child._boneParented = true;
+				// Simulate bone attachment: parent object3d elsewhere
+				const fakeBone = new THREE.Object3D();
+				fakeBone.add(child.object3d);
+			}
+		}
+		game.start(TestScene);
+		game.step(); // trigger render sync
+
+		const threeScene = getThreeContext(game)!.scene;
+		const parentObj = threeScene.children[0]!;
+		// child should NOT be under parentObj — it's bone-parented elsewhere
+		expect(parentObj.children.length).toBe(0);
+	});
+
 	it("warns on non-renderFixed Node2D in 3D mode", () => {
 		const game = makeFullGame();
 

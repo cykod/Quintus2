@@ -9,6 +9,7 @@ import { Level1 } from "./scenes/level1.js";
 import { Level2 } from "./scenes/level2.js";
 import { Level3 } from "./scenes/level3.js";
 import { TitleScene } from "./scenes/title-scene.js";
+import { DebugSwordScene } from "./scenes/debug-sword.js";
 import { WinScene } from "./scenes/win-scene.js";
 
 const game = new Game({
@@ -36,6 +37,7 @@ game.use(
 );
 
 game.registerScenes({
+	"debug-sword": DebugSwordScene,
 	title: TitleScene,
 	level1: Level1,
 	level2: Level2,
