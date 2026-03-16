@@ -1,3 +1,17 @@
+## Add README with engine overview and debug bridge docs
+*Monday, March 16th at 4pm*
+Create a comprehensive README.md documenting the Quintus 2.0 engine for human 
+developers. Covers the node/scene tree architecture, JSX build pattern, all 21 
+packages, example games, testing infrastructure, and full toolchain. Includes 
+an extensive debug bridge section showing how to enable debug mode via the 
+?debug URL param, use the three window globals (__quintusDebug, 
+__quintusFormatters, __quintusGame) from browser DevTools, and 15+ console 
+recipes for inspecting scene trees, stepping frames, simulating input, 
+analyzing jumps, and more. Also documents the complete 33-method bridge API and 
+8 formatters in reference tables.
+
+---
+
 ## Add BoneAttachment primitive, qdbg bone commands, and fix sword
 *Monday, March 16th at 4pm*
 Add BoneAttachment engine primitive to @quintus/three for declaratively 
