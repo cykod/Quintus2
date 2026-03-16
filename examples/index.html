@@ -14,7 +14,7 @@
     .card { background: #16213e; border: 1px solid #333; border-radius: 8px; padding: 1.5rem; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s; }
     .card:hover { border-color: #4fc3f7; transform: translateY(-2px); }
     .card h2 { font-size: 1.1rem; color: #4fc3f7; margin-bottom: 0.5rem; }
-    .card .phase { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+    .card .tag { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
     .card p { font-size: 0.9rem; color: #aaa; line-height: 1.4; }
   </style>
 </head>
@@ -25,69 +25,84 @@
   </header>
   <div class="demos">
     <a class="card" href="/bouncing-balls/">
-      <div class="phase">Phase 1 — Core</div>
+      <div class="tag">Core</div>
       <h2>Bouncing Balls</h2>
       <p>20 balls with seeded random colors and velocities bouncing inside a canvas. Tests the game loop, Node2D, and rendering.</p>
     </a>
     <a class="card" href="/basic_platformer/">
-      <div class="phase">Phase 2 — Physics</div>
+      <div class="tag">Physics</div>
       <h2>Basic Platformer</h2>
       <p>Player character with gravity, jumping, and coin collection. Demonstrates Actor, StaticCollider, Sensor, and input.</p>
     </a>
     <a class="card" href="/tilemap/">
-      <div class="phase">Phase 4 — Tilemap &amp; Camera</div>
+      <div class="tag">Tilemap &amp; Camera</div>
       <h2>Tilemap + Camera</h2>
       <p>Tiled-based level with camera follow, zoom, and smoothing. Collect all 5 coins to win.</p>
     </a>
     <a class="card" href="/tween-ui/">
-      <div class="phase">Phase 5 — Tween, Audio &amp; UI</div>
+      <div class="tag">Tween, Audio &amp; UI</div>
       <h2>Tween &amp; UI Showcase</h2>
       <p>Interactive buttons, progress bar, and tween animations (bounce, fade, spin, path). HUD layer with UI widgets.</p>
     </a>
     <a class="card" href="/platformer/">
-      <div class="phase">Phase 6 — Full Game</div>
+      <div class="tag">Full Game</div>
       <h2>Platformer</h2>
       <p>Complete platformer with 2 levels, enemies, double jump, health, HUD, audio, and camera follow. Built with Tiled TMX maps and pixel art sprites.</p>
     </a>
     <a class="card" href="/platformer-tsx/">
-      <div class="phase">Phase JSX — Full Game (TSX)</div>
+      <div class="tag">Full Game (TSX)</div>
       <h2>Platformer (JSX)</h2>
       <p>Same complete platformer rebuilt with JSX/TSX declarative syntax. Validates the @quintus/jsx build() pattern against a real game.</p>
     </a>
     <a class="card" href="/dungeon/">
-      <div class="phase">Phase B — Dungeon Crawler</div>
+      <div class="tag">Dungeon Crawler</div>
       <h2>Dungeon Crawler</h2>
       <p>Top-down dungeon crawler with combat, enemies, equipment, chests, and multi-level progression. Uses Y-sort rendering and Kenney Tiny Dungeon tileset.</p>
     </a>
     <a class="card" href="/breakout/">
-      <div class="phase">Phase 9 — Breakout</div>
+      <div class="tag">Breakout</div>
       <h2>Breakout</h2>
       <p>Classic brick-breaker with paddle, bouncing ball, destructible bricks, and power-ups. Tests collision reflection, scoring, and level progression.</p>
     </a>
     <a class="card" href="/top-down-shooter/">
-      <div class="phase">Phase 9 — Pooling</div>
+      <div class="tag">Pooling</div>
       <h2>Top-Down Shooter</h2>
       <p>Twin-stick arena shooter with pooled bullets and enemies, wave spawning, weapon switching, and HUD pool stats. Validates NodePool at scale.</p>
     </a>
     <a class="card" href="/space-shooter/">
-      <div class="phase">Phase 9 — Space Shooter</div>
+      <div class="tag">Space Shooter</div>
       <h2>Space Shooter</h2>
       <p>Vertical-scrolling space shooter with wave spawning, pooled bullets/enemies, power-ups, boss fights, and parallax starfield. Exercises NodePool at high volume.</p>
     </a>
     <a class="card" href="/tower-defense/">
-      <div class="phase">Phase 9 — Tower Defense</div>
+      <div class="tag">Tower Defense</div>
       <h2>Tower Defense</h2>
       <p>Grid-based tower placement with path-following enemies, targeting AI, projectiles, and economy. Tests strategic game patterns and complex UI.</p>
     </a>
     <a class="card" href="/sokoban/">
-      <div class="phase">Phase 9 — Puzzle</div>
+      <div class="tag">Puzzle</div>
       <h2>Sokoban</h2>
       <p>Grid-based box-pushing puzzle with undo, level progression, and move counter. Tests turn-based logic without physics.</p>
     </a>
     <a class="card" href="/advanced-platformer/">
-      <div class="phase">Flagship — Advanced Platformer</div>
+      <div class="tag">Flagship</div>
       <h2>Advanced Platformer</h2>
       <p>3-level flagship demo with slopes, 5 enemy types, breakable blocks, springs, ladders, keys/locks, parallax scrolling, fade transitions, and polished HUD.</p>
+    </a>
+    <a class="card" href="/3d-cube/">
+      <div class="tag">Three.js</div>
+      <h2>3D Cube</h2>
+      <p>Minimal Three.js integration demo with a rotating cube, standard material lighting, and Camera3D. The simplest @quintus/three example.</p>
+    </a>
+    <a class="card" href="/3d-hybrid/">
+      <div class="tag">Three.js + 2D</div>
+      <h2>3D Hybrid</h2>
+      <p>Hybrid rendering with a 3D starfield background via ThreeLayer and a 2D text overlay on top. Demonstrates mixing Canvas2D and WebGL renderers.</p>
+    </a>
+    <a class="card" href="/3d-dungeon/">
+      <div class="tag">Three.js</div>
+      <h2>3D Dungeon</h2>
+      <p>Turn-based 3D dungeon crawler with tank controls, GLTF models, shadows, combat, traps, coins, and multi-level progression. Built on @quintus/three.</p>
     </a>
   </div>
 </body>

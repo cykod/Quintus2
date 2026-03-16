@@ -1,3 +1,12 @@
+## Add 3D examples to index and remove phase prefixes
+*Monday, March 16th at 3pm*
+Add 3D Cube, 3D Hybrid, and 3D Dungeon example cards to the examples index 
+page. Remove all Phase N prefixes from card labels, replacing them with short 
+category tags (Core, Physics, Flagship, Three.js, etc.) and renaming the CSS 
+class from .phase to .tag.
+
+---
+
 ## Add 3D dungeon tank controls, shadows, and fix engine footguns
 *Sunday, March 15th at 8pm*
 Overhaul the 3D dungeon example with relative tank controls (forward/backward + 
