@@ -10,10 +10,19 @@ export const MOVE_DURATION = 0.2;
 export const TURN_DURATION = 0.15;
 export const PLAYER_HEALTH = 3;
 export const PLAYER_ATTACK_DAMAGE = 1;
+export const PLAYER_ATTACK_WINDUP = 0.15;
+export const PLAYER_ATTACK_DURATION = 0.3;
 export const PLAYER_INVINCIBILITY = 1.0;
 
 // === Turns ===
 export const ENEMY_TURN_INTERVAL = 2;
+
+// === Enemies ===
+export const ENEMY_HEALTH = 2;
+export const ENEMY_DAMAGE = 1;
+export const ENEMY_MOVE_DURATION = 0.3;
+export const ENEMY_ATTACK_DURATION = 0.3;
+export const ENEMY_KILL_SCORE = 25;
 
 // === Scoring ===
 export const COIN_SCORE = 10;
@@ -23,17 +32,17 @@ export const TRAP_DAMAGE = 1;
 // === Level data ===
 export const LEVELS: string[][] = [
 	// Level 1 (8×8)
-	["########", "#P....E#", "#..C...#", "#......#", "#...T..#", "#......#", "#....C.#", "########"],
+	["########", "#P....E#", "#..C...#", "#.G....#", "#...T..#", "#......#", "#....C.#", "########"],
 	// Level 2 (10×10)
 	[
 		"##########",
 		"#P.......#",
 		"#..##.C..#",
-		"#..##....#",
+		"#..##..G.#",
 		"#...T....#",
 		"#....##..#",
 		"#.C..##.E#",
-		"#........#",
+		"#..G.....#",
 		"##########",
 	],
 	// Level 3 (12×12)
@@ -43,10 +52,10 @@ export const LEVELS: string[][] = [
 		"#..###..C..#",
 		"#..#.T..#..#",
 		"#....C..#..#",
-		"#.####.....#",
+		"#.####..G..#",
 		"#......T...#",
 		"#..##.##...#",
-		"#..##......#",
+		"#..##....G.#",
 		"#.....C..T.#",
 		"#.........E#",
 		"############",

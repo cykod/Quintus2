@@ -14,6 +14,7 @@ const CHAR_MAP: Record<string, number> = {
 	C: TILE_FLOOR,
 	T: TILE_FLOOR,
 	E: TILE_FLOOR,
+	G: TILE_FLOOR,
 };
 
 export class DungeonGrid extends TileMap3D {
@@ -21,6 +22,26 @@ export class DungeonGrid extends TileMap3D {
 
 	/** Original character grid for game-logic lookups. */
 	private _charGrid: string[][] = [];
+
+	/** Tracks tiles occupied by enemies (keyed as "x,z"). */
+	private _occupied = new Set<string>();
+
+	isOccupied(gx: number, gz: number): boolean {
+		return this._occupied.has(`${gx},${gz}`);
+	}
+
+	setOccupied(gx: number, gz: number): void {
+		this._occupied.add(`${gx},${gz}`);
+	}
+
+	clearOccupied(gx: number, gz: number): void {
+		this._occupied.delete(`${gx},${gz}`);
+	}
+
+	/** Check if a grid position is walkable and not occupied by an enemy. */
+	isWalkableAndFree(gx: number, gz: number): boolean {
+		return this.isWalkable(gx, gz) && !this.isOccupied(gx, gz);
+	}
 
 	/**
 	 * Parse a level from string lines.

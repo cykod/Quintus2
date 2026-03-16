@@ -6,6 +6,9 @@ export class HUD extends Layer {
 	private scoreLabel!: Label;
 	private healthLabel!: Label;
 	private levelLabel!: Label;
+	private turnLabel!: Label;
+	private flashLabel!: Label;
+	private _flashTimer = 0;
 
 	override onReady() {
 		this.fixed = true;
@@ -34,6 +37,22 @@ export class HUD extends Layer {
 			align: "right",
 		});
 
+		this.turnLabel = this.add(Label, {
+			position: new Vec2(8, 28),
+			text: `Turn: ${gameState.turn}`,
+			fontSize: 12,
+			color: Color.fromHex("#b0bec5"),
+		});
+
+		this.flashLabel = this.add(Label, {
+			position: new Vec2(this.game.width / 2, this.game.height / 2 - 40),
+			text: "",
+			fontSize: 24,
+			color: Color.fromHex("#ffffff"),
+			align: "center",
+		});
+		this.flashLabel.visible = false;
+
 		gameState.on("score").connect(({ value }) => {
 			this.scoreLabel.text = `Score: ${value}`;
 		});
@@ -45,6 +64,27 @@ export class HUD extends Layer {
 		gameState.on("level").connect(({ value }) => {
 			this.levelLabel.text = `Level ${value}`;
 		});
+
+		gameState.on("turn").connect(({ value }) => {
+			this.turnLabel.text = `Turn: ${value}`;
+		});
+	}
+
+	/** Show a centered flash text that fades after ~1 second. */
+	flash(text: string, color = "#ffffff"): void {
+		this.flashLabel.text = text;
+		this.flashLabel.color = Color.fromHex(color);
+		this.flashLabel.visible = true;
+		this._flashTimer = 1.0;
+	}
+
+	override onUpdate(dt: number): void {
+		if (this._flashTimer > 0) {
+			this._flashTimer -= dt;
+			if (this._flashTimer <= 0) {
+				this.flashLabel.visible = false;
+			}
+		}
 	}
 
 	private _heartsText(current: number, max: number): string {

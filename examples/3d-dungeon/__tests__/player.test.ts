@@ -248,11 +248,7 @@ describe("PlayerCharacter", () => {
 	it("attack emits attacked signal with correct target tile", async () => {
 		const { InputScript } = await import("@quintus/test");
 		// Turn left (face east), then tap interact
-		const input = InputScript.create()
-			.tap("turn_left", 1)
-			.wait(12)
-			.tap("interact", 1)
-			.wait(5);
+		const input = InputScript.create().tap("turn_left", 1).wait(12).tap("interact", 1).wait(5);
 
 		let emittedTarget: { gridX: number; gridZ: number } | null = null;
 		class AttackTestScene extends PlayerTestScene {

@@ -5,4 +5,6 @@ export const gameState = reactiveState({
 	health: 3,
 	maxHealth: 3,
 	level: 1,
+	turn: 0,
+	kills: 0,
 });

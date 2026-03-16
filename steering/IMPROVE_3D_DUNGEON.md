@@ -9,10 +9,11 @@
 |-------|-------------|--------|
 | 1 | Turn manager & action system | Done |
 | 2 | Player sword attack | Done |
-| 3 | Enemy entity & AI | Pending |
-| 4 | Combat resolution & damage | Pending |
-| 5 | Level design & HUD updates | Pending |
-| 6 | Tests | Pending |
+| 3 | Enemy entity & AI | Done |
+| 4 | Combat resolution & damage | Done |
+| 5 | Level design & HUD updates | Done |
+| 6 | Tests | Done |
+| 7 | Sound effects | Done |
 
 ---
 
@@ -479,6 +480,61 @@ it("player can kill enemy and reach exit", async () => {
 
 ---
 
+## Phase 7: Sound Effects
+
+Add audio feedback for combat and movement using the **Kenney RPG Audio** pack (`tmp/kenney_rpg-audio /Audio/`). Note: the source directory has a trailing space in its name.
+
+### Sound Mapping
+
+| Event | Sound File(s) | Notes |
+|-------|--------------|-------|
+| Player footstep | `footstep00.ogg` – `footstep09.ogg` | Random pick per step |
+| Player sword swing | `drawKnife1.ogg` / `drawKnife2.ogg` / `drawKnife3.ogg` | Random pick on attack start |
+| Sword hit (enemy takes damage) | `knifeSlice.ogg` / `knifeSlice2.ogg` | On `attacked` signal when enemy present |
+| Enemy death | `chop.ogg` | On `enemy.died` |
+| Enemy attack (player takes damage) | `metalPot1.ogg` / `metalPot2.ogg` | On `enemy.attackedPlayer` |
+| Coin collect | `handleCoins.ogg` / `handleCoins2.ogg` | On `player.collected` |
+| Door/exit open | `doorOpen_1.ogg` / `doorOpen_2.ogg` | On `player.reachedExit` |
+| Trap trigger | `metalClick.ogg` | On trap damage |
+
+### Implementation Steps
+
+- [ ] Copy selected `.ogg` files to `examples/3d-dungeon/assets/audio/`
+- [ ] Add audio paths to `assets.ts` (new `AUDIO_PATHS` array or extend existing asset loading)
+- [ ] Add `AudioPlugin` to the game setup in `main.ts`
+- [ ] Create `audio.ts` helper that exposes `playSound(name)` using the engine's `AudioPlayer`
+- [ ] Wire sounds to signals in `dungeon-level.ts`:
+  - `player.attacked` → sword swing + hit (if enemy at target)
+  - `player.collected` → coin sound
+  - `player.reachedExit` → door sound
+  - `enemy.attackedPlayer` → enemy hit sound
+  - `enemy.died` → death sound
+- [ ] Play footstep sound in `PlayerCharacter._startMove()`
+- [ ] Play trap sound in `PlayerCharacter._takeDamage()`
+- [ ] Randomize variant sounds (e.g., pick random footstep) for variety
+
+### Available Audio Files
+
+Full listing from `tmp/kenney_rpg-audio /Audio/`:
+
+```
+beltHandle1.ogg       bookPlace2.ogg      clothBelt2.ogg     doorClose_4.ogg
+beltHandle2.ogg       bookPlace3.ogg      doorClose_1.ogg    doorOpen_1.ogg
+bookClose.ogg         chop.ogg            doorClose_2.ogg    doorOpen_2.ogg
+bookFlip1.ogg         cloth1.ogg          doorClose_3.ogg    drawKnife1.ogg
+bookFlip2.ogg         cloth2.ogg          dropLeather.ogg    drawKnife2.ogg
+bookFlip3.ogg         cloth3.ogg          footstep00.ogg     drawKnife3.ogg
+bookOpen.ogg          cloth4.ogg          footstep01.ogg     handleCoins.ogg
+bookPlace1.ogg        clothBelt.ogg       footstep02.ogg     handleCoins2.ogg
+creak1.ogg            footstep03.ogg      footstep07.ogg     knifeSlice.ogg
+creak2.ogg            footstep04.ogg      footstep08.ogg     knifeSlice2.ogg
+creak3.ogg            footstep05.ogg      footstep09.ogg     metalClick.ogg
+handleSmallLeather.ogg  footstep06.ogg    metalLatch.ogg     metalPot1.ogg
+handleSmallLeather2.ogg                   metalPot2.ogg      metalPot3.ogg
+```
+
+---
+
 ## Key Design Decisions
 
 ### Why a TurnManager node instead of inline logic?
@@ -515,7 +571,8 @@ Turn-based invincibility doesn't make sense the same way real-time invincibility
 | `config.ts` | **Modify** — add combat constants, update level data |
 | `state.ts` | **Modify** — add `turn`, `kills` fields |
 | `hud/hud.ts` | **Modify** — add turn counter display |
-| `assets.ts` | No change (barrel.glb already listed) |
+| `assets.ts` | **Modify** — add character-orc.glb + audio paths |
+| `audio.ts` | **New** — sound effect helper |
 | `__tests__/combat.test.ts` | **New** — turn system integration tests |
 | `__tests__/enemy.test.ts` | **New** — enemy AI tests |
 | `__tests__/player.test.ts` | **Modify** — add attack tests |
@@ -537,3 +594,4 @@ Turn-based invincibility doesn't make sense the same way real-time invincibility
 - [ ] `pnpm test` passes (new + existing tests)
 - [ ] `pnpm lint` clean
 - [ ] Demo runs in browser via `pnpm dev`
+- [ ] Sound effects play for footsteps, attacks, hits, coins, exits, traps, and enemy death

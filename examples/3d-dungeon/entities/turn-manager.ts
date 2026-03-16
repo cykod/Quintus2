@@ -31,8 +31,6 @@ export class TurnManager extends Node {
 		if (this.turnCount % ENEMY_TURN_INTERVAL === 0) {
 			this.phase = TurnPhase.EnemyTurn;
 			this.enemyTurnStart.emit();
-			// No enemies yet — immediately finish enemy turn
-			this.enemyAnimDone();
 		} else {
 			this.phase = TurnPhase.PlayerInput;
 		}

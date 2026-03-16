@@ -1,15 +1,16 @@
+import { AudioPlugin } from "@quintus/audio";
 import { Game } from "@quintus/core";
 import { InputPlugin } from "@quintus/input";
 import { ThreePlugin } from "@quintus/three";
 import { puzzleLayout, TouchPlugin } from "@quintus/touch";
-import { MODEL_PATHS } from "./assets.js";
+import { AUDIO_PATHS, MODEL_PATHS } from "./assets.js";
 import { GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS } from "./config.js";
+import { DebugSwordScene } from "./scenes/debug-sword.js";
 import { GameOverScene } from "./scenes/game-over-scene.js";
 import { Level1 } from "./scenes/level1.js";
 import { Level2 } from "./scenes/level2.js";
 import { Level3 } from "./scenes/level3.js";
 import { TitleScene } from "./scenes/title-scene.js";
-import { DebugSwordScene } from "./scenes/debug-sword.js";
 import { WinScene } from "./scenes/win-scene.js";
 
 const game = new Game({
@@ -20,6 +21,7 @@ const game = new Game({
 });
 
 game.use(ThreePlugin({ antialias: true, background: 0x1a1a2e, shadows: true }));
+game.use(AudioPlugin());
 game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(
 	TouchPlugin({
@@ -46,6 +48,6 @@ game.registerScenes({
 	"game-over": GameOverScene,
 });
 
-game.assets.load({ glb: MODEL_PATHS }).then(() => {
+game.assets.load({ glb: MODEL_PATHS, audio: AUDIO_PATHS }).then(() => {
 	game.start("title");
 });

@@ -1,3 +1,15 @@
+## Add HUD turn counter, combat flash text, and sound effects to 3D dungeon
+*Monday, March 16th at 6pm*
+Implements phases 5 and 7 of the 3D dungeon design. Phase 5 adds a turn counter 
+to gameState and HUD, plus centered combat flash text (Hit!, Miss!, Ouch!) that 
+auto-fades after 1 second. Phase 7 copies 23 Kenney RPG Audio .ogg files, adds 
+AudioPlugin, and wires sound effects to all game events: footsteps on move, 
+sword swing/hit on attack, coin collect, enemy attack/death, door open on exit, 
+and metalClick on traps. Also removes an unused variable flagged by the linter 
+and marks all design doc phases as Done.
+
+---
+
 ## Add README with engine overview and debug bridge docs
 *Monday, March 16th at 4pm*
 Create a comprehensive README.md documenting the Quintus 2.0 engine for human 

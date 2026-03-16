@@ -1,9 +1,11 @@
 import { Scene } from "@quintus/core";
 import { AmbientLight, Camera3D, DirectionalLight } from "@quintus/three";
-import { COIN_SCORE } from "../config.js";
+import { SFX } from "../audio.js";
+import { COIN_SCORE, ENEMY_DAMAGE, ENEMY_KILL_SCORE, PLAYER_ATTACK_DAMAGE } from "../config.js";
 import { CameraOrbit } from "../entities/camera-orbit.js";
 import { CoinItem } from "../entities/coin-item.js";
 import { DungeonGrid } from "../entities/dungeon-grid.js";
+import { Enemy } from "../entities/enemy.js";
 import { ExitStairs } from "../entities/exit-stairs.js";
 import { PlayerCharacter } from "../entities/player.js";
 import { TrapTile } from "../entities/trap-tile.js";
@@ -72,6 +74,18 @@ export abstract class DungeonLevel extends Scene {
 			});
 		}
 
+		// Enemies
+		const enemies = new Set<Enemy>();
+		for (const cell of grid.findAllChars("G")) {
+			const enemy = this.add(Enemy, {
+				gridX: cell.gridX,
+				gridZ: cell.gridZ,
+				dungeonGrid: grid,
+			});
+			enemies.add(enemy);
+			grid.setOccupied(cell.gridX, cell.gridZ);
+		}
+
 		// Lighting
 		this.add(AmbientLight, { intensity: 0.4 });
 		const sun = this.add(DirectionalLight, {
@@ -82,7 +96,12 @@ export abstract class DungeonLevel extends Scene {
 		sun.position.set(5, 10, -5);
 
 		// HUD
-		this.add(HUD);
+		const hud = this.add(HUD);
+
+		// Turn counter
+		turnManager.playerTurnComplete.connect((turn) => {
+			gameState.turn = turn;
+		});
 
 		// Signal wiring
 		player.collected.connect(({ gridX, gridZ }) => {
@@ -93,10 +112,77 @@ export abstract class DungeonLevel extends Scene {
 				coin.destroy();
 				coins.delete(key);
 				grid.clearCell(gridX, gridZ);
+				this.game.audio.play(SFX.coinCollect(), { bus: "sfx" });
 			}
 		});
 
+		// Enemy turn orchestration
+		turnManager.enemyTurnStart.connect(() => {
+			if (enemies.size === 0) {
+				turnManager.enemyAnimDone();
+				return;
+			}
+
+			let remaining = enemies.size;
+			const onDone = () => {
+				remaining--;
+				if (remaining <= 0) {
+					turnManager.enemyAnimDone();
+				}
+			};
+
+			for (const enemy of enemies) {
+				const action = enemy.takeTurn(player.gridX, player.gridZ);
+				enemy.actionComplete.once(onDone);
+				enemy.executeAction(action);
+			}
+		});
+
+		// Find enemy at a given grid position
+		const findEnemyAt = (gx: number, gz: number): Enemy | undefined => {
+			for (const enemy of enemies) {
+				if (enemy.gridX === gx && enemy.gridZ === gz) return enemy;
+			}
+			return undefined;
+		};
+
+		// Player attack → damage enemies
+		player.attacked.connect(({ gridX, gridZ }) => {
+			const enemy = findEnemyAt(gridX, gridZ);
+			if (!enemy) {
+				hud.flash("Miss!", "#90a4ae");
+				this.game.audio.play(SFX.swordSwing(), { bus: "sfx" });
+				return;
+			}
+
+			enemy.takeDamage(PLAYER_ATTACK_DAMAGE);
+			hud.flash("Hit!", "#ffd54f");
+			this.game.audio.play(SFX.swordHit(), { bus: "sfx" });
+		});
+
+		// Enemy attacks player / enemy death
+		for (const enemy of enemies) {
+			enemy.attackedPlayer.connect(() => {
+				gameState.health -= ENEMY_DAMAGE;
+				hud.flash("Ouch!", "#ef5350");
+				this.game.audio.play(SFX.enemyAttack(), { bus: "sfx" });
+				if (gameState.health <= 0) {
+					player.died.emit();
+				}
+			});
+
+			enemy.died.connect(() => {
+				enemies.delete(enemy);
+				grid.clearOccupied(enemy.gridX, enemy.gridZ);
+				gameState.score += ENEMY_KILL_SCORE;
+				gameState.kills++;
+				this.game.audio.play(SFX.enemyDeath(), { bus: "sfx" });
+				enemy.destroy();
+			});
+		}
+
 		player.reachedExit.connect(() => {
+			this.game.audio.play(SFX.exitDoor(), { bus: "sfx" });
 			this.switchTo(this.nextScene);
 		});
 

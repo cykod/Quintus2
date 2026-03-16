@@ -23,11 +23,7 @@ export class DebugSwordScene extends Scene {
 
 		// Direct front view — character faces south (+Z), camera further south
 		const cam = this.add(Camera3D, { fov: 30 });
-		cam.position.set(
-			player.position.x,
-			0.3,
-			player.position.z + 1.2,
-		);
+		cam.position.set(player.position.x, 0.3, player.position.z + 1.2);
 		cam.lookAt(player.position.x, 0.15, player.position.z);
 
 		// Lighting
