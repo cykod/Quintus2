@@ -664,3 +664,85 @@
 [IMPL] sat 3/7 5pm - Add mobile full screen enhancements to the top down shooter and space shooter examples
 
 [MILE] sat 3/7 8pm - Added mobile fill mode to both shooters and fixed sticky joystick tracking for continuous touch input
+
+[MILE] sun 3/8 1am - Fixed touch pointer hijacking mousePosition and simplified dual-stick mobile layout for top-down shooter
+
+[IMPL] sun 3/8 1am - Fix tower defense game broken on mobile - touching doesn't place turrets after recent mobile-related commits
+
+[DSGN] sun 3/8 1am - Design holistic touch input fix that works across all example games with simple, understandable approach
+
+[ASKS] sun 3/8 2am - Plan fixes for six example game issues: mobile camera/scaling for top-down shooter, dungeon, and breakout; tower defense sprite bleeding; wave 2 stuck bug; and advanced platformer ladder joystick support
+
+[IMPL] sun 3/8 2am - Implement touch input fix: revert InputPlugin filtering, add aim actions to VirtualAimStick, update shooter aiming
+
+[MILE] sun 3/8 2am - Fixed touch input with axis-based aim actions on VirtualAimStick and reverted InputPlugin to simple pointer handling
+
+[IMPL] sun 3/8 1pm - Implement 3D dungeon example game phases 1+2: asset pipeline, project setup, and dungeon grid with instanced rendering
+
+[DSGN] sun 3/8 4pm - Design debug package to extract qdbg logic into a testable package
+
+[MILE] sun 3/8 4pm - Fixed mobile scaling and camera across all example games with fillAxis option, sprite bleed fix, and joystick ladder support
+
+[IMPL] sun 3/8 4pm - Implement Phase 3: Player character + grid movement + camera for 3D dungeon example
+
+[IMPL] sun 3/8 5pm - Implement @quintus/debug package — extract qdbg logic into testable TypeScript
+
+[MILE] sun 3/8 6pm - Added 3D dungeon player character with grid movement, camera follow, damage system, and coin collection signals
+
+[IMPL] sun 3/8 6pm - Implement Phase 4: Items, traps, and scoring for 3D dungeon example
+
+[MILE] sun 3/8 6pm - Added items, traps, and exit stairs to 3D dungeon example (Phase 4) with GLTF models and fallback geometry
+
+[MILE] sun 3/8 6pm - Removed hasModels fallback geometry code from 3D dungeon example, simplified all entities to use GLTF directly
+
+[IMPL] sun 3/8 7pm - Implement Phase 5 (HUD overlay + game flow) and Phase 6 (tests + polish) for 3D dungeon example
+
+[MILE] sun 3/8 7pm - Added @quintus/debug package with formatters, bridge commands, programmatic CLI runner, and headless API; thinned qdbg script
+
+[MILE] sun 3/8 7pm - Added HUD, game flow (title/levels/win/game-over), 26 tests, and debugged camera/touch/scaling issues for 3D dungeon Phases 5-6
+
+[IMPL] sun 3/8 8pm - Fix 3D dungeon camera follow, desktop touch controls visibility, and mobile title screen scaling issues
+
+[MILE] sun 3/8 8pm - Sorted imports across all examples and one test file to satisfy Biome linter rules
+
+[IMPL] sun 3/8 8pm - Remove the fullscreen-on-mobile functionality since it doesn't appear to do anything
+
+[MILE] mon 3/9 12pm - Fixed ThreeRenderer overlay scaling bug, improved 3D dungeon camera/UI, and removed unused fullscreen feature from TouchPlugin
+
+[IMPL] mon 3/9 12pm - Switch 3D dungeon to a close follow camera that is a child of the player and looks in the player's direction
+
+[DSGN] sun 3/15 8pm - Design turn-based combat with enemies and sword attack for 3D dungeon example
+
+[MILE] sun 3/15 8pm - Added 3D dungeon tank controls, shadows, and fixed GLTFModel shared resource disposal and DirectionalLight shadow camera defaults in engine
+
+[IMPL] sun 3/15 9pm - Implement Phase 1: Turn manager & action system for 3D dungeon turn-based combat
+
+[IMPL] sun 3/15 9pm - Implement Phase 2: Player sword attack for 3D dungeon
+
+[IMPL] mon 3/16 1pm - Add the 3D dungeon example to the examples selection screen
+
+[DSGN] mon 3/16 2pm - Design qdbg bones commands and BoneAttachment engine primitive for 3D model debugging
+
+[DEVL] mon 3/16 3pm - Review 3D_BONES_FIXES.md bone debugging and attachment design for issues
+
+[MILE] mon 3/16 3pm - Added 3D examples to index page and removed phase prefixes from all example cards
+
+[MILE] mon 3/16 3pm - Added turn manager, sword attack, camera orbit, and GLTFModel bone/oneshot APIs for 3D dungeon Phases 1-2
+
+[IMPL] mon 3/16 3pm - Implement qdbg bone commands, BoneAttachment primitive, and fix sword attachment
+
+[MILE] mon 3/16 4pm - Added BoneAttachment engine primitive, qdbg bone inspection commands, and fixed sword attachment in 3D dungeon
+
+[IMPL] mon 3/16 4pm - Implement Phase 3: Enemy entity & AI for 3D dungeon
+
+[MILE] mon 3/16 4pm - Added README with engine overview and debug bridge documentation
+
+[IMPL] mon 3/16 5pm - Implement phases 5-7 of 3D dungeon: level design, HUD updates, tests, and sound effects
+
+[MILE] mon 3/16 6pm - Added HUD turn counter, combat flash text, and sound effects to 3D dungeon (phases 5 and 7)
+
+[DSGN] mon 3/16 6pm - Design particle systems for 2D and 3D with LLM-friendly configuration
+
+[DEVL] mon 3/16 6pm - Review PARTICLE_SYSTEMS.md design document for potential issues and risks
+
+[IMPL] mon 3/16 6pm - Implement particle systems phases 1-5: core simulation, Canvas2D rendering, emitter node, property curves, and preset library

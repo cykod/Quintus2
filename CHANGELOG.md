@@ -1,3 +1,16 @@
+## Add particle system with 15 presets and interactive viewer
+*Monday, March 16th at 8pm*
+Implement @quintus/particles phases 1-5: SoA particle pool with swap-remove, 
+CPU simulator with 5 emission shapes and deterministic physics, Canvas2D batch 
+renderer with fillStyle dedup and additive blending, ParticleEmitter Node2D 
+with oneShot/burst/restart lifecycle, property curves and color gradients, 
+game.emitParticles() augment, and 15 built-in presets (fire, smoke, sparks, 
+explosion, blood, rain, snow, magic, poison, electric, bubbles, leaves, trail, 
+debris, collect). Ships with 146 tests across 8 test files and an interactive 
+examples/particles/ viewer with grid and focus views.
+
+---
+
 ## Add HUD turn counter, combat flash text, and sound effects to 3D dungeon
 *Monday, March 16th at 6pm*
 Implements phases 5 and 7 of the 3D dungeon design. Phase 5 adds a turn counter 

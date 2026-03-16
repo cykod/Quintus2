@@ -31,5 +31,9 @@
 		"type": "git",
 		"url": "https://github.com/cykod/Quintus",
 		"directory": "packages/particles"
+	},
+	"dependencies": {
+		"@quintus/core": "workspace:*",
+		"@quintus/math": "workspace:*"
 	}
 }
