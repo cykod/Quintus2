@@ -7,6 +7,7 @@ import {
 	PLAYER_ATTACK_DURATION,
 	PLAYER_ATTACK_WINDUP,
 	PLAYER_INVINCIBILITY,
+	STAIR_DESCENT_DURATION,
 	TRAP_DAMAGE,
 	TURN_DURATION,
 } from "../config.js";
@@ -41,6 +42,18 @@ export class PlayerCharacter extends GLTFModel {
 	readonly died = signal<void>();
 	readonly attacked = signal<{ gridX: number; gridZ: number }>();
 	readonly moved = signal<{ fromX: number; fromZ: number }>();
+	readonly deathComplete = signal<void>();
+	readonly exitDescentComplete = signal<void>();
+
+	private _dead = false;
+	private _descending = false;
+	private _descendStart = new THREE.Vector3();
+	private _descendEnd = new THREE.Vector3();
+	private _descendElapsed = 0;
+
+	get isDead(): boolean {
+		return this._dead;
+	}
 
 	/** Cardinal direction index: 0=North, 1=East, 2=South, 3=West. Starts facing south. */
 	private _facing = 2;
@@ -97,7 +110,62 @@ export class PlayerCharacter extends GLTFModel {
 		this._tryPlay("idle");
 	}
 
+	/** Play the "die" animation clip, then emit deathComplete. */
+	playDeath(): void {
+		if (this._dead) return;
+		this._dead = true;
+		this.playOneShot("die", () => {
+			this.deathComplete.emit();
+		});
+	}
+
+	/**
+	 * Snap to the top of the stairs facing the descent direction, then
+	 * walk forward and down. Emits exitDescentComplete when done.
+	 *
+	 * @param descentDX — world X delta for the descent direction
+	 * @param descentDZ — world Z delta for the descent direction
+	 * @param descentAngle — rotation.y for the descent direction
+	 */
+	playExitDescent(descentDX: number, descentDZ: number, descentAngle: number): void {
+		if (this._descending) return;
+		this._descending = true;
+
+		// Snap to exit tile center, facing the descent direction
+		const exitWorld = this.dungeonGrid.gridToWorld(this.gridX, this.gridZ);
+		this.position.set(exitWorld.x, 0, exitWorld.z);
+		this.rotation.y = descentAngle;
+
+		this._descendStart.copy(this.position);
+		this._descendEnd.set(
+			this.position.x + descentDX * 0.4,
+			-0.8,
+			this.position.z + descentDZ * 0.4,
+		);
+		this._descendElapsed = 0;
+		this._tryPlay("walk");
+	}
+
 	override onFixedUpdate(dt: number): void {
+		if (this._dead) {
+			super.onUpdate(dt); // keep ticking mixer so "die" clip plays
+			return;
+		}
+
+		// Stair descent animation
+		if (this._descending) {
+			super.onUpdate(dt);
+			this._descendElapsed += dt;
+			const t = Math.min(this._descendElapsed / STAIR_DESCENT_DURATION, 1);
+			const eased = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+			this.position.lerpVectors(this._descendStart, this._descendEnd, eased);
+			if (t >= 1) {
+				this._descending = false;
+				this.exitDescentComplete.emit();
+			}
+			return;
+		}
+
 		// Tick animation mixer via GLTFModel.onUpdate
 		super.onUpdate(dt);
 
@@ -153,7 +221,7 @@ export class PlayerCharacter extends GLTFModel {
 
 			if (t >= 1) {
 				this._turning = false;
-				this.rotation.y = this._turnEnd;
+				this.rotation.y = DIR_ANGLE[this._facing];
 				this.turnManager.playerAnimDone();
 			}
 			return;
@@ -262,7 +330,7 @@ export class PlayerCharacter extends GLTFModel {
 		this._moving = true;
 
 		this._tryPlay("walk");
-		this.game.audio.play(SFX.footstep(), { bus: "sfx" });
+		this.game.audio?.play(SFX.footstep(), { bus: "sfx" });
 	}
 
 	private _checkTile(): void {
@@ -288,7 +356,7 @@ export class PlayerCharacter extends GLTFModel {
 
 		gameState.health -= TRAP_DAMAGE;
 		this._invincibleTimer = PLAYER_INVINCIBILITY;
-		this.game.audio.play(SFX.trap(), { bus: "sfx" });
+		this.game.audio?.play(SFX.trap(), { bus: "sfx" });
 
 		if (gameState.health <= 0) {
 			this.died.emit();

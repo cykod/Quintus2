@@ -67,6 +67,11 @@ export const FOG_SIGHT_RANGE = 3;
 export const FOG_VISITED_OPACITY = 0.5;
 export const FOG_HIDDEN_OPACITY = 1.0;
 
+// === Transitions ===
+export const TRANSITION_FADE_DURATION = 0.4;
+export const TRANSITION_DEATH_FADE_DURATION = 0.5;
+export const STAIR_DESCENT_DURATION = 0.4;
+
 // === Camera ===
 export const CAMERA_ORBIT_DURATION = 0.2;
 

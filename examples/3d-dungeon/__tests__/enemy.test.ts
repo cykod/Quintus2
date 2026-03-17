@@ -112,34 +112,25 @@ describe("Enemy", () => {
 			expect(action.type).toBe("idle");
 		});
 
-		it("avoids walls when choosing movement", async () => {
+		it("idles when all directions are blocked or worse", async () => {
 			// Enemy at (3,1), player at (1,1). Direct path west is blocked.
+			// All other directions increase Manhattan distance, so enemy idles.
 			const enemy = new Enemy();
 			enemy.gridX = 3;
 			enemy.gridZ = 1;
 			enemy.dungeonGrid = {
 				isWalkableAndFree: (gx: number, gz: number) => {
-					// Block west (2,1)
+					// Block west (2,1) — the only direction that would reduce distance
 					if (gx === 2 && gz === 1) return false;
 					return true;
 				},
 			} as unknown as DungeonGrid;
 
 			const action = enemy.takeTurn(1, 1);
-			// Can't go west, should try another direction that reduces distance
-			expect(action.type).toBe("move");
-			if (action.type === "move") {
-				// Should move north (3,0) — distance to player goes from 2+0=2 to 2+1=3 — no improvement
-				// Or south (3,2) — distance 2+1=3 — no improvement either
-				// East (4,1) — distance 3+0=3 — worse
-				// With all directions worse or equal, should stay idle
-				// Actually let me recalculate: current dist = |1-3|+|1-1| = 2
-				// North (3,0): |1-3|+|1-0| = 3 — worse
-				// South (3,2): |1-3|+|1-2| = 3 — worse
-				// East (4,1): |1-4|+|1-1| = 3 — worse
-				// West blocked
-				// So actually it should be idle since no move reduces distance
-			}
+			// Current dist = |1-3|+|1-1| = 2
+			// North (3,0): dist=3, South (3,2): dist=3, East (4,1): dist=3 — all worse
+			// West blocked → no improving move → idle
+			expect(action.type).toBe("idle");
 		});
 	});
 
@@ -271,11 +262,12 @@ describe("Enemy", () => {
 			const { InputScript } = await import("@quintus/test");
 			// Turn left (face east), move forward — enemy is at (3,1), tile (2,1) is free
 			// Move forward once to (2,1), then try again into (3,1) which is occupied
+			// Move anim 12f + enemy attack anim 18f = 30f needed after move
 			const input = InputScript.create()
 				.tap("turn_left", 1)
 				.wait(12)
 				.tap("move_forward", 1)
-				.wait(15)
+				.wait(35)
 				.tap("move_forward", 1)
 				.wait(15);
 			const result = await runScene(EnemyTestScene, input);
@@ -289,15 +281,17 @@ describe("Enemy", () => {
 			const { InputScript } = await import("@quintus/test");
 			// Turn left (face east), move to (2,1), then attack twice to kill enemy at (3,1)
 			// ENEMY_HEALTH=2, PLAYER_ATTACK_DAMAGE=1, so need 2 attacks
+			// Turn anim ~9f, move anim 12f + enemy attack anim 18f = 30f,
+			// attack anim ~27f, second attack + enemy turn ~27f + 18f
 			const input = InputScript.create()
 				.tap("turn_left", 1)
 				.wait(12)
 				.tap("move_forward", 1)
-				.wait(15)
+				.wait(35)
 				.tap("interact", 1)
-				.wait(5)
+				.wait(30)
 				.tap("interact", 1)
-				.wait(5);
+				.wait(50);
 			await runScene(EnemyTestScene, input);
 			expect(gameState.score).toBe(ENEMY_KILL_SCORE);
 			expect(gameState.kills).toBe(1);

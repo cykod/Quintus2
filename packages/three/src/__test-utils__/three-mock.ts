@@ -86,6 +86,20 @@ export class Quaternion {
 		this.z = z;
 		this.w = w;
 	}
+	set(x: number, y: number, z: number, w: number): this {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.w = w;
+		return this;
+	}
+	copy(q: Quaternion): this {
+		this.x = q.x;
+		this.y = q.y;
+		this.z = q.z;
+		this.w = q.w;
+		return this;
+	}
 }
 
 export class Object3D {
@@ -126,6 +140,25 @@ export class Object3D {
 	}
 
 	lookAt(_x: number | Vector3, _y?: number, _z?: number) {}
+
+	updateWorldMatrix(_updateParents?: boolean, _updateChildren?: boolean) {}
+
+	getWorldPosition(target: Vector3): Vector3 {
+		target.set(this.position.x, this.position.y, this.position.z);
+		let p: Object3D | null = this.parent;
+		while (p) {
+			target.x += p.position.x;
+			target.y += p.position.y;
+			target.z += p.position.z;
+			p = p.parent;
+		}
+		return target;
+	}
+
+	getWorldQuaternion(target: Quaternion): Quaternion {
+		target.set(this.quaternion.x, this.quaternion.y, this.quaternion.z, this.quaternion.w);
+		return target;
+	}
 
 	traverse(fn: (o: Object3D) => void) {
 		fn(this);

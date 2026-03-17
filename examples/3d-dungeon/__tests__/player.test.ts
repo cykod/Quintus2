@@ -69,6 +69,11 @@ class PlayerTestScene extends Scene {
 			this.add(TrapTile, { gridX: cell.gridX, gridZ: cell.gridZ });
 		}
 
+		// No enemies — immediately finish enemy turns
+		turnManager.enemyTurnStart.connect(() => {
+			turnManager.enemyAnimDone();
+		});
+
 		// Wire signals
 		player.collected.connect(({ gridX, gridZ }) => {
 			const key = `${gridX},${gridZ}`;
@@ -248,7 +253,8 @@ describe("PlayerCharacter", () => {
 	it("attack emits attacked signal with correct target tile", async () => {
 		const { InputScript } = await import("@quintus/test");
 		// Turn left (face east), then tap interact
-		const input = InputScript.create().tap("turn_left", 1).wait(12).tap("interact", 1).wait(5);
+		// Attack takes ~27 frames (windup + lunge + return), signal fires at ~18 frames
+		const input = InputScript.create().tap("turn_left", 1).wait(12).tap("interact", 1).wait(30);
 
 		let emittedTarget: { gridX: number; gridZ: number } | null = null;
 		class AttackTestScene extends PlayerTestScene {
@@ -281,7 +287,7 @@ describe("PlayerCharacter", () => {
 			.tap("turn_right", 1)
 			.wait(12)
 			.tap("interact", 1)
-			.wait(5);
+			.wait(30);
 
 		let emittedTarget: { gridX: number; gridZ: number } | null = null;
 		class WallAttackScene extends PlayerTestScene {
@@ -296,6 +302,95 @@ describe("PlayerCharacter", () => {
 		await runScene(WallAttackScene, input);
 		// Facing north from (1,1) → target is (1,0) which is a wall
 		expect(emittedTarget).toEqual({ gridX: 1, gridZ: 0 });
+	});
+
+	it("playDeath() sets isDead to true", async () => {
+		const result = await runScene(PlayerTestScene, undefined, 0.1);
+		const player = result.game.currentScene!.findByType(PlayerCharacter)!;
+		expect(player.isDead).toBe(false);
+		player.playDeath();
+		expect(player.isDead).toBe(true);
+	});
+
+	it("deathComplete signal fires after playDeath()", async () => {
+		const result = await runScene(PlayerTestScene, undefined, 0.1);
+		const player = result.game.currentScene!.findByType(PlayerCharacter)!;
+		let fired = false;
+		player.deathComplete.connect(() => {
+			fired = true;
+		});
+		player.playDeath();
+		// In tests, playOneShot completes synchronously (no GLTF loaded)
+		expect(fired).toBe(true);
+	});
+
+	it("playDeath() is idempotent", async () => {
+		const result = await runScene(PlayerTestScene, undefined, 0.1);
+		const player = result.game.currentScene!.findByType(PlayerCharacter)!;
+		let count = 0;
+		player.deathComplete.connect(() => {
+			count++;
+		});
+		player.playDeath();
+		player.playDeath();
+		expect(count).toBe(1);
+	});
+
+	it("input is ignored during death", async () => {
+		const { InputScript } = await import("@quintus/test");
+		const input = InputScript.create()
+			.wait(6)
+			.tap("turn_left", 1)
+			.wait(12)
+			.tap("move_forward", 1)
+			.wait(15);
+
+		class DeathInputScene extends PlayerTestScene {
+			override onReady() {
+				super.onReady();
+				const player = this.findByType(PlayerCharacter)!;
+				// Kill player immediately
+				player.playDeath();
+			}
+		}
+
+		const result = await runScene(DeathInputScene, input);
+		const player = result.game.currentScene!.findByType(PlayerCharacter)!;
+		// Player should still be at start position — input ignored
+		expect(player.gridX).toBe(1);
+		expect(player.gridZ).toBe(1);
+	});
+
+	it("playExitDescent() emits exitDescentComplete after animation", async () => {
+		const result = await runScene(PlayerTestScene, undefined, 0.1);
+		const player = result.game.currentScene!.findByType(PlayerCharacter)!;
+		let fired = false;
+		player.exitDescentComplete.connect(() => {
+			fired = true;
+		});
+		const startY = player.position.y;
+		player.playExitDescent(1, 0, -Math.PI / 2);
+		// Step enough frames to complete descent (0.4s = 24 frames)
+		for (let i = 0; i < 30; i++) {
+			result.game.step(1 / 60);
+		}
+		expect(fired).toBe(true);
+		expect(player.position.y).toBeLessThan(startY);
+	});
+
+	it("playExitDescent() is idempotent", async () => {
+		const result = await runScene(PlayerTestScene, undefined, 0.1);
+		const player = result.game.currentScene!.findByType(PlayerCharacter)!;
+		let count = 0;
+		player.exitDescentComplete.connect(() => {
+			count++;
+		});
+		player.playExitDescent(1, 0, -Math.PI / 2);
+		player.playExitDescent(1, 0, -Math.PI / 2);
+		for (let i = 0; i < 40; i++) {
+			result.game.step(1 / 60);
+		}
+		expect(count).toBe(1);
 	});
 
 	it("player cannot input during non-PlayerInput phases", async () => {

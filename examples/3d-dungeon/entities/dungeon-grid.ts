@@ -13,7 +13,7 @@ const CHAR_MAP: Record<string, number> = {
 	P: TILE_FLOOR,
 	C: TILE_FLOOR,
 	T: TILE_FLOOR,
-	E: TILE_FLOOR,
+	E: 0,
 	G: TILE_FLOOR,
 	H: TILE_FLOOR,
 };

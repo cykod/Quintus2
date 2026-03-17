@@ -16,9 +16,9 @@
 | 7 | Health pickup | Done |
 | 8 | Enemy hit stagger (red flash) | Done |
 | 9 | Torch/light flicker | Done |
-| 10 | Fog of war | Pending |
-| 11 | Player death animation | Pending |
-| 12 | Level transition effect | Pending |
+| 10 | Fog of war | Done |
+| 11 | Player death animation | Done |
+| 12 | Level transition effect | Done |
 
 ---
 

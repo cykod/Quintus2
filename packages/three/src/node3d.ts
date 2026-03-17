@@ -15,6 +15,12 @@ export class Node3D extends Node {
 	_boneParented = false;
 
 	/**
+	 * @internal When true, _walkSync parents this node's object3d directly
+	 * to the Three.js scene root, ignoring the Quintus parent chain.
+	 */
+	_worldFreeze = false;
+
+	/**
 	 * The underlying Three.js object. Created lazily via _createObject3D()
 	 * on first access. Subclasses override _createObject3D() to return
 	 * Mesh, Light, Camera, etc.
@@ -75,6 +81,26 @@ export class Node3D extends Node {
 	/** Look at a world position. */
 	lookAt(x: number, y: number, z: number): void {
 		this.object3d.lookAt(x, y, z);
+	}
+
+	/**
+	 * Freeze this node's world transform. The node's object3d will be
+	 * reparented to the Three.js scene root on the next render, keeping
+	 * it at its current world position and orientation regardless of
+	 * Quintus parent movement. Call before the parent moves.
+	 */
+	freezeWorldTransform(): void {
+		const obj = this.object3d;
+		// Compute world transform by walking up the Three.js parent chain
+		obj.updateWorldMatrix(true, false);
+		const worldPos = new THREE.Vector3();
+		const worldQuat = new THREE.Quaternion();
+		obj.getWorldPosition(worldPos);
+		obj.getWorldQuaternion(worldQuat);
+		// Store world values as local (they become local once scene-root-parented)
+		obj.position.copy(worldPos);
+		obj.quaternion.copy(worldQuat);
+		this._worldFreeze = true;
 	}
 
 	// === Lifecycle ===

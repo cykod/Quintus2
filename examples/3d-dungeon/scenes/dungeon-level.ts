@@ -1,7 +1,14 @@
 import { Scene } from "@quintus/core";
 import { AmbientLight, Camera3D, DirectionalLight } from "@quintus/three";
 import { SFX } from "../audio.js";
-import { COIN_SCORE, ENEMY_DAMAGE, ENEMY_KILL_SCORE, PLAYER_ATTACK_DAMAGE } from "../config.js";
+import {
+	COIN_SCORE,
+	ENEMY_DAMAGE,
+	ENEMY_KILL_SCORE,
+	PLAYER_ATTACK_DAMAGE,
+	TRANSITION_DEATH_FADE_DURATION,
+	TRANSITION_FADE_DURATION,
+} from "../config.js";
 import { CameraOrbit } from "../entities/camera-orbit.js";
 import { CameraShake } from "../entities/camera-shake.js";
 import { CoinItem } from "../entities/coin-item.js";
@@ -22,6 +29,7 @@ import { TrapTile } from "../entities/trap-tile.js";
 import { TurnManager } from "../entities/turn-manager.js";
 import { DamageOverlay } from "../hud/damage-overlay.js";
 import { HUD } from "../hud/hud.js";
+import { TransitionOverlay } from "../hud/transition-overlay.js";
 import { gameState } from "../state.js";
 
 export abstract class DungeonLevel extends Scene {
@@ -80,10 +88,12 @@ export abstract class DungeonLevel extends Scene {
 
 		// Exit stairs
 		const exitCell = grid.findChar("E");
+		let exitStairs: ExitStairs | null = null;
 		if (exitCell) {
-			this.add(ExitStairs, {
+			exitStairs = this.add(ExitStairs, {
 				gridX: exitCell.gridX,
 				gridZ: exitCell.gridZ,
+				dungeonGrid: grid,
 			});
 		}
 
@@ -138,6 +148,16 @@ export abstract class DungeonLevel extends Scene {
 		// Damage overlay
 		const damageOverlay = this.add(DamageOverlay);
 
+		// Transition overlay (fade to/from black)
+		const transition = this.add(TransitionOverlay);
+		let pendingScene: string | null = null;
+
+		transition.fadeOutComplete.connect(() => {
+			if (pendingScene) {
+				this.switchTo(pendingScene);
+			}
+		});
+
 		// Turn counter
 		turnManager.playerTurnComplete.connect((turn) => {
 			gameState.turn = turn;
@@ -153,7 +173,7 @@ export abstract class DungeonLevel extends Scene {
 				coin.destroy();
 				coins.delete(key);
 				grid.clearCell(gridX, gridZ);
-				this.game.audio.play(SFX.coinCollect(), { bus: "sfx" });
+				this.game.audio?.play(SFX.coinCollect(), { bus: "sfx" });
 			}
 		});
 
@@ -172,7 +192,7 @@ export abstract class DungeonLevel extends Scene {
 				potion.destroy();
 				potions.delete(key);
 				grid.clearCell(gridX, gridZ);
-				this.game.audio.play(SFX.healPickup(), { bus: "sfx" });
+				this.game.audio?.play(SFX.healPickup(), { bus: "sfx" });
 			}
 		});
 
@@ -218,7 +238,7 @@ export abstract class DungeonLevel extends Scene {
 			const enemy = findEnemyAt(gridX, gridZ);
 			if (!enemy) {
 				hud.flash("Miss!", "#90a4ae");
-				this.game.audio.play(SFX.swordSwing(), { bus: "sfx" });
+				this.game.audio?.play(SFX.swordSwing(), { bus: "sfx" });
 				return;
 			}
 
@@ -226,7 +246,7 @@ export abstract class DungeonLevel extends Scene {
 			enemy.flashHit();
 			spawnBloodBurst(this, enemy.position.x, 0.2, enemy.position.z);
 			hud.flash("Hit!", "#ffd54f");
-			this.game.audio.play(SFX.swordHit(), { bus: "sfx" });
+			this.game.audio?.play(SFX.swordHit(), { bus: "sfx" });
 		});
 
 		// Enemy attacks player / enemy death
@@ -234,7 +254,7 @@ export abstract class DungeonLevel extends Scene {
 			enemy.attackedPlayer.connect(() => {
 				gameState.health -= ENEMY_DAMAGE;
 				hud.flash("Ouch!", "#ef5350");
-				this.game.audio.play(SFX.enemyAttack(), { bus: "sfx" });
+				this.game.audio?.play(SFX.enemyAttack(), { bus: "sfx" });
 				shake.shake(0.08, 0.15);
 				damageOverlay.flash();
 				spawnBloodBurst(this, player.position.x, 0.2, player.position.z);
@@ -248,21 +268,40 @@ export abstract class DungeonLevel extends Scene {
 				grid.clearOccupied(enemy.gridX, enemy.gridZ);
 				gameState.score += ENEMY_KILL_SCORE;
 				gameState.kills++;
-				this.game.audio.play(SFX.enemyDeath(), { bus: "sfx" });
+				this.game.audio?.play(SFX.enemyDeath(), { bus: "sfx" });
 				spawnBloodBurst(this, enemy.position.x, 0.2, enemy.position.z);
 				enemy.playDeath();
 			});
 		}
 
 		player.reachedExit.connect(() => {
-			this.game.audio.play(SFX.exitDoor(), { bus: "sfx" });
-			this.switchTo(this.nextScene);
+			this.game.audio?.play(SFX.exitDoor(), { bus: "sfx" });
+			if (exitStairs) {
+				// Freeze camera in place so it doesn't follow the player down the stairs
+				orbit.freezeWorldTransform();
+
+				player.playExitDescent(exitStairs.descentDX, exitStairs.descentDZ, exitStairs.descentAngle);
+			} else {
+				pendingScene = this.nextScene;
+				transition.fadeOut(TRANSITION_FADE_DURATION);
+			}
+		});
+
+		player.exitDescentComplete.connect(() => {
+			pendingScene = this.nextScene;
+			transition.fadeOut(TRANSITION_FADE_DURATION);
 		});
 
 		player.died.connect(() => {
 			shake.shake(0.15, 0.3);
 			damageOverlay.flash();
-			this.switchTo("game-over");
+			spawnBloodBurst(this, player.position.x, 0.2, player.position.z);
+			player.playDeath();
+		});
+
+		player.deathComplete.connect(() => {
+			pendingScene = "game-over";
+			transition.fadeOut(TRANSITION_DEATH_FADE_DURATION);
 		});
 
 		// Health decrease from traps → shake + flash
@@ -272,6 +311,9 @@ export abstract class DungeonLevel extends Scene {
 				damageOverlay.flash();
 			}
 		});
+
+		// Fade in from black on level start
+		transition.fadeIn(0.3);
 	}
 }
 

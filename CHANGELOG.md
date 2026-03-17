@@ -1,3 +1,17 @@
+## Add death animation, level transitions, and camera freeze to 3D dungeon
+*Tuesday, March 17th at 5pm*
+Add player death animation using the GLTF die clip, fade-to/from-black scene 
+transitions via a new TransitionOverlay, and a stair descent animation when 
+exiting levels. The exit stairs auto-detect their facing direction from 
+adjacent walkable tiles, and the player snaps to the stair top before walking 
+down. A new freezeWorldTransform() API on Node3D in @quintus/three lets the 
+camera hold its world position when the player descends, by reparenting the 
+object3d to the scene root in the renderer sync walk. Also fixes 8 pre-existing 
+test failures caused by missing audio guards and incorrect turn/attack timing, 
+and marks dungeon polish phases 10-12 as done.
+
+---
+
 ## Add fog of war with opaque cubes to 3D dungeon
 *Monday, March 16th at 11pm*
 Add fog of war system to the 3D dungeon (Phase 10). Unexplored tiles are 

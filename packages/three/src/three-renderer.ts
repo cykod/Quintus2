@@ -69,11 +69,13 @@ export class ThreeRenderer implements Renderer {
 	private _walkSync(node: Node, threeParent: THREE.Object3D): void {
 		if (node instanceof Node3D) {
 			if (!node._boneParented) {
+				// Frozen nodes parent to the scene root regardless of Quintus parent
+				const target = node._worldFreeze ? this.ctx.scene : threeParent;
 				const prevParent = this.parentMap.get(node);
-				if (prevParent !== threeParent) {
+				if (prevParent !== target) {
 					if (prevParent) prevParent.remove(node.object3d);
-					threeParent.add(node.object3d);
-					this.parentMap.set(node, threeParent);
+					target.add(node.object3d);
+					this.parentMap.set(node, target);
 				}
 			}
 

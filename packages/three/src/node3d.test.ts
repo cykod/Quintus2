@@ -128,4 +128,23 @@ describe("Node3D", () => {
 		const node = new Node3D();
 		expect(node).toBeInstanceOf(Node);
 	});
+
+	it("freezeWorldTransform sets _worldFreeze flag", () => {
+		const parent = new Node3D();
+		parent.position.set(10, 0, 5);
+
+		const child = new Node3D();
+		child.position.set(1, 2, 3);
+
+		// Simulate Three.js parent chain
+		parent.object3d.add(child.object3d);
+
+		child.freezeWorldTransform();
+
+		expect(child._worldFreeze).toBe(true);
+		// World position = parent(10,0,5) + local(1,2,3) = (11,2,8)
+		expect(child.position.x).toBe(11);
+		expect(child.position.y).toBe(2);
+		expect(child.position.z).toBe(8);
+	});
 });
