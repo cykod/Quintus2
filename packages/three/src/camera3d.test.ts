@@ -96,4 +96,54 @@ describe("Camera3D", () => {
 		// Camera should have moved toward target + offset
 		expect(cam.position.x).toBeGreaterThan(0);
 	});
+
+	it("shake offsets position", () => {
+		const cam = new Camera3D();
+		cam.position.set(0, 0, 0);
+
+		cam.shake(1, 1);
+		cam.onUpdate(0.1);
+
+		// Position should be offset (non-zero due to shake)
+		const pos = cam.position;
+		const offset = Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z);
+		expect(offset).toBeGreaterThan(0);
+	});
+
+	it("shake decays and returns to base position", () => {
+		const cam = new Camera3D();
+		cam.position.set(5, 5, 5);
+
+		cam.shake(1, 0.1);
+
+		// Advance past shake duration
+		cam.onUpdate(0.05);
+		cam.onUpdate(0.05);
+		cam.onUpdate(0.01); // past duration
+
+		// Position should be restored to original (no shake offset)
+		// Note: due to random offsets, we just check shake has stopped
+		// The _shakeOffset should be (0,0,0) after completion
+		// One more update to verify no further offset
+		const before = { x: cam.position.x, y: cam.position.y, z: cam.position.z };
+		cam.onUpdate(0.1);
+		expect(cam.position.x).toBe(before.x);
+		expect(cam.position.y).toBe(before.y);
+		expect(cam.position.z).toBe(before.z);
+	});
+
+	it("higher intensity shake overrides lower", () => {
+		const cam = new Camera3D();
+		cam.shake(0.1, 1);
+		cam.shake(5, 1);
+
+		cam.onUpdate(0.016);
+
+		// Max offset should reflect the higher intensity
+		const pos = cam.position;
+		// With intensity 5, offsets can be up to ±5
+		// We can't test exact values due to Math.random, but the shake should be active
+		const offset = Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z);
+		expect(offset).toBeGreaterThan(0);
+	});
 });

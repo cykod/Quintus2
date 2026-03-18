@@ -5,13 +5,18 @@
 
 import type { DebugBridge } from "@quintus/core";
 import {
+	formatCamera3D,
 	formatEvents,
 	formatJumpAnalysis,
 	formatLayout,
+	formatLights,
+	formatMaterial,
 	formatNearby,
 	formatPhysics,
 	formatQueryResults,
+	formatStats3D,
 	formatTrack,
+	formatTransform,
 	formatTree,
 } from "./formatters.js";
 import type { CommandResult } from "./types.js";
@@ -261,6 +266,47 @@ export function executeCommand(
 		case "mouse-get": {
 			const pos = bridge.getMousePosition();
 			return ok(`Mouse position: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)})`);
+		}
+
+		case "transform": {
+			const target = args[0];
+			if (!target) return err("Usage: transform <name|id>");
+			let result = bridge.transform(target);
+			if (typeof result === "string") {
+				const numId = Number(target);
+				if (!Number.isNaN(numId)) result = bridge.transform(numId);
+			}
+			if (typeof result === "string") return err(result);
+			return ok(formatTransform(result));
+		}
+
+		case "camera": {
+			const result = bridge.camera3d();
+			if (typeof result === "string") return err(result);
+			return ok(formatCamera3D(result));
+		}
+
+		case "lights": {
+			const result = bridge.lights();
+			return ok(formatLights(result));
+		}
+
+		case "material": {
+			const target = args[0];
+			if (!target) return err("Usage: material <name|id>");
+			let result = bridge.material(target);
+			if (typeof result === "string") {
+				const numId = Number(target);
+				if (!Number.isNaN(numId)) result = bridge.material(numId);
+			}
+			if (typeof result === "string") return err(result);
+			return ok(formatMaterial(result));
+		}
+
+		case "stats": {
+			const result = bridge.stats3d();
+			if (typeof result === "string") return err(result);
+			return ok(formatStats3D(result));
 		}
 
 		default:

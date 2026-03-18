@@ -236,3 +236,107 @@ export function formatNearby(result: NearbyResult): string {
 	const lines = result.nodes.map((n) => `  ${n.line}`);
 	return `${header}\n${lines.join("\n")}`;
 }
+
+// ── 3D Formatters ───────────────────────────────────────────────────────────
+
+/**
+ * Format 3D transform data.
+ */
+export function formatTransform(data: Record<string, unknown>): string {
+	const lines: string[] = [];
+	lines.push(`Node: ${data.type} "${data.name}"`);
+	const p = data.position as { x: number; y: number; z: number } | undefined;
+	if (p) lines.push(`Position:  (${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`);
+	const wp = data.worldPosition as { x: number; y: number; z: number } | undefined;
+	if (wp) lines.push(`World:     (${wp.x.toFixed(2)}, ${wp.y.toFixed(2)}, ${wp.z.toFixed(2)})`);
+	const r = data.rotation as { x: number; y: number; z: number; order?: string } | undefined;
+	if (r) {
+		lines.push(
+			`Rotation:  (${((r.x * 180) / Math.PI).toFixed(1)}, ${((r.y * 180) / Math.PI).toFixed(1)}, ${((r.z * 180) / Math.PI).toFixed(1)}) deg${r.order ? ` ${r.order}` : ""}`,
+		);
+	}
+	const s = data.scale as { x: number; y: number; z: number } | undefined;
+	if (s) lines.push(`Scale:     (${s.x.toFixed(2)}, ${s.y.toFixed(2)}, ${s.z.toFixed(2)})`);
+	if (data.visible === false) lines.push("Visible:   false");
+	return lines.join("\n");
+}
+
+/**
+ * Format 3D camera info.
+ */
+export function formatCamera3D(data: Record<string, unknown>): string {
+	const lines: string[] = [];
+	lines.push("=== 3D Camera ===");
+	if (data.fov !== undefined) lines.push(`FOV:       ${data.fov}`);
+	if (data.aspect !== undefined) lines.push(`Aspect:    ${(data.aspect as number).toFixed(3)}`);
+	if (data.near !== undefined) lines.push(`Near:      ${data.near}`);
+	if (data.far !== undefined) lines.push(`Far:       ${data.far}`);
+	const p = data.position as { x: number; y: number; z: number } | undefined;
+	if (p) lines.push(`Position:  (${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`);
+	const r = data.rotation as { x: number; y: number; z: number } | undefined;
+	if (r) {
+		lines.push(
+			`Rotation:  (${((r.x * 180) / Math.PI).toFixed(1)}, ${((r.y * 180) / Math.PI).toFixed(1)}, ${((r.z * 180) / Math.PI).toFixed(1)}) deg`,
+		);
+	}
+	return lines.join("\n");
+}
+
+/**
+ * Format lights list.
+ */
+export function formatLights(data: Record<string, unknown>[]): string {
+	if (data.length === 0) return "(no lights found)";
+	const lines: string[] = [];
+	lines.push(`=== ${data.length} Light(s) ===`);
+	for (const light of data) {
+		let line = `${light.type}`;
+		if (light.name && light.name !== light.type) line += ` "${light.name}"`;
+		if (light.intensity !== undefined) line += `  intensity=${light.intensity}`;
+		if (light.color) line += `  color=${light.color}`;
+		const p = light.position as { x: number; y: number; z: number } | undefined;
+		if (p) line += `  pos=(${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)})`;
+		lines.push(`  ${line}`);
+	}
+	return lines.join("\n");
+}
+
+/**
+ * Format material info.
+ */
+export function formatMaterial(data: Record<string, unknown>[]): string {
+	if (data.length === 0) return "(no materials found)";
+	const lines: string[] = [];
+	lines.push(`=== ${data.length} Material(s) ===`);
+	for (const mat of data) {
+		let line = mat.type ? String(mat.type) : "Material";
+		if (mat.color) line += `  color=${mat.color}`;
+		if (mat.emissive) line += `  emissive=${mat.emissive}`;
+		if (mat.opacity !== undefined && mat.opacity !== 1) line += `  opacity=${mat.opacity}`;
+		if (mat.transparent) line += "  [transparent]";
+		lines.push(`  ${line}`);
+	}
+	return lines.join("\n");
+}
+
+/**
+ * Format Three.js renderer stats.
+ */
+export function formatStats3D(data: Record<string, unknown>): string {
+	const lines: string[] = [];
+	lines.push("=== Three.js Stats ===");
+	const render = data.render as Record<string, unknown> | undefined;
+	if (render) {
+		if (render.calls !== undefined) lines.push(`Draw calls:  ${render.calls}`);
+		if (render.triangles !== undefined) lines.push(`Triangles:   ${render.triangles}`);
+		if (render.points !== undefined) lines.push(`Points:      ${render.points}`);
+		if (render.lines !== undefined) lines.push(`Lines:       ${render.lines}`);
+	}
+	const memory = data.memory as Record<string, unknown> | undefined;
+	if (memory) {
+		if (memory.geometries !== undefined) lines.push(`Geometries:  ${memory.geometries}`);
+		if (memory.textures !== undefined) lines.push(`Textures:    ${memory.textures}`);
+	}
+	if (data.programs !== undefined) lines.push(`Programs:    ${data.programs}`);
+	return lines.join("\n");
+}

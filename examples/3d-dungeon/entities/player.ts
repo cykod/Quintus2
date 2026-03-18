@@ -11,20 +11,10 @@ import {
 	TRAP_DAMAGE,
 	TURN_DURATION,
 } from "../config.js";
+import { Direction } from "../direction.js";
 import { gameState } from "../state.js";
 import type { DungeonGrid } from "./dungeon-grid.js";
 import type { TurnManager } from "./turn-manager.js";
-
-/**
- * Cardinal directions derived from Three.js conventions.
- * Three.js default forward is -Z, so rotation.y = 0 faces north (-Z).
- *
- * Index: 0 = North, 1 = East, 2 = South, 3 = West
- * Turn right increments index, turn left decrements.
- */
-const DIR_DX = [0, 1, 0, -1]; // grid X delta
-const DIR_DZ = [-1, 0, 1, 0]; // grid Z delta
-const DIR_ANGLE = [0, -Math.PI / 2, Math.PI, Math.PI / 2]; // rotation.y
 
 export class PlayerCharacter extends GLTFModel {
 	override src = "character-human";
@@ -94,7 +84,7 @@ export class PlayerCharacter extends GLTFModel {
 		// Place at grid position
 		const worldPos = this.dungeonGrid.gridToWorld(this.gridX, this.gridZ);
 		this.position.set(worldPos.x, 0, worldPos.z);
-		this.rotation.y = DIR_ANGLE[this._facing];
+		this.rotation.y = Direction.angle[this._facing];
 
 		// Attach sword to the right hand via BoneAttachment.
 		// arm-right bone is at the shoulder; -Y goes toward the hand.
@@ -221,7 +211,7 @@ export class PlayerCharacter extends GLTFModel {
 
 			if (t >= 1) {
 				this._turning = false;
-				this.rotation.y = DIR_ANGLE[this._facing];
+				this.rotation.y = Direction.angle[this._facing];
 				this.turnManager.playerAnimDone();
 			}
 			return;
@@ -274,8 +264,8 @@ export class PlayerCharacter extends GLTFModel {
 	}
 
 	private _startAttack(): void {
-		const targetX = this.gridX + DIR_DX[this._facing];
-		const targetZ = this.gridZ + DIR_DZ[this._facing];
+		const targetX = this.gridX + Direction.dx[this._facing];
+		const targetZ = this.gridZ + Direction.dz[this._facing];
 
 		this.turnManager.commitPlayerAction();
 
@@ -296,7 +286,7 @@ export class PlayerCharacter extends GLTFModel {
 		this.turnManager.commitPlayerAction();
 		this._facing = (this._facing + direction + 4) % 4;
 		this._turnStart = this.rotation.y;
-		this._turnEnd = DIR_ANGLE[this._facing];
+		this._turnEnd = Direction.angle[this._facing];
 
 		// Pick shortest rotation path
 		let delta = this._turnEnd - this._turnStart;
@@ -309,8 +299,8 @@ export class PlayerCharacter extends GLTFModel {
 	}
 
 	private _startMove(forward: number): void {
-		const dx = DIR_DX[this._facing] * forward;
-		const dz = DIR_DZ[this._facing] * forward;
+		const dx = Direction.dx[this._facing] * forward;
+		const dz = Direction.dz[this._facing] * forward;
 
 		const newX = this.gridX + dx;
 		const newZ = this.gridZ + dz;

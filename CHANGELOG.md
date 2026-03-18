@@ -1,3 +1,18 @@
+## Add 3D API improvements from design review
+*Wednesday, March 18th at 6pm*
+Implement all 9 phases from the 3D API review plus footgun fixes F1-F3. Adds 
+ActionQueue for animation orchestration, GLTFModel material/model convenience 
+API (flipModel, cloneMaterials, setEmissive, setOpacity), Camera3D.shake(), 
+FogOverlay3D engine primitive, ParticleEmitter3D.burst() static method, shared 
+Direction constants, GridEntity3D base class, and 5 new qdbg debug commands 
+(transform, camera, lights, material, stats). Fixes Node3D transform accessor 
+lazy-creation trap with cached backing fields, enhances the Node2D-under-Node3D 
+warning, and updates ThreeRenderer.resize() to immediately sync camera aspect. 
+Refactors dungeon entities to use the new shared utilities, reducing ~200 lines 
+of duplication. All 2502 tests pass across 153 test files.
+
+---
+
 ## Add death animation, level transitions, and camera freeze to 3D dungeon
 *Tuesday, March 17th at 5pm*
 Add player death animation using the GLTF die clip, fade-to/from-black scene 

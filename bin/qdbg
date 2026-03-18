@@ -65,6 +65,11 @@ COMMANDS
     physics <name>        Physics state summary for one node
     bones <name|id>       3D bone hierarchy tree with positions
     bone-info <name> <bone>  Detailed info for a specific bone
+    transform <name|id>   3D local/world transform details
+    camera                Active 3D camera info (FOV, aspect, position)
+    lights                List all lights with type, intensity, color
+    material <name|id>    Material info for a node's meshes
+    stats                 Three.js renderer stats (draw calls, triangles)
 
   Scene:
     scene <name>          Switch to a registered scene by name
@@ -696,6 +701,68 @@ cmd_screenshot() {
 	}"
 }
 
+cmd_transform() {
+	local target="${1:?Usage: qdbg transform <name|id>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
+		var result = d.transform('${target}');
+		if (typeof result === 'string') {
+			result = d.transform(Number('${target}'));
+		}
+		if (typeof result === 'string') return result;
+		return f.formatTransform(result);
+	"
+}
+
+cmd_camera() {
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
+		var result = d.camera3d();
+		if (typeof result === 'string') return result;
+		return f.formatCamera3D(result);
+	"
+}
+
+cmd_lights() {
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
+		var result = d.lights();
+		return f.formatLights(result);
+	"
+}
+
+cmd_material() {
+	local target="${1:?Usage: qdbg material <name|id>}"
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
+		var result = d.material('${target}');
+		if (typeof result === 'string') {
+			result = d.material(Number('${target}'));
+		}
+		if (typeof result === 'string') return result;
+		return f.formatMaterial(result);
+	"
+}
+
+cmd_stats() {
+	need_bridge
+	qblock "
+		var d = window.__quintusDebug;
+		var f = window.__quintusFormatters;
+		var result = d.stats3d();
+		if (typeof result === 'string') return result;
+		return f.formatStats3D(result);
+	"
+}
+
 # ── Dispatch ─────────────────────────────────────────────────────────────────
 
 cmd="${1:-}"
@@ -748,6 +815,11 @@ case "$cmd" in
 	mouse-get)    check_playwright_cli; cmd_mouse_get ;;
 	bones)        check_playwright_cli; cmd_bones "$@" ;;
 	bone-info)    check_playwright_cli; cmd_bone_info "$@" ;;
+	transform)    check_playwright_cli; cmd_transform "$@" ;;
+	camera)       check_playwright_cli; cmd_camera ;;
+	lights)       check_playwright_cli; cmd_lights ;;
+	material)     check_playwright_cli; cmd_material "$@" ;;
+	stats)        check_playwright_cli; cmd_stats ;;
 	screenshot)   check_playwright_cli; cmd_screenshot "$@" ;;
 	*)
 		echo "Error: Unknown command '$cmd'" >&2

@@ -91,6 +91,33 @@ export class ParticleEmitter3D extends Node3D {
 		this._simulator.burst(this._resolved, n, 0, 0, this.game.random);
 	}
 
+	/**
+	 * Convenience: create a one-shot particle burst at a position.
+	 * Creates the emitter, adds it to the parent, positions it, and fires a burst.
+	 * The emitter auto-destroys when all particles expire (oneShot behavior).
+	 *
+	 * @param parent Node to add the emitter to
+	 * @param config Particle configuration
+	 * @param position World position for the burst
+	 * @param count Number of particles to emit
+	 * @returns The created emitter (for optional chaining)
+	 */
+	static burst(
+		parent: Node3D,
+		config: ParticleConfig3D,
+		position: { x: number; y: number; z: number },
+		count: number,
+	): ParticleEmitter3D {
+		const emitter = parent.add(ParticleEmitter3D, {
+			config,
+			oneShot: true,
+			emitting: false,
+		});
+		emitter.position.set(position.x, position.y, position.z);
+		emitter.burst(count);
+		return emitter;
+	}
+
 	/** Restart the emitter (kills existing particles, resets accumulator) */
 	restart(): void {
 		this._simulator.pool.reset();

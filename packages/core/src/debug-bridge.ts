@@ -60,6 +60,16 @@ export interface DebugBridge {
 	moveTo(options: MoveToOptions): MoveToResult | string;
 	/** Find nodes near a target node within a radius. */
 	nearby(target: string, radius?: number): NearbyResult | string;
+	/** Get 3D transform details for a Node3D. */
+	transform(nameOrId: string | number): Record<string, unknown> | string;
+	/** Get active 3D camera info. */
+	camera3d(): Record<string, unknown> | string;
+	/** Get all lights in the 3D scene. */
+	lights(): Record<string, unknown>[];
+	/** Get material info for a node's 3D meshes. */
+	material(nameOrId: string | number): Record<string, unknown>[] | string;
+	/** Get Three.js renderer stats (draw calls, triangles, etc.). */
+	stats3d(): Record<string, unknown> | string;
 }
 
 export interface DebugFormatters {
@@ -71,6 +81,11 @@ export interface DebugFormatters {
 	formatTrack: (result: TrackResult) => string;
 	formatJumpAnalysis: (result: JumpAnalysisResult, nodeName: string) => string;
 	formatNearby: (result: NearbyResult) => string;
+	formatTransform: (data: Record<string, unknown>) => string;
+	formatCamera3D: (data: Record<string, unknown>) => string;
+	formatLights: (data: Record<string, unknown>[]) => string;
+	formatMaterial: (data: Record<string, unknown>[]) => string;
+	formatStats3D: (data: Record<string, unknown>) => string;
 }
 
 declare global {
@@ -434,6 +449,149 @@ export function installDebugBridge(game: Game): DebugBridge {
 			};
 		},
 
+		transform(nameOrId: string | number): Record<string, unknown> | string {
+			const scene = game.currentScene;
+			if (!scene) return "No scene";
+			const node =
+				typeof nameOrId === "number"
+					? findNodeById(scene, nameOrId)
+					: findNodeByName(scene, nameOrId);
+			if (!node) return `Node not found: ${nameOrId}`;
+			const snap = node.serialize() as Snap;
+			const p = _snapPos(snap);
+			if (!p) return `Node has no position: ${nameOrId}`;
+			const result: Record<string, unknown> = {
+				name: snap.name,
+				type: snap.type,
+				position: snap.position,
+			};
+			if (snap.rotation) result.rotation = snap.rotation;
+			if (snap.scale) result.scale = snap.scale;
+			if (snap.quaternion) result.quaternion = snap.quaternion;
+			if (snap.visible !== undefined) result.visible = snap.visible;
+
+			// Try to get world position via object3d if available
+			const n3d = node as unknown as {
+				object3d?: {
+					getWorldPosition?: (v: { x: number; y: number; z: number }) => void;
+				};
+			};
+			if (n3d.object3d?.getWorldPosition) {
+				const wp = { x: 0, y: 0, z: 0 };
+				n3d.object3d.getWorldPosition(wp as unknown as { x: number; y: number; z: number });
+				result.worldPosition = wp;
+			}
+			return result;
+		},
+
+		camera3d(): Record<string, unknown> | string {
+			// Try to find via ThreeContext
+			const gameAny = game as unknown as Record<string, unknown>;
+			const threeCtx = gameAny.three as
+				| { activeCamera: unknown; webglRenderer?: unknown }
+				| undefined;
+			if (!threeCtx) return "ThreePlugin not installed";
+			const cam = threeCtx.activeCamera as Record<string, unknown> | null;
+			if (!cam) return "No active 3D camera";
+			const result: Record<string, unknown> = { type: "Camera3D" };
+			if (cam.fov !== undefined) result.fov = cam.fov;
+			if (cam.aspect !== undefined) result.aspect = cam.aspect;
+			if (cam.near !== undefined) result.near = cam.near;
+			if (cam.far !== undefined) result.far = cam.far;
+			const pos = cam.position as { x: number; y: number; z: number } | undefined;
+			if (pos) result.position = { x: pos.x, y: pos.y, z: pos.z };
+			const rot = cam.rotation as { x: number; y: number; z: number } | undefined;
+			if (rot) result.rotation = { x: rot.x, y: rot.y, z: rot.z };
+			return result;
+		},
+
+		lights(): Record<string, unknown>[] {
+			const scene = game.currentScene;
+			if (!scene) return [];
+			const results: Record<string, unknown>[] = [];
+			function walkLights(n: Node): void {
+				const snap = n.serialize() as Snap;
+				const type = snap.type as string;
+				if (
+					type.includes("Light") ||
+					type === "AmbientLight" ||
+					type === "DirectionalLight" ||
+					type === "PointLight"
+				) {
+					const entry: Record<string, unknown> = { name: snap.name, type };
+					const p = _snapPos(snap);
+					if (p) entry.position = p;
+					const n3d = n as unknown as {
+						object3d?: { intensity?: number; color?: { r: number; g: number; b: number } };
+					};
+					if (n3d.object3d?.intensity !== undefined) entry.intensity = n3d.object3d.intensity;
+					if (n3d.object3d?.color) {
+						const c = n3d.object3d.color;
+						entry.color = `rgb(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)})`;
+					}
+					results.push(entry);
+				}
+				for (const child of n.children) walkLights(child);
+			}
+			walkLights(scene);
+			return results;
+		},
+
+		material(nameOrId: string | number): Record<string, unknown>[] | string {
+			const scene = game.currentScene;
+			if (!scene) return "No scene";
+			const node =
+				typeof nameOrId === "number"
+					? findNodeById(scene, nameOrId)
+					: findNodeByName(scene, nameOrId);
+			if (!node) return `Node not found: ${nameOrId}`;
+			const n3d = node as unknown as {
+				object3d?: { traverse?: (fn: (obj: unknown) => void) => void };
+			};
+			if (!n3d.object3d?.traverse) return `Node has no object3d: ${nameOrId}`;
+			const mats: Record<string, unknown>[] = [];
+			n3d.object3d.traverse((obj: unknown) => {
+				const mesh = obj as {
+					material?: {
+						type?: string;
+						color?: { r: number; g: number; b: number };
+						opacity?: number;
+						transparent?: boolean;
+						emissive?: { r: number; g: number; b: number };
+					};
+				};
+				if (mesh.material) {
+					const m = mesh.material;
+					const entry: Record<string, unknown> = {};
+					if (m.type) entry.type = m.type;
+					if (m.color)
+						entry.color = `rgb(${Math.round(m.color.r * 255)},${Math.round(m.color.g * 255)},${Math.round(m.color.b * 255)})`;
+					if (m.opacity !== undefined) entry.opacity = m.opacity;
+					if (m.transparent !== undefined) entry.transparent = m.transparent;
+					if (m.emissive)
+						entry.emissive = `rgb(${Math.round(m.emissive.r * 255)},${Math.round(m.emissive.g * 255)},${Math.round(m.emissive.b * 255)})`;
+					mats.push(entry);
+				}
+			});
+			return mats;
+		},
+
+		stats3d(): Record<string, unknown> | string {
+			const gameAny = game as unknown as Record<string, unknown>;
+			const threeCtx = gameAny.three as
+				| {
+						webglRenderer?: { info?: { render?: unknown; memory?: unknown; programs?: unknown[] } };
+				  }
+				| undefined;
+			if (!threeCtx?.webglRenderer?.info) return "ThreePlugin not installed or no renderer info";
+			const info = threeCtx.webglRenderer.info;
+			return {
+				render: info.render ?? {},
+				memory: info.memory ?? {},
+				programs: info.programs?.length ?? 0,
+			};
+		},
+
 		nearby(target: string, radius = 100): NearbyResult | string {
 			const snap = bridge.inspect(target) as (NodeSnapshot & Record<string, unknown>) | null;
 			if (!snap) return `Node not found: ${target}`;
@@ -519,6 +677,11 @@ export function installDebugBridge(game: Game): DebugBridge {
 			formatTrack: _formatTrack,
 			formatJumpAnalysis: _formatJumpAnalysis,
 			formatNearby: _formatNearby,
+			formatTransform: _formatTransform,
+			formatCamera3D: _formatCamera3D,
+			formatLights: _formatLights,
+			formatMaterial: _formatMaterial,
+			formatStats3D: _formatStats3D,
 		};
 		// Expose game for debugging (debug mode only)
 		(window as unknown as Record<string, unknown>).__quintusGame = game;
@@ -803,4 +966,93 @@ function _formatNearby(result: NearbyResult): string {
 	const header = `Nearby ${result.targetName} ${result.targetPos} within ${result.radius}:`;
 	const lines = result.nodes.map((n) => `  ${n.line}`);
 	return `${header}\n${lines.join("\n")}`;
+}
+
+function _formatTransform(data: Record<string, unknown>): string {
+	const lines: string[] = [];
+	lines.push(`Node: ${data.type} "${data.name}"`);
+	const p = data.position as { x: number; y: number; z: number } | undefined;
+	if (p) lines.push(`Position:  (${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`);
+	const wp = data.worldPosition as { x: number; y: number; z: number } | undefined;
+	if (wp) lines.push(`World:     (${wp.x.toFixed(2)}, ${wp.y.toFixed(2)}, ${wp.z.toFixed(2)})`);
+	const r = data.rotation as { x: number; y: number; z: number; order?: string } | undefined;
+	if (r) {
+		lines.push(
+			`Rotation:  (${((r.x * 180) / Math.PI).toFixed(1)}, ${((r.y * 180) / Math.PI).toFixed(1)}, ${((r.z * 180) / Math.PI).toFixed(1)}) deg${r.order ? ` ${r.order}` : ""}`,
+		);
+	}
+	const s = data.scale as { x: number; y: number; z: number } | undefined;
+	if (s) lines.push(`Scale:     (${s.x.toFixed(2)}, ${s.y.toFixed(2)}, ${s.z.toFixed(2)})`);
+	if (data.visible === false) lines.push("Visible:   false");
+	return lines.join("\n");
+}
+
+function _formatCamera3D(data: Record<string, unknown>): string {
+	if (typeof data === "string") return data as string;
+	const lines: string[] = [];
+	lines.push("=== 3D Camera ===");
+	if (data.fov !== undefined) lines.push(`FOV:       ${data.fov}`);
+	if (data.aspect !== undefined) lines.push(`Aspect:    ${(data.aspect as number).toFixed(3)}`);
+	if (data.near !== undefined) lines.push(`Near:      ${data.near}`);
+	if (data.far !== undefined) lines.push(`Far:       ${data.far}`);
+	const p = data.position as { x: number; y: number; z: number } | undefined;
+	if (p) lines.push(`Position:  (${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`);
+	const r = data.rotation as { x: number; y: number; z: number } | undefined;
+	if (r) {
+		lines.push(
+			`Rotation:  (${((r.x * 180) / Math.PI).toFixed(1)}, ${((r.y * 180) / Math.PI).toFixed(1)}, ${((r.z * 180) / Math.PI).toFixed(1)}) deg`,
+		);
+	}
+	return lines.join("\n");
+}
+
+function _formatLights(data: Record<string, unknown>[]): string {
+	if (data.length === 0) return "(no lights found)";
+	const lines: string[] = [];
+	lines.push(`=== ${data.length} Light(s) ===`);
+	for (const light of data) {
+		let line = `${light.type}`;
+		if (light.name && light.name !== light.type) line += ` "${light.name}"`;
+		if (light.intensity !== undefined) line += `  intensity=${light.intensity}`;
+		if (light.color) line += `  color=${light.color}`;
+		const p = light.position as { x: number; y: number; z: number } | undefined;
+		if (p) line += `  pos=(${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)})`;
+		lines.push(`  ${line}`);
+	}
+	return lines.join("\n");
+}
+
+function _formatMaterial(data: Record<string, unknown>[]): string {
+	if (data.length === 0) return "(no materials found)";
+	const lines: string[] = [];
+	lines.push(`=== ${data.length} Material(s) ===`);
+	for (const mat of data) {
+		let line = mat.type ? String(mat.type) : "Material";
+		if (mat.color) line += `  color=${mat.color}`;
+		if (mat.emissive) line += `  emissive=${mat.emissive}`;
+		if (mat.opacity !== undefined && mat.opacity !== 1) line += `  opacity=${mat.opacity}`;
+		if (mat.transparent) line += "  [transparent]";
+		lines.push(`  ${line}`);
+	}
+	return lines.join("\n");
+}
+
+function _formatStats3D(data: Record<string, unknown>): string {
+	if (typeof data === "string") return data as string;
+	const lines: string[] = [];
+	lines.push("=== Three.js Stats ===");
+	const render = data.render as Record<string, unknown> | undefined;
+	if (render) {
+		if (render.calls !== undefined) lines.push(`Draw calls:  ${render.calls}`);
+		if (render.triangles !== undefined) lines.push(`Triangles:   ${render.triangles}`);
+		if (render.points !== undefined) lines.push(`Points:      ${render.points}`);
+		if (render.lines !== undefined) lines.push(`Lines:       ${render.lines}`);
+	}
+	const memory = data.memory as Record<string, unknown> | undefined;
+	if (memory) {
+		if (memory.geometries !== undefined) lines.push(`Geometries:  ${memory.geometries}`);
+		if (memory.textures !== undefined) lines.push(`Textures:    ${memory.textures}`);
+	}
+	if (data.programs !== undefined) lines.push(`Programs:    ${data.programs}`);
+	return lines.join("\n");
 }

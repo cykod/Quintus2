@@ -37,7 +37,11 @@ function buildWallGrid(lines: string[]): boolean[][] {
 	return lines.map((line) => line.split("").map((ch) => ch === "#"));
 }
 
-type FogMesh = { visible: boolean; material: { opacity: number }; position: { x: number; z: number } };
+type FogMesh = {
+	visible: boolean;
+	material: { opacity: number };
+	position: { x: number; z: number };
+};
 
 describe("FogOfWar", () => {
 	beforeEach(() => {
@@ -225,8 +229,9 @@ describe("FogOfWar", () => {
 		expect(meshOld.material.opacity).toBe(FOG_VISITED_OPACITY);
 	});
 
-	it("wall tiles have no fog mesh", async () => {
-		const level = ["###", "#.#", "###"];
+	it("edge walls have no fog, interior walls do", async () => {
+		// 5x5 grid: edge ring is all walls, interior has a wall at (2,2)
+		const level = ["#####", "#...#", "#.#.#", "#...#", "#####"];
 		const wallGrid = buildWallGrid(level);
 		let fog!: FogOfWar;
 
@@ -249,9 +254,11 @@ describe("FogOfWar", () => {
 			beforeRun: () => resetState(),
 		});
 
-		// Only 1 non-wall tile (1,1), so only 1 fog mesh
-		expect(fog.object3d.children.length).toBe(1);
-		expect(fog.object3d.children[0].position.x).toBe(1);
-		expect(fog.object3d.children[0].position.z).toBe(1);
+		// 5x5 = 25 tiles. 16 edge tiles skipped. 9 interior tiles get fog (including wall at 2,2).
+		expect(fog.object3d.children.length).toBe(9);
+
+		// Interior wall at (2,2) should have a fog mesh
+		const wallMesh = fog.object3d.children.find((c) => c.position.x === 2 && c.position.z === 2);
+		expect(wallMesh).toBeDefined();
 	});
 });

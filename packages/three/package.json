@@ -9,7 +9,8 @@
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
 		},
-		"./__test-utils__/three-mock.js": "./src/__test-utils__/three-mock.ts"
+		"./__test-utils__/three-mock.js": "./src/__test-utils__/three-mock.ts",
+		"./test-utils": "./src/__test-utils__/index.ts"
 	},
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",

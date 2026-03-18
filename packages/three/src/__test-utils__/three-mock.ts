@@ -194,6 +194,19 @@ export class Color {
 			this.b = 0;
 		}
 	}
+	clone(): Color {
+		const c = new Color();
+		c.r = this.r;
+		c.g = this.g;
+		c.b = this.b;
+		return c;
+	}
+	copy(other: Color): Color {
+		this.r = other.r;
+		this.g = other.g;
+		this.b = other.b;
+		return this;
+	}
 }
 
 class MockShadow {
@@ -303,9 +316,34 @@ export class Material {
 
 export class MeshStandardMaterial extends Material {
 	color: Color;
-	constructor(params?: { color?: number }) {
+	emissive: Color;
+	transparent: boolean;
+	opacity: number;
+	constructor(params?: {
+		color?: number;
+		emissive?: number;
+		transparent?: boolean;
+		opacity?: number;
+	}) {
 		super();
 		this.color = new Color(params?.color ?? 0xffffff);
+		this.emissive = new Color(params?.emissive ?? 0x000000);
+		this.transparent = params?.transparent ?? false;
+		this.opacity = params?.opacity ?? 1;
+	}
+	clone(): MeshStandardMaterial {
+		const c = new MeshStandardMaterial();
+		c.color = new Color();
+		c.color.r = this.color.r;
+		c.color.g = this.color.g;
+		c.color.b = this.color.b;
+		c.emissive = new Color();
+		c.emissive.r = this.emissive.r;
+		c.emissive.g = this.emissive.g;
+		c.emissive.b = this.emissive.b;
+		c.transparent = this.transparent;
+		c.opacity = this.opacity;
+		return c;
 	}
 }
 
@@ -608,6 +646,7 @@ export class Matrix4 {
 export class InstancedMesh extends Mesh {
 	count: number;
 	instanceMatrix: { needsUpdate: boolean; array: Float32Array };
+	instanceColor: { needsUpdate: boolean; array: Float32Array } | null = null;
 	private _matrices: Matrix4[] = [];
 
 	constructor(geometry?: BufferGeometry, material?: Material, count = 0) {
@@ -630,6 +669,19 @@ export class InstancedMesh extends Mesh {
 		for (let i = 0; i < 16; i++) {
 			matrix.elements[i] = this.instanceMatrix.array[offset + i];
 		}
+	}
+
+	setColorAt(index: number, color: Color): void {
+		if (!this.instanceColor) {
+			this.instanceColor = {
+				needsUpdate: false,
+				array: new Float32Array(this.count * 3),
+			};
+		}
+		const offset = index * 3;
+		this.instanceColor.array[offset] = color.r;
+		this.instanceColor.array[offset + 1] = color.g;
+		this.instanceColor.array[offset + 2] = color.b;
 	}
 }
 

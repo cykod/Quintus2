@@ -2,13 +2,8 @@ import { signal } from "@quintus/core";
 import { GLTFModel } from "@quintus/three";
 import * as THREE from "three";
 import { ENEMY_ATTACK_DURATION, ENEMY_HEALTH, ENEMY_MOVE_DURATION } from "../config.js";
+import { Direction } from "../direction.js";
 import type { DungeonGrid } from "./dungeon-grid.js";
-
-/** Cardinal direction deltas: 0=North, 1=East, 2=South, 3=West. */
-const DIR_DX = [0, 1, 0, -1];
-const DIR_DZ = [-1, 0, 1, 0];
-/** Rotation angles matching direction indices (same as player). */
-const DIR_ANGLE = [0, -Math.PI / 2, Math.PI, Math.PI / 2];
 
 export type EnemyAction =
 	| { type: "idle" }
@@ -57,7 +52,7 @@ export class Enemy extends GLTFModel {
 		// Place at grid position, face south by default
 		const worldPos = this.dungeonGrid.gridToWorld(this.gridX, this.gridZ);
 		this.position.set(worldPos.x, 0, worldPos.z);
-		this.rotation.y = DIR_ANGLE[2]; // south
+		this.rotation.y = Direction.angle[2]; // south
 
 		this._tryPlay("idle");
 	}
@@ -244,8 +239,8 @@ export class Enemy extends GLTFModel {
 		const dx = targetX - this.gridX;
 		const dz = targetZ - this.gridZ;
 		for (let i = 0; i < 4; i++) {
-			if (DIR_DX[i] === dx && DIR_DZ[i] === dz) {
-				this.rotation.y = DIR_ANGLE[i];
+			if (Direction.dx[i] === dx && Direction.dz[i] === dz) {
+				this.rotation.y = Direction.angle[i];
 				return;
 			}
 		}
@@ -263,8 +258,8 @@ export class Enemy extends GLTFModel {
 		let bestDist = currentDist;
 
 		for (let dir = 0; dir < 4; dir++) {
-			const nx = this.gridX + DIR_DX[dir];
-			const nz = this.gridZ + DIR_DZ[dir];
+			const nx = this.gridX + Direction.dx[dir];
+			const nz = this.gridZ + Direction.dz[dir];
 			if (!this.dungeonGrid.isWalkableAndFree(nx, nz)) continue;
 
 			const dist = Math.abs(playerX - nx) + Math.abs(playerZ - nz);

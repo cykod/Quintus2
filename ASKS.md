@@ -768,3 +768,19 @@
 [MILE] mon 3/16 10pm - Added dungeon polish phases 1-9: camera shake, blood/coin/dust/heal particles, enemy death animation, damage flash overlay, enemy hit stagger, health potions, footstep dust, and wall-mounted torches
 
 [IMPL] mon 3/16 10pm - Implement Phase 10 fog of war for 3D dungeon
+
+[MILE] mon 3/16 11pm - Added fog of war with opaque cubes to 3D dungeon, covering Phase 10 of dungeon polish
+
+[IMPL] mon 3/16 11pm - Implement Phase 11 (player death animation) and Phase 12 (level transition effect) from dungeon polish design, using real animations instead of shrink
+
+[IMPL] tue 3/17 12am - Fix 3D dungeon rotation wrapping back the other way when continuously turning in one direction
+
+[DSGN] tue 3/17 1am - Design 3D API review: identify pain points, footguns, and missing tooling in quintus/three and 3d-dungeon example
+
+[MILE] tue 3/17 5pm - Added death animation, level transitions, camera freeze API, and fixed 8 pre-existing test failures in 3D dungeon
+
+[DEVL] tue 3/17 6pm - Review 3D_REVIEW.md for potential issues and risks
+
+[IMPL] tue 3/17 9pm - Implement 3D API review phases 1-10 and footguns from steering/3D_REVIEW.md
+
+[IMPL] wed 3/18 12am - Implement 3D API review: phases 1-10 and footguns F1-F8 from steering/3D_REVIEW.md

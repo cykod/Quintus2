@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("three", () => import("@quintus/three/__test-utils__/three-mock.js"));
 
+import { Node3D } from "@quintus/three";
 import { ParticleEmitter3D } from "./particle-emitter-3d.js";
 
 // Minimal game mock with random and input
@@ -108,6 +109,31 @@ describe("ParticleEmitter3D", () => {
 
 		expect(finishedSpy).toHaveBeenCalled();
 		expect(destroySpy).toHaveBeenCalled();
+	});
+
+	it("static burst() creates one-shot emitter at position", () => {
+		const parent = new Node3D();
+		const mg = mockGame();
+
+		// Patch add() so the child emitter gets a game mock
+		const realAdd = parent.add.bind(parent);
+		(parent as unknown as Record<string, unknown>).add = (Ctor: unknown, props: unknown) => {
+			const child = realAdd(Ctor as new () => ParticleEmitter3D, props as Record<string, unknown>);
+			Object.defineProperty(child, "game", {
+				get: () => mg,
+				configurable: true,
+			});
+			return child;
+		};
+
+		const emitter = ParticleEmitter3D.burst(parent, { maxParticles: 10 }, { x: 3, y: 4, z: 5 }, 5);
+
+		expect(emitter).toBeInstanceOf(ParticleEmitter3D);
+		expect(emitter.oneShot).toBe(true);
+		expect(emitter.emitting).toBe(false);
+		expect(emitter.position.x).toBe(3);
+		expect(emitter.position.y).toBe(4);
+		expect(emitter.position.z).toBe(5);
 	});
 
 	it("uses ShaderMaterial with transparent and depthWrite settings", () => {

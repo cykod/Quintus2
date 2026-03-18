@@ -77,44 +77,20 @@ export const HEAL_BURST_CONFIG: ParticleConfig3D = {
 
 /** Spawn a blood burst at a world position, auto-destroys. */
 export function spawnBloodBurst(parent: Node3D, x: number, y: number, z: number): void {
-	const emitter = parent.add(ParticleEmitter3D, {
-		config: BLOOD_BURST_CONFIG,
-		oneShot: true,
-		emitting: false,
-	});
-	emitter.position.set(x, y, z);
-	emitter.burst(20);
+	ParticleEmitter3D.burst(parent, BLOOD_BURST_CONFIG, { x, y, z }, 20);
 }
 
 /** Spawn a gold coin burst at a world position, auto-destroys. */
 export function spawnCoinBurst(parent: Node3D, x: number, y: number, z: number): void {
-	const emitter = parent.add(ParticleEmitter3D, {
-		config: COIN_BURST_CONFIG,
-		oneShot: true,
-		emitting: false,
-	});
-	emitter.position.set(x, y, z);
-	emitter.burst(30);
+	ParticleEmitter3D.burst(parent, COIN_BURST_CONFIG, { x, y, z }, 30);
 }
 
 /** Spawn a dust puff at a world position, auto-destroys. */
 export function spawnDustPuff(parent: Node3D, x: number, y: number, z: number): void {
-	const emitter = parent.add(ParticleEmitter3D, {
-		config: DUST_PUFF_CONFIG,
-		oneShot: true,
-		emitting: false,
-	});
-	emitter.position.set(x, y, z);
-	emitter.burst(8);
+	ParticleEmitter3D.burst(parent, DUST_PUFF_CONFIG, { x, y, z }, 8);
 }
 
 /** Spawn a green heal burst at a world position, auto-destroys. */
 export function spawnHealBurst(parent: Node3D, x: number, y: number, z: number): void {
-	const emitter = parent.add(ParticleEmitter3D, {
-		config: HEAL_BURST_CONFIG,
-		oneShot: true,
-		emitting: false,
-	});
-	emitter.position.set(x, y, z);
-	emitter.burst(20);
+	ParticleEmitter3D.burst(parent, HEAL_BURST_CONFIG, { x, y, z }, 20);
 }

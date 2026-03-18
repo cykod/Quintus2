@@ -129,6 +129,29 @@ describe("Node3D", () => {
 		expect(node).toBeInstanceOf(Node);
 	});
 
+	it("position does not trigger object3d creation before first access", () => {
+		const node = new Node3D();
+		// Setting position before object3d is accessed should work via cached backing field
+		node.position.set(5, 6, 7);
+		// Now force object3d creation via serialize
+		const snap = node.serialize();
+		expect(snap.position).toEqual({ x: 5, y: 6, z: 7 });
+	});
+
+	it("rotation does not trigger object3d creation before first access", () => {
+		const node = new Node3D();
+		node.rotation.y = 1.5;
+		const snap = node.serialize();
+		expect(snap.rotation.y).toBe(1.5);
+	});
+
+	it("scale caches before object3d creation", () => {
+		const node = new Node3D();
+		node.scale.set(2, 3, 4);
+		const snap = node.serialize();
+		expect(snap.scale).toEqual({ x: 2, y: 3, z: 4 });
+	});
+
 	it("freezeWorldTransform sets _worldFreeze flag", () => {
 		const parent = new Node3D();
 		parent.position.set(10, 0, 5);

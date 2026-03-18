@@ -1,14 +1,11 @@
-import { GLTFModel, Node3D } from "@quintus/three";
-import { TILE_SIZE } from "../config.js";
+import { GLTFModel } from "@quintus/three";
+import { GridEntity3D } from "./grid-entity.js";
 
-export class HealthPotion extends Node3D {
-	gridX = 0;
-	gridZ = 0;
+export class HealthPotion extends GridEntity3D {
 	private _elapsed = 0;
 
 	override onReady(): void {
 		this.add(GLTFModel, { src: "barrel", castShadow: true });
-		this.position.set(this.gridX * TILE_SIZE, 0.0, this.gridZ * TILE_SIZE);
 		this.scale.set(0.7, 0.7, 0.7);
 	}
 

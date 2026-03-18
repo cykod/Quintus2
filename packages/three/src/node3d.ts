@@ -32,6 +32,24 @@ export class Node3D extends Node {
 			this._object3d = this._createObject3D();
 			this._object3d.userData.quintusNodeId = this.id;
 			this._object3d.visible = this._visible;
+			// Sync cached transform values into the new object3d (only if modified from defaults,
+			// so subclass _createObject3D() overrides are preserved)
+			const p = this._position;
+			if (p.x !== 0 || p.y !== 0 || p.z !== 0) {
+				this._object3d.position.copy(p);
+			}
+			const r = this._rotation;
+			if (r.x !== 0 || r.y !== 0 || r.z !== 0) {
+				this._object3d.rotation.set(r.x, r.y, r.z, r.order);
+			}
+			const q = this._quaternion;
+			if (q.x !== 0 || q.y !== 0 || q.z !== 0 || q.w !== 1) {
+				this._object3d.quaternion.copy(q);
+			}
+			const s = this._scale;
+			if (s.x !== 1 || s.y !== 1 || s.z !== 1) {
+				this._object3d.scale.copy(s);
+			}
 		}
 		return this._object3d;
 	}
@@ -62,20 +80,25 @@ export class Node3D extends Node {
 
 	// === Transform Accessors ===
 
+	private _position = new THREE.Vector3();
+	private _rotation = new THREE.Euler();
+	private _quaternion = new THREE.Quaternion();
+	private _scale = new THREE.Vector3(1, 1, 1);
+
 	get position(): THREE.Vector3 {
-		return this.object3d.position;
+		return this._object3d ? this._object3d.position : this._position;
 	}
 
 	get rotation(): THREE.Euler {
-		return this.object3d.rotation;
+		return this._object3d ? this._object3d.rotation : this._rotation;
 	}
 
 	get quaternion(): THREE.Quaternion {
-		return this.object3d.quaternion;
+		return this._object3d ? this._object3d.quaternion : this._quaternion;
 	}
 
 	get scale(): THREE.Vector3 {
-		return this.object3d.scale;
+		return this._object3d ? this._object3d.scale : this._scale;
 	}
 
 	/** Look at a world position. */
@@ -109,9 +132,10 @@ export class Node3D extends Node {
 		for (const child of this.children) {
 			if (child instanceof Node2D) {
 				console.warn(
-					`Node2D "${child.name || child.constructor.name}" is a child of Node3D ` +
-						`"${this.name || this.constructor.name}". Node2D cannot render under Node3D. ` +
-						`Use Billboard for in-world 2D content.`,
+					`[Quintus] Node2D "${child.name || child.constructor.name}" is a child of Node3D ` +
+						`"${this.name || this.constructor.name}". Node2D nodes cannot render under a Node3D parent. ` +
+						`Move it under a Node3D parent using Billboard for in-world 2D content, ` +
+						`or set renderFixed=true for HUD/overlay elements.`,
 				);
 			}
 		}

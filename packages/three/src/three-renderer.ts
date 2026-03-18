@@ -49,6 +49,12 @@ export class ThreeRenderer implements Renderer {
 			this.overlayCanvas.width = width;
 			this.overlayCanvas.height = height;
 		}
+		// Update active camera aspect ratio immediately on resize
+		if (this.ctx.activeCamera && "aspect" in this.ctx.activeCamera) {
+			const cam = this.ctx.activeCamera as THREE.PerspectiveCamera;
+			cam.aspect = width / height;
+			cam.updateProjectionMatrix();
+		}
 	}
 
 	dispose(): void {

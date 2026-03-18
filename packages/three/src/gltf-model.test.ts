@@ -9,11 +9,8 @@ vi.mock("three/addons/loaders/GLTFLoader.js", () => ({
 	},
 }));
 vi.mock("three/addons/utils/SkeletonUtils.js", () => ({
-	clone: (_scene: unknown) => {
-		// Return a mock clone (simple Object3D-like)
-		const THREE = require("three");
-		const cloned = new THREE.Object3D();
-		return cloned;
+	clone: (scene: unknown) => {
+		return scene; // Return the original scene for testing
 	},
 }));
 
@@ -177,5 +174,150 @@ describe("GLTFModel", () => {
 
 		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
 		expect(model.loaded).toBe(true);
+	});
+
+	it("applies flipModel rotation", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		const mockGltf = {
+			scene: new THREE.Object3D(),
+			animations: [],
+		};
+		game.assets._storeCustom("char", mockGltf);
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel, { src: "char", flipModel: true });
+			}
+		}
+		game.start(TestScene);
+
+		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
+		expect(model.modelRotation).toBe(Math.PI);
+	});
+
+	it("applies custom modelRotation", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		const mockGltf = {
+			scene: new THREE.Object3D(),
+			animations: [],
+		};
+		game.assets._storeCustom("char", mockGltf);
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel, { src: "char", modelRotation: Math.PI / 2 });
+			}
+		}
+		game.start(TestScene);
+
+		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
+		expect(model.modelRotation).toBe(Math.PI / 2);
+	});
+
+	it("getMaterials returns empty for unloaded model", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel);
+			}
+		}
+		game.start(TestScene);
+
+		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
+		expect(model.getMaterials()).toEqual([]);
+	});
+
+	it("cloneMaterials is idempotent", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		const mockGltf = {
+			scene: new THREE.Object3D(),
+			animations: [],
+		};
+		game.assets._storeCustom("char", mockGltf);
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel, { src: "char" });
+			}
+		}
+		game.start(TestScene);
+
+		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
+		// Should not throw when called multiple times
+		model.cloneMaterials();
+		model.cloneMaterials();
+	});
+
+	it("setEmissive and resetEmissive work", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		// Create a scene with a mesh that has MeshStandardMaterial
+		const meshScene = new THREE.Object3D();
+		const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+		const mesh = new THREE.Mesh(new THREE.BoxGeometry(), mat);
+		meshScene.add(mesh);
+
+		const mockGltf = { scene: meshScene, animations: [] };
+		game.assets._storeCustom("char", mockGltf);
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel, { src: "char" });
+			}
+		}
+		game.start(TestScene);
+
+		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
+
+		const mats = model.getMaterials();
+		expect(mats.length).toBeGreaterThan(0);
+
+		// setEmissive should auto-clone and set
+		model.setEmissive({ r: 1, g: 0, b: 0 });
+		// Materials were cloned so we need to re-get
+		const matsAfter = model.getMaterials();
+		const stdAfter = matsAfter[0] as unknown as { emissive: { r: number; g: number; b: number } };
+		expect(stdAfter.emissive.r).toBe(1);
+
+		// resetEmissive
+		model.resetEmissive();
+		expect(stdAfter.emissive.r).toBe(0);
+	});
+
+	it("setOpacity sets transparent flag", () => {
+		const game = new Game({ width: 800, height: 600, renderer: null });
+		game.use(ThreePlugin());
+
+		const meshScene = new THREE.Object3D();
+		const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+		const mesh = new THREE.Mesh(new THREE.BoxGeometry(), mat);
+		meshScene.add(mesh);
+
+		const mockGltf = { scene: meshScene, animations: [] };
+		game.assets._storeCustom("char", mockGltf);
+
+		class TestScene extends Scene {
+			onReady() {
+				this.add(GLTFModel, { src: "char" });
+			}
+		}
+		game.start(TestScene);
+
+		const model = game.currentScene!.children.find((c) => c instanceof GLTFModel) as GLTFModel;
+		model.setOpacity(0.5);
+
+		const mats = model.getMaterials();
+		const stdMat = mats[0] as unknown as { opacity: number; transparent: boolean };
+		expect(stdMat.opacity).toBe(0.5);
+		expect(stdMat.transparent).toBe(true);
 	});
 });

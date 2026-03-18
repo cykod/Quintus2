@@ -1,6 +1,14 @@
+export {
+	ActionQueue,
+	ActionQueueBuilder,
+	type EasingFn,
+	easeInOutQuad,
+	linear,
+} from "./action-queue.js";
 export { Billboard } from "./billboard.js";
 export { BoneAttachment } from "./bone-attachment.js";
 export { Camera3D } from "./camera3d.js";
+export { FogOverlay3D } from "./fog-overlay.js";
 export { GLTFModel } from "./gltf-model.js";
 export { AmbientLight, DirectionalLight, PointLight } from "./lights.js";
 export { MeshNode } from "./mesh-node.js";
