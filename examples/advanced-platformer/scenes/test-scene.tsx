@@ -17,8 +17,7 @@ export class Level1Scene extends BaseLevelScene {
 
 	protected override readonly bgSkyTexture = "bg_solid_sky";
 	protected override readonly bgCloudsTexture = "bg_clouds";
-	protected override readonly bgFarTexture = "bg_fade_hills";
-	protected override readonly bgNearTexture = "bg_color_hills";
+	protected override readonly bgHillsTexture = "bg_color_hills";
 
 	protected override _spawnEnemiesFromTiles(): void {
 		super._spawnEnemiesFromTiles();

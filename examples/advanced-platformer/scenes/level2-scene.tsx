@@ -1,4 +1,4 @@
-import { Vec2 } from "@quintus/math";
+import { Color, Vec2 } from "@quintus/math";
 import { MovingPlatform } from "../entities/moving-platform.js";
 import { BaseLevelScene } from "./base-level-scene.js";
 
@@ -14,8 +14,8 @@ export class Level2Scene extends BaseLevelScene {
 
 	protected override readonly bgSkyTexture = "bg_solid_sand";
 	protected override readonly bgCloudsTexture = "bg_clouds";
-	protected override readonly bgFarTexture = "bg_fade_desert";
-	protected override readonly bgNearTexture = "bg_color_desert";
+	protected override readonly bgHillsTexture = "bg_color_desert";
+	protected override readonly bgFillBelowColor = Color.fromHex("#f3c7a5");
 
 	protected override _spawnEnemiesFromTiles(): void {
 		super._spawnEnemiesFromTiles();

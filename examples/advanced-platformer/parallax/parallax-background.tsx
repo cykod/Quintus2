@@ -1,6 +1,6 @@
 import { Camera } from "@quintus/camera";
 import { type DrawContext, Node2D } from "@quintus/core";
-import { Vec2 } from "@quintus/math";
+import { type Color, Vec2 } from "@quintus/math";
 
 /**
  * Container node that groups parallax layers. Has no visual output itself.
@@ -35,9 +35,12 @@ export class ParallaxLayer extends Node2D {
 	tileY = false;
 	/** Screen-space Y position of the strip top at game start. */
 	screenY = 0;
+	/** If set, fills from the bottom of the tile strip to the bottom of the screen. */
+	fillBelow: Color | null = null;
 
 	private _camera: Camera | null = null;
 	private _refCamY: number | null = null;
+	private _drawCount = 0;
 
 	override onReady(): void {
 		this.renderFixed = true;
@@ -57,17 +60,19 @@ export class ParallaxLayer extends Node2D {
 		const screenW = game.width;
 		const screenH = game.height;
 
-		// Capture reference camera Y on first draw for relative parallax
-		if (this._refCamY === null) {
+		// Capture reference camera Y after a few frames so camera smoothing settles
+		this._drawCount++;
+		if (this._refCamY === null && this._drawCount > 5) {
 			this._refCamY = cam.position.y;
 		}
 
 		// Horizontal parallax: layer scrolls opposite to camera
 		const scrollX = -(cam.position.x * this.scrollFactor);
 
-		// Vertical parallax: relative to initial camera position
-		const deltaY = cam.position.y - this._refCamY;
-		const scrollY = -(deltaY * this.scrollFactor);
+		// Vertical parallax: relative to settled camera position
+		const scrollY = this._refCamY !== null
+			? -(( cam.position.y - this._refCamY) * this.scrollFactor)
+			: 0;
 
 		// Horizontal tile range to cover the screen
 		const colStart = Math.floor(-scrollX / this.tileWidth);
@@ -100,6 +105,16 @@ export class ParallaxLayer extends Node2D {
 					width: this.tileWidth,
 					height: this.tileHeight,
 				});
+			}
+
+			// Fill below the strip with a solid color
+			if (this.fillBelow) {
+				const fillTop = drawY + this.tileHeight;
+				if (fillTop < screenH) {
+					ctx.rect(new Vec2(0, fillTop), new Vec2(screenW, screenH - fillTop), {
+						fill: this.fillBelow,
+					});
+				}
 			}
 		}
 	}

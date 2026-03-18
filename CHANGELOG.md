@@ -1,3 +1,16 @@
+## Fix advanced platformer parallax backgrounds and title screen
+*Wednesday, March 18th at 9pm*
+Simplify the advanced platformer parallax from 4 layers to 3 by removing the 
+redundant bg_fade_hills layer. Add a fillBelow property to ParallaxLayer for 
+solid color fills below tile strips. Position hills at ground level with clouds 
+in front and blue sky behind, creating a natural blue-to-white-to-green 
+gradient. Fix vertical parallax camera reference capture to wait 5 frames for 
+camera smoothing to settle, preventing hills from disappearing after respawn. 
+Update title screen with black text, matching parallax layout, and white fill 
+below clouds.
+
+---
+
 ## Add 3D API improvements from design review
 *Wednesday, March 18th at 6pm*
 Implement all 9 phases from the 3D API review plus footgun fixes F1-F3. Adds 

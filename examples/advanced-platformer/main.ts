@@ -55,13 +55,10 @@ game.assets
 			"assets/enemies.png",
 			"assets/bg_clouds.png",
 			"assets/bg_color_hills.png",
-			"assets/bg_fade_hills.png",
 			"assets/bg_solid_sky.png",
 			"assets/bg_color_desert.png",
-			"assets/bg_fade_desert.png",
 			"assets/bg_solid_sand.png",
 			"assets/bg_color_mushrooms.png",
-			"assets/bg_fade_mushrooms.png",
 		],
 		xml: ["assets/tiles.xml", "assets/characters.xml", "assets/enemies.xml"],
 		tmx: [

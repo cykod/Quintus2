@@ -784,3 +784,7 @@
 [IMPL] tue 3/17 9pm - Implement 3D API review phases 1-10 and footguns from steering/3D_REVIEW.md
 
 [IMPL] wed 3/18 12am - Implement 3D API review: phases 1-10 and footguns F1-F8 from steering/3D_REVIEW.md
+
+[MILE] wed 3/18 6pm - Added 3D API improvements from design review: ActionQueue, GLTFModel material API, Camera3D shake, FogOverlay3D, ParticleEmitter3D.burst(), Direction constants, GridEntity3D, 5 qdbg commands, and footgun fixes F1-F3
+
+[IMPL] wed 3/18 6pm - Fix advanced platformer parallax backgrounds to show hills at player level, sky above at slower rate, and solid color below
