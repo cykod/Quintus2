@@ -36,3 +36,5 @@ worktrees/
 .pnpm-store
 
 tmp/
+reviews/
+retro/

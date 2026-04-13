@@ -70,9 +70,8 @@ export class ParallaxLayer extends Node2D {
 		const scrollX = -(cam.position.x * this.scrollFactor);
 
 		// Vertical parallax: relative to settled camera position
-		const scrollY = this._refCamY !== null
-			? -(( cam.position.y - this._refCamY) * this.scrollFactor)
-			: 0;
+		const scrollY =
+			this._refCamY !== null ? -((cam.position.y - this._refCamY) * this.scrollFactor) : 0;
 
 		// Horizontal tile range to cover the screen
 		const colStart = Math.floor(-scrollX / this.tileWidth);

@@ -790,3 +790,7 @@
 [IMPL] wed 3/18 6pm - Fix advanced platformer parallax backgrounds to show hills at player level, sky above at slower rate, and solid color below
 
 [MILE] wed 3/18 9pm - Fixed advanced platformer parallax backgrounds with simplified 3-layer setup, fillBelow support, and title screen updates
+
+[DSGN] mon 4/13 2pm - Design gh-pages deployment build process for example games
+
+[BUILD] mon 4/13 2pm - Build gh-pages deployment from DEPLOYED_EXAMPLES.md

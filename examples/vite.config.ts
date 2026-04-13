@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { cpSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
@@ -9,12 +9,41 @@ const pkg = (name: string) =>
 const subpath = (name: string, path: string) =>
 	fileURLToPath(new URL(`../packages/${name}/src/${path}.ts`, import.meta.url));
 
+// Discover all example directories that contain an index.html
+const examplesDir = fileURLToPath(new URL(".", import.meta.url));
+const SKIP_DIRS = new Set(["node_modules", "dist", "__tests__"]);
+
+function discoverExamples(): Record<string, string> {
+	const input: Record<string, string> = {
+		main: resolve(examplesDir, "index.html"),
+	};
+	for (const entry of readdirSync(examplesDir)) {
+		if (SKIP_DIRS.has(entry)) continue;
+		const dir = join(examplesDir, entry);
+		try {
+			if (!statSync(dir).isDirectory()) continue;
+			statSync(join(dir, "index.html"));
+			input[entry] = join(dir, "index.html");
+		} catch {
+			// Not a directory or no index.html — skip
+		}
+	}
+	return input;
+}
+
 export default defineConfig({
 	root: ".",
+	base: process.env.QUINTUS_BASE || "/",
 	server: {
 		port: 3050,
 		open: !process.env.DEVCONTAINER,
 		host: process.env.DEVCONTAINER ? "0.0.0.0" : undefined,
+	},
+	build: {
+		outDir: "dist",
+		rollupOptions: {
+			input: discoverExamples(),
+		},
 	},
 	plugins: [
 		{
@@ -43,6 +72,27 @@ export default defineConfig({
 						next();
 					}
 				});
+			},
+		},
+		{
+			// Copy each example's assets/ directory into the build output.
+			// Game assets are loaded at runtime via fetch() and are invisible
+			// to Vite's module graph, so they must be copied explicitly.
+			name: "copy-example-assets",
+			apply: "build",
+			writeBundle(options) {
+				const outDir = options.dir || join(examplesDir, "dist");
+				const examples = discoverExamples();
+				for (const [name] of Object.entries(examples)) {
+					if (name === "main") continue;
+					const assetsDir = join(examplesDir, name, "assets");
+					if (existsSync(assetsDir)) {
+						const destDir = join(outDir, name, "assets");
+						cpSync(assetsDir, destDir, { recursive: true });
+					}
+				}
+				// Write .nojekyll to prevent GitHub Pages from running Jekyll
+				writeFileSync(join(outDir, ".nojekyll"), "");
 			},
 		},
 	],

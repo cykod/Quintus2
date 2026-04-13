@@ -17,6 +17,7 @@
 		"docs": "typedoc",
 		"test:platformer": "vitest run --config examples/platformer/vitest.config.ts",
 		"test:dungeon": "vitest run --config examples/dungeon/vitest.config.ts",
+		"build:examples": "pnpm build && rm -rf examples/dist && pnpm exec vite build examples",
 		"clean": "pnpm --recursive exec rm -rf dist",
 		"preinstall": "npx only-allow pnpm",
 		"qdbg": "./bin/qdbg"
