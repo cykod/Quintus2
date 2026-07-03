@@ -842,3 +842,5 @@
 [RETR] thu 7/2 10pm - Retro on Phase 7 (E2E scaffold+build test and docs) of steering/20260702_PACKAGING_DESIGN.md
 
 [FIX] thu 7/2 10pm - Fix Phase 7 (E2E and docs) review findings: close create-quintus2 packaging-coverage gap, fix vacuous assertions, correct doc counts, and low findings
+
+[MILE] fri 7/3 12am - Added npm packaging, CHANGELOG-driven release flow, and the create-quintus2 2D/3D scaffolder (all 7 phases of the packaging design)

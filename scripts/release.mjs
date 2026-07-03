@@ -5,8 +5,8 @@
  * Flow:
  *   1. Read the target version from the topmost `## [x.y.z]` heading in CHANGELOG.md.
  *   2. Verify it is greater than the currently published version.
- *   3. Verify the working tree is clean EXCEPT for CHANGELOG.md (the release entry
- *      is the only thing allowed to be uncommitted).
+ *   3. Verify the working tree is clean EXCEPT for CHANGELOG.md (the release entry)
+ *      and ASKS.md (the ask log) — the only paths allowed to be uncommitted.
  *   4. Run the full pre-release gate: install, lint, test, build.
  *   5. Bump EVERY publishable package (skips `"private": true`) to the target version.
  *   6. Commit ("Release vX.Y.Z"), tag (vX.Y.Z).
@@ -34,6 +34,13 @@ import {
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
+
+/**
+ * Repo-root paths allowed to be uncommitted when a release starts: the release
+ * entry (`CHANGELOG.md`) and the appended ask log (`ASKS.md`). Any other dirty
+ * path aborts the release. These get folded into the `Release v<x>` commit.
+ */
+const ALLOWED_DIRTY = new Set(["CHANGELOG.md", "ASKS.md"]);
 
 /**
  * Parse the target release version from a CHANGELOG.md body: the version in the
@@ -121,21 +128,23 @@ async function main() {
 	console.log(`  ${publishable.length} package(s) will be published:`);
 	for (const p of publishable) console.log(`    - ${p.json.name}`);
 
-	// 3. Working tree clean except CHANGELOG.md.
-	// Each porcelain line is `XY <path>` (a two-char status + space); the path
-	// starts at column 3. Do NOT trim the whole blob first — that would eat the
-	// leading space of the first line and shift its parse by one column (so a
-	// lone dirty `CHANGELOG.md`, the normal release case, would misparse and abort).
+	// 3. Working tree clean except for the allowed release-bookkeeping files
+	// (CHANGELOG.md — the release entry; ASKS.md — the appended ask log). Each
+	// porcelain line is `XY <path>` (a two-char status + space); the path starts
+	// at column 3. Do NOT trim the whole blob first — that would eat the leading
+	// space of the first line and shift its parse by one column (so a lone dirty
+	// `CHANGELOG.md`, the normal release case, would misparse and abort).
 	step("Checking working tree");
 	const status = sh("git status --porcelain", { capture: true });
 	const dirty = status
 		.split("\n")
 		.map((l) => l.slice(3).trim())
 		.filter(Boolean);
-	const disallowed = dirty.filter((p) => p !== "CHANGELOG.md");
+	const disallowed = dirty.filter((p) => !ALLOWED_DIRTY.has(p));
 	if (disallowed.length) {
+		const allowed = [...ALLOWED_DIRTY].join(", ");
 		fail(
-			`Working tree has uncommitted changes other than CHANGELOG.md:\n    ${disallowed.join("\n    ")}\n  Commit or stash them first — only the CHANGELOG.md entry may be uncommitted.`,
+			`Working tree has uncommitted changes other than ${allowed}:\n    ${disallowed.join("\n    ")}\n  Commit or stash them first — only ${allowed} may be uncommitted.`,
 		);
 	}
 
