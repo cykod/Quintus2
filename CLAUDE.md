@@ -6,6 +6,8 @@ Complete rewrite of the Quintus HTML5 game engine for the AI/LLM era.
 
 **Phases 0–8 complete. Phase 9 in progress.** The engine has a full node/scene tree, physics, sprites, input, audio, UI, tweens, camera, tilemaps, JSX scene building, deterministic testing infrastructure, and a Playwright-based CLI debugger (qdbg). Three complete example games ship: a platformer, a dungeon crawler, and a breakout clone.
 
+**Packaging & release (per `steering/20260702_PACKAGING_DESIGN.md`, all phases Done):** the engine is now publishable. Exactly **two** packages ship to npm — **`quintus2`** (the whole engine, bundled into one `dist`) and **`create-quintus2`** (the project scaffolder, `npm create quintus2@latest my-game`). The 21 `@quintus/*` packages are **private internals** inlined into `quintus2`. Releases go through `pnpm release` (CHANGELOG-driven, lockstep versioning starting at `0.0.1`).
+
 ## Architecture
 
 Godot-inspired **Node/Scene Tree** (NOT ECS) with TypeScript. The key abstraction chain:
@@ -24,7 +26,7 @@ Node → Node2D → Actor / StaticCollider / Sensor
 
 ## Monorepo Layout
 
-pnpm workspace. 21 packages under `packages/`:
+pnpm workspace, 23 packages under `packages/`. **Only two publish to npm** — `quintus2` (bundled engine) and `create-quintus2` (scaffolder); the other 21 `@quintus/*` are `"private": true` internals bundled into `quintus2`'s `dist`.
 
 | Package | npm Name | Purpose | Status |
 |---------|----------|---------|--------|
@@ -34,6 +36,7 @@ pnpm workspace. 21 packages under `packages/`:
 | `sprites` | `@quintus/sprites` | Sprite, AnimatedSprite, SpriteSheet, TextureAtlas XML parser | Done |
 | `tilemap` | `@quintus/tilemap` | TileMap, Tiled JSON/TMX/TSX import, tile collision, DDA raycast | Done |
 | `input` | `@quintus/input` | Input actions, keyboard, mouse, touch, gamepad, deterministic inject | Done |
+| `touch` | `@quintus/touch` | Mobile touch UI — virtual joysticks, D-pads, buttons, scroll lock | Done |
 | `audio` | `@quintus/audio` | AudioPlayer, Web Audio API, bus routing (music/sfx/ui) | Done |
 | `ui` | `@quintus/ui` | Label, Button, Container, ProgressBar, Panel, Layer | Done |
 | `tween` | `@quintus/tween` | Tween builder, 16 easing functions, sequential/parallel groups | Done |
@@ -42,7 +45,8 @@ pnpm workspace. 21 packages under `packages/`:
 | `headless` | `@quintus/headless` | HeadlessGame, runFor/runUntil, Node.js runtime | Done |
 | `test` | `@quintus/test` | TestRunner, InputScript DSL, assertions, assertDeterministic | Done |
 | `snapshot` | `@quintus/snapshot` | StateSnapshot, captureState, diffSnapshots | Done |
-| `quintus` | `quintus` | Meta-package re-exporting all engine packages | Done |
+| `quintus2` | `quintus2` | **Published** — bundled engine (`noExternal` inlines all internals into `dist`; subpaths `/jsx-runtime`, `/three`, `/testing`) | Done |
+| `create-quintus2` | `create-quintus2` | **Published** — scaffolder for 2D/3D starter projects (`npm create quintus2@latest`) | Done |
 | `quintus-core` | `@quintus/quintus-core` | (placeholder) | — |
 | `mcp` | `@quintus/mcp` | (placeholder) | — |
 | `particles` | `@quintus/particles` | ParticleEmitter | — |
@@ -184,7 +188,8 @@ Actor convenience methods: `raycast()`, `isEdgeAhead()`, `hasLineOfSight()`, `fi
 ```bash
 pnpm install          # Install all dependencies
 pnpm build            # Build all packages (dependency-ordered)
-pnpm test             # Run all tests (1726 tests)
+pnpm test             # Run all tests (fast unit suite; offline)
+pnpm test:e2e         # Packaging E2E: pack quintus2 → scaffold → install → build → test → tsc (slow, network; NOT in `pnpm test`)
 pnpm test:watch       # Watch mode
 pnpm test:coverage    # Tests with coverage
 pnpm lint             # Biome check
@@ -193,6 +198,7 @@ pnpm dev              # Vite dev server (examples on :3050)
 pnpm docs             # TypeDoc generation
 pnpm clean            # Remove all dist/ directories
 pnpm qdbg <cmd>       # CLI game debugger (see qdbg section)
+pnpm release          # CHANGELOG-driven lockstep publish of quintus2 + create-quintus2 (see scripts/release.mjs)
 ```
 
 ## Example Games

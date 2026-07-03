@@ -58,6 +58,7 @@
 			"!examples/platformer/assets/*.json",
 			"!examples/platformer/tools",
 			"!examples/**/assets/*.tsx",
+			"!packages/create-quintus2/templates",
 			"!worktrees"
 		]
 	}

@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/quintus-core",
+	"private": true,
 	"version": "0.0.0",
 	"description": "Meta-package bundling core packages",
 	"type": "module",
@@ -29,7 +30,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/quintus-core"
 	}
 }

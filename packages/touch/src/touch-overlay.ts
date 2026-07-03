@@ -207,7 +207,7 @@ export class TouchOverlay extends Node2D {
 		const current = this._pointers.get(id) ?? null;
 
 		// Sticky controls (joysticks, d-pads) keep tracking regardless of position
-		if (current !== null && current.sticky) {
+		if (current?.sticky) {
 			current._onTouchMove(x, y);
 			return;
 		}

@@ -1,0 +1,39 @@
+name: CI
+
+# Lightweight gate: lint, test, and build on every PR and every push to main.
+# It does NOT publish — releases are the maintainer's local `pnpm release`.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: this gate only reads the repo — it never publishes or writes.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm version comes from the root package.json "packageManager" field.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm test
+
+      - run: pnpm build

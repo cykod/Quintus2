@@ -10,6 +10,8 @@ import {
 	AudioPlayer,
 	AudioPlugin,
 	AudioSystem,
+	// @quintus/prefabs
+	Bullet,
 	Button,
 	// @quintus/camera
 	Camera,
@@ -19,6 +21,7 @@ import {
 	Color,
 	Container,
 	clamp,
+	Damageable,
 	definePlugin,
 	Ease,
 	// @quintus/core
@@ -39,6 +42,7 @@ import {
 	Panel,
 	PhysicsPlugin,
 	PhysicsWorld,
+	Pickup,
 	ProgressBar,
 	parseTiledMap,
 	Rect,
@@ -62,6 +66,7 @@ import {
 	UINode,
 	// @quintus/math
 	Vec2,
+	WaveSpawner,
 } from "./index.js";
 
 function createGame(): Game {
@@ -150,6 +155,13 @@ describe("quintus meta-package", () => {
 			expect(Panel).toBeDefined();
 			expect(Layer).toBeDefined();
 			expect(UINode).toBeDefined();
+		});
+
+		it("exports @quintus/prefabs classes", () => {
+			expect(Bullet).toBeDefined();
+			expect(Damageable).toBeDefined();
+			expect(Pickup).toBeDefined();
+			expect(WaveSpawner).toBeDefined();
 		});
 	});
 

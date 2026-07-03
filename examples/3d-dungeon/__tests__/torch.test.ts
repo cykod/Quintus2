@@ -58,7 +58,6 @@ describe("Torch", () => {
 
 	it("light intensity varies over time (not constant)", async () => {
 		let torch!: Torch;
-		const intensities: number[] = [];
 
 		class TorchTestScene extends Scene {
 			override onReady() {
@@ -66,7 +65,7 @@ describe("Torch", () => {
 			}
 		}
 
-		const result = await TestRunner.run({
+		await TestRunner.run({
 			scene: TorchTestScene,
 			seed: 42,
 			width: GAME_WIDTH,

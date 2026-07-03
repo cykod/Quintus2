@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/three",
+	"private": true,
 	"version": "0.0.0",
 	"description": "ThreeLayer, MeshNode, Camera3D, Three.js bridge",
 	"type": "module",
@@ -31,7 +32,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/three"
 	},
 	"peerDependencies": {

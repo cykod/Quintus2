@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/test",
+	"private": true,
 	"version": "0.0.0",
 	"description": "TestRunner, InputScript, game assertions, scenarios",
 	"type": "module",
@@ -38,7 +39,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/test"
 	}
 }

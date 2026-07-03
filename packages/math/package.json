@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/math",
+	"private": true,
 	"version": "0.0.0",
 	"description": "Vec2, Matrix2D, Color, Rect, AABB, SeededRandom, math utilities",
 	"type": "module",
@@ -34,7 +35,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/math"
 	}
 }

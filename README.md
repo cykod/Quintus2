@@ -2,7 +2,59 @@
 
 A modern HTML5 game engine built with TypeScript. Clean-room rewrite of the original Quintus engine, featuring a Godot-inspired node/scene tree architecture designed for the AI era.
 
-## Quick Start
+## Getting Started
+
+Create a new game project with the scaffolder — it generates a runnable, self-contained project:
+
+```bash
+npm create quintus2@latest my-game
+```
+
+Pick **2D** or **3D** when prompted, then:
+
+```bash
+cd my-game
+npm install          # only if you skipped install during scaffolding
+npm run dev          # dev server on http://localhost:3050
+npm test             # bundled headless smoke test
+```
+
+All of these forms run the same `create-quintus2` CLI:
+
+```bash
+npm create quintus2@latest my-game   # recommended
+npx create-quintus2 my-game
+pnpm create quintus2 my-game
+```
+
+> It's `npm create quintus2` (`create` is npm's subcommand) — **not** `npx create quintus2`.
+
+### Non-interactive
+
+```bash
+npm create quintus2@latest my-game -- --template 2d --no-install --no-git
+```
+
+Flags: `--template 2d|3d`, `--name <pkg>`, `--pm npm|pnpm|yarn|bun`, `--no-install`, `--no-git`, `--force`, `--help`.
+
+### Debugging your game
+
+Every scaffold ships the `debug-game` Claude Code skill, a standalone `qdbg` CLI, and a `CLAUDE.md` engine cheat-sheet. With the dev server running:
+
+```bash
+npm run dev                    # terminal 1
+pnpm qdbg connect              # terminal 2 — opens the game paused at frame 0
+pnpm qdbg tree                 # inspect the scene tree
+pnpm qdbg step 30              # advance 30 frames
+```
+
+Open the project in Claude Code and read its `CLAUDE.md`: the bundled `debug-game` skill lets an LLM build and debug the game for you. (`qdbg` needs Claude Code's `playwright-cli`; the game still runs, builds, and tests without it.)
+
+> **Two published packages:** `quintus2` (the whole engine, bundled) and `create-quintus2` (this scaffolder). The other 21 `@quintus/*` workspace packages are private internals bundled into `quintus2` — not published individually.
+
+## Developing the Engine
+
+Working on Quintus itself (the monorepo below):
 
 ```bash
 pnpm install          # Install dependencies
@@ -55,7 +107,7 @@ class Player extends Actor {
 
 ## Packages
 
-Quintus is a pnpm monorepo with 21 packages under `packages/`:
+Quintus is a pnpm monorepo with 23 packages under `packages/` — 21 private `@quintus/*` internals plus the 2 published packages (`quintus2`, `create-quintus2`). The most-used internals:
 
 | Package | Purpose |
 |---------|---------|
@@ -73,7 +125,8 @@ Quintus is a pnpm monorepo with 21 packages under `packages/`:
 | `@quintus/headless` | HeadlessGame for Node.js (no browser needed) |
 | `@quintus/test` | TestRunner, InputScript DSL, assertions, deterministic replay |
 | `@quintus/snapshot` | State snapshots and diffing |
-| `quintus` | Meta-package re-exporting everything |
+| `quintus2` | **Published** bundled engine (re-exports everything; all 21 private internals are inlined into its `dist`) |
+| `create-quintus2` | **Published** project scaffolder (`npm create quintus2@latest`) |
 
 ## Example Games
 

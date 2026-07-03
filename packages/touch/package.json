@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/touch",
+	"private": true,
 	"version": "0.0.0",
 	"description": "Mobile touch UI — virtual joysticks, D-pads, buttons, fullscreen, scroll prevention",
 	"type": "module",
@@ -36,7 +37,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/touch"
 	}
 }

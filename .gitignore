@@ -11,6 +11,12 @@ coverage/
 # IDE
 .vscode/
 .idea/
+
+# Claude Code local (machine-local permission allowlists — never commit)
+.claude/settings.local.json
+
+# Temporary per-package LICENSE copies created by scripts/release.mjs during publish
+packages/*/LICENSE.md
 *.swp
 *.swo
 *~

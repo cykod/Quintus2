@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/input",
+	"private": true,
 	"version": "0.0.0",
 	"description": "Input action map, keyboard, mouse, touch, gamepad",
 	"type": "module",
@@ -33,7 +34,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/input"
 	}
 }

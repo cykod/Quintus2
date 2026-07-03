@@ -1,0 +1,2030 @@
+## [FEAT] Add npm packaging, release flow, and create-quintus2 scaffolder
+*Friday, July 3rd at 12am*
+Makes the Quintus2 engine publishable as exactly two npm packages — the 
+bundled quintus2 engine (the former quintus meta-package, renamed and expanded 
+to inline all 21 now-private @quintus/* internals into one dist with 
+self-contained .d.ts and /three, /testing, /jsx-runtime subpaths) and the 
+create-quintus2 scaffolder that generates runnable 2D and 3D starter projects. 
+Adds a CHANGELOG-driven lockstep pnpm release script, a CI gate plus a matrixed 
+scaffold-install-build-test E2E workflow, and ships each scaffold with the 
+debug-game skill, a standalone bin/qdbg (now .qdbg.json-aware), and a 
+CLAUDE.md. Implemented across all seven phases of 
+steering/20260702_PACKAGING_DESIGN.md with per-phase 
+review/code-review/security-review/fix passes; notable fixes include 
+self-contained consumer types (58 to 0 tsc errors), a release-blocking 
+clean-tree parse bug, and single-copy engine bundling. LICENSE (MIT) and 
+CONTRIBUTING added; nothing is published yet (real pnpm release awaits npm 
+auth).
+
+---
+
+## Fix advanced platformer parallax backgrounds and title screen
+*Wednesday, March 18th at 9pm*
+Simplify the advanced platformer parallax from 4 layers to 3 by removing the 
+redundant bg_fade_hills layer. Add a fillBelow property to ParallaxLayer for 
+solid color fills below tile strips. Position hills at ground level with clouds 
+in front and blue sky behind, creating a natural blue-to-white-to-green 
+gradient. Fix vertical parallax camera reference capture to wait 5 frames for 
+camera smoothing to settle, preventing hills from disappearing after respawn. 
+Update title screen with black text, matching parallax layout, and white fill 
+below clouds.
+
+---
+
+## Add 3D API improvements from design review
+*Wednesday, March 18th at 6pm*
+Implement all 9 phases from the 3D API review plus footgun fixes F1-F3. Adds 
+ActionQueue for animation orchestration, GLTFModel material/model convenience 
+API (flipModel, cloneMaterials, setEmissive, setOpacity), Camera3D.shake(), 
+FogOverlay3D engine primitive, ParticleEmitter3D.burst() static method, shared 
+Direction constants, GridEntity3D base class, and 5 new qdbg debug commands 
+(transform, camera, lights, material, stats). Fixes Node3D transform accessor 
+lazy-creation trap with cached backing fields, enhances the Node2D-under-Node3D 
+warning, and updates ThreeRenderer.resize() to immediately sync camera aspect. 
+Refactors dungeon entities to use the new shared utilities, reducing ~200 lines 
+of duplication. All 2502 tests pass across 153 test files.
+
+---
+
+## Add death animation, level transitions, and camera freeze to 3D dungeon
+*Tuesday, March 17th at 5pm*
+Add player death animation using the GLTF die clip, fade-to/from-black scene 
+transitions via a new TransitionOverlay, and a stair descent animation when 
+exiting levels. The exit stairs auto-detect their facing direction from 
+adjacent walkable tiles, and the player snaps to the stair top before walking 
+down. A new freezeWorldTransform() API on Node3D in @quintus/three lets the 
+camera hold its world position when the player descends, by reparenting the 
+object3d to the scene root in the renderer sync walk. Also fixes 8 pre-existing 
+test failures caused by missing audio guards and incorrect turn/attack timing, 
+and marks dungeon polish phases 10-12 as done.
+
+---
+
+## Add fog of war with opaque cubes to 3D dungeon
+*Monday, March 16th at 11pm*
+Add fog of war system to the 3D dungeon (Phase 10). Unexplored tiles are 
+covered by fully opaque black cubes that block vision completely, visited tiles 
+outside sight range show semi-transparent cubes, and tiles within the player's 
+sight range (manhattan distance 3) are fully revealed. The fog updates on every 
+player move via the existing moved signal. Includes 5 tests, Three.js mock 
+additions (MeshBasicMaterial, PlaneGeometry.rotateX), and config constants.
+
+---
+
+## Add dungeon polish: particles, shake, torches, and health potions
+*Monday, March 16th at 10pm*
+Implements phases 1–9 of the dungeon polish design: camera shake on damage, 
+blood/coin/dust/heal particle bursts via ParticleEmitter3D, enemy death 
+animation (shrink+sink+spin), full-screen red damage flash overlay, enemy hit 
+stagger with per-instance material cloning, health potion pickups with new 
+level character H, footstep dust on player movement, and flickering 
+wall-mounted torches with point lights and fire particles. Exports 
+ParticleEmitter3D from @quintus/particles and adds it as an examples 
+dependency. Includes 16 new tests across 5 test files covering all new systems.
+
+---
+
+## Add 3D particle demo, integration tests, and Vite alias fix
+*Monday, March 16th at 9pm*
+Add the 3D particle viewer example at examples/3d-particles/ with a 3x2 grid of 
+all six Particles3D presets rendered via Three.js Points, 2D label overlay 
+using real-time 3D-to-screen projection, focus view with config overlay, and 
+the same keyboard controls as the 2D viewer. Add three missing integration 
+tests covering 60-frame lifecycle, burst position accuracy, and local 
+simulation space tracking. Register the @quintus/particles/three subpath export 
+in the Vite config. Mark Phase 7 (Tests & Demo) as Done in the particle systems 
+design doc.
+
+---
+
+## Add 3D particle system with Three.js integration
+*Monday, March 16th at 8pm*
+Implement Phase 6 of the particle system: Three.js 3D particles. Adds 
+ParticlePool3D, ParticleSimulator3D, and ParticleEmitter3D (extends Node3D) 
+with spherical velocity emission, z-axis physics, and THREE.Points rendering 
+via custom ShaderMaterial for per-particle RGBA. Includes 6 presets (fire, 
+sparks, explosion, magic, snow, trail), a subpath export at 
+@quintus/particles/three with optional peer dependencies, and extended Three.js 
+test mocks. Base class methods made protected for extensibility. All 319 tests 
+pass with zero regressions.
+
+---
+
+## Add snowflake texture to snow particle preset in viewer
+*Monday, March 16th at 8pm*
+Modified the particles example to render the snow preset with a snowflake 
+texture image instead of the default circle shape. The preset definition itself 
+remains unchanged — the texture override is applied only in the viewer's grid 
+and focus views. The title displays as 'snow (with texture)' to distinguish it 
+from the base preset.
+
+---
+
+## Add particle system with 15 presets and interactive viewer
+*Monday, March 16th at 8pm*
+Implement @quintus/particles phases 1-5: SoA particle pool with swap-remove, 
+CPU simulator with 5 emission shapes and deterministic physics, Canvas2D batch 
+renderer with fillStyle dedup and additive blending, ParticleEmitter Node2D 
+with oneShot/burst/restart lifecycle, property curves and color gradients, 
+game.emitParticles() augment, and 15 built-in presets (fire, smoke, sparks, 
+explosion, blood, rain, snow, magic, poison, electric, bubbles, leaves, trail, 
+debris, collect). Ships with 146 tests across 8 test files and an interactive 
+examples/particles/ viewer with grid and focus views.
+
+---
+
+## Add HUD turn counter, combat flash text, and sound effects to 3D dungeon
+*Monday, March 16th at 6pm*
+Implements phases 5 and 7 of the 3D dungeon design. Phase 5 adds a turn counter 
+to gameState and HUD, plus centered combat flash text (Hit!, Miss!, Ouch!) that 
+auto-fades after 1 second. Phase 7 copies 23 Kenney RPG Audio .ogg files, adds 
+AudioPlugin, and wires sound effects to all game events: footsteps on move, 
+sword swing/hit on attack, coin collect, enemy attack/death, door open on exit, 
+and metalClick on traps. Also removes an unused variable flagged by the linter 
+and marks all design doc phases as Done.
+
+---
+
+## Add README with engine overview and debug bridge docs
+*Monday, March 16th at 4pm*
+Create a comprehensive README.md documenting the Quintus 2.0 engine for human 
+developers. Covers the node/scene tree architecture, JSX build pattern, all 21 
+packages, example games, testing infrastructure, and full toolchain. Includes 
+an extensive debug bridge section showing how to enable debug mode via the 
+?debug URL param, use the three window globals (__quintusDebug, 
+__quintusFormatters, __quintusGame) from browser DevTools, and 15+ console 
+recipes for inspecting scene trees, stepping frames, simulating input, 
+analyzing jumps, and more. Also documents the complete 33-method bridge API and 
+8 formatters in reference tables.
+
+---
+
+## Add BoneAttachment primitive, qdbg bone commands, and fix sword
+*Monday, March 16th at 4pm*
+Add BoneAttachment engine primitive to @quintus/three for declaratively 
+attaching models to skeleton bones. Includes _boneParented opt-out flag on 
+Node3D respected by both ThreeLayer and ThreeRenderer sync loops. Add qdbg 
+bones and bone-info commands for runtime skeleton inspection. Fix sword 
+attachment in 3D dungeon to use BoneAttachment with correct offset and 
+rotation. Add playOneShot timeScale parameter to GLTFModel for animation speed 
+control.
+
+---
+
+## Add turn manager, sword attack, and camera orbit to 3D dungeon
+*Monday, March 16th at 3pm*
+Implement Phases 1-2 of the 3D dungeon turn-based combat design. Added a 
+TurnManager node that gates player input during animations and enemy turns, 
+tracking a global turn counter with configurable enemy turn interval. Player 
+can now attack with a sword (interact key) that emits a directional attacked 
+signal for the target tile. The sword model attaches to the player's arm-right 
+bone via the new GLTFModel.findBone() and playOneShot() APIs. Also added a 
+camera orbit pivot (Q/E keys) for inspecting the scene, switched touch layout 
+to puzzleLayout with configurable D-pad actions, and added 6 new tests covering 
+turn counting, attack signals, and input gating.
+
+---
+
+## Add 3D examples to index and remove phase prefixes
+*Monday, March 16th at 3pm*
+Add 3D Cube, 3D Hybrid, and 3D Dungeon example cards to the examples index 
+page. Remove all Phase N prefixes from card labels, replacing them with short 
+category tags (Core, Physics, Flagship, Three.js, etc.) and renaming the CSS 
+class from .phase to .tag.
+
+---
+
+## Add 3D dungeon tank controls, shadows, and fix engine footguns
+*Sunday, March 15th at 8pm*
+Overhaul the 3D dungeon example with relative tank controls (forward/backward + 
+smooth turning), an overhead third-person camera parented to the player, shadow 
+casting on all entities, and a GLTF model rotation fix for the +Z forward 
+convention. Fix two engine-level footguns in @quintus/three: 
+GLTFModel.onDestroy no longer disposes shared geometry/materials/textures from 
+SkeletonUtils clones (which broke sibling instances), and DirectionalLight now 
+exposes shadowExtent/shadowNear/shadowFar properties with sensible defaults so 
+shadow cameras work out of the box without reaching into Three.js internals.
+
+---
+
+## Fix ThreeRenderer overlay scaling and improve 3D dungeon UX
+*Monday, March 9th at 12pm*
+Fixed a critical bug in ThreeRenderer where the 2D overlay canvas (used for 
+HUD, title screens, and touch controls) was wrapped in a container div that 
+expanded to fill the full viewport, causing overlay content to render at wrong 
+aspect ratios and sizes on non-4:3 screens. The overlay now places as a sibling 
+of the WebGL canvas with CSS synced each frame, and uses game logical 
+dimensions instead of WebGL physical pixels (which include devicePixelRatio). 
+Also raised the 3D dungeon camera offset from (0,4,4) to (0,12,8) for a proper 
+overhead view, centered all menu screen UI, removed the unused 
+fullscreen-on-mobile feature from TouchPlugin, and added invisible subtree 
+skipping to prevent touch controls from rendering on desktop.
+
+---
+
+## Sort imports across examples to satisfy Biome linter
+*Sunday, March 8th at 8pm*
+Reorder imports alphabetically in 17 files across all example games and one 
+test file to satisfy Biome's import sorting rules. The @quintus/prefabs imports 
+(Damageable, Pickup, Bullet, WaveSpawner) were consistently placed before other 
+@quintus/* imports; this sorts them into proper alphabetical position. Also 
+adds a missing blank line after beforeAll in input-plugin.test.ts.
+
+---
+
+## Add HUD, game flow, and tests to 3D dungeon (Phases 5-6)
+*Sunday, March 8th at 7pm*
+Complete the 3D dungeon example with full game flow (title → 3 levels → 
+win/game-over), a reactive HUD showing score, health hearts, and level 
+indicator, and 26 automated tests covering grid logic, player mechanics, and 
+game state. Touch controls are filtered to gameplay scenes only, the camera 
+starts at its follow target to eliminate convergence delay, and scale mode uses 
+"fit" for correct mobile/desktop rendering. Design doc status updated to mark 
+all phases DONE.
+
+---
+
+## Add @quintus/debug package with formatters, commands, and headless API
+*Sunday, March 8th at 7pm*
+Extract debug logic from bin/qdbg's embedded JavaScript into the @quintus/debug 
+TypeScript package. Adds 6 new formatters (formatLayout, formatPhysics, 
+formatQueryResults, formatTrack, formatJumpAnalysis, formatNearby), 4 new 
+DebugBridge methods (track, jumpAnalysis, moveTo, nearby), a programmatic 
+executeCommand() CLI runner, and an attachDebug() headless API. Thins qdbg from 
+870 to 654 lines by delegating heavy commands to bridge methods and formatters. 
+Includes 55 new tests across 3 test files, all passing alongside the existing 
+2175 tests.
+
+---
+
+## Remove hasModels fallback code from 3D dungeon example
+*Sunday, March 8th at 6pm*
+Removes all defensive hasModels/fallback geometry code from the 3D dungeon 
+example since models are always available. This simplifies six entity files by 
+removing conditional branches that created procedural BoxGeometry/PlaneGeometry 
+substitutes, deletes the hasModels utility function from assets.ts, and removes 
+the .catch fallback in main.ts that started the game without models. The 
+entities now directly use GLTFModel for all visual representation.
+
+---
+
+## Add items, traps, and exit stairs to 3D dungeon (Phase 4)
+*Sunday, March 8th at 6pm*
+Adds Phase 4 of the 3D dungeon example with three new entity types: CoinItem 
+(spinning/bobbing GLTF coin with fallback yellow box), TrapTile (static GLTF 
+trap with fallback red box), and ExitStairs (GLTF stairs with fallback green 
+box). All entities spawn from the grid's character data and use GLTF models 
+when available or procedural geometry as fallback. Coin collection destroys the 
+coin node, increments the score, and clears the grid cell. Trap damage and exit 
+detection were already wired in Phase 3's PlayerCharacter signals.
+
+---
+
+## Add 3D dungeon player character with grid movement and camera follow
+*Sunday, March 8th at 6pm*
+Adds Phase 3 of the 3D dungeon example: a PlayerCharacter entity extending 
+GLTFModel with grid-based movement, smooth ease-in-out interpolation, 
+directional facing, animation support (walk/idle), trap damage with 
+invincibility blinking, and signal-based coin collection and exit detection. 
+The camera now follows the player with a smooth overhead offset. Props are 
+passed via add() to avoid the onReady timing issue where dungeonGrid would be 
+undefined if set after scene insertion.
+
+---
+
+## Fix mobile scaling and camera across all example games
+*Sunday, March 8th at 4pm*
+Adds a fillAxis option to Game's fill scaling mode so portrait games (like 
+breakout) can lock their design width while adapting height to the viewport 
+aspect ratio. Fixes sprite texture bleeding in Canvas2DRenderer by rounding 
+source rectangle coordinates in drawImage calls. Updates breakout, dungeon, 
+top-down shooter, and advanced platformer examples for proper mobile support: 
+breakout and dungeon use dynamic game.width/height instead of hardcoded 
+constants, the shooter gets mobile camera follow with bounds and a 
+wave-complete signal fix, and the advanced platformer enables a 4-way joystick 
+for ladder climbing. Includes two new fill-mode tests and a Tailscale 
+devcontainer fix.
+
+---
+
+## Add 3D dungeon example (Phases 1-2) and qdbg 3D support
+*Sunday, March 8th at 4pm*
+Creates the 3d-dungeon example game with Kenney Mini Dungeon GLB assets (floor,
+wall, character, coin, trap, stairs, chest, barrel) plus colormap texture.
+Implements DungeonGrid entity extending TileMap3D with game-logic helpers
+(parseLevel, isWalkable, findChar, clearCell). Includes 3 level grids, reactive
+game state, config constants, and a test scene that renders Level 1 with instanced
+floor+wall tiles. Extends the qdbg debugger and debug-format.ts for full 3D
+support: tree/layout/physics/query/nearby commands now display xyz positions,
+Euler rotation in degrees, and 3D scale. TILE_SIZE set to 1 to match Kenney model
+geometry. All 2167 tests pass.
+
+---
+
+## Fix touch input: axis-based aim, simple pointer handling
+*Sunday, March 8th at 2am*
+Reverts InputPlugin to treat all pointer types equally for mousePosition 
+updates, removing the touch-specific filtering that broke tower defense taps. 
+Adds optional aimActions to VirtualAimStick so it injects directional actions 
+(like VirtualJoystick), giving the top-down shooter a clean axis-based aiming 
+pathway on mobile. Updates the shooter player to use getAxis for aim direction 
+and only fall back to mousePosition on desktop. Removes the mousePosition 
+forwarding hack from TouchOverlay. All 2165 tests pass.
+
+---
+
+## Fix touch pointer hijacking mousePosition for dual-stick aiming
+*Sunday, March 8th at 1am*
+Prevent touch pointer events from updating mousePosition in InputPlugin — 
+only actual mouse movement sets it now. Virtual controls (aim stick, follow 
+zone) already call setMousePosition() explicitly, so touch aiming still works. 
+This fixes the top-down shooter's dual-stick layout where touching the left 
+movement joystick would override the aim direction. Also removed weapon buttons 
+from the dual-stick mobile layout since the aim stick handles firing. Includes 
+a new test verifying touch pointers skip mousePosition while still buffering 
+button presses (2162 total tests passing).
+
+---
+
+## Add mobile fill mode and sticky joystick tracking
+*Saturday, March 7th at 8pm*
+Switch space shooter and top-down shooter from scale:"fit" to scale:"fill" for 
+responsive mobile display. Replace hardcoded GAME_WIDTH/GAME_HEIGHT constants 
+with runtime this.game.width/this.game.height across all scenes, HUD, and 
+entity code (21 files). Add sticky property to VirtualControl so joysticks, aim 
+sticks, and d-pads keep tracking the finger even when it drifts outside the hit 
+zone — only touchend releases them. Buttons retain their existing 
+slide-between behavior. Includes 2 new overlay tests (162 total touch tests 
+passing).
+
+---
+
+## Add TileMap3D with instanced rendering and 26 tests
+*Saturday, March 7th at 4pm*
+Implements TileMap3D for the @quintus/three package — a grid-based 3D tilemap 
+that renders tiles as GPU-instanced meshes. Supports tile registration from 
+geometry/material or GLTF scenes, string-based grid parsing, grid-to-world 
+coordinate conversion, and automatic rebuild of InstancedMesh objects. Includes 
+Matrix4 and InstancedMesh in the three-mock test utilities. Marks Phase 0 of 
+the 3D example game design as done.
+
+---
+
+## Implement Phase 10: Three.js integration
+*Saturday, March 7th at 3am*
+Add the @quintus/three package with full 3D and hybrid 2D+3D rendering modes 
+via Three.js as a peer dependency. The package provides Node3D (lazy Object3D 
+creation), ThreeRenderer (scene graph sync), MeshNode, PointsNode, Camera3D, 
+lights (ambient/directional/point), GLTFModel (asset system + animations), 
+Billboard, and ThreeLayer (2D canvas compositing). Core changes add 
+Game.hasRenderer, DrawContext.drawCanvas(), and export Canvas2DDrawContext. 
+Includes 70 tests with a hand-written Three.js mock, two example demos 
+(3d-cube, 3d-hybrid), and marks all 6 design phases as Done.
+
+---
+
+## Rename ai-prefabs package to prefabs
+*Friday, March 6th at 7pm*
+Rename the @quintus/ai-prefabs package to @quintus/prefabs for brevity. 
+Directory renamed from packages/ai-prefabs/ to packages/prefabs/, npm package 
+name updated, and all import references updated across 30+ example game files, 
+vite config, steering docs, and CLAUDE.md. All 2063 tests pass with the new 
+name.
+
+---
+
+## Use native touch events for reliable iOS slide input
+*Friday, March 6th at 5pm*
+Rewrite TouchOverlay to use native touch events as the primary input path for 
+real touch devices, with pointer events as a fallback for jsdom tests and 
+Chrome DevTools emulation. On iOS Safari, calling preventDefault on touchstart 
+suppresses pointermove events, breaking all slide behavior — removed that 
+from scroll-lock and rely on CSS (user-select, webkit-touch-callout) for 
+selection prevention instead. Common logic extracted into shared helpers 
+(_findNearest, _handleStart, _handleMove, _handleEnd) used by both paths. Added 
+8 native touch event tests including a comprehensive multi-finger scenario 
+matching the exact user-described behavior.
+
+---
+
+## Fix iOS touch selection and button slide switching
+*Thursday, March 5th at 11pm*
+Fix two iOS mobile touch bugs. First, prevent long-press canvas selection by 
+adding user-select/webkit-touch-callout CSS, contextmenu prevention, and 
+touchstart preventDefault in scroll-lock. Second, fix sliding between adjacent 
+directional buttons with overlapping hit zones by rewriting touch-overlay's 
+_onPointerMove to use nearest-control-by-distance matching instead of 
+stick-with-current logic. Added 5 new tests covering both fixes.
+
+---
+
+## Rework fill mode: responsive scaling for desktop + mobile
+*Wednesday, March 4th at 8pm*
+Rewrote the scale: "fill" implementation to use responsive width with constant 
+height instead of raw viewport pixels. Desktop (fine pointer) now behaves 
+identically to "fit" mode with CSS letterboxing, preserving all hardcoded UI 
+positions. Mobile (coarse pointer) keeps the design height constant and adjusts 
+width to match the viewport aspect ratio, with CSS scaling the canvas to fill 
+the screen. Removed the baseHeight option in favor of using the design height 
+directly. Updated both platformer examples to use game.width/game.height for 
+all runtime UI positioning instead of hardcoded constants, and replaced 
+camera.autoZoom with fixed zoom values.
+
+---
+
+## Add mobile enhancements: touch slide fix and fill scaling mode
+*Wednesday, March 4th at 6pm*
+Fix touch overlay dead-zone tracking so fingers can slide between virtual 
+buttons via dead zones without losing pointer tracking. Add scale:"fill" mode 
+that sets the canvas to exact viewport pixel dimensions with camera autoZoom 
+for responsive mobile display. The fill mode exposes game.fillZoom 
+(viewportHeight/baseHeight), a resized signal, renderer resize support, and 
+automatic touch overlay rebuilding on resize. Both platformer examples updated 
+to use fill mode. Includes 25 new tests across touch, core, camera, and plugin 
+packages (2050 total, all passing).
+
+---
+
+## Add integration tests and visual polish (Phase 12)
+*Wednesday, March 4th at 5pm*
+Complete Phase 12 of the advanced platformer with 6 integration tests (entity 
+loading, coin collection, enemy stomp, damage, checkpoint, deterministic 
+replay) and 8 visual polish effects: camera shake on damage/death, spring 
+squash-stretch, flag bounce tween, door open animation, score popups on enemy 
+stomp, fade-to-black scene transitions, and brick debris particles. All 12 
+phases of the advanced platformer are now complete. Added the game to the 
+examples index page.
+
+---
+
+## Complete advanced platformer Phase 12: integration tests and visual polish
+*Tuesday, March 4th at 3pm*
+Added 6 integration tests (entity loading, coin collection, enemy stomp, damage,
+checkpoint, deterministic replay) and 8 visual polish effects: camera shake on
+damage/death, spring squash-stretch, flag bounce tween, door open animation,
+score popups on enemy stomp, fade-to-black scene transitions, and brick debris
+particles. All 12 phases of the advanced platformer are now complete.
+
+---
+
+## Fix fall-death boundary and stomp detection, clean up docs
+*Wednesday, March 4th at 3pm*
+Made the player's fall-death threshold configurable via a fallDeathY property 
+instead of a hardcoded 800px cutoff, with each level scene setting it from the 
+map bounds plus a 200px buffer. Fixed stomp detection by removing the 
+requirement that the player must be falling (velocity.y > 0) — now any 
+collision where the player is above the enemy counts as a stomp, which fixes 
+edge cases on slopes and at the apex of jumps. Also cleaned up old walkthrough 
+documentation directories and added a skills bind mount to the devcontainer.
+
+---
+
+## Add 3-level progression to advanced platformer (Phase 11)
+*Tuesday, March 3rd at 9pm*
+Extract shared level logic into BaseLevelScene and create three themed levels 
+with full progression: Grasslands (100x20), Desert Ruins (120x25), and Dark 
+Fortress (140x30). Each level uses theme-appropriate terrain tiles, parallax 
+backgrounds, and escalating difficulty with unique enemy placements and 
+mechanics. Level transitions flow level1 -> level2 -> level3 -> victory, with 
+per-level state clearing (keys, checkpoint) while preserving score/coins/lives 
+across levels. Death respawns in the current level; game-over restarts from 
+level 1.
+
+---
+
+## Spawn enemies from TMX tile layer instead of hardcoded positions
+*Tuesday, March 3rd at 7pm*
+Refactored enemy spawning in the advanced-platformer to use a dedicated enemies 
+tile layer in level1.tmx backed by the enemies.png spritesheet as a Tiled 
+tileset. Created enemies-tileset.tsx (64x64 tiles, 8 cols), added an enemies 
+tile layer to level1.tmx with all 5 enemy types (slime, bee, snail, frog, saw) 
+placed at grid positions, and replaced the hardcoded _spawnEnemies() method 
+with spawnFromTiles()-based spawning. Added 5 integration tests verifying 
+tile-layer enemy placement and count. Enemy tile IDs are exported as 
+ENEMY_TILE_IDS constants to avoid multi-tileset tile definition cache 
+collisions in the engine.
+
+---
+
+## Add HUD, menu scenes, and audio polish (Phase 10)
+*Tuesday, March 3rd at 7pm*
+Implement Phase 10 of the advanced platformer: sprite-based HUD with reactive 
+hearts, coin digit display, score label, key icons, and star power progress 
+bar; title screen with parallax background and start button; game-over and 
+victory screens with score display and replay buttons. Renamed TestScene to 
+Level1Scene and wired player death to game-over/respawn and door exit to 
+victory transitions. Fixed key-pickup reactivity by reassigning the keys object 
+instead of mutating, and refined audio by using distinct SFX for double jump, 
+spring bounce, door open, and snail shell kick. Adds 11 new tests covering HUD 
+reactivity and scene existence.
+
+---
+
+## Add parallax scrolling backgrounds (Phase 9)
+*Tuesday, March 3rd at 7pm*
+Add 4-layer parallax scrolling to the advanced platformer: solid sky fill, 
+slow-drifting clouds, distant fade hills, and closer color hills. ParallaxLayer 
+uses renderFixed screen-space rendering with lazy camera lookup to avoid JSX 
+ordering issues, horizontal-only tiling with configurable screenY positioning, 
+integer pixel snapping to prevent tile seams, and vertical parallax relative to 
+the initial camera position. Camera tuned with smoothing=0.08 and offset y=-30. 
+Desert and mushroom background assets preloaded for future levels.
+
+---
+
+## Add collectibles, keys/locks, and checkpoints (Phase 8)
+*Tuesday, March 3rd at 5pm*
+Implement Phase 8 of the advanced platformer: collectible items (Coin, Gem, 
+HeartPickup, PowerUp), key/lock mechanics (KeyPickup with 4 colors 
+auto-detected from tile type, LockedDoor that opens on contact when the player 
+holds the matching key), checkpoint flags that set gameState.checkpoint for 
+respawn, and a DoorExit sensor that emits a levelComplete signal. All entities 
+follow the established Sensor/StaticCollider + JSX build() + tileInfo pattern. 
+Includes 18 new tests across 3 test files, 7 new test arenas, collectible tiles 
+placed on level1.tmx, and full wiring in test-scene.tsx with checkpoint-based 
+spawn logic.
+
+---
+
+## Add moving platforms, spikes, and water zone hazards (Phase 7)
+*Tuesday, March 3rd at 4pm*
+Implement Phase 7 of the advanced platformer: MovingPlatform oscillates between 
+endpoints using constantVelocity for automatic player carry, with configurable 
+direction, distance, speed, and endpoint wait time. Spike sensor spawns from 
+tiles and damages on overlap. WaterZone sensor with createWaterZones() helper 
+scans tilemap for water/lava tile regions and creates lethal hazard sensors. 
+Added water tiles to level1.tmx gap. All wired into the test scene with 8 new 
+tests covering platform carry, direction reversal, endpoint pausing, spike 
+damage, and water lethality.
+
+---
+
+## Fix saw hazard damage using onOverlap with hazards group
+*Tuesday, March 3rd at 3pm*
+The saw blade enemy (SawSensor) used a Sensor body type, which is invisible to 
+the onContact dispatch system since onContact only hooks into Actor collided 
+signals. Fixed by introducing a separate hazards collision group for the 
+SawSensor and wiring onOverlap(player, hazards) in both the game scene and test 
+arena. This also includes the full enemy system: five enemy types (Slime, Bee, 
+Snail, Frog, Saw) with base enemy infrastructure, stomp mechanics, and 25 tests.
+
+---
+
+## Pass tile metadata to spawned entities via tileInfo
+*Monday, March 2nd at 8pm*
+Entities spawned by spawnFromTiles() now receive per-tile metadata through the 
+TileSpawnInfo interface, which was wired up in the previous commit but not yet 
+consumed. BreakableBlock uses tileInfo to render the correct tile art from the 
+tileset and compute per-tile collision shapes from TSX objectgroup data, so 
+breakable blocks with different tile IDs now render distinctly with accurate 
+collision bounds. Spring similarly uses tileInfo for its initial sprite 
+sourceRect. Adds 7 new tests covering tileInfo injection and getTileSourceRect, 
+and exports the TileSpawnInfo type from the tilemap package.
+
+---
+
+## Fix fall-away platform collision using CollisionShape.disabled
+*Monday, March 2nd at 8pm*
+The fall-away platform was using monitoring = false to disable collision after 
+falling, but monitoring only controls overlap signals (bodyEntered/bodyExited), 
+not collision response from StaticColliders. This left an invisible solid body 
+blocking the player until respawn. Fixed by using CollisionShape.disabled = 
+true which removes the shape from getShapes() and returns null from 
+getWorldAABB(), so the physics sweep finds no shape pairs and the player falls 
+through immediately. Also adds a public getTileSourceRect() method and 
+TileSpawnInfo interface to the TileMap API.
+
+---
+
+## Fix entity physics registration and refine interactive tiles
+*Monday, March 2nd at 4pm*
+Fixed a critical bug where BreakableBlock, Spring, and FallAwayPlatform 
+entities were invisible to physics because their onReady() overrides didn't 
+call super.onReady(), preventing spatial hash registration. Also refined 
+collision shapes (spring 56x56, fall-away thin 60x14 platform), fixed fall-away 
+sprite mismatch by switching to bridge atlas frames matching the Tiled editor 
+tiles, added horizontal movement while climbing ladders with position clamping 
+to ladder bounds, and redesigned level1.tmx with proper test sections for all 
+Phase 5 features.
+
+---
+
+## Add interactive tiles: breakable blocks, springs, fall-away, ladders
+*Sunday, March 1st at 8pm*
+Implement Phase 5 of the advanced platformer with four interactive tile entity 
+types: breakable blocks (brick/coin/exclamation with bump tweens, score, and 
+popups), fall-away platforms (shake + crumble + respawn cycle), spring bounce 
+pads (configurable force with sprite animation), and ladder zone sensors 
+(overlap-based climbing with contiguous tile column detection via 
+createLadderZones). The test scene now spawns interactive entities from tilemap 
+tile types via spawnFromTiles and wires physics contact callbacks for 
+hit-from-below, land-on-top, and sensor overlap interactions. Includes 16 new 
+tests across 4 test files (38 total for the example) with dedicated test 
+arenas, and fixes a missing super.onReady() call in LadderZone that prevented 
+sensor registration with the physics world.
+
+---
+
+## Add floor snap to prevent floating when walking down slopes
+*Sunday, March 1st at 8pm*
+Actor.move() now has two mechanisms to keep actors grounded on descending 
+slopes. First, the gravity step computes slope-following velocity (|vx * 
+normalX / normalY|) instead of the fixed FLOOR_SNAP_GRAVITY when moving 
+downhill on a known slope. Second, a new floorSnapLength property enables a 
+post-move downward cast that re-establishes floor contact when transitioning 
+from flat surfaces onto slopes. The advanced-platformer Player sets 
+floorSnapLength=32, and a frame-by-frame regression test verifies zero frames 
+off-ground during 45-degree slope descent.
+
+---
+
+## Fix tile seams when pixelArt is off, default pixelSnap to true
+*Sunday, March 1st at 7pm*
+Tile seams appeared between tiles when pixelArt mode was disabled because 
+pixelSnap defaulted to false (causing sub-pixel camera offsets) and bilinear 
+filtering bled across tile boundaries in the atlas. Fixed by defaulting 
+pixelSnap to true for all games and adding setImageSmoothing to DrawContext so 
+TileMap can disable image smoothing during tile rendering while sprites remain 
+smooth. Also updated the advanced platformer to use higher resolution without 
+pixelArt mode and adjusted the player sprite offset.
+
+---
+
+## Fix tileset slope collisions to match visual art across all biomes
+*Sunday, March 1st at 6pm*
+Swapped collision polygon assignments in tileset.tsx across all 6 biomes so 
+that slope tile collision shapes match their visual art positions. The original 
+tileset had slope_long_a/b and slope_left_asc/top polygons assigned to the 
+wrong tile IDs, causing tiles that looked like slopes to have solid-rect 
+collision and vice versa. Also corrected the 2:1 slope polygon values from 
+21/22px rise per tile to 32px each (proper 2:1 ratio totaling 64px over 2 
+tiles), made slope_long_c a full solid square, and updated the player with 
+floorMaxAngle override, sprite offset fix, and slope-exit launch prevention. 
+Updated level1.tmx to a focused slope test layout.
+
+---
+
+## Fix Vite .tsx conflict, add advanced platformer walkthrough doc
+*Sunday, March 1st at 3am*
+Fixed two bugs discovered while testing the advanced platformer with qdbg: Vite 
+was intercepting Tiled tileset .tsx files (XML) as TypeScript JSX and returning 
+500 errors, fixed by adding a serve-tiled-tsx Vite plugin that serves .tsx 
+files in /assets/ directories as plain XML; and an orphan ref="camera" in 
+TestScene.build() that threw because the class had no camera property. Also 
+generated a comprehensive walkthrough document with 9 Playwright screenshots 
+verifying all Phase 1-4 features: player movement, jumping, double-jump, 
+ducking, slope collision, and one-way platforms.
+
+---
+
+## Add slope collision, one-way platforms, and terrain tests (Phase 4)
+*Sunday, March 1st at 1am*
+Add Phase 4 (Terrain & Collision) to the advanced platformer. Configures 
+polygon collision shapes on all 18 long slope tiles across 6 theme rows in the 
+tileset, enables tileShapeColliders in the test scene, and expands level1.tmx 
+with short/long slopes and one-way cloud platforms. Adds 7 test arena scenes 
+(SlopeArena, SlopeDescentArena, FlippedSlopeArena, LongSlopeArena, OneWayArena) 
+with direct polygon StaticColliders, and 8 new tests verifying slope 
+ascent/descent, isOnFloor detection on 45° and 18° slopes, flipped slope 
+traversal, and one-way platform pass-through/landing behavior. All 2024 tests 
+pass.
+
+---
+
+## Add Player class with full mechanics and SpriteSheet.fromAtlas (Phase 3)
+*Saturday, February 28th at 11pm*
+Add the advanced platformer Player class with movement, jumping, double-jump, 
+ducking, ladder climbing (state machine ready for Phase 5), star power, 
+invincibility, fall death, and animation state management. Also add 
+SpriteSheet.fromAtlas() factory to the sprites package, which creates 
+SpriteSheets from TextureAtlas frame names directly — eliminating manual grid 
+math. Includes vitest config, test helpers, and 13 passing player tests. 
+Replaces the inline TestPlayer placeholder in test-scene.tsx with the real 
+Player class.
+
+---
+
+## Add advanced platformer asset pipeline and Tiled setup (Phase 2)
+*Saturday, February 28th at 3pm*
+Implements Phase 2 of the Advanced Platformer example: copies Kenney New 
+Platformer Pack 1.1 assets (spritesheets, backgrounds, sounds), creates 
+TextureAtlas/SpriteSheet loaders with a grid-index bridging helper, generates a 
+235-tile Tiled tileset (TSX) with typed properties, slope collision polygons, 
+and animated tiles, and wires external TSX resolution into TileMap._loadMap(). 
+A minimal test scene with player movement verifies the full pipeline 
+end-to-end. All 2014 tests pass, build and lint clean.
+
+---
+
+## Add TileMap query APIs, animated tiles, and polygon colliders
+*Saturday, February 28th at 12am*
+Implement Phase 1 engine enhancements for the advanced platformer: tile 
+definition query APIs (getTileDefinition, getTileIdsByProperty, 
+getTileIdsByType) with O(1) cache lookup, visibleLayers filtering for split 
+foreground/background rendering, animated tile support using Tiled animation 
+frames driven by game.elapsed, and per-tile polygon collision generation 
+(createTileShapeColliders) with flip flag handling and clockwise winding 
+enforcement. Extended generateCollision() with excludeTileIds and 
+tileShapeColliders options. Added shapePolygon to PhysicsFactories interface. 
+19 new tests across tilemap.test.ts and tile-collision.test.ts; all 2014 tests 
+pass.
+
+---
+
+## Add gamepad support, fullscreen HTML, and menu confirm to all examples
+*Friday, February 27th at 8pm*
+Added gamepad controller bindings to all 7 example game configs (platformer, 
+platformer-tsx, dungeon, breakout, space-shooter, sokoban, top-down-shooter), 
+with a new ui_confirm action mapped to Enter/gamepad:a/gamepad:start. Stripped 
+all 7 index.html files to minimal fullscreen canvas layout by removing titles, 
+instructions, back-links, and unnecessary CSS so the engine's scale:fit mode 
+fills the viewport. Added onFixedUpdate with isJustPressed("ui_confirm") to all 
+18 title/game-over/victory scenes so players can start and restart games with a 
+gamepad button press.
+
+---
+
+## Add gamepad support to both shooter examples
+*Friday, February 27th at 8pm*
+Added full gamepad bindings to the space shooter and top-down shooter examples. 
+The space shooter gets left stick, D-pad, and A/RT for fire. The top-down 
+shooter gets left stick for movement, right stick for twin-stick aiming, RT for 
+fire, and X/Y/B for weapon switching. The player controller was updated to use 
+getAxis() for analog movement and to prefer right-stick aim over mouse when the 
+stick is deflected.
+
+---
+
+## Fix mobile touch controls, audio gate, and fullscreen activation
+*Friday, February 27th at 6pm*
+Fix several mobile touch issues discovered during review. Sokoban controls now 
+only appear during gameplay via a scene filter, and duplicate HUD buttons were 
+removed. Breakout's launch button was replaced by tap-to-launch on the follow 
+zone via a new tapAction config. Dungeon action buttons now render emoji icons 
+(sword, shield, hand, potion) via a new VirtualButton icon field. Fixed 
+InputPlugin's pointerdown handler to set mouse position (touch has no preceding 
+pointermove, causing tower defense placement at wrong coordinates). Rewrote the 
+AutoplayGate to use click/keydown events instead of touchstart (which does not 
+grant user activation in Chrome), retry on every gesture until context.state is 
+actually running, and register on document capture phase to survive 
+stopImmediatePropagation. Changed fullscreen activation from touchstart to 
+click for the same user activation reason.
+
+---
+
+## Improve test coverage from 91.5% to 96.6% across engine packages
+*Friday, February 27th at 4pm*
+Added 86 new tests across 8 packages to close coverage gaps identified in a 
+systematic review. The touch package saw the biggest improvement (82% to 95%) 
+with tests for plugin lifecycle, overlay pointer routing, and aim-stick 
+mechanics. Tilemap gained spawnFromTiles and rendering tests (89% to 96%), 
+audio got pause/resume coverage (88% to 95%), and the test runner, 
+assert-deterministic, and debug-bridge packages each gained edge-case tests. 
+Also updated vitest.config.ts to exclude pure interface files, barrel 
+re-exports, type-only files, and placeholder packages from coverage metrics for 
+a more accurate picture.
+
+---
+
+## Integrate mobile touch controls into all 8 example games
+*Friday, February 27th at 4pm*
+Complete Mobile Touch UI Phase 4: switch InputPlugin from MouseEvent to 
+PointerEvent so touch input works natively, add public setMousePosition() API 
+to Input (removing ugly type casts in virtual controls), add moveActions config 
+to topDownLayout for games using non-standard action names, update all 8 
+example HTML files with mobile viewport meta tags and touch-action CSS, and 
+integrate TouchPlugin with appropriate layouts into every example game 
+(platformer, platformer-tsx, dungeon, breakout, sokoban, tower-defense, 
+top-down-shooter, space-shooter). Each game now has scale: "fit" for responsive 
+canvas sizing and fullscreen support on mobile.
+
+---
+
+## Add preset touch layouts to @quintus/touch
+*Friday, February 27th at 2pm*
+Implement Phase 3 of the mobile touch UI: 6 preset layout factory functions 
+(platformer, topDown, dualStick, puzzle, pointClick, breakout) that compose 
+existing virtual control widgets into ready-to-use control schemes for each 
+game genre. Also adds a new TouchFollowZone widget for breakout-style paddle 
+tracking via full-screen touch-to-mouse-position mapping. All layouts use 
+proportional sizing based on game dimensions and are exported from the package 
+index. 116 touch package tests pass with clean lint.
+
+---
+
+## Eliminate all noNonNullAssertion warnings and promote to error
+*Friday, February 27th at 2pm*
+Fix all 37 noNonNullAssertion lint warnings across example games and promote 
+the Biome rule from "warn" to "error" to prevent regressions. Add 
+AssetLoader.require() method that throws on missing assets (replacing get()! 
+pattern in breakout and space-shooter sprites). Refactor brick.tsx to use 
+satisfies with nullable atlas instead of null! initialization. Replace array 
+index assertions with guards/fallbacks in tower-defense path tracing and 
+space-shooter starfield. Remove redundant this.scene! calls where the getter 
+already throws.
+
+---
+
+## Add virtual control widgets to @quintus/touch
+*Friday, February 27th at 1pm*
+Implement Phase 2 of the Mobile Touch UI: virtual control widgets that inject 
+actions into the Input system for zero-code mobile support. Adds VirtualButton 
+(circular hold button), VirtualJoystick (analog stick with dead zone), 
+VirtualDPad (4-way with 1-frame release delay for quick taps), VirtualAimStick 
+(twin-stick aiming with mouse position control), and TouchOverlay (multi-touch 
+dispatcher tracking pointer-to-control mapping). The TouchPlugin now 
+creates/destroys overlays on scene switches and toggles visibility based on 
+input method detection. Includes 32 new tests covering injection, hit testing, 
+multi-touch dispatch, and draw callbacks.
+
+---
+
+## Fix lint errors and configure Biome for test files
+*Friday, February 27th at 12pm*
+Fix all lint errors across the codebase: remove unused imports and variables in 
+breakout, platformer, platformer-tsx, and physics tests. Add Biome override to 
+disable noNonNullAssertion in test files so warnings surface only in production 
+code. Exclude .pnpm-store from Biome to eliminate 500+ false diagnostics. 
+Auto-fix formatting across 20 files including import ordering and line-width 
+compliance. Result: 0 errors, 37 actionable warnings, all 1862 tests passing.
+
+---
+
+## Add @quintus/touch package with canvas scaling and touch utilities
+*Friday, February 27th at 12pm*
+Create the @quintus/touch package (Phase 1 of Mobile UI design) with core touch 
+infrastructure: canvas scale: fit letterboxing in Game, cross-browser 
+fullscreen helpers with Safari fallback, scroll/zoom prevention via 
+lockScroll(), touch device detection with dynamic input method switching, and a 
+TouchPlugin using the WeakMap plugin pattern with scroll lock, 
+fullscreen-on-first-touch, and scene switch hooks. Includes 31 new tests across 
+5 test files and wires the package into the quintus meta-package.
+
+---
+
+## Polish tower defense with ai-prefabs integration
+*Friday, February 27th at 12pm*
+Integrate Damageable mixin on PathFollower (replacing hand-rolled damage/death 
+system) and replace the custom WaveManager with the ai-prefabs WaveSpawner, 
+deleting wave-manager.ts entirely. Wave definitions move to a data array in 
+config.ts. Add 7 edge-case tests covering path blocking, slow stacking, wave 
+transition exits, equidistant targeting, wave overlap prevention, zero-gold 
+placement, and projectile self-destruct. Targeted code comments added at 
+architectural decision points across 8 files. Phase G marked complete in 
+PREFABS_PROPOSAL.md.
+
+---
+
+## Polish space shooter and top-down shooter with ai-prefabs integration
+*Friday, February 27th at 11am*
+Integrate the four core ai-prefabs utilities (Damageable, Bullet, WaveSpawner, 
+Pickup) into both shooter example games per Phases D and F of the prefabs 
+proposal. The space shooter replaces hand-rolled health/invincibility, separate 
+bullet classes, and inline wave logic with the shared utilities, while the 
+top-down shooter similarly consolidates its bullet hierarchy into a single 
+ShooterBullet class and delegates wave orchestration to WaveSpawner. Both games 
+gain dedicated edge-case test suites and design-decision comments at key 
+architectural points, with a net reduction of 116 lines of code.
+
+---
+
+## Fix Bullet scene-tree error and sideways sprite rotation
+*Friday, February 27th at 11am*
+Fix two bugs in the ai-prefabs Bullet base class introduced during Phase D 
+space shooter polish. The scene-tree error occurred because _checkOffScreen() 
+accessed this.game after the bullet was recycled during move() collision -- 
+fixed by adding an isInsideTree guard after move(). The sideways sprite bug 
+occurred because fire() set this.rotation to the movement angle, visually 
+rotating pre-oriented sprites -- fixed by storing the angle in a private _angle 
+field separate from visual rotation.
+
+---
+
+## Polish Sokoban with 7 edge-case tests and code comments
+*Friday, February 27th at 11am*
+Add edge-case test file for the Sokoban example game covering corner deadlocks, 
+push-on/push-off target transitions, undo at move zero, partial-solve 
+detection, rapid sequential input registration, and level-select rendering with 
+mixed completion state. Add architectural decision comments to grid.ts 
+(class-level separation rationale, MoveRecord undo stack design, tryMove atomic 
+return struct) and player-sprite.tsx (grid-to-pixel coordinate mapping for 
+center-anchored sprites). All 46 Sokoban tests pass with zero lint warnings.
+
+---
+
+## Polish dungeon and breakout games with ai-prefabs integration
+*Friday, February 27th at 1am*
+Integrate ai-prefabs utilities into two example games as part of Phase 9 
+polish. Dungeon (8B): refactor Player and BaseEnemy to use the Damageable 
+mixin, replace PotionPickup's hand-rolled bob/collection with the Pickup base 
+class, and add 7 edge-case tests plus architectural comments at 4 decision 
+points. Breakout (8C): refactor PowerUp to extend Pickup with falling-pickup 
+pattern (bobAmount=0, collectTag="paddle"), add paddle tagging, and add 7 
+edge-case tests covering ball physics corner cases (brick seam hits, paddle 
+edge angles, multi-ball life deduction, narrow gap resolution) plus 
+design-decision comments on ball reflection math, attachment state machine, and 
+power-up timer management. All 1824 engine tests and 32 breakout-specific tests 
+pass.
+
+---
+
+## Polish platformer edge-case tests and add design-decision comments
+*Friday, February 27th at 12am*
+Expands Phase 8A platformer polish with a reusable TestArena test helper, five 
+focused test files (player, enemies, pickups, edge-cases, flow) totaling 31 
+passing tests, and inline comments explaining why specific entities do or don't 
+use the Damageable/Pickup ai-prefabs utilities. Also fixes a subtle double-jump 
+reset ordering bug where the floor check now runs before the jump input check 
+so a grounded jump can re-enable double-jump in the same frame.
+
+---
+
+## Make TMX a built-in asset type in AssetLoader
+*Friday, February 27th at 12am*
+Added "tmx" as a first-class asset type in AssetLoader alongside images, json, 
+and xml. The TMX loader fetches text identically to the xml handler, 
+eliminating the need for manual registerLoader("tmx", ...) calls. Removed the 
+duplicated 5-line TMX loader registration from all four example games that used 
+it (platformer, platformer-tsx, dungeon, tower-defense). Updated one test that 
+was using "tmx" as a custom type name to use "csv" instead, since TMX is now 
+built-in.
+
+---
+
+## Integrate ai-prefabs into platformer and add 24 edge-case tests
+*Thursday, February 26th at 11pm*
+Refactors the platformer-tsx example to use @quintus/ai-prefabs utilities: 
+Player now uses the Damageable mixin for health/invincibility management, and 
+Coin extends Pickup for bob animation and collection. Adds 24 integration tests 
+across 5 test files covering player movement, enemy behavior, pickups, level 
+flow, and 7 edge cases from the PREFABS_PROPOSAL. Also fixes a double-jump bug 
+where _canDoubleJump was immediately reset on the jump frame because the 
+isOnFloor() check ran after the jump assignment but before move(). 
+Architectural decision comments explain why PatrolEnemy, FlyingEnemy, and 
+HealthPickup intentionally do not use the prefab utilities.
+
+---
+
+## Remove deprecated addChild method in favor of add
+*Thursday, February 26th at 9pm*
+Fully removed the deprecated addChild() method from Node, replacing all 334 
+call sites across 43 files with the canonical add() method. The two methods 
+were identical — both delegated to the private _addChildNode() implementation 
+— so this is a pure cleanup with no behavioral change. Updated test names, 
+comments, and source code across all packages and example games. All 1824 tests 
+pass.
+
+---
+
+## Add core game utilities to @quintus/ai-prefabs
+*Thursday, February 26th at 7pm*
+Implement 4 focused utilities in @quintus/ai-prefabs that extract common 
+cross-game patterns identified during Phase 9: Damageable (mixin for health, 
+damage, invincibility, death effects), Bullet (headless poolable Actor with 
+fire/lifetime/off-screen recycling), WaveSpawner (signal-driven wave system 
+with configurable intervals and per-entry delays), and Pickup (Sensor with 
+tag-filtered collection, bob animation, and pop effect). All utilities 
+gracefully degrade without @quintus/tween installed. Ships with 50 tests across 
+4 test files, zero lint warnings, and full .d.ts generation.
+
+---
+
+## Add TMX maps, sound effects, and visual polish to tower defense
+*Thursday, February 26th at 7pm*
+Converted tower defense from programmatic map rendering to Tiled TMX files, 
+with path/placement data read directly from the map's path layer (tile 
+18=start, 17=end, 15=road, 16=placement). Added 10 CC0 sound effects for tower 
+firing, enemy death, wave start, placement, UI clicks, victory, and game over. 
+Visual improvements include turret rotation toward targets, enemies facing 
+their movement direction with a walking shimmy animation, projectile rotation, 
+correct sprite frames for all tower types (arrow 203, cannon 249, slow 226, 
+missile 251, slow projectile 274), projectile z-ordering under towers, and the 
+slow tower using the round base matching other weapons.
+
+---
+
+## Add gamepad support and audio effects to Sokoban
+*Thursday, February 26th at 3pm*
+Add full gamepad support to the Sokoban game with D-pad and left stick for 
+movement, B for undo, Y for reset, and Start for menu navigation. Add seven CC0 
+sound effects covering all gameplay actions: step (player move), push (crate 
+push), place (crate on target), win (level complete), undo, reset, and click 
+(UI buttons). A new menu input action allows returning to level select via 
+Escape or gamepad Start. The title scene now displays gamepad control 
+instructions.
+
+---
+
+## Fix Sokoban visual bugs and replace unsolvable levels
+*Thursday, February 26th at 3pm*
+Fixed three bugs in the Sokoban example game: wrong tile frame indices in 
+sprites.ts caused walls to render as blue crates and floors as player sprites 
+(fixed by visually identifying correct frames in the Kenney tileset using qdbg 
+overlays), a position offset bug where snapTo() overwrote the grid centering 
+offset (fixed by parenting all game entities to a Node2D container), and 
+unsolvable levels 3 and 5 confirmed via exhaustive BFS search (replaced with 
+verified-solvable designs requiring 16 and 19 optimal moves respectively). All 
+39 sokoban tests pass. Includes debugging documentation with screenshots and 
+Claude Code skill definitions.
+
+---
+
+## Fix qdbg screenshot command: use Playwright native canvas capture
+*Thursday, February 26th at 1pm*
+The qdbg screenshot command was broken because it used require('fs') inside a 
+Playwright run-code snippet, which runs in an ESM context where require is not 
+defined. Replaced the manual base64-decode-and-write approach with Playwright's 
+native page.locator('canvas').screenshot({ path }), which handles file I/O 
+internally and is both simpler and more robust.
+
+---
+
+## Add Sokoban puzzle game with 39 tests
+*Thursday, February 26th at 1pm*
+Implement a classic Sokoban box-pushing puzzle as a Phase 9 example game. This 
+is the only example that uses no physics engine — purely grid-based logic 
+with Node2D, tweened movement, and a pure TypeScript SokobanGrid class for 
+puzzle state. Features 5 levels of increasing difficulty, undo/reset, level 
+select with completion tracking, and a reactive HUD. Includes 39 tests across 6 
+files covering pure grid logic, movement, crate pushing, undo, level 
+validation, and game flow determinism.
+
+---
+
+## Fix tower defense UI: click placement, visual buttons, enemy sprite
+*Thursday, February 26th at 1am*
+Fix three tower defense UI issues: mouse click placement was broken because the 
+input binding used the invalid name "PointerButton1" instead of "mouse:left"; 
+the tower selection bar was plain text labels with no icons or click support, 
+now replaced with styled TowerSelectButton components showing turret sprites, 
+costs, keyboard shortcuts, and gold selection borders with hover/press states; 
+and the basic creep used wrong tileset frame 244 (a terrain tile) instead of 
+the correct enemy sprite at frame 245. Also enables the tower defense card on 
+the examples index page.
+
+---
+
+## Add tower defense example game with 29 tests
+*Wednesday, February 25th at 11pm*
+Implement the tower defense example game for Phase 9.5, featuring grid-based 
+tower placement, waypoint path following, three enemy types (basic, fast, 
+tank), three tower types (arrow, cannon with splash, slow), homing projectiles, 
+a 5-wave manager with escalating difficulty, reactive HUD, and two levels with 
+different path layouts. Includes 32 new files and 29 integration tests covering 
+path following, enemy behavior, tower targeting, placement validation, wave 
+progression, and deterministic replay. All 1774 tests pass with zero type 
+errors.
+
+---
+
+## Make collisionGroup and solid forced-choice with clear errors
+*Wednesday, February 25th at 10pm*
+Changed CollisionObject.collisionGroup and Actor.solid defaults from 
+"default"/false to null. PhysicsWorld.register() now throws actionable errors 
+if either property is unset, preventing the common footgun where collision 
+silently doesn't work. Updated the pool system's ClassDefaultsSnapshot to 
+handle null types, added as-string casts in internal methods that operate on 
+registered bodies, and updated all 13 test files and 5 example games to 
+explicitly set both properties.
+
+---
+
+## Add SFX, animated explosions, and convex hitboxes to space shooter
+*Wednesday, February 25th at 10pm*
+Added 7 CC0 sound effects (player/enemy shoot, hit, die, boss die, powerup) and 
+animated particle explosions to the space shooter example. Built a particle 
+spritesheet (576x128, 9x2 grid) from Kenney smoke-particle PNGs using a sharp 
+build script, with flash animations for non-lethal hits and size-matched 
+explosions for kills. Replaced undersized rectangular collision shapes with 
+convex polygons (pentagons for the player ship, hexagons for enemies, circle 
+for the boss UFO) and widened bullet hitboxes to better match the visual 
+sprites. Hit flashes are attached as children of the struck enemy so they track 
+with movement, positioned at the bullet impact point via a lerp between bullet 
+position and enemy center.
+
+---
+
+## Add space shooter example game with pooled bullets and wave spawning
+*Wednesday, February 25th at 8pm*
+Implement Phase 9.4 space shooter — a vertical-scrolling shmup with player 
+ship, three enemy types (basic, weaver, bomber), boss fights every 3 waves, 
+NodePool-based bullet recycling, power-ups (shield, rapid fire, spread shot), 
+parallax starfield, and full scene flow (title, gameplay, game over). All 
+entities use solid Actor collisions with self-contained bullet→enemy and 
+bullet→player routing via the collided signal. Enemies wrap to the top of the 
+screen when they pass the bottom, keeping waves persistent until cleared. Ships 
+with 24 integration tests covering player movement, enemy behavior, bullet 
+pooling, wave progression, power-ups, and deterministic replay.
+
+---
+
+## Remove pool workarounds from top-down shooter example
+*Wednesday, February 25th at 8pm*
+With the engine-level NodePool class defaults snapshot (Phase 1) and 
+Actor.move() slide-loop re-entrancy guard (Phase 2) now in place, the top-down 
+shooter no longer needs manual workarounds. Removed _recycled and 
+_collisionConnected guard flags from PlayerBullet, EnemyBullet, WeaponPickup, 
+and MuzzleFlash. Removed override-restoration boilerplate from all reset() 
+methods (collisionGroup, solid, applyGravity, upDirection) — NodePool now 
+handles this automatically. Replaced _recycled double-release guards with 
+isInsideTree checks. Added 3 tests verifying pool properties survive 
+acquire/release cycles. All three SHOOTER_ISSUES.md phases are now marked Done.
+
+---
+
+## Add slide-loop re-entrancy guard to Actor.move()
+*Wednesday, February 25th at 6pm*
+When Actor.move() fires onCollided() mid-slide-loop, collision handlers may 
+remove the node from the tree (e.g., via removeSelf() or pool release). 
+Previously the slide loop would continue executing on a detached node, 
+requiring users to work around this with manual _recycled flags. This adds 
+three isInsideTree checks in actor.ts: one after each of the two onCollided() 
+call sites to break from the loop, and an early return after the loop to skip 
+position writes, contact flag updates, platform carry, and rehash on detached 
+nodes. Three tests verify the guard works correctly, partial slides stop early, 
+and normal collisions are unaffected.
+
+---
+
+## Add class defaults snapshot to NodePool
+*Wednesday, February 25th at 6pm*
+NodePool now automatically captures class-level property overrides 
+(collisionGroup, applyGravity, upDirection, solid, etc.) from a 
+freshly-constructed exemplar and restores them after _poolReset() on every 
+acquire. This eliminates the need for users to manually restore subclass 
+override declarations in their reset() method. Also changes the auto-created 
+default collision group to mask=0 (collides with nothing) to encourage explicit 
+group configuration, with a console.warn when bodies use the unconfigured 
+default group.
+
+---
+
+## Add sound effects to the top-down shooter
+*Wednesday, February 25th at 4pm*
+Added 9 CC0-licensed sound effects to the top-down shooter: per-weapon firing 
+sounds (pistol, machine gun, silencer), player hit, enemy hit and death, weapon 
+pickup, weapon switch, and wave start. Each WeaponDef now includes a sound 
+field so the correct firing sound plays automatically. Sounds are loaded via 
+the asset pipeline and played through the sfx audio bus.
+
+---
+
+## Polish top-down shooter and extend debug bridge API
+*Wednesday, February 25th at 4pm*
+Overhauled the top-down shooter example: replaced circular collision shapes 
+with capsules for better character fit, added mouse-click and scroll-wheel 
+firing/weapon-switching, fixed contact damage so enemies hurt a stationary 
+player (enemy-side collided signal), introduced a weapon unlock system where 
+only the pistol is available at start and other weapons drop from killed 
+enemies as timed pickups with labels, fixed the ammo HUD display ordering bug, 
+and added per-weapon ammo tracking across switches. Extended the debug bridge 
+with destroy, mouse, and mouse-get commands, and fixed a crash in Actor where 
+game.debugLog could throw if a node was destroyed during onCollided.
+
+---
+
+## Add top-down shooter game with pooled bullets and enemies
+*Wednesday, February 25th at 3pm*
+Implement Phase 3 of the object pooling system: a twin-stick top-down arena 
+shooter in examples/top-down-shooter/ that validates NodePool at scale. The 
+game features a WASD+mouse player, 3 weapon types (pistol, machine gun, 
+silencer), 3 pooled enemy types (zombie, robot, soldier) with distinct AI, wave 
+spawning, weapon pickups, muzzle flash effects, and a HUD with real-time pool 
+stats. Includes 19 tests covering game flow, player movement/damage, bullet 
+pool reuse across 100 spawn/recycle cycles, enemy waves, and weapon switching. 
+Also adds a headless benchmark (3600 frames) and updates the examples index 
+page. Discovered that poolable actors must use new Vec2(0, 0) instead of frozen 
+Vec2.ZERO for upDirection to avoid crashes in _poolReset().
+
+---
+
+## Implement object pooling system (Phase 9.3)
+*Wednesday, February 25th at 1pm*
+Implements the two-tier object pooling system from POOLING_PLAN.md. Phase 1 
+eliminates per-frame garbage in physics hot paths: Actor.move() and 
+castMotion() now use scalar math instead of allocating Vec2/AABB objects, SAT 
+functions accept Matrix2DLike plain objects instead of requiring Matrix2D 
+instances, and stepMonitoring() reuses scratch Set/Map instead of allocating 
+per frame. Phase 2 adds NodePool<T> with the Poolable interface and a 
+_poolReset() chain across the full Node hierarchy (Node, Node2D, 
+CollisionObject, Actor, Sensor, StaticCollider), enabling zero-GC entity 
+recycling for bullet-hell scenarios. All 1747 tests pass including 21 new pool 
+unit tests and integration tests verifying acquire/release lifecycle, physics 
+re-registration, and deterministic ID assignment.
+
+---
+
+## Add Breakout game, auto-rehash spatial hash, and built-in XML assets
+*Wednesday, February 25th at 1am*
+Adds the complete Breakout example game (3 levels, paddle/ball/brick/power-up 
+entities, HUD, title/game-over/victory scenes) using the JSX build() pattern 
+throughout. Fixes a critical engine bug where setting position on a 
+CollisionObject after add() did not update the spatial hash — StaticColliders 
+and Sensors were permanently registered at their initial position. The fix adds 
+a _onTransformDirty() hook in Node2D that CollisionObject overrides to 
+auto-rehash, with suppression in Actor.move() to avoid double-rehash. Also 
+promotes XML to a built-in asset type in AssetLoader alongside images and JSON, 
+eliminating per-game boilerplate for sprite atlas loading.
+
+---
+
+## Add Breakout game, auto-rehash spatial hash, and built-in XML assets
+*Wednesday, February 25th at 1am*
+Adds the complete Breakout example game (3 levels, paddle/ball/brick/power-up 
+entities, HUD, title/game-over/victory scenes) using the JSX build() pattern 
+throughout. Fixes a critical engine bug where setting position on a 
+CollisionObject after add() did not update the spatial hash — StaticColliders 
+and Sensors were permanently registered at their initial position. The fix adds 
+a _onTransformDirty() hook in Node2D that CollisionObject overrides to 
+auto-rehash, with suppression in Actor.move() to avoid double-rehash. Also 
+promotes XML to a built-in asset type in AssetLoader alongside images and JSON, 
+eliminating per-game boilerplate for sprite atlas loading.
+
+---
+
+## Fix remaining dungeon lint warnings across all files
+*Tuesday, February 24th at 3pm*
+Eliminate all noNonNullAssertion lint warnings from the dungeon example. In 
+entity classes (player, chest, potion-pickup), replaced this.scene! and 
+this.sprite! patterns with guarded local variables. In HUD, wrapped signal 
+handler property accesses with null checks. In test files, added if (!x) return 
+guards after expect assertions and switched to optional chaining for nullable 
+values. Also fixed import ordering and formatting (spaces to tabs) in door.tsx 
+and toast.tsx. All 69 dungeon tests pass and pnpm lint reports zero warnings.
+
+---
+
+## Prepare Phase 9 assets, designs, and fix non-null assertions
+*Tuesday, February 24th at 3pm*
+Downloaded Kenney asset packs (sprite sheets + XML atlases) for four upcoming 
+Phase 9 example games: Breakout, Space Shooter, Tower Defense, and Sokoban. 
+Added placeholder cards to the examples index page. Created Phase 10 Three.js 
+design and object pooling plan. Cleaned up non-null assertion warnings across 
+dungeon tests and chest entity by replacing ! with proper null checks and 
+optional chaining. Updated Phase 9 design to mark Phase 1.5 (TextureAtlas XML) 
+as Done.
+
+---
+
+## Add TextureAtlas XML parser to @quintus/sprites
+*Tuesday, February 24th at 3pm*
+Add a TextureAtlas class to @quintus/sprites that parses Kenney-style XML atlas 
+files and provides name-based frame lookup. This enables example games to 
+reference sprites by name (e.g., "paddle_01.png") instead of hardcoding pixel 
+coordinates. The class supports getFrame, getFrameOrThrow, hasFrame, 
+getFramesByPrefix, and fromXml static constructor. Includes 10 unit/integration 
+tests covering XML parsing, error handling, prefix grouping, and validation 
+against a real Kenney breakout atlas file.
+
+---
+
+## Fix dungeon and tween test failures with missing dependencies
+*Sunday, February 22nd at 8am*
+Fixed all failing tests across the dungeon example and main test suite. The 
+tween package's actor-child-tween test was missing @quintus/physics as a 
+devDependency. The dungeon tests had two issues: a stale build of @quintus/test 
+that was missing the recently-added hold() method, and a missing AudioPlugin in 
+the test helper configuration that caused all game entities (Player, Dwarf, 
+Door) to crash when calling game.audio.play(). Also includes a minor level2.tmx 
+tweak repositioning a health pickup and adding a second one.
+
+---
+
+## Fix isEdgeAhead probe distance so patrol enemies walk closer to edges
+*Sunday, February 22nd at 8am*
+Reduced the default probeDistance in Actor.isEdgeAhead() from actorWidth / 2 + 
+4 to just 2 pixels beyond the front edge. The old formula caused patrol enemies 
+to detect floor edges far too early — for a 7px wide enemy, the probe fired 
+7.5px past the front edge (more than the enemy's own width), making them turn 
+around well before reaching the actual ledge. The new default of 2px gives 
+natural-looking patrol behavior while still allowing custom values via the 
+probeDistance parameter.
+
+---
+
+## Rebuild dungeon example with JSX entities, equipment system, and tests
+*Saturday, February 21st at 4pm*
+Major overhaul of the dungeon crawl example game. Migrated all entities and 
+scenes to JSX-based build() declarations, added a full equipment system 
+(weapons, shields, potions, buff manager), renamed enemies (orc to barbarian, 
+skeleton to dwarf), and added 12 sound effects. Built a comprehensive test 
+suite with 11 test files covering combat, enemies, equipment, HUD, 
+interactables, inventory, player, scene setup, and game flow. Also enhanced 
+@quintus/test InputScript with new capabilities, added actor-child-tween tests, 
+and updated the debug bridge and canvas2d renderer.
+
+---
+
+## Fix all linting warnings across the codebase
+*Friday, February 20th at 4pm*
+Fixed all Biome linting warnings by replacing non-null assertion operators with 
+definite assignment assertions on JSX ref-bound properties across the 
+platformer-tsx example (coin, flying-enemy, health-pickup, patrol-enemy, 
+player, hud, level), fixing indentation from spaces to tabs in the platformer 
+level scene, reformatting long JSX attribute lines in title-scene, 
+game-over-scene, victory-scene, and hud, and excluding the worktrees directory 
+from Biome's scan to prevent nested config conflicts.
+
+---
+
+## Consolidate tilemap layers with tile-based entity spawning
+*Friday, February 20th at 3pm*
+Merged the separate ground and platforms layers in both platformer levels into 
+a single tiles layer by adding oneWayTileIds support to generateCollision(), 
+which splits collision into solid and one-way passes from a single layer. Added 
+spawnFromTiles() to TileMap for spawning nodes (coins, spikes) directly from 
+tile IDs instead of object-layer placement, clearing matched tiles after 
+spawning. Updated both the platformer and platformer-tsx examples to use the 
+consolidated approach, added excludeTileIds parameter to buildSolidGrid(), and 
+included tests for all new functionality.
+
+---
+
+## Add one-way platform support and fix level tile IDs
+*Friday, February 20th at 1pm*
+Extended TileMap.generateCollision() to support per-layer collision tracking 
+and one-way platforms. Changed the internal _collisionGenerated boolean to a 
+per-layer Set so generateCollision() can be called for multiple layers (e.g., 
+"ground" and "platforms"). Added oneWay option that passes through to created 
+StaticColliders. Rebuilt level2.tmx to fix wrong auto-tiled IDs from wangsets 
+(replacing tiles 11/12/26 with correct 56/57/58 for platforms, and fixing 
+right-side ground islands). Split platform tiles (56/57/58) into a separate 
+"platforms" layer in both level1.tmx and level2.tmx so they generate one-way 
+collision — players can jump through from below and land on top.
+
+---
+
+## Add TSX platformer example and complete JSX Phase 4
+*Friday, February 20th at 1pm*
+Converts the complete platformer example to JSX/TSX declarative syntax, 
+validating the @quintus/jsx build() pattern against a real game. All entities 
+(Player, enemies, pickups), scenes (Title, GameOver, Victory, Level1/2), and 
+HUD use build() with typed refs. Also fixes JSX children type to support nested 
+arrays, adds @quintus/jsx to the examples workspace with Vite aliases, and 
+updates the REACT_BUILD_PATTERN Phase 4 checklist to Done.
+
+---
+
+## Fix Layer renderFixed propagation via _onChildAdded hook
+*Friday, February 20th at 12pm*
+Layer's addChild() override for propagating renderFixed to children was never 
+called because Node.add() (the recommended API) routes through _addChildNode() 
+directly, bypassing addChild(). The JSX build() path also bypasses it via 
+direct array push. Added a protected _onChildAdded() hook to Node, called from 
+both _addChildNode() and the build() path. Layer now overrides this hook 
+instead of addChild(), fixing HUD hearts and labels that were scrolling 
+off-screen with the camera in both imperative and JSX platformer examples.
+
+---
+
+## Fix input edge flag timing for high-refresh-rate displays
+*Friday, February 20th at 12pm*
+Fixed a bug where jump presses (and other isJustPressed actions) were 
+intermittently lost on high-refresh-rate displays (120Hz+). The root cause was 
+that _beginFrame() cleared justPressed/justReleased edge flags every browser 
+frame, but fixedUpdate only runs when the physics accumulator has enough time. 
+On faster displays, browser frames without a corresponding fixedUpdate would 
+clear the flag before any game code could see it. Edge flag clearing is now 
+done via postFixedUpdate after each physics step, ensuring presses are never 
+lost. Also added preventDefault for bound keys (fixes Space scrolling the page) 
+and newlyTransitioned tracking for correct InputEvent propagation.
+
+---
+
+## Add type-safe string refs, callback refs, and dollar refs to JSX
+*Friday, February 20th at 10am*
+Reimplements JSX phases 1-3 ref system with three ref forms: string refs 
+(ref="sprite") that assign to the build owner with runtime typo detection, 
+callback refs (ref={n => ...}) for edge cases, and dollar refs ("$player") for 
+order-independent cross-node references. Build owner tracking via Symbol.for in 
+core's _enterTreeRecursive and _loadScene enables string ref assignment with 
+save/restore for nested builds. The ref-scope module registers a resolver on 
+globalThis so core can trigger dollar ref resolution after each build() without 
+importing @quintus/jsx. Runtime validation throws actionable errors for refs 
+used outside build(), typos in property names, and unresolved dollar refs 
+listing available names.
+
+---
+
+## Add build() lifecycle for declarative JSX node trees (Phase 3)
+*Thursday, February 19th at 8pm*
+Adds the build() virtual method to Node that returns JSX-created children 
+during tree entry. When a node enters the scene tree, build() runs before child 
+recursion, so all built children are in-tree and ready by onReady() time. 
+Modified _enterTreeRecursive to process build results with direct _children 
+push (avoiding nested recursion), and _loadScene to handle Scene root builds. 
+Includes 9 integration tests covering nested builds, refs, fragments, 
+composition coexistence, and correct bottom-up ready ordering.
+
+---
+
+## Add JSX type definitions with auto-derived props (Phase 2)
+*Thursday, February 19th at 6pm*
+Add TypeScript JSX type definitions to @quintus/jsx that automatically derive 
+prop types from any Node subclass via LibraryManagedAttributes. Implements 
+WritableKeys to exclude readonly, methods, and underscore-prefixed properties; 
+CoercedPropType for Vec2 tuple and Color string ergonomics; SignalProps for 
+auto-connecting signal handlers. Includes module-scoped JSX namespace in both 
+jsx-runtime and jsx-dev-runtime, vitest typecheck configuration, and 31 
+type-level tests covering writable props, readonly exclusion, coercion, 
+signals, and Scene guard.
+
+---
+
+## Add @quintus/jsx package with core JSX runtime (Phase 1)
+*Thursday, February 19th at 4pm*
+Implements Phase 1 of the React-style JSX build pattern for Quintus. Creates 
+the new @quintus/jsx package with h() and jsx() element creation, Fragment 
+support, ref() for node references, and applyProp() with smart coercion (tuples 
+to Vec2, hex strings to Color, numbers to uniform scale, functions to Signal 
+connections, Ref unwrapping). Adds IS_NODE_CLASS symbol to @quintus/core Node 
+class for distinguishing class components from functional components. Includes 
+46 tests covering all creation paths, coercion rules, tree nesting, and Scene 
+exclusion guard. The package exports three entry points: main index, 
+jsx-runtime for TypeScript auto-import, and jsx-dev-runtime for dev mode.
+
+---
+
+## Implement API ergonomics overhaul (9-phase code smell fixes)
+*Thursday, February 19th at 9am*
+Implement all 9 phases of API ergonomics improvements identified in 
+CODE_SMELLS.md. Core engine changes: node.game/node.scene now throw outside 
+tree with gameOrNull/sceneOrNull escape hatches; unified add() API on Node 
+(addChild deprecated); is() type guard and typed findFirst/findAll queries; 
+@quintus/tilemap/physics side-effect import replacing unsafe casts; 
+node.after()/every() timer convenience methods; reactiveState() with 
+Proxy-based change signals and per-key subscriptions; game.consts 
+ConstantsRegistry for tweakable values; removed andThen() from tween API. All 6 
+examples updated to use new APIs — null-check boilerplate eliminated, 
+signal-driven HUDs replace polling, duck-typing replaced with type-safe is() 
+guards. Build, 1589 tests, platformer integration tests, and lint all pass 
+clean.
+
+---
+
+## Add pixel-snap rendering to fix sub-pixel tile seams
+*Thursday, February 19th at 7am*
+Add a pixelSnap property to Canvas2DRenderer that rounds transform translation 
+components (e, f) to integers via Math.round() before ctx.setTransform() calls. 
+This eliminates the 1px banding/seam artifacts visible between tiles when 
+camera smoothing or fractional positions produce sub-pixel offsets. The 
+property defaults to true when pixelArt mode is enabled, matching the old 
+Quintus engine's strategy of sub-pixel physics with integer-snapped rendering. 
+Uses Math.round() over Math.floor() following Godot's PR #43813 findings (less 
+jitter at integer boundaries, no systematic bias).
+
+---
+
+## Add scene registry for string-based scene transitions
+*Wednesday, February 18th at 7pm*
+Add a scene registry to Game that allows scenes to be referenced by string 
+names instead of class constructors, eliminating circular import issues. The 
+registry adds registerScene(), registerScenes(), and a SceneTarget type (string 
+| SceneConstructor) accepted by start(), switchTo(), and _switchScene(). Both 
+platformer and dungeon examples are updated to use string-based transitions, 
+removing the _Level1Ref/_setLevel1Ref mutable-reference hack. Ten new tests 
+cover registration, resolution, chaining, error cases, and backwards 
+compatibility.
+
+---
+
+## Fix dungeon crawler sprites and add complete dungeon example
+*Wednesday, February 18th at 1pm*
+Corrected all 16 tile mappings in the dungeon crawler sprites.ts and state.ts 
+by visually cataloging every tile in the Kenney Tiny Dungeon tileset (132 
+tiles). Created tile_description.csv for future reference. Added the complete 
+dungeon crawler example game with player, enemies (skeleton, orc), items 
+(chests, keys, health pickups, equipment), doors, HUD, procedural level 
+generation, and multiple dungeon levels. Also updated debug-game skill 
+references to use pnpm-based commands.
+
+---
+
+## Add Y-Sort rendering, Timer node, and fix all lint warnings
+*Tuesday, February 17th at 8pm*
+Implements Phase A engine enhancements for the dungeon crawler demo: 
+ySortChildren property on Node2D for automatic Y-position-based render 
+ordering, and a Timer node for deterministic one-shot/repeating delays using 
+onFixedUpdate. Resolves all 377 Biome lint diagnostics across the codebase by 
+replacing non-null assertions with type-safe alternatives (charAt for string 
+indexing, as-assertions for array access in hot loops), removing unused 
+imports, fixing import ordering, and eliminating useless constructors. Also 
+includes Phase 8 design document, debug skill updates, and audio/input debug 
+instrumentation.
+
+---
+
+## Implement Phase 7: deterministic testing and AI infrastructure
+*Tuesday, February 17th at 2pm*
+Implement @quintus/headless (HeadlessGame with runFor/runUntil), @quintus/test 
+(InputScript DSL, InputScriptPlayer, async TestRunner, Timeline, assertions, 
+assertDeterministic), and @quintus/snapshot (StateSnapshot, captureState, 
+recursive diffSnapshots with tolerance). Add shared snapshot-utils and 
+_resetNodeIdCounter to @quintus/core. Include 97 new tests across all three 
+packages plus 7 platformer integration tests verifying player movement, 
+jumping, and 3-run determinism. AI agents and CI pipelines can now run, test, 
+and inspect Quintus games headlessly without a browser.
+
+---
+
+## Add comprehensive test coverage across all engine packages
+*Tuesday, February 17th at 12pm*
+Add 107 new tests across 6 new test files and 5 expanded existing files, 
+raising overall statement coverage from 91.67% to 95.38%. New test files cover 
+UI panel drawing, audio augmentation and autoplay gate, audio plugin lifecycle, 
+pointer event dispatch with coordinate conversion, and input plugin propagation 
+with DOM event binding. Expanded tests add gamepad polling with dead zones and 
+stick axes, moving platform carry, debug bridge click/clickButton and query 
+helpers, asset loader custom loaders, TSX parser error paths and collision 
+shapes, and tilemap edge cases including TMX loading.
+
+---
+
+## Add platformer to examples index page
+*Tuesday, February 17th at 12pm*
+Added the full-featured platformer game as a new entry on the examples index 
+page. The card links to /platformer/ and is labeled as Phase 6, with a 
+description highlighting its key features: 2 levels, enemies, double jump, 
+health system, HUD, audio, camera follow, TMX maps, and pixel art sprites.
+
+---
+
+## Add TMX/TSX XML parser and convert platformer to native Tiled format
+*Tuesday, February 17th at 12pm*
+Add first-class Tiled TMX/TSX XML parsing to @quintus/tilemap with parseTmx() 
+and parseTsx() functions that produce the same TiledMap objects as the existing 
+JSON pipeline. The parser supports CSV tile data, inline and external tilesets, 
+all object shapes (point, ellipse, polygon, polyline), tile objects with GID, 
+per-tile collision and animation, custom properties of all types, and Tiled 
+1.9+ class-to-type fallback. TileMap._loadMap() now auto-detects format, trying 
+JSON first then falling back to TMX text. The platformer example is converted 
+to load .tmx levels instead of .json, reducing level file sizes from ~7000 
+lines to ~160 lines. Includes comprehensive test suites for both parsers (27 
+test cases) and prerequisite type additions to tiled-types.ts.
+
+---
+
+## Add Node.set() and addChild props for bulk property assignment
+*Tuesday, February 17th at 10am*
+Added a set(props) method to the Node base class and an optional props second 
+argument to addChild(Class, props) and Scene.add(Class, props), enabling bulk 
+property assignment with full type safety via Partial<this> and Partial<T>. 
+Updated Layer.addChild to forward props correctly. Refactored all platformer 
+example UI scenes (title, game-over, victory, HUD) to use the new declarative 
+props pattern, eliminating verbose per-property setter lines. Added 3 new tests 
+covering addChild with props, set() standalone, and set() chaining.
+
+---
+
+## Add pixel art sprites, spike hazard, and renderer pixelArt mode
+*Tuesday, February 17th at 8am*
+Replace all procedural onDraw rendering in the platformer with 
+AnimatedSprite-based pixel art using the Kenney Pico-8 tileset. Add a shared 
+SpriteSheet definition for all entities (player, enemies, coin, health, flag, 
+spike), a new Spike hazard entity, heart-icon HUD replacing the health bar, and 
+edge-detection patrol AI. On the engine side, add pixelArt mode to 
+Canvas2DRenderer (disables image smoothing), fix flip rendering to always zero 
+drawX/drawY after translate, and set camera zoom to 2x for the crispy pixel 
+look.
+
+---
+
+## Add scene query API: raycast, area queries, shape cast, DDA tilemap raycast
+*Monday, February 16th at 6pm*
+Implement the complete Scene Query API across 5 phases as specified in 
+QUERY_API.md. Adds raycast/raycastAll, 
+queryPoint/queryRect/queryCircle/queryShape, and shapeCast to PhysicsWorld with 
+composable QueryOptions filtering (tags, groups, sensors, exclude, custom 
+predicate). Extracts findShapePairTOI to a standalone function for reuse. Adds 
+Actor convenience methods (raycast, isEdgeAhead, hasLineOfSight, findNearest) 
+for common gameplay patterns like patrol AI edge detection and line-of-sight 
+checks. Implements DDA grid raycast on TileMap for fast tile-level 
+line-of-sight queries. Includes 47 new tests across 4 test files, all passing 
+with clean build and lint.
+
+---
+
+## Add complete platformer game and fix bidirectional onContact dispatch
+*Monday, February 16th at 4pm*
+Implements the Phase 6 complete platformer with title screen, two levels, 
+enemies, coins, HUD, and game-over/victory scenes. Fixes three engine bugs 
+discovered during gameplay testing: onContact callbacks now fire 
+bidirectionally (when either body is the mover), the depenetration path in 
+Actor.move() now emits onCollided signals for overlapping bodies, and patrol 
+enemies use edge detection to stay on one-way platforms. Also adds 
+click/clickButton commands to the debug bridge for UI testing.
+
+---
+
+## Fix stderr warnings in game error-handling tests
+*Monday, February 16th at 2pm*
+Added game.stop() calls to two error-handling tests in game.test.ts that were 
+leaving the rAF loop running after assertions. The pending 
+requestAnimationFrame callbacks would fire after the test completed (and after 
+console.error spy was restored), producing spurious stderr output in the test 
+runner. All 1196 tests continue to pass, now with zero warnings.
+
+---
+
+## Add quintus meta-package bundling all 10 engine packages
+*Monday, February 16th at 1pm*
+Create the quintus npm meta-package (Phase 6, Step 1) that re-exports all 10 
+@quintus/* packages via a single entry point. The package uses sideEffects: 
+true to ensure module augmentations (game.physics, game.input, game.audio, 
+node.tween()) aren't tree-shaken. Includes 14 tests verifying all major classes 
+are accessible and all augmentations work correctly. Zero export name conflicts 
+across all packages. Gzipped barrel is 153 bytes; actual code bundled at 
+consume-time from dependencies.
+
+---
+
+## Copy platformer to basic_platformer before Phase 6 rewrite
+*Monday, February 16th at 1pm*
+Copied the existing Phase 2 platformer example to examples/basic_platformer/ to 
+preserve it as a simple reference demo before it gets replaced with a 
+full-featured Phase 6 platformer. Updated the examples index page to link to 
+the new basic_platformer path with an updated title. Also includes minor 
+updates to PHASE_6_DESIGN.md steering doc and ASKS.md log entries.
+
+---
+
+## Add actor-to-actor collision, onOverlap/onContact APIs
+*Monday, February 16th at 12pm*
+Implement FIX_COLLISION_DESIGN.md for @quintus/physics: add solid property to 
+Actor for actor-to-actor physical collision in castMotion(), replace 
+onCollision() with onOverlap() (enter/exit callbacks, auto-monitoring) and add 
+onContact() API for physics contact detection via collided signal. Rename 
+internal _onBodyEntered/_onBodyExited to public virtual methods, fix Sensor 
+signal bug where sensor-to-sensor overlaps swallowed bodyEntered, and fix 
+monitoring toggle stale overlap cleanup. All 382 tests pass across 14 test 
+files with comprehensive new coverage for solid actors, virtual methods, 
+overlap/contact APIs, and edge cases.
+
+---
+
+## Refactor examples into subdirectories with landing page
+*Monday, February 16th at 10am*
+Moved each demo (bouncing-balls, platformer, tilemap, tween-ui) into its own 
+subdirectory with a dedicated index.html and main.ts. The root index.html is 
+now a styled landing page with cards linking to each demo. Assets moved into 
+the tilemap subdirectory. Old flat HTML files removed. All routes verified 
+serving 200.
+
+---
+
+## Add tween, audio, and UI packages (Phase 5)
+*Sunday, February 15th at 6pm*
+Implement Phase 5 of the engine rewrite: three new packages (@quintus/tween, 
+@quintus/audio, @quintus/ui) plus core changes. Tween adds a builder-pattern 
+animation system with 16 easing functions, sequential/parallel groups, repeat, 
+and Node.tween() augmentation. Audio provides Web Audio API integration with 
+bus routing (music/sfx/ui), autoplay gate, and AudioPlayer node. UI adds 
+screen-fixed widgets (Label, Button, ProgressBar, Panel, Container, Layer) with 
+pointer dispatch for hit testing. Core gains postUpdate signal, 
+Node2D.alpha/renderFixed, and AssetLoader.registerLoader for custom asset 
+types. Includes a Phase 5 demo showcasing interactive tweened animations with 
+UI controls. All 1143 tests pass across 62 files.
+
+---
+
+## Add tilemap and camera packages (Phase 4)
+*Sunday, February 15th at 3pm*
+Implement Phase 4 of the Quintus 2.0 engine rewrite: @quintus/tilemap for Tiled 
+JSON map loading with greedy-merge tile collision generation and 
+viewport-culled rendering, and @quintus/camera for smooth follow, bounds 
+clamping, dead zones, zoom, pixel-perfect mode, deterministic shake, and 
+coordinate conversion. Core changes include Scene.viewTransform for camera 
+rendering, markRenderDirty propagation, and CameraSnapshot serialization with 
+informative debug tree output. Adds a scrolling platformer demo (tilemap-demo) 
+with Player, Coins, TileMap, and Camera. All 999 tests pass across 49 test 
+files.
+
+---
+
+## Add move-to and nearby commands to debug-game skill
+*Sunday, February 15th at 1pm*
+Adds two new commands to the quintus-debug CLI based on lessons from a live 
+platformer debugging session. move-to holds input actions until a node crosses 
+an x/y threshold, replacing the repetitive press/step/release cycle (reducing 
+coin collection from ~15 commands to 4). nearby shows nodes within a radius 
+with distance, delta, shape, and group info for spatial awareness. Also 
+documents the ceiling collision trap (jumping under platforms), the 
+isJustPressed caveat with move-to, and updates all recipes to use the new 
+commands.
+
+---
+
+## Add node IDs and shape info to debug tree output
+*Sunday, February 15th at 1pm*
+Enhance the debug tree formatter to include node IDs as [id] prefixes on every 
+line and collision shape details (type, dimensions) in angle brackets. 
+CollisionShape now serializes its shape data via a new CollisionShapeSnapshot 
+type with shapeType, shapeDesc, and disabled fields. The tree output changes 
+from CollisionShape (0, 0) to [3] CollisionShape (0, 0) <rect 16x32>, making 
+the debug view immediately useful for understanding scene geometry.
+
+---
+
+## Add /debug-game skill with quintus-debug CLI wrapper
+*Sunday, February 15th at 1pm*
+Add the /debug-game Claude Code skill for ergonomic runtime debugging of 
+Quintus games. The core engine change exposes formatTree and formatEvents on 
+window.__quintusFormatters so the CLI can use the engine's own pretty-printers 
+from the browser context. The quintus-debug bash wrapper provides 24 commands 
+(connect, tree, layout, physics, step, tap, track, jump-analysis, events, etc.) 
+that wrap playwright-cli session calls into one-liners. Includes SKILL.md with 
+methodology and decision tree, plus reference docs for the full API, physics 
+debugging formulas, and step-by-step recipes. Also fixes a null-safety issue in 
+the platformer demo's input access and applies biome formatting cleanups to 
+tests.
+
+---
+
+## Add AI debug protocol with serialization and instrumentation
+*Sunday, February 15th at 12pm*
+Implement the AI Debug Protocol infrastructure: node serialization (Node, 
+Node2D, Actor, StaticCollider, Sensor snapshots), a ring-buffer DebugLog for 
+structured events, a window.__quintusDebug bridge for 
+pause/resume/step/inspect/inject/screenshot, and auto-instrumentation hooks 
+throughout the engine (lifecycle events, collisions, contact flag changes, 
+sensor overlaps, scene transitions, errors). Game gains a debug option with URL 
+param detection (?debug, ?seed=N, ?step=N) for deterministic AI-driven testing. 
+Also refines the Phase 4 design doc with markRenderDirty fix for dynamic scene 
+changes, physics as optional peer dependency for tilemap, Camera inverse 
+transform caching, destroyed-target polling, and InputPlugin integration in the 
+demo.
+
+---
+
+## Add sprites and input packages (Phase 3)
+*Sunday, February 15th at 11am*
+Implement Phase 3 of the Quintus 2.0 rewrite: @quintus/sprites (SpriteSheet, 
+Sprite, AnimatedSprite with frame-based animation) and @quintus/input 
+(action-map input system with keyboard bindings, 
+isPressed/isJustPressed/isJustReleased queries, InputEvent propagation through 
+the scene tree, InputReceiver interface, and deterministic input injection via 
+inject()/injectAnalog()). Adds preFrame signal to core Game for input polling 
+before fixedUpdate. Updates the platformer demo to use the new input system 
+instead of raw keyboard listeners. Also adds Phase 3, Phase 4, and AI Debug 
+design documents, and updates the implementation plan to replace the MCP server 
+approach with a lighter Playwright-based debug CLI.
+
+---
+
+## Close test coverage gaps across core, math, and physics
+*Sunday, February 15th at 8am*
+Added 120 new tests across 13 test files to close branch coverage gaps 
+identified by a systematic coverage audit. Overall branch coverage improved 
+from 94.79% to 97.19%. Key improvements include full 100% branch coverage for 
+actor.ts, sensor.ts, collision-groups.ts, contact-point.ts, node2d.ts, 
+utils.ts, and static-collider.ts. Tests cover edge cases like null-return paths 
+in tree queries, error handling in onFixedUpdate, physics operations without a 
+world attached, sweptAABB near-zero motion branches, and Color.fromHSL hue 
+conversion branches.
+
+---
+
+## Fix physics registration, jump, rendering and add platformer demo
+*Sunday, February 15th at 7am*
+Fix four critical physics engine bugs and add the Phase 2.5 platformer demo 
+with integration tests. CollisionShape now notifies its parent CollisionObject 
+via _onShapeChanged() when the shape property is set, fixing the root cause 
+where bodies registered in the spatial hash before their shapes existed. 
+Actor.move() no longer clobbers jump velocity with floor snap gravity when 
+velocity.y is negative. Scene._processDestroyQueue() now returns a boolean so 
+Game can mark the render list dirty, fixing ghost nodes that persisted after 
+destroy(). The platformer demo includes a player with gravity/jumping, three 
+collectible coins with bobbing animation, stair-stepped platforms, and walls.
+
+---
+
+## Refactor scenes from callbacks to class-based API
+*Saturday, February 14th at 9pm*
+Replaced the callback-based scene registration pattern (game.scene("name", fn) 
+/ game.start("name")) with a class-based approach (class Level extends Scene { 
+onReady() {} } / game.start(Level)). This eliminates the _scenes map, 
+SceneSetupFn, SceneDefinition, and defineScene() in favor of a single 
+SceneConstructor type, making scenes consistent with the rest of the engine's 
+inheritance model. All 713 tests across 14 modified files pass, including 
+converted helpers in core and physics packages.
+
+---
+
+## Add Actor, StaticCollider, and Sensor physics bodies (Phase 2.4)
+*Saturday, February 14th at 9pm*
+Implement Phase 2 Subphase 4: the three concrete physics body types. Actor 
+provides the core move() slide loop with gravity, floor/wall/ceiling detection, 
+safe margin depenetration, velocity zeroing, collided signal, and moving 
+platform carry. StaticCollider adds constantVelocity for moving platforms and 
+oneWay/oneWayDirection for jump-through platforms. Sensor provides 
+bodyEntered/bodyExited/sensorEntered/sensorExited signals with monitoring 
+toggle and overlap queries. PhysicsWorld.castMotion gains bodyOffset for 
+batched displacement, actor-vs-actor filtering, and one-way normal alignment 
+filtering. 54 new tests (719 total), all passing.
+
+---
+
+## Add physics world & SAT micro-gap tests (T6)
+*Saturday, February 14th at 8pm*
+Added 11 tests covering uncovered edge-case paths in physics-world.ts, sat.ts, 
+and spatial-hash.ts as part of Phase 2 test gap subphase T6. Tests exercise the 
+general binary-search TOI path for non-rect shapes (circles, polygons), 
+closestPointsSegments endpoint clamping for capsule-vs-capsule collisions (t<0, 
+t>1, degenerate segments), sweptAABB Y-axis normal selection for 
+already-overlapping rects, rectVsCircle Y-axis fallback, and queryPairs reverse 
+ID ordering in the spatial hash. All three files now have 100% line coverage, 
+bringing the total to 665 passing tests.
+
+---
+
+## Add math micro-gap tests for Vec2, Color, Matrix2D (T5)
+*Saturday, February 14th at 4pm*
+Implements Phase 2 test gap subphase T5 with 7 new tests covering math package 
+micro-gaps: Vec2._set() onChange behavior (fire once on change, skip when 
+unchanged), Color.fromHex() 4-char #RGBA format, SeededRandom.weighted() edge 
+case, and Matrix2D negative determinant handling in decompose()/getScale() plus 
+singular matrix inverse fallback. Coverage improved: vec2.ts 96% → 100%, 
+matrix2d.ts branches 90% → 100%, color.ts line 83-84 now covered. Only 
+seeded-random.ts line 93 remains uncovered (unreachable defensive fallback).
+
+---
+
+## Add core edge case tests for game, node2d, and asset-loader (T4)
+*Saturday, February 14th at 4pm*
+Implements Phase 2 test gap subphase T4 with 15 new tests covering previously 
+uncovered edge cases in game.ts (pause/resume, SceneDefinition start, 
+_switchScene with setup, canvas resolution paths, backgroundColor), node2d.ts 
+(lookAt, moveToward with overshoot protection, _markGlobalTransformDirty early 
+return, deep nesting dirty propagation), and asset-loader.ts (retry with 
+image/JSON extensions, allLoaded getter, network error handling). Coverage 
+improved: game.ts 87% → 100%, asset-loader.ts 89% → 100%, node2d.ts 89% → 98%.
+
+---
+
+## Add GameLoop RAF tick tests for 100% game-loop coverage (T3)
+*Saturday, February 14th at 4pm*
+Added 12 tests covering the GameLoop's RAF-based tick(), start(), and stop() 
+methods, which were previously untested at 67% coverage. Tests mock 
+requestAnimationFrame and performance.now to precisely control timestamps, 
+verifying correct fixedUpdate call counts, accumulator clamping for 
+spiral-of-death prevention, fixed-vs-variable update separation, RAF 
+scheduling, and mid-frame stop behavior. This completes Phase 2 test gap 
+subphase T3, bringing game-loop.ts from 67% to 100% line coverage.
+
+---
+
+## Add Canvas2DDrawContext and render pipeline tests (T2)
+*Saturday, February 14th at 4pm*
+Add 28 new tests covering the Canvas2DDrawContext drawing primitives (line, 
+rect, circle, polygon, text, measureText, image with flip/sourceRect, 
+save/restore, setAlpha) and render pipeline edge cases (globalTransform 
+application, exception resilience, empty scene). Uses property setter spies to 
+work around jsdom's color normalization behavior. Coverage for 
+canvas2d-renderer.ts goes from 44.62% to 100% line coverage, bringing total 
+tests to 613 across 26 files.
+
+---
+
+## Add physics integration tests for CollisionObject and PhysicsPlugin
+*Saturday, February 14th at 4pm*
+Implement T1 subphase from PHASE_2_TEST_GAPS.md: 31 new tests across two files 
+covering PhysicsPlugin factory/wiring (defaults, custom config, WeakMap 
+isolation, postFixedUpdate hook) and CollisionObject lifecycle (getShapes, 
+getWorldAABB, auto-registration on tree enter, auto-unregistration on exit, 
+auto-install with warning, full game loop sensor integration). Coverage for 
+collision-object.ts goes from 48% to 100% and physics-plugin.ts from 0% to 
+100%, bringing physics package statement coverage to 98%. Also adds the test 
+gap analysis doc and refines the Phase 2 Subphase 4 design with depenetration, 
+safe margin, batched displacement, and actor-vs-actor skip decisions.
+
+---
+
+## Implement Phase 2 Subphase 3 physics infrastructure
+*Saturday, February 14th at 4pm*
+Implement the physics infrastructure layer: CollisionShape node for defining 
+collision geometry, CollisionObject abstract base class with auto-registration 
+and shape queries, PhysicsWorld orchestrator with castMotion(), testOverlap(), 
+and sensor overlap detection, PhysicsPlugin with WeakMap-based world storage 
+and postFixedUpdate hook, and contact point computation via support point 
+midpoint. Circular dependency between CollisionObject and PhysicsPlugin 
+resolved via a registration pattern. Includes 55 new tests covering all 
+modules. Updates collision-info.ts to use real CollisionObject/CollisionShape 
+types instead of Node2D aliases.
+
+---
+
+## Dramatically increase SAT collision test coverage
+*Saturday, February 14th at 2pm*
+Add 57 new tests to SAT collision detection covering all previously untested 
+shape pairs (Circle×Polygon, Capsule×Polygon), transform variations (rotation, 
+scale, composed), swept collision for 7 additional shape combinations, argument 
+order swap symmetry, and full containment scenarios. Test count grows from 46 
+to 103, achieving 100% shape pair coverage for static tests and 90% for swept 
+collision pairs. Includes new txrs helper for composed transforms and shared 
+polygon shape constants.
+
+---
+
+## Implement Phase 2 Subphase 2 collision detection
+*Saturday, February 14th at 2pm*
+Add SpatialHash generic broad-phase with Cantor pairing and smart cell updates, 
+SAT narrow-phase with fast paths for axis-aligned rect-vs-rect, 
+circle-vs-circle, and rect-vs-circle, plus general SAT supporting rotated 
+shapes, capsules, and convex polygons. Includes swept collision via analytical 
+sweptAABB for rects and binary-search findTOI for arbitrary shape pairs. Normal 
+convention is consistently A-toward-B across all code paths. 68 new tests (16 
+spatial hash, 52 SAT/swept) all passing alongside existing 380 tests.
+
+---
+
+## Implement Phase 2 Subphase 1 foundation types for physics
+*Friday, February 13th at 10pm*
+Add Shape2D types (rect, circle, capsule, polygon) with Shape factory and 
+transform-aware shapeAABB() computation including a fast path for 
+translation-only transforms. Add CollisionInfo interface for collision response 
+data and CollisionGroups class that compiles named string groups to bitmasks 
+for O(1) shouldCollide() checks. Includes 34 new tests covering all shape 
+types, AABB computation across identity/translate/rotate/scale/composed 
+transforms, and collision group compilation with asymmetric collision and 
+validation. Step 1 core changes (postFixedUpdate signal, props removal from 
+addChild) were already completed in prior commits.
+
+---
+
+## Apply devil's advocate fixes to core, math, and Phase 2 design
+*Friday, February 13th at 9pm*
+Fix 14 issues from devil's advocate review of Phase 2 design. In code: fix 
+Node.destroy() to queue for deferred processing via scene._queueDestroy(), 
+remove the type-unsafe props parameter from addChild() and Scene.add() (delete 
+applyNodeProps/applyNode2DProps), add postFixedUpdate signal to Game that fires 
+after each fixed step, and fix Matrix2D.isTranslationOnly() to use 
+epsilon-based comparison instead of exact equality. Updates tests, examples, 
+CLAUDE.md, and Phase 2 steering docs (shapeAABB rewritten with zero-allocation 
+inline math, SAT helper functions for pool temporaries, collision direction 
+documented as unidirectional).
+
+---
+
+## Add Vec2._set() to reduce redundant dirty notifications
+*Friday, February 13th at 4pm*
+Add a bulk _set(x, y) method to Vec2 that writes both components and fires the 
+_onChange callback at most once. Node2D's position, scale, and globalPosition 
+setters now use _set() instead of writing x/y individually through setters, 
+which previously triggered _markTransformDirty() up to three times per 
+assignment (once per component via _onChange, plus once explicitly). This 
+reduces dirty-propagation overhead from 3x to 1x per vector assignment.
+
+---
+
+## Extract Renderer interface and make Game renderer pluggable
+*Friday, February 13th at 3pm*
+Extract a Renderer interface from Canvas2DRenderer and make the Game class 
+accept pluggable renderers via GameOptions. This enables headless mode 
+(renderer: null), custom renderers, and runtime renderer swapping via 
+_setRenderer() for future plugins like ThreePlugin. Also moves onDraw from Node 
+to Node2D, making the base Node class dimension-agnostic with zero 
+math/rendering imports — a key architectural invariant for future 3D support. 
+Includes 6 new tests for renderer pluggability.
+
+---
+
+## Simplify Phase 1: remove Proxy, tinting, and boilerplate
+*Friday, February 13th at 2pm*
+Simplify Phase 1 core engine based on LLM-friendliness review. Replace 
+Proxy-based Vec2 dirty flagging with getter/setter + _onChange callback. 
+Simplify Signal emission to snapshot-only iteration, removing mid-emit 
+disconnect tracking. Remove entire tint system (tint/selfTint/effectiveTint and 
+offscreen canvas compositing) from Phase 1, deferring to a later phase. Drop 
+third addChild overload (constructor args) keeping only instance and 
+class+props variants. Replace hasVisualContent boolean flag with prototype 
+comparison (node.onDraw !== baseOnDraw) for automatic render list inclusion.
+
+---
+
+## Implement Phase 1: math and core packages with design-aligned API
+*Friday, February 13th at 2pm*
+Implement the @quintus/math and @quintus/core packages for Phase 1 of the 
+engine rewrite. Math package includes Vec2 (mutable with frozen static 
+constants), Matrix2D, Color, Rect, AABB, SeededRandom, and Vec2Pool. Core 
+package includes Node/Node2D scene tree, Signal system, Game/GameLoop, Scene 
+management, Canvas2D renderer, asset loader, and plugin system. API follows the 
+PHASE_1_DESIGN.md conventions: lifecycle methods use the on-prefix pattern 
+(onReady, onUpdate, onDraw, onDestroy), PauseMode replaces ProcessMode with 
+simplified inherit/independent values, modulate is renamed to tint, and Vec2 
+position/scale on Node2D use Proxy-based dirty flagging for automatic transform 
+invalidation. All 333 tests pass with clean builds.
+
+---
+
+## Phase 0: Bootstrap monorepo with 19 packages and tooling
+*Friday, February 13th at 12pm*
+Set up the Quintus 2.0 monorepo infrastructure from PHASE_0_DESIGN.md. 
+Scaffolded 19 empty packages under packages/ with pnpm workspace, tsup builds 
+(ESM + CJS + DTS), TypeScript strict mode, Vitest testing, Biome 
+linting/formatting, Vite dev server for examples, and TypeDoc API generation. 
+All commands pass: pnpm install, build, test, lint, and docs. Fixed several 
+issues from the design doc including the correct tsconfig option name 
+(forceConsistentCasingInFileNames), pnpm --if-present flag ordering, and Biome 
+2.3.15 schema migration.
+
+---

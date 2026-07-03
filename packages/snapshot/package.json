@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/snapshot",
+	"private": true,
 	"version": "0.0.0",
 	"description": "StateSnapshot, filmstrip, visual regression",
 	"type": "module",
@@ -32,7 +33,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/snapshot"
 	}
 }

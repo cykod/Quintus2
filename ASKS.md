@@ -794,3 +794,51 @@
 [DSGN] mon 4/13 2pm - Design gh-pages deployment build process for example games
 
 [BUILD] mon 4/13 2pm - Build gh-pages deployment from DEPLOYED_EXAMPLES.md
+
+[DSGN] thu 7/2 4pm - Design npm packaging/release setup for Quintus2 and a create-quintus2 scaffolder (2D/3D) that installs the debug-game skill
+
+[BUILD] thu 7/2 7pm - Build all 7 phases of npm packaging/release + create-quintus2 scaffolder from steering/20260702_PACKAGING_DESIGN.md
+
+[IMPL] thu 7/2 7pm - Implement Phase 1 of steering/20260702_PACKAGING_DESIGN.md: privatize @quintus/* internals, rename quintus meta-package to quintus2, bundle engine into quintus2's dist
+
+[CDRV] thu 7/2 7pm - Code review Phase 1 publish-readiness per steering/20260702_PACKAGING_DESIGN.md
+
+[RETR] thu 7/2 7pm - Retro on Phase 1 publish-readiness per steering/20260702_PACKAGING_DESIGN.md
+
+[CDRV] thu 7/2 8pm - Code review Phase 2 CHANGELOG-driven release script per steering/20260702_PACKAGING_DESIGN.md
+
+[RETR] thu 7/2 8pm - Retro on Phase 2 (CHANGELOG-driven release script) of the packaging design
+
+[FIX] thu 7/2 8pm - Fix Phase 2 release-script review findings (license fan-out robustness, CI least-privilege, CONTRIBUTING count) per steering/20260702_PACKAGING_DESIGN.md
+
+[IMPL] thu 7/2 8pm - Implement Phase 3 of steering/20260702_PACKAGING_DESIGN.md — the create-quintus2 CLI skeleton with scaffold/package-json/pm core and placeholder templates
+
+[CDRV] thu 7/2 8pm - Code review Phase 3 create-quintus2 CLI skeleton per steering/20260702_PACKAGING_DESIGN.md
+
+[RETR] thu 7/2 8pm - Retro on Phase 3 (create-quintus2 CLI skeleton) of the packaging design
+
+[FIX] thu 7/2 8pm - Fix Phase 3 create-quintus2 CLI review findings from code-review, security-review, retro, and runtime review files
+
+[IMPL] thu 7/2 8pm - Implement Phase 4 (2D starter template) of steering/20260702_PACKAGING_DESIGN.md
+
+[CDRV] thu 7/2 8pm - Code review Phase 4 (2D starter template) of PACKAGING_DESIGN
+
+[RETR] thu 7/2 8pm - Retro on Phase 4 (2D starter template) of steering/20260702_PACKAGING_DESIGN.md
+
+[FIX] thu 7/2 9pm - Fix Phase 4 (2D template) review findings plus the cross-cutting quintus2 .d.ts consumer-typecheck defect per steering/20260702_PACKAGING_DESIGN.md
+
+[RETR] thu 7/2 9pm - Retro on Phase 5 (3D starter template) of steering/20260702_PACKAGING_DESIGN.md
+
+[IMPL] thu 7/2 9pm - Implement Phase 6 of steering/20260702_PACKAGING_DESIGN.md: bundle debug-game skill, standalone qdbg with .qdbg.json support, CLAUDE.md, and README.md into both create-quintus2 templates
+
+[RETR] thu 7/2 10pm - Retro on Phase 6 (bundled tooling: debug-game skill, standalone qdbg, CLAUDE.md) of steering/20260702_PACKAGING_DESIGN.md
+
+- [FIX] Fix Phase 6 (Bundled Tooling) review findings: FORCE_COLOR undefined-guard bug, url scheme/host hardening, SKILL.md allowed-tools + connect recipe adaptation, template drift-guard (sync script + vitest), and npm-run-qdbg cosmetic fix.
+
+[IMPL] thu 7/2 10pm - Implement Phase 7 of steering/20260702_PACKAGING_DESIGN.md: E2E scaffold+build test, CI job, Getting Started docs, and root CLAUDE.md updates
+
+[CDRV] thu 7/2 10pm - Code review Phase 7 (E2E scaffold+build test and docs) per steering/20260702_PACKAGING_DESIGN.md
+
+[RETR] thu 7/2 10pm - Retro on Phase 7 (E2E scaffold+build test and docs) of steering/20260702_PACKAGING_DESIGN.md
+
+[FIX] thu 7/2 10pm - Fix Phase 7 (E2E and docs) review findings: close create-quintus2 packaging-coverage gap, fix vacuous assertions, correct doc counts, and low findings

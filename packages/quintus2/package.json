@@ -1,0 +1,125 @@
+{
+	"name": "quintus2",
+	"version": "0.0.0",
+	"description": "Quintus 2.0 — modern HTML5 game engine with Godot-inspired Node/Scene Tree",
+	"type": "module",
+	"sideEffects": [
+		"./dist/index.js",
+		"./dist/index.cjs",
+		"./dist/three.js",
+		"./dist/three.cjs"
+	],
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
+		},
+		"./jsx-runtime": {
+			"import": {
+				"types": "./dist/jsx-runtime.d.ts",
+				"default": "./dist/jsx-runtime.js"
+			},
+			"require": {
+				"types": "./dist/jsx-runtime.d.cts",
+				"default": "./dist/jsx-runtime.cjs"
+			}
+		},
+		"./jsx-dev-runtime": {
+			"import": {
+				"types": "./dist/jsx-dev-runtime.d.ts",
+				"default": "./dist/jsx-dev-runtime.js"
+			},
+			"require": {
+				"types": "./dist/jsx-dev-runtime.d.cts",
+				"default": "./dist/jsx-dev-runtime.cjs"
+			}
+		},
+		"./three": {
+			"import": {
+				"types": "./dist/three.d.ts",
+				"default": "./dist/three.js"
+			},
+			"require": {
+				"types": "./dist/three.d.cts",
+				"default": "./dist/three.cjs"
+			}
+		},
+		"./testing": {
+			"import": {
+				"types": "./dist/testing.d.ts",
+				"default": "./dist/testing.js"
+			},
+			"require": {
+				"types": "./dist/testing.d.cts",
+				"default": "./dist/testing.cjs"
+			}
+		},
+		"./package.json": "./package.json"
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup && node scripts/build-dts.mjs",
+		"dev": "tsup --watch"
+	},
+	"keywords": [
+		"game-engine",
+		"quintus",
+		"html5",
+		"2d",
+		"3d",
+		"typescript",
+		"scene-tree"
+	],
+	"license": "MIT",
+	"author": "Cykod LLC",
+	"homepage": "https://github.com/cykod/quintus2#readme",
+	"bugs": {
+		"url": "https://github.com/cykod/quintus2/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/cykod/quintus2",
+		"directory": "packages/quintus2"
+	},
+	"peerDependencies": {
+		"three": ">=0.160.0"
+	},
+	"peerDependenciesMeta": {
+		"three": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@quintus/audio": "workspace:*",
+		"@quintus/camera": "workspace:*",
+		"@quintus/core": "workspace:*",
+		"@quintus/headless": "workspace:*",
+		"@quintus/input": "workspace:*",
+		"@quintus/jsx": "workspace:*",
+		"@quintus/math": "workspace:*",
+		"@quintus/physics": "workspace:*",
+		"@quintus/prefabs": "workspace:*",
+		"@quintus/snapshot": "workspace:*",
+		"@quintus/sprites": "workspace:*",
+		"@quintus/test": "workspace:*",
+		"@quintus/three": "workspace:*",
+		"@quintus/tilemap": "workspace:*",
+		"@quintus/touch": "workspace:*",
+		"@quintus/tween": "workspace:*",
+		"@quintus/ui": "workspace:*",
+		"@types/three": "^0.172.0",
+		"dts-bundle-generator": "^9.5.1",
+		"three": "^0.172.0"
+	}
+}

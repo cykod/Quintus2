@@ -1,0 +1,47 @@
+{
+	"name": "create-quintus2",
+	"version": "0.0.0",
+	"description": "Scaffolder for Quintus2 games — `npm create quintus2@latest my-game`",
+	"type": "module",
+	"bin": {
+		"create-quintus2": "./dist/index.js"
+	},
+	"files": [
+		"dist",
+		"templates"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"prebuild": "node ../../scripts/sync-template-tooling.mjs",
+		"build": "tsup src/index.ts --format esm --clean",
+		"dev": "tsup src/index.ts --format esm --watch"
+	},
+	"dependencies": {
+		"picocolors": "^1.0.0",
+		"prompts": "^2.4.2"
+	},
+	"devDependencies": {
+		"@types/prompts": "^2.4.9"
+	},
+	"keywords": [
+		"quintus",
+		"quintus2",
+		"game-engine",
+		"create",
+		"scaffold",
+		"starter"
+	],
+	"license": "MIT",
+	"author": "Cykod LLC",
+	"homepage": "https://github.com/cykod/quintus2#readme",
+	"bugs": {
+		"url": "https://github.com/cykod/quintus2/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/cykod/quintus2",
+		"directory": "packages/create-quintus2"
+	}
+}

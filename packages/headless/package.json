@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/headless",
+	"private": true,
 	"version": "0.0.0",
 	"description": "HeadlessGame, Node.js runtime, manual stepping",
 	"type": "module",
@@ -33,7 +34,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/headless"
 	}
 }

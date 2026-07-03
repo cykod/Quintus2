@@ -6,7 +6,7 @@ export default defineConfig({
 		globals: true,
 		passWithNoTests: true,
 		setupFiles: ["vitest-canvas-mock"],
-		include: ["packages/*/src/**/*.test.ts"],
+		include: ["packages/*/src/**/*.test.ts", "scripts/**/*.test.mjs"],
 		typecheck: {
 			enabled: true,
 			tsconfig: "./packages/jsx/tsconfig.typetest.json",

@@ -1,0 +1,58 @@
+name: E2E
+
+# Heavier packaging smoke test: pack `quintus2`, scaffold a project, install it from
+# the tarball, then build + test + typecheck it (packages/create-quintus2/e2e).
+# Path-gated so it only runs when the engine bundle, the scaffolder, or engine
+# source changes. The always-on fast gate (lint/test/build) lives in ci.yml.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/create-quintus2/**"
+      - "packages/quintus2/**"
+      - "packages/*/src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  pull_request:
+    paths:
+      - "packages/create-quintus2/**"
+      - "packages/quintus2/**"
+      - "packages/*/src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+# Least privilege: reads the repo and installs from the public npm registry.
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scaffold-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [2d, 3d]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The E2E consumes built output (quintus2 bundle + scaffolder dist).
+      - run: pnpm build
+
+      - name: Scaffold → install (tarball) → build → test → tsc (${{ matrix.template }})
+        run: pnpm test:e2e
+        env:
+          QUINTUS_E2E_TEMPLATE: ${{ matrix.template }}

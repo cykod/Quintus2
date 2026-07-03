@@ -109,7 +109,7 @@ async function main() {
 		);
 	}
 	xml.push("</TextureAtlas>");
-	writeFileSync(join(OUT_DIR, "particles.xml"), xml.join("\n") + "\n");
+	writeFileSync(join(OUT_DIR, "particles.xml"), `${xml.join("\n")}\n`);
 	console.log("Created particles.xml");
 }
 

@@ -9,6 +9,7 @@
 	"scripts": {
 		"build": "pnpm --recursive --sort run --if-present build",
 		"test": "vitest run",
+		"test:e2e": "vitest run --config packages/create-quintus2/vitest.e2e.config.ts",
 		"test:watch": "vitest --watch",
 		"test:coverage": "vitest run --coverage",
 		"lint": "biome check .",
@@ -20,6 +21,8 @@
 		"build:examples": "pnpm build && rm -rf examples/dist && pnpm exec vite build examples",
 		"clean": "pnpm --recursive exec rm -rf dist",
 		"preinstall": "npx only-allow pnpm",
+		"release": "node scripts/release.mjs",
+		"sync:templates": "node scripts/sync-template-tooling.mjs",
 		"qdbg": "./bin/qdbg"
 	},
 	"devDependencies": {

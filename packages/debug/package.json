@@ -1,5 +1,6 @@
 {
 	"name": "@quintus/debug",
+	"private": true,
 	"version": "0.0.0",
 	"description": "FPS counter, node inspector, collision visualization",
 	"type": "module",
@@ -40,7 +41,7 @@
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cykod/Quintus",
+		"url": "https://github.com/cykod/quintus2",
 		"directory": "packages/debug"
 	}
 }
