@@ -1,4 +1,5 @@
 import { AnimatedSprite, CollisionShape, Sensor, Shape } from "quintus2";
+import { SPRITE_SCALE } from "../config.js";
 import { entitySheet } from "../sprites.js";
 import { gameState } from "../state.js";
 
@@ -11,8 +12,13 @@ export class Coin extends Sensor {
 	override build() {
 		return (
 			<>
-				<CollisionShape shape={Shape.circle(4)} />
-				<AnimatedSprite ref="sprite" spriteSheet={entitySheet} animation="coin_idle" />
+				<CollisionShape shape={Shape.circle(7)} />
+				<AnimatedSprite
+					ref="sprite"
+					spriteSheet={entitySheet}
+					animation="coin_idle"
+					scale={SPRITE_SCALE}
+				/>
 			</>
 		);
 	}
@@ -23,6 +29,7 @@ export class Coin extends Sensor {
 		this.bodyEntered.connect((body) => {
 			if (!body.hasTag("player")) return;
 			gameState.score += 10;
+			gameState.coins += 1;
 			this.game.audio.play("coin", { bus: "sfx" });
 			this.destroy();
 		});

@@ -4,4 +4,5 @@ import { reactiveState } from "quintus2";
 export const gameState = reactiveState({
 	score: 0,
 	lives: 3,
+	coins: 0,
 });

@@ -1,10 +1,11 @@
 import { AudioPlugin, Game, InputPlugin, PhysicsPlugin, Vec2 } from "quintus2";
-import { COLLISION_GROUPS, INPUT_BINDINGS } from "./config.js";
+import { COLLISION_GROUPS, GAME_HEIGHT, GAME_WIDTH, INPUT_BINDINGS } from "./config.js";
 import { Level1 } from "./scenes/level1.js";
+import { WinScene } from "./scenes/win.js";
 
 const game = new Game({
-	width: 320,
-	height: 240,
+	width: GAME_WIDTH,
+	height: GAME_HEIGHT,
 	canvas: "game",
 	scale: "fit",
 	pixelArt: true,
@@ -18,7 +19,7 @@ game.use(InputPlugin({ actions: INPUT_BINDINGS }));
 game.use(AudioPlugin());
 
 // === Scenes ===
-game.registerScenes({ level1: Level1 });
+game.registerScenes({ level1: Level1, win: WinScene });
 
 // === Load assets, then start ===
 game.assets

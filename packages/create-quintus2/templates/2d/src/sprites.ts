@@ -17,5 +17,7 @@ export const entitySheet = new SpriteSheet({
 		player_jump: { frames: [107], fps: 1, loop: false },
 		// Coin (spinning star)
 		coin_idle: { frames: [88], fps: 1, loop: false },
+		// Patrolling enemy
+		enemy_walk: { frames: [109, 112], fps: 4, loop: true },
 	},
 });

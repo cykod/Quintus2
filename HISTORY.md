@@ -1,3 +1,19 @@
+## [FEAT] Expand 2D starter: walls, platforms, enemy, win scene
+*Friday, July 3rd at 5pm*
+Extended the create-quintus2 2D starter template into a small but complete 
+platformer: a new visible Block component fixes the previously-invisible floor 
+and adds bordering walls plus a three-step platform staircase; the level now 
+has three collectible coins, a patrolling Enemy that reverses at walls/edges 
+and costs the player a life (with respawn + brief invulnerability) on contact, 
+and a new WinScene that triggers once all coins are collected. The render 
+resolution was raised to 640x480 with sprites drawn at 2x so they stay chunky 
+instead of shrinking, and the HUD gained a coin counter. Verified end-to-end 
+against the built engine — typecheck clean, three unit tests passing, and 
+runtime behavior (movement, walls, enemy life-loss, coin pickup, and the win 
+transition) confirmed via qdbg with screenshots.
+
+---
+
 ## [TWK] Scaffold pnpm + devcontainer; release prints push
 *Friday, July 3rd at 4pm*
 Generated create-quintus2 projects now use pnpm (pinned packageManager field, 
