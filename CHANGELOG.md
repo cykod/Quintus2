@@ -18,6 +18,24 @@ lockstep — every published package shares the version at the top of this file.
 
 _Add changes for the next release here, then promote to a versioned heading._
 
+## [0.0.3] - 2026-07-03 — Scaffold in a container
+
+### Added
+
+- Ship a `.devcontainer/` in the scaffolded 2D and 3D projects — open the project
+  in VS Code ("Reopen in Container") or a Codespace and dependencies install
+  automatically, with the Vite dev server (port 3050) and `qdbg` ready to run.
+
+### Changed
+
+- Scaffolded projects now use **pnpm**: a pinned `packageManager` field plus
+  pnpm-based `README` and `CLAUDE.md` docs (with an npm fallback note).
+
+### Fixed
+
+- `pnpm release` now prints the `git push --follow-tags` command for you to run
+  instead of pushing itself — the release environment has no git credentials.
+
 ## [0.0.2] - 2026-07-02
 
 ### Added

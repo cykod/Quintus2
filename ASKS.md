@@ -844,3 +844,5 @@
 [FIX] thu 7/2 10pm - Fix Phase 7 (E2E and docs) review findings: close create-quintus2 packaging-coverage gap, fix vacuous assertions, correct doc counts, and low findings
 
 [MILE] fri 7/3 12am - Added npm packaging, CHANGELOG-driven release flow, and the create-quintus2 2D/3D scaffolder (all 7 phases of the packaging design)
+
+[MILE] fri 7/3 4pm - Added pnpm and .devcontainer support to create-quintus2 templates and made release.mjs print the git push instead of running it
