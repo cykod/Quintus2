@@ -1,6 +1,6 @@
 {
 	"name": "quintus2",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "Quintus 2.0 — modern HTML5 game engine with Godot-inspired Node/Scene Tree",
 	"type": "module",
 	"sideEffects": [
