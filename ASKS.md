@@ -846,3 +846,7 @@
 [MILE] fri 7/3 12am - Added npm packaging, CHANGELOG-driven release flow, and the create-quintus2 2D/3D scaffolder (all 7 phases of the packaging design)
 
 [MILE] fri 7/3 4pm - Added pnpm and .devcontainer support to create-quintus2 templates and made release.mjs print the git push instead of running it
+
+[MILE] fri 7/3 5pm - Expanded the create-quintus2 2D starter with visible floor/walls, platforms, more coins, a patrolling enemy, a You-Win scene, and a higher 640x480 resolution with upscaled sprites
+
+[MILE] fri 7/3 5pm - Fixed the GitHub Pages examples deploy failure via cancel-in-progress: false and bumped setup-node from Node 20 to 24 across ci, e2e, and deploy-examples workflows

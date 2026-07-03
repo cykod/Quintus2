@@ -18,6 +18,29 @@ lockstep — every published package shares the version at the top of this file.
 
 _Add changes for the next release here, then promote to a versioned heading._
 
+## [0.0.4] - 2026-07-03 — Playable 2D starter
+
+### Added
+
+- The scaffolded 2D starter is now a small but complete platformer: a visible
+  `Block` component provides a solid floor and bordering walls plus a three-step
+  platform staircase, three collectible coins, a patrolling enemy that reverses
+  at walls and ledges and costs a life (with respawn + brief invulnerability) on
+  contact, and a `WinScene` that triggers once every coin is collected.
+- Coin counter in the starter HUD.
+
+### Changed
+
+- Raised the starter's render resolution to 640×480 with sprites drawn at 2×, so
+  art stays chunky instead of shrinking.
+
+### Fixed
+
+- The examples GitHub Pages deploy no longer fails with "Deployment failed, try
+  again later" — the `pages` concurrency group now uses `cancel-in-progress:
+  false` so in-flight deployments are not cancelled mid-flight. CI also moved off
+  the deprecated Node 20 runner to Node 24.
+
 ## [0.0.3] - 2026-07-03 — Scaffold in a container
 
 ### Added
