@@ -1,3 +1,14 @@
+## [OTHR] Fix Pages deploy failure and bump CI to Node 24
+*Friday, July 3rd at 5pm*
+Fixed the "Deployment failed, try again later" error in the examples GitHub 
+Pages deploy by setting the pages concurrency group to cancel-in-progress: 
+false, so in-flight production deployments are no longer cancelled mid-flight. 
+Also bumped actions/setup-node from the deprecated Node 20 to Node 24 across 
+all three workflows (deploy-examples.yml, ci.yml, e2e.yml) to silence the 
+runner deprecation warning.
+
+---
+
 ## [FEAT] Expand 2D starter: walls, platforms, enemy, win scene
 *Friday, July 3rd at 5pm*
 Extended the create-quintus2 2D starter template into a small but complete 
