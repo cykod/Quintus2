@@ -18,10 +18,14 @@ lockstep — every published package shares the version at the top of this file.
 
 _Add changes for the next release here, then promote to a versioned heading._
 
-## [0.0.1] - 2026-07-02
+## [0.0.2] - 2026-07-02
 
 ### Added
 
 - Initial release of Quintus2 to npm: the bundled **`quintus2`** engine (2D + core,
   with 3D under the `quintus2/three` subpath) and the **`create-quintus2`** project
   scaffolder.
+
+## [0.0.1] - 2026-07-01
+
+- Unreleased
