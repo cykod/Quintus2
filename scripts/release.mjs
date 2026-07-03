@@ -12,7 +12,9 @@
  *   6. Commit ("Release vX.Y.Z"), tag (vX.Y.Z).
  *   7. Fan the root LICENSE.md into each publishable package, publish all public
  *      packages (`pnpm -r publish` rewrites `workspace:*` and skips private
- *      packages), remove the copies, then push the commit and tag.
+ *      packages), then remove the copies. The commit and tag are left unpushed —
+ *      the script prints the `git push --follow-tags` for the user to run, since
+ *      the release container has no git credentials.
  *
  * Usage:
  *   pnpm release            # interactive — confirms before mutating
@@ -223,10 +225,13 @@ async function main() {
 		}
 	}
 
-	step("Pushing commit and tag");
-	mutate("git push --follow-tags");
-
 	console.log(`\n✔ Released v${target}${DRY ? " (dry-run — nothing was changed)" : ""}`);
+	if (!DRY) {
+		console.log(
+			"\nNext step — push the release commit and tag (this environment has no git credentials):\n" +
+				"  git push --follow-tags",
+		);
+	}
 }
 
 // Run the CLI flow only when executed directly (not when imported by tests).

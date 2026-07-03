@@ -1,3 +1,16 @@
+## [TWK] Scaffold pnpm + devcontainer; release prints push
+*Friday, July 3rd at 4pm*
+Generated create-quintus2 projects now use pnpm (pinned packageManager field, 
+pnpm-based README/CLAUDE.md docs) and ship a .devcontainer/ for both the 2D and 
+3D templates so a project can be opened and run in a container with 
+dependencies auto-installed; the E2E survival check now guards the devcontainer 
+file against npm dotfile stripping. Separately, scripts/release.mjs no longer 
+attempts git push itself — the release container has no git credentials — 
+and instead prints the git push --follow-tags command for the user to run after 
+publishing.
+
+---
+
 ## [FEAT] Add npm packaging, release flow, and create-quintus2 scaffolder
 *Friday, July 3rd at 12am*
 Makes the Quintus2 engine publishable as exactly two npm packages — the 

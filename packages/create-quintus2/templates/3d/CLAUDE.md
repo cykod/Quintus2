@@ -112,7 +112,7 @@ expect(scene?.findByType(Camera3D)).not.toBeNull();
 result.game.stop(); // always stop — a lingering loop leaks across tests
 ```
 
-Run with `npm test`. Deterministic: same `seed` → same result.
+Run with `pnpm test`. Deterministic: same `seed` → same result.
 
 ## Debugging
 
@@ -121,7 +121,7 @@ engine's debug bridge with the `qdbg` CLI (the bridge is renderer-agnostic, so i
 3D scene too). `qdbg` needs Claude Code's bundled `playwright-cli`.
 
 ```bash
-npm run dev            # start the Vite dev server on http://localhost:3050
+pnpm dev               # start the Vite dev server on http://localhost:3050
 pnpm qdbg connect      # opens the game at ./.qdbg.json's url + ?debug, paused at frame 0
 pnpm qdbg tree         # print the scene tree
 pnpm qdbg step 30      # advance 30 frames

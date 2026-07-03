@@ -172,6 +172,7 @@ describe("create-quintus2 E2E: scaffold → install → build → test → tsc",
 			for (const rel of [
 				".claude/skills/debug-game/SKILL.md",
 				".qdbg.json",
+				".devcontainer/devcontainer.json", // ships as-is (npm doesn't strip .devcontainer)
 				"bin/qdbg",
 				".gitignore", // renamed from the packed `_gitignore`
 				".npmrc", // renamed from the packed `_npmrc`

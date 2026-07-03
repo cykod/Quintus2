@@ -4,24 +4,30 @@ A 2D platformer starter built with the [Quintus 2](https://github.com/cykod/quin
 (`quintus2`). A player, a floor, a collectible coin, and a reactive HUD — a small but complete base
 to build on.
 
+This project uses [pnpm](https://pnpm.io). If you don't have it, `corepack enable` (bundled with
+Node) activates the pinned version automatically.
+
 ## Quick Start
 
 ```bash
-npm install        # install dependencies
-npm run dev        # start the dev server → http://localhost:3050
+pnpm install       # install dependencies
+pnpm dev           # start the dev server → http://localhost:3050
 ```
 
 Open http://localhost:3050 and use the arrow keys / WASD to move, Space/Up to jump.
 
+> **Prefer a container?** This project ships a [`.devcontainer/`](./.devcontainer/) — open it in
+> VS Code ("Reopen in Container") or a Codespace and dependencies install automatically.
+
 ## Scripts
 
-| Command          | What it does                                             |
-|------------------|----------------------------------------------------------|
-| `npm run dev`    | Vite dev server on port 3050 (hot reload)                |
-| `npm run build`  | Production build into `dist/`                            |
-| `npm run preview`| Serve the production build locally                       |
-| `npm test`       | Run the headless Vitest suite                            |
-| `npm run qdbg`   | The `qdbg` game debugger CLI (see below)                 |
+| Command         | What it does                                             |
+|-----------------|----------------------------------------------------------|
+| `pnpm dev`      | Vite dev server on port 3050 (hot reload)                |
+| `pnpm build`    | Production build into `dist/`                            |
+| `pnpm preview`  | Serve the production build locally                       |
+| `pnpm test`     | Run the headless Vitest suite                            |
+| `pnpm qdbg`     | The `qdbg` game debugger CLI (see below)                 |
 
 ## Debugging with `qdbg`
 
@@ -29,18 +35,18 @@ Open http://localhost:3050 and use the arrow keys / WASD to move, Space/Up to ju
 frames, simulate input, and analyze physics from the terminal.
 
 ```bash
-npm run dev                    # in one terminal
-npm run qdbg -- connect        # opens the game paused at frame 0 (reads .qdbg.json)
-npm run qdbg -- tree           # print the scene tree
-npm run qdbg -- step 30        # advance 30 frames
-npm run qdbg -- physics Player # inspect the player's physics state
-npm run qdbg -- disconnect
+pnpm dev                    # in one terminal
+pnpm qdbg connect           # opens the game paused at frame 0 (reads .qdbg.json)
+pnpm qdbg tree              # print the scene tree
+pnpm qdbg step 30           # advance 30 frames
+pnpm qdbg physics Player    # inspect the player's physics state
+pnpm qdbg disconnect
 ```
 
 > **`qdbg` requires `playwright-cli`, which is bundled with [Claude Code](https://claude.com/claude-code).**
 > The game itself runs, builds, and tests without it — only `qdbg` needs it.
 
-If you use pnpm, `pnpm qdbg connect` works without the `--` separator.
+If you use npm instead of pnpm, forward args with `--`: `npm run qdbg -- connect`.
 
 ## Project Structure & Engine Guide
 
