@@ -1,3 +1,19 @@
+## [FEAT] Add artillery destructible-terrain example
+*Sunday, July 5th at 5pm*
+A new Worms/Scorched-Earth-style artillery example under examples/artillery/ 
+demonstrating a custom bitmap-collision surface (an authoritative Uint8Array 
+terrain mask with canvas-for-presentation) for the destructible terrain the 
+engine's shape-based physics doesn't cover. The player aims with Left/Right, 
+holds Space to charge muzzle power and releases to fire a shell that arcs under 
+gravity and per-shot wind, carving craters and destroying crate targets via a 
+queryCircle blast, with win/lose to a results screen and a play-again loop. 
+Fully deterministic via a forked seeded RNG, unit + integration tested (53 
+tests), and reachable through qdbg. Also includes a stout cannon sprite, an 
+immediate self-destruct loss if you blast your own cannon, and mobile touch 
+controls (aim + hold-to-charge FIRE buttons, tap-to-advance menus).
+
+---
+
 ## [OTHR] Fix Pages deploy failure and bump CI to Node 24
 *Friday, July 3rd at 5pm*
 Fixed the "Deployment failed, try again later" error in the examples GitHub 

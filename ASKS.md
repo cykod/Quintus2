@@ -850,3 +850,43 @@
 [MILE] fri 7/3 5pm - Expanded the create-quintus2 2D starter with visible floor/walls, platforms, more coins, a patrolling enemy, a You-Win scene, and a higher 640x480 resolution with upscaled sprites
 
 [MILE] fri 7/3 5pm - Fixed the GitHub Pages examples deploy failure via cancel-in-progress: false and bumped setup-node from Node 20 to 24 across ci, e2e, and deploy-examples workflows
+
+[DSGN] sat 7/4 9pm - Design a Worms-style destructible-terrain example with projectile aiming (angle+velocity), bitmap terrain, and explosion craters per steering/DESTRUCTIBLE_TERRAIN_EXAMPLE.md
+
+[BUILD] sun 7/5 2am - Build the artillery destructible-terrain example (all 6 phases) per steering/20260704_DESTRUCTIBLE_TERRAIN_EXAMPLE.md
+
+[CDRV] sun 7/5 2am - Code review Phase 1 (Scaffold + Terrain) of artillery destructible terrain example
+
+[RETR] sun 7/5 2am - Retro on Phase 1 (Scaffold + Terrain) of the artillery destructible-terrain example per steering/20260704_DESTRUCTIBLE_TERRAIN_EXAMPLE.md
+
+[FIX] sun 7/5 2am - Fix Phase 1 artillery code-review findings (surfaceY x-bounds guard, clamp reuse + TERRAIN_MIN_Y) per .work/code-reviews/2026-07-05-artillery-p1.md
+
+[IMPL] sun 7/5 2am - Implement Phase 2 (projectile ballistics + detonation with sweep-sampling) of steering/20260704_DESTRUCTIBLE_TERRAIN_EXAMPLE.md
+
+[CDRV] sun 7/5 2am - Code review Phase 2 (projectile ballistics + detonation) of artillery destructible terrain example
+
+[RETR] sun 7/5 2am - Retro on Phase 2 (projectile ballistics) of steering/20260704_DESTRUCTIBLE_TERRAIN_EXAMPLE.md
+
+[IMPL] sun 7/5 3am - Implement Phase 3 (Cannon aiming + input + HUD) of steering/20260704_DESTRUCTIBLE_TERRAIN_EXAMPLE.md for the artillery example
+
+[CDRV] sun 7/5 3am - Code review Phase 3 (cannon aiming, input, HUD) of artillery destructible terrain example
+
+[RETR] sun 7/5 3am - Retro on Phase 3 (Cannon aiming + input + HUD) of the artillery destructible-terrain example
+
+[CDRV] sun 7/5 3am - Code review Phase 4 (targets, blast damage, scoring, wind) of artillery destructible-terrain example
+
+[RETR] sun 7/5 3am - Retro on Phase 4 (targets, blast, scoring, wind) of the artillery destructible-terrain example
+
+[FIX] sun 7/5 3am - Fix Phase 4 artillery code-review findings F1-F5 (placement fallback spacing + test, Vec2.distanceTo reuse, DIRECT_HIT_MULTIPLIER, blast-radius comments, init return-type consistency)
+
+[CDRV] sun 7/5 4am - Code review on current session for artillery Phase 5 (explosion FX, camera shake, audio)
+
+[RETR] sun 7/5 4am - Retro on Phase 5 (Explosion FX, camera shake, audio) of the artillery destructible-terrain example
+
+[IMPL] sun 7/5 4am - Implement Phase 6 (final) of steering/20260704_DESTRUCTIBLE_TERRAIN_EXAMPLE.md — title/results scenes, game flow, integration tests for the artillery example
+
+[CDRV] sun 7/5 4am - Code review Phase 6 (scenes/game flow) of artillery destructible-terrain example
+
+[RETR] sun 7/5 4am - Retro on Phase 6 (scenes/game flow/integration) of the artillery destructible-terrain example, plus the whole 6-phase arc
+
+[FIX] sun 7/5 4am - Fix Phase-6 artillery review findings — HUD gameState subscription leak, brittle magic detonation point, missing real scene-flow coverage, and determinism-test overlap

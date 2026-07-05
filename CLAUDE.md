@@ -218,6 +218,7 @@ pnpm release          # CHANGELOG-driven lockstep publish of quintus2 + create-q
 | Sokoban | `examples/sokoban/` | (placeholder) | — |
 | Bullet Hell | `examples/bullet-hell/` | (placeholder) | — |
 | Advanced Platformer | `examples/advanced-platformer/` | 3-level flagship demo: slopes, enemies, breakable blocks, parallax, HUD, 105 tests | Done |
+| Artillery | `examples/artillery/` | Worms-style destructible-terrain artillery: custom `Uint8Array` pixel-mask collision, ballistics, wind, crater carving, scoring, title/results flow | Done |
 
 ## Claude Code Skills
 
