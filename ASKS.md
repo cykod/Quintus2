@@ -890,3 +890,5 @@
 [RETR] sun 7/5 4am - Retro on Phase 6 (scenes/game flow/integration) of the artillery destructible-terrain example, plus the whole 6-phase arc
 
 [FIX] sun 7/5 4am - Fix Phase-6 artillery review findings — HUD gameState subscription leak, brittle magic detonation point, missing real scene-flow coverage, and determinism-test overlap
+
+[MILE] sun 7/5 5pm - Added the artillery destructible-terrain example (mask-based terrain, charge-to-fire cannon, wind, scoring, self-destruct, mobile touch controls) with 53 tests
