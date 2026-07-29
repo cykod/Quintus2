@@ -57,9 +57,30 @@ export abstract class CollisionObject extends Node2D {
 
 	// === Shape Queries ===
 
-	/** Get all enabled CollisionShape children. */
+	/**
+	 * Get all enabled CollisionShape children.
+	 *
+	 * Deliberately walks `children` rather than calling `getChildren(CollisionShape)`:
+	 * tree queries hide a destroyed node's whole subtree from the receiver as well,
+	 * but the solver must keep resolving collisions against a body for the remainder
+	 * of the frame in which it was destroyed — `destroy()` is deferred to end-of-frame
+	 * cleanup precisely so mid-frame destruction doesn't perturb the current step.
+	 * Without this, an actor falls through a platform destroyed mid-tick.
+	 * Individually destroyed *shapes* are still skipped, matching `getChildren`.
+	 */
 	getShapes(): CollisionShape[] {
-		return this.getChildren(CollisionShape).filter((s) => !s.disabled && s.shape != null);
+		const shapes: CollisionShape[] = [];
+		for (const child of this.children) {
+			if (
+				child instanceof CollisionShape &&
+				!child.isDestroyed &&
+				!child.disabled &&
+				child.shape != null
+			) {
+				shapes.push(child);
+			}
+		}
+		return shapes;
 	}
 
 	/** Get shape + transform pairs for collision testing. */

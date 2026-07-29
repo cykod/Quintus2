@@ -892,3 +892,17 @@
 [FIX] sun 7/5 4am - Fix Phase-6 artillery review findings — HUD gameState subscription leak, brittle magic detonation point, missing real scene-flow coverage, and determinism-test overlap
 
 [MILE] sun 7/5 5pm - Added the artillery destructible-terrain example (mask-based terrain, charge-to-fire cannon, wind, scoring, self-destruct, mobile touch controls) with 53 tests
+
+[DSGN] tue 7/28 12pm - Design engine-level fixes for 5 embedded-integration issues per steering/QUINTUS_FIXES.md
+
+[BUILD] wed 7/29 5pm - Build all 5 phases of steering/2026-07-28_USAGE_FIXES_DESIGN.md — embedded-integration fixes (NodeType tokens, destroyed-node query filtering, scoped input capture, fit-parent scaling, TSDoc/embedding guide)
+
+[IMPL] wed 7/29 5pm - Implement Phases 1 and 2 of steering/2026-07-28_USAGE_FIXES_DESIGN.md: NodeType type token for instanceof queries and destroyed-node filtering in tree queries
+
+[CDRV] wed 7/29 5pm - Code review Phase 1 and 2 of steering/2026-07-28_USAGE_FIXES_DESIGN.md (NodeType typing, isDestroyed query guards)
+
+[RETR] wed 7/29 5pm - Retro on Phase 1 and Phase 2 of steering/2026-07-28_USAGE_FIXES_DESIGN.md (NodeType token + isDestroyed guards)
+
+[DREV] wed 7/29 5pm - Design-review Phases 1 and 2 of steering/2026-07-28_USAGE_FIXES_DESIGN.md against a reference design — self-gated N/A (engine-internals only, no reference design)
+
+[FIX] wed 7/29 5pm - Fix issues from the Phase 1-2 usage-fixes review, code-review, security-review, and retro (NodeType token + destroyed-node query guards)

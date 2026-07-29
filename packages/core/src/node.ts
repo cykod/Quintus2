@@ -13,9 +13,19 @@ const CURRENT_BUILD_OWNER = Symbol.for("quintus:currentBuildOwner");
 /** @internal Symbol for the dollar-ref resolver registered by @quintus/jsx. */
 const RESOLVE_BUILD_REFS = Symbol.for("quintus:resolveBuildRefs");
 
+/** A zero-arg class, usable to *construct* a node (`add`, pools, JSX). */
 export interface NodeConstructor<T extends Node = Node> {
 	new (): T;
 }
+
+/**
+ * A class used purely as a runtime `instanceof` **type token** — for query/guard
+ * methods (`is`, `findByType`, `getChild`, …) that never instantiate it.
+ * Unlike {@link NodeConstructor}, it accepts node classes with required
+ * constructor args (e.g. `class Target extends Sensor { constructor(p: Vec2) }`),
+ * because `instanceof` does not care about arity.
+ */
+export type NodeType<T extends Node = Node> = abstract new (...args: never[]) => T;
 
 export type NodeProps = {
 	name?: string;
@@ -273,13 +283,20 @@ export class Node {
 	// === Type Guard ===
 
 	/** Type-narrowing check: `if (node.is(Actor)) { node.move(dt); }` */
-	is<T extends Node>(type: NodeConstructor<T>): this is T {
+	is<T extends Node>(type: NodeType<T>): this is T {
 		return this instanceof type;
 	}
 
 	// === Tree Queries ===
+	// Invariant: a destroyed node and its whole subtree are invisible to every
+	// tree query in the same tick — including when the destroyed node is the
+	// receiver. `destroy()` flags only the receiver (descendants are flagged
+	// later, in `_processDestroy`), so each recursive walk needs both an
+	// `this.isDestroyed` receiver guard and a per-child skip.
 	find(name: string): Node | null {
+		if (this.isDestroyed) return null;
 		for (const child of this._children) {
+			if (child.isDestroyed) continue;
 			if (child.name === name) return child;
 			const found = child.find(name);
 			if (found) return found;
@@ -288,8 +305,8 @@ export class Node {
 	}
 
 	findAll(tag: string): Node[];
-	findAll<T extends Node>(tag: string, type: NodeConstructor<T>): T[];
-	findAll(tag: string, type?: NodeConstructor<Node>): Node[] {
+	findAll<T extends Node>(tag: string, type: NodeType<T>): T[];
+	findAll(tag: string, type?: NodeType<Node>): Node[] {
 		const result: Node[] = [];
 		this._collectByTag(tag, result);
 		if (type) return result.filter((n) => n instanceof type);
@@ -298,12 +315,13 @@ export class Node {
 
 	/** Find the first node with the given tag, optionally narrowed by type. */
 	findFirst(tag: string): Node | null;
-	findFirst<T extends Node>(tag: string, type: NodeConstructor<T>): T | null;
-	findFirst(tag: string, type?: NodeConstructor<Node>): Node | null {
+	findFirst<T extends Node>(tag: string, type: NodeType<T>): T | null;
+	findFirst(tag: string, type?: NodeType<Node>): Node | null {
 		return this._findFirstByTag(tag, type ?? null);
 	}
 
-	private _findFirstByTag(tag: string, type: NodeConstructor<Node> | null): Node | null {
+	private _findFirstByTag(tag: string, type: NodeType<Node> | null): Node | null {
+		if (this.isDestroyed) return null; // skip destroyed node + subtree
 		if (this.hasTag(tag) && (!type || this instanceof type)) return this;
 		for (const child of this._children) {
 			const found = child._findFirstByTag(tag, type);
@@ -313,22 +331,27 @@ export class Node {
 	}
 
 	private _collectByTag(tag: string, result: Node[]): void {
+		if (this.isDestroyed) return; // skip destroyed node + subtree
 		if (this.hasTag(tag)) result.push(this);
 		for (const child of this._children) {
 			child._collectByTag(tag, result);
 		}
 	}
 
-	getChild<T extends Node>(type: NodeConstructor<T>): T | null {
-		return (this._children.find((c) => c instanceof type) as T) ?? null;
+	getChild<T extends Node>(type: NodeType<T>): T | null {
+		if (this.isDestroyed) return null;
+		return (this._children.find((c) => !c.isDestroyed && c instanceof type) as T) ?? null;
 	}
 
-	getChildren<T extends Node>(type: NodeConstructor<T>): T[] {
-		return this._children.filter((c) => c instanceof type) as T[];
+	getChildren<T extends Node>(type: NodeType<T>): T[] {
+		if (this.isDestroyed) return [];
+		return this._children.filter((c) => !c.isDestroyed && c instanceof type) as T[];
 	}
 
-	findByType<T extends Node>(type: NodeConstructor<T>): T | null {
+	findByType<T extends Node>(type: NodeType<T>): T | null {
+		if (this.isDestroyed) return null;
 		for (const child of this._children) {
+			if (child.isDestroyed) continue;
 			if (child instanceof type) return child;
 			const found = child.findByType(type);
 			if (found) return found;
@@ -336,13 +359,14 @@ export class Node {
 		return null;
 	}
 
-	findAllByType<T extends Node>(type: NodeConstructor<T>): T[] {
+	findAllByType<T extends Node>(type: NodeType<T>): T[] {
 		const result: T[] = [];
 		this._collectByType(type, result);
 		return result;
 	}
 
-	private _collectByType<T extends Node>(type: NodeConstructor<T>, result: T[]): void {
+	private _collectByType<T extends Node>(type: NodeType<T>, result: T[]): void {
+		if (this.isDestroyed) return; // skip destroyed node + subtree
 		if (this instanceof type) result.push(this as unknown as T);
 		for (const child of this._children) {
 			child._collectByType(type, result);
@@ -491,6 +515,22 @@ export class Node {
 	}
 
 	// === Destruction ===
+	/**
+	 * Marks this node for destruction. **Deferred, but immediately invisible:**
+	 * `isDestroyed` is set synchronously, so this node *and its whole subtree*
+	 * stop being returned by every tree query (`find`, `findAll`, `findFirst`,
+	 * `findByType`, `findAllByType`, `getChild`, `getChildren`, `Scene.count`)
+	 * in the same tick. The splice out of the parent's child list and the full
+	 * teardown (`destroying`, `onDestroy`, `onExitTree`, `treeExited`, child
+	 * recursion, signal disconnect) run at end-of-frame cleanup — so the node is
+	 * still present in `parent.children` until then, and it is safe to call this
+	 * from `onFixedUpdate` without perturbing the current walk.
+	 *
+	 * @see {@link removeChild} for immediate detach *without* any destroy hooks.
+	 * Do not call `removeChild()` and then `destroy()`: `removeChild()` nulls the
+	 * parent, so `destroy()` can no longer reach the scene's destroy queue and
+	 * the whole lifecycle is silently skipped.
+	 */
 	destroy(): void {
 		if (this._isDestroyed) return;
 		this._isDestroyed = true;

@@ -117,6 +117,68 @@ describe("Scene", () => {
 		errorSpy.mockRestore();
 	});
 
+	// Guards against reintroducing a synchronous splice in destroy(): the update
+	// walk iterates the live _children array, so mutating it mid-walk would skip
+	// the sibling following the destroyed node.
+	it("sibling still updates when a preceding sibling destroys itself mid-walk", () => {
+		const game = createTestGame();
+		const ticks: string[] = [];
+
+		class Ticker extends Node {
+			destroySelf = false;
+			override onFixedUpdate(): void {
+				ticks.push(this.name);
+				if (this.destroySelf) this.destroy();
+			}
+		}
+
+		class TestScene extends Scene {
+			onReady() {
+				for (const n of ["A", "B", "C"]) {
+					const node = this.add(Ticker);
+					node.name = n;
+					node.destroySelf = n === "B";
+				}
+			}
+		}
+
+		game.start(TestScene);
+		game.step();
+
+		// C must still have run in the same step B destroyed itself.
+		expect(ticks).toEqual(["A", "B", "C"]);
+		// B is gone by the next step; A and C keep running.
+		ticks.length = 0;
+		game.step();
+		expect(ticks).toEqual(["A", "C"]);
+	});
+
+	it("destroy-all-then-rebuild in the same tick sees a clean tree", () => {
+		const game = createTestGame();
+		const scene = new Scene(game);
+		class Entity extends Node {}
+
+		const spawn = (n: number) => {
+			for (let i = 0; i < n; i++) {
+				const e = new Entity();
+				e.tag("entity");
+				scene.add(e);
+			}
+		};
+
+		spawn(3);
+		expect(scene.count("entity")).toBe(3);
+
+		// reset(): tear down everything tagged, then rebuild — all in one tick.
+		for (const e of scene.findAll("entity")) e.destroy();
+		expect(scene.count("entity")).toBe(0);
+		expect(scene.findAllByType(Entity)).toEqual([]);
+
+		spawn(2);
+		expect(scene.count("entity")).toBe(2);
+		expect(scene.findAllByType(Entity)).toHaveLength(2);
+	});
+
 	it("switchTo destroys current scene and loads new one", () => {
 		const game = createTestGame();
 		const destroyed = vi.fn();

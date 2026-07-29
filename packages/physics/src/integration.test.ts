@@ -1218,3 +1218,47 @@ describe("Integration: physics full-loop", () => {
 		});
 	});
 });
+
+// === Mid-frame destroy vs. the solver ===
+
+describe("destroyed bodies and the current physics step", () => {
+	it("an actor does NOT fall through a platform destroyed mid-tick", () => {
+		// destroy() is deferred to end-of-frame cleanup precisely so that mid-frame
+		// destruction never perturbs the step in progress. Tree queries hide the
+		// destroyed platform immediately (same-tick query consistency), but the
+		// solver must keep it solid until cleanup runs.
+		const game = createGame();
+		const floor = makeStatic(new Vec2(0, 50), 200, 20);
+		const actor = makeActor(Actor, new Vec2(0, 0));
+		startScene(game, [floor, actor]);
+
+		floor.destroy();
+
+		// Tree queries already agree the platform is gone...
+		expect(game.currentScene?.findByType(StaticCollider)).toBeNull();
+
+		// ...but the solver still stops the actor on it this frame.
+		const hit = actor.moveAndCollide(new Vec2(0, 100));
+		expect(hit).not.toBeNull();
+		expect(actor.position.y).toBeLessThan(50);
+
+		game.stop();
+	});
+
+	it("scene queries stop returning a body destroyed mid-tick", () => {
+		const game = createGame();
+		const floor = makeStatic(new Vec2(0, 50), 200, 20);
+		const actor = makeActor(Actor, new Vec2(0, 0));
+		startScene(game, [floor, actor]);
+		const world = getPhysicsWorld(game);
+
+		expect(world?.queryCircle(new Vec2(0, 50), 30)).toHaveLength(1);
+
+		floor.destroy();
+
+		expect(world?.queryCircle(new Vec2(0, 50), 30)).toHaveLength(0);
+		expect(world?.raycast(new Vec2(0, 0), new Vec2(0, 1), 200)).toBeNull();
+
+		game.stop();
+	});
+});

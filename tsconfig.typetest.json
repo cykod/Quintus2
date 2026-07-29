@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"jsxImportSource": "@quintus/jsx",
+		"noEmit": true
+	},
+	"include": ["packages/*/src/**/*.test-d.ts", "packages/*/src/**/*.test-d.tsx"],
+	"exclude": ["node_modules", "dist", "old"]
+}

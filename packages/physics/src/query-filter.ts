@@ -4,8 +4,19 @@ import type { QueryOptions } from "./query-types.js";
 /**
  * Returns true if the body passes all filters in QueryOptions.
  * Used by all query methods.
+ *
+ * Destroyed bodies are always excluded, mirroring the `Node` tree-query
+ * guards: `destroy()` is deferred to end-of-frame cleanup, but a
+ * same-tick `raycast`/`queryCircle`/`findNearest` must agree with
+ * `findAll`/`findByType` about what is still in the game. This is scoped to
+ * the *query* path only — the collision solver collects candidates straight
+ * from the spatial hash and never calls this, so a body destroyed mid-frame
+ * still resolves collisions for the remainder of that frame.
  */
 export function matchesQuery(body: CollisionObject, options?: QueryOptions): boolean {
+	// Destroyed-but-not-yet-cleaned-up bodies are invisible to queries
+	if (body.isDestroyed) return false;
+
 	// Sensor filtering (excluded by default, even when no options)
 	if (body.bodyType === "sensor" && !options?.includeSensors) return false;
 

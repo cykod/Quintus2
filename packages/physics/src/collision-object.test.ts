@@ -104,6 +104,46 @@ describe("CollisionObject", () => {
 			const shapes = body.getShapes();
 			expect(shapes).toHaveLength(2);
 		});
+
+		it("excludes a shape destroyed in the same tick", () => {
+			// Destroying a lone shape on a live body drops it from collision
+			// immediately rather than at end-of-frame cleanup.
+			const body = new TestBody("actor");
+			const cs1 = body.add(CollisionShape);
+			cs1.shape = Shape.rect(10, 10);
+			const cs2 = body.add(CollisionShape);
+			cs2.shape = Shape.circle(5);
+			expect(body.getShapes()).toHaveLength(2);
+
+			cs2.destroy();
+
+			// Still in the live child array (deferred teardown), but gone from queries.
+			expect(body.children).toContain(cs2);
+			const shapes = body.getShapes();
+			expect(shapes).toHaveLength(1);
+			expect(shapes[0]).toBe(cs1);
+			// The remaining shape still drives the body's world AABB.
+			expect(body.getShapeTransforms()).toHaveLength(1);
+			expect(body.getWorldAABB()).not.toBeNull();
+		});
+
+		it("keeps its shapes for the rest of the frame when the body is destroyed", () => {
+			// Tree queries (getChildren) hide a destroyed node's whole subtree from
+			// the receiver, but getShapes() deliberately does not use them: destroy()
+			// is deferred to end-of-frame cleanup so mid-frame destruction never
+			// perturbs the current physics step. Regression guard against an actor
+			// falling through a platform destroyed mid-tick.
+			const body = new TestBody("actor");
+			const cs = body.add(CollisionShape);
+			cs.shape = Shape.rect(10, 10);
+
+			body.destroy();
+
+			expect(body.getChildren(CollisionShape)).toHaveLength(0); // tree query: hidden
+			expect(body.getShapes()).toHaveLength(1); // solver: still solid
+			expect(body.getShapes()[0]).toBe(cs);
+			expect(body.getWorldAABB()).not.toBeNull();
+		});
 	});
 
 	describe("getShapeTransforms()", () => {

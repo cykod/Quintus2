@@ -18,6 +18,24 @@ lockstep — every published package shares the version at the top of this file.
 
 _Add changes for the next release here, then promote to a versioned heading._
 
+### Changed
+
+- **Destroyed nodes are now invisible to queries in the same tick.** `destroy()`
+  is still deferred to end-of-frame cleanup, but a destroyed node and its whole
+  subtree immediately stop being returned by `find`, `findAll`, `findFirst`,
+  `findByType`, `findAllByType`, `getChild`, `getChildren` and `Scene.count`, and
+  by the `PhysicsWorld` scene queries (`raycast`, `raycastAll`, `queryPoint`,
+  `queryRect`, `queryCircle`, `queryShape`, `shapeCast`, and the `Actor`
+  `findNearest`/`raycast`/`hasLineOfSight` helpers). Previously a `destroy()`
+  followed by a same-tick `count("enemy")` still saw the dead node. `destroy()`
+  timing, lifecycle ordering, and collision resolution are unchanged.
+- Query and type-guard methods (`is`, `findAll`, `findFirst`, `getChild`,
+  `getChildren`, `findByType`, `findAllByType`) now take the new `NodeType<T>`
+  token instead of `NodeConstructor<T>`, so a node class with required
+  constructor args — `class Target extends Sensor { constructor(p: Vec2) }` —
+  can be passed with no cast. Construction sites (`add`, `NodePool`, JSX,
+  `TileMap.spawn*`) still require a zero-arg constructor.
+
 ## [0.0.4] - 2026-07-03 — Playable 2D starter
 
 ### Added

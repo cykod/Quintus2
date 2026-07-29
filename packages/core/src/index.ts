@@ -35,7 +35,7 @@ export type { GameOptions } from "./game.js";
 export { Game } from "./game.js";
 // Game loop
 export { GameLoop } from "./game-loop.js";
-export type { NodeConstructor, NodeProps, PauseMode } from "./node.js";
+export type { NodeConstructor, NodeProps, NodeType, PauseMode } from "./node.js";
 // Node tree
 export { _resetNodeIdCounter, IS_NODE_CLASS, Node } from "./node.js";
 export type { Node2DProps } from "./node2d.js";

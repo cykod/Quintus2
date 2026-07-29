@@ -351,3 +351,45 @@ describe("PhysicsWorld.shapeCast", () => {
 		expect(hit?.point.x).toBeLessThan(50);
 	});
 });
+
+// === Destroyed bodies ===
+
+describe("scene queries exclude destroyed bodies", () => {
+	it("queryPoint / queryRect / queryCircle / queryShape skip a same-tick destroyed body", () => {
+		const world = new PhysicsWorld({ groups: defaultGroups() });
+		const body = createBody("static", Shape.rect(20, 20), new Vec2(0, 0));
+		world.register(body);
+
+		expect(world.queryPoint(new Vec2(5, 5))).toHaveLength(1);
+
+		// destroy() is deferred (no scene here, so nothing is spliced), but the
+		// body must disappear from queries immediately — matching Node tree queries.
+		body.destroy();
+		expect(body.isDestroyed).toBe(true);
+
+		expect(world.queryPoint(new Vec2(5, 5))).toHaveLength(0);
+		expect(world.queryRect(new AABB(new Vec2(-50, -50), new Vec2(50, 50)))).toHaveLength(0);
+		expect(world.queryCircle(new Vec2(0, 0), 50)).toHaveLength(0);
+		expect(world.queryShape(Shape.rect(20, 20), Matrix2D.translate(0, 0))).toHaveLength(0);
+	});
+
+	it("raycast / raycastAll / shapeCast skip a same-tick destroyed body", () => {
+		const world = new PhysicsWorld({ groups: defaultGroups() });
+		const near = createBody("static", Shape.rect(20, 20), new Vec2(30, 0));
+		const far = createBody("static", Shape.rect(20, 20), new Vec2(80, 0));
+		world.register(near);
+		world.register(far);
+
+		expect(world.raycast(new Vec2(-50, 0), new Vec2(1, 0), 200)?.collider).toBe(near);
+
+		near.destroy();
+
+		expect(world.raycast(new Vec2(-50, 0), new Vec2(1, 0), 200)?.collider).toBe(far);
+		const all = world.raycastAll(new Vec2(-50, 0), new Vec2(1, 0), 200);
+		expect(all).toHaveLength(1);
+		expect(all[0]?.collider).toBe(far);
+		expect(
+			world.shapeCast(Shape.rect(10, 10), Matrix2D.translate(-50, 0), new Vec2(200, 0))?.collider,
+		).toBe(far);
+	});
+});

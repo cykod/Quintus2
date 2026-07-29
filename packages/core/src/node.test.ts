@@ -728,3 +728,230 @@ describe("Node", () => {
 		expect(fn).not.toHaveBeenCalled();
 	});
 });
+
+// A node class whose constructor takes a required argument. Valid as an
+// `instanceof` type token (NodeType), but NOT constructible via add().
+class RequiredArgNode extends Node {
+	constructor(readonly label: string) {
+		super();
+	}
+}
+
+// NOTE: `NodeType`'s guarantee is purely compile-time — esbuild strips types and
+// `instanceof` never cared about constructor arity, so every test below passes
+// with or without the `NodeType` change. The type-level assertions live in
+// `node.test-d.ts`, which `pnpm test` typechecks. These are runtime regression
+// coverage for the query methods, nothing more.
+describe("Node queries over a required-arg node class (runtime)", () => {
+	it("findAllByType returns required-arg instances across the tree", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const a = new RequiredArgNode("a");
+		const parent = new Node();
+		const b = new RequiredArgNode("b");
+		parent.add(b);
+		scene.add(a);
+		scene.add(parent);
+
+		const found = scene.findAllByType(RequiredArgNode);
+		expect(found).toHaveLength(2);
+		// Result is typed as RequiredArgNode — `.label` must be accessible.
+		expect(found.map((n) => n.label).sort()).toEqual(["a", "b"]);
+	});
+
+	it("findByType recurses while getChild / getChildren stay direct", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const direct = new RequiredArgNode("direct");
+		const parent = new Node();
+		const deep = new RequiredArgNode("deep");
+		parent.add(deep);
+		scene.add(parent);
+		scene.add(direct);
+
+		expect(scene.findByType(RequiredArgNode)).toBe(deep);
+		expect(scene.getChild(RequiredArgNode)).toBe(direct);
+		const kids = scene.getChildren(RequiredArgNode);
+		expect(kids).toHaveLength(1);
+		expect(kids[0]).toBe(direct);
+	});
+
+	it("is() narrows to a required-arg node class", () => {
+		const node: Node = new RequiredArgNode("x");
+		expect(node.is(RequiredArgNode)).toBe(true);
+		if (node.is(RequiredArgNode)) {
+			expect(node.label).toBe("x");
+		}
+	});
+
+	it("findAll / findFirst narrow a tagged set by type", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		const tagged = new RequiredArgNode("tagged");
+		tagged.tag("target");
+		const plain = new Node();
+		plain.tag("target");
+		scene.add(plain);
+		scene.add(tagged);
+
+		expect(scene.findAll("target", RequiredArgNode).map((n) => n.label)).toEqual(["tagged"]);
+		expect(scene.findFirst("target", RequiredArgNode)?.label).toBe("tagged");
+	});
+
+	it("regression: zero-arg lookups still work", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		class Terrain extends Node {}
+		const terrain = new Terrain();
+		scene.add(terrain);
+		expect(scene.findByType(Terrain)).toBe(terrain);
+		const all = scene.findAllByType(Terrain);
+		expect(all).toHaveLength(1);
+		expect(all[0]).toBe(terrain);
+	});
+
+	// The `add()`-rejects-required-arg-classes guarantee is compile-time only and
+	// is pinned by a `@ts-expect-error` in `node.test-d.ts`.
+});
+
+describe("Node queries skip destroyed nodes (same-tick consistency)", () => {
+	function buildScene() {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		class Target extends TestNode {}
+		const target = new Target();
+		target.name = "target";
+		target.tag("target");
+		scene.add(target);
+		return { game, scene, Target, target };
+	}
+
+	it("all tree queries exclude a destroyed child in the same tick", () => {
+		const { scene, Target, target } = buildScene();
+
+		// Sanity: visible before destroy.
+		expect(scene.find("target")).toBe(target);
+		expect(scene.count("target")).toBe(1);
+
+		target.destroy();
+
+		expect(scene.find("target")).toBeNull();
+		expect(scene.findAll("target")).toEqual([]);
+		expect(scene.findAll("target", Target)).toEqual([]);
+		expect(scene.findFirst("target")).toBeNull();
+		expect(scene.findFirst("target", Target)).toBeNull();
+		expect(scene.findByType(Target)).toBeNull();
+		expect(scene.findAllByType(Target)).toEqual([]);
+		expect(scene.getChild(Target)).toBeNull();
+		expect(scene.getChildren(Target)).toEqual([]);
+		expect(scene.count("target")).toBe(0);
+	});
+
+	it("descendants of a destroyed node are excluded too", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		class Child extends Node {}
+		const parent = new Node();
+		parent.name = "parent";
+		const child = new Child();
+		child.name = "child";
+		child.tag("child");
+		parent.add(child);
+		scene.add(parent);
+
+		expect(scene.findByType(Child)).toBe(child);
+
+		// Destroying only the parent must hide the whole subtree from queries.
+		parent.destroy();
+
+		expect(scene.find("child")).toBeNull();
+		expect(scene.findAll("child")).toEqual([]);
+		expect(scene.findFirst("child")).toBeNull();
+		expect(scene.findByType(Child)).toBeNull();
+		expect(scene.findAllByType(Child)).toEqual([]);
+		expect(scene.count("child")).toBe(0);
+	});
+
+	it("queries on a destroyed node itself return nothing", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		class Kid extends Node {}
+		const node = new Node();
+		node.tag("self");
+		const kid = new Kid();
+		kid.name = "kid";
+		kid.tag("kid");
+		node.add(kid);
+		scene.add(node);
+
+		// Sanity: the receiver sees its live child before the destroy.
+		expect(node.find("kid")).toBe(kid);
+		expect(node.getChild(Kid)).toBe(kid);
+
+		node.destroy();
+
+		// destroy() flags only the receiver — `kid` is still unflagged until
+		// _processDestroy — so every query must guard on `this`, not just on
+		// its children. All seven public query methods share one contract.
+		expect(kid.isDestroyed).toBe(false);
+		expect(node.find("kid")).toBeNull();
+		expect(node.findAll("self")).toEqual([]);
+		expect(node.findAll("kid")).toEqual([]);
+		expect(node.findFirst("self")).toBeNull();
+		expect(node.findFirst("kid")).toBeNull();
+		expect(node.findByType(Kid)).toBeNull();
+		expect(node.findAllByType(Node)).toEqual([]);
+		expect(node.findAllByType(Kid)).toEqual([]);
+		expect(node.getChild(Kid)).toBeNull();
+		expect(node.getChildren(Kid)).toEqual([]);
+	});
+
+	it("regression: destroy() timing and lifecycle are unchanged", () => {
+		const { scene, target } = buildScene();
+		const exited = vi.fn();
+		target.treeExited.connect(exited);
+
+		target.destroy();
+
+		// Still spliced in the live child list until end-of-frame cleanup.
+		expect(scene.children).toContain(target);
+		expect(target.isDestroyed).toBe(true);
+		expect(target.destroyedCalled).toBe(false);
+		expect(target.exitTreeCount).toBe(0);
+		expect(exited).not.toHaveBeenCalled();
+
+		target._processDestroy();
+
+		expect(scene.children).not.toContain(target);
+		expect(target.destroyedCalled).toBe(true);
+		expect(target.exitTreeCount).toBe(1);
+		expect(exited).toHaveBeenCalledOnce();
+
+		// Idempotent: a second pass runs no hooks again.
+		target._processDestroy();
+		expect(target.exitTreeCount).toBe(1);
+		expect(exited).toHaveBeenCalledOnce();
+	});
+
+	it("surviving siblings are still found after a sibling is destroyed", () => {
+		const game = createTestGame();
+		const scene = createTestScene(game);
+		class Item extends Node {}
+		const a = new Item();
+		const b = new Item();
+		const c = new Item();
+		for (const [i, n] of [a, b, c].entries()) {
+			n.name = `item-${i}`;
+			n.tag("item");
+			scene.add(n);
+		}
+
+		b.destroy();
+
+		const names = (nodes: Node[]) => nodes.map((n) => n.name);
+		expect(names(scene.findAllByType(Item))).toEqual(["item-0", "item-2"]);
+		expect(names(scene.findAll("item"))).toEqual(["item-0", "item-2"]);
+		expect(names(scene.getChildren(Item))).toEqual(["item-0", "item-2"]);
+		expect(scene.count("item")).toBe(2);
+	});
+});

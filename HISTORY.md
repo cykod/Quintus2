@@ -1,3 +1,23 @@
+## [FEAT] Add NodeType token and hide destroyed nodes from queries
+*Wednesday, July 29th at 5pm*
+Implements Phases 1 and 2 of the embedded-integration fixes design. Phase 1 
+splits the overloaded NodeConstructor into a separate NodeType type token 
+(abstract new (...args: never[]) => T) used by the seven instanceof-only query 
+methods, so node classes with required-arg constructors work without a cast, 
+while construction sites (add, NodePool, JSX, TileMap.spawn*) still require 
+zero-arg. Phase 2 makes tree queries skip isDestroyed nodes and their subtrees, 
+so a destroy() followed by a same-tick count()/findAll() no longer sees stale 
+nodes — fixing a real bug in the Artillery reset(seed) path without touching 
+destroy()'s deliberate end-of-frame deferral. The guard is applied as one 
+uniform invariant across all seven methods rather than the asymmetric 
+per-method table the design originally specified; CollisionObject.getShapes() 
+now walks children directly so the physics solver keeps its unchanged 
+end-of-frame semantics and a body destroyed mid-tick stays solid for that step. 
+Also adds a root tsconfig.typetest.json and widens Vitest's typecheck.include 
+so type-level assertions across all packages are enforced by pnpm test.
+
+---
+
 ## [FEAT] Add artillery destructible-terrain example
 *Sunday, July 5th at 5pm*
 A new Worms/Scorched-Earth-style artillery example under examples/artillery/ 
