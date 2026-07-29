@@ -23,8 +23,19 @@ export interface GameOptions {
 	width: number;
 	/** Canvas height in pixels. */
 	height: number;
-	/** How to fit the canvas to the page. Default: "fixed". */
-	scale?: "fit" | "fixed" | "fill";
+	/**
+	 * How to fit the canvas to the page. Default: "fixed".
+	 *   - "fixed"      — leave CSS alone; the canvas is sized by the page
+	 *   - "fit"        — letterbox into the **viewport** (`position: absolute`, escapes its container)
+	 *   - "fill"       — mobile fills the viewport (changes internal resolution); desktop falls back to "fit"
+	 *   - "fit-parent" — letterbox into the canvas's **parent element**, staying in normal flow
+	 *                    (embedding-safe; re-fits via `ResizeObserver` when the parent resizes)
+	 *
+	 * `"fit-parent"` centers the canvas against its own normal-flow origin, so give the game its
+	 * own container element. If the canvas has in-flow siblings (a toolbar, a caption), it is
+	 * displaced by their height and can overflow the parent's bottom edge.
+	 */
+	scale?: "fit" | "fixed" | "fill" | "fit-parent";
 	/**
 	 * Which axis stays fixed in fill mode. Default: "height".
 	 *   - "height" — keeps design height, adjusts width (landscape games)
@@ -100,7 +111,19 @@ export class Game {
 	readonly postFixedUpdate: Signal<number> = signal<number>();
 	readonly postUpdate: Signal<number> = signal<number>();
 
-	/** Fires after canvas dimensions change (fill mode resize). */
+	/**
+	 * Fires after the canvas has been re-fitted to its container.
+	 *
+	 * The payload is always the **internal** resolution (`game.width`/`game.height`), i.e. the
+	 * backing-store size the scene renders into:
+	 *   - `"fill"` changes it on every viewport resize, so the payload changes with it.
+	 *   - `"fit-parent"` never changes it — the signal is a "the CSS box was re-fitted"
+	 *     notification and the payload is constant. Read `canvas.clientWidth / game.width` for
+	 *     the design→CSS-px factor.
+	 *
+	 * Handlers that only care about the internal resolution should compare against the previous
+	 * payload and bail when it is unchanged.
+	 */
 	readonly resized: Signal<{ width: number; height: number }> = signal();
 
 	/** Recommended camera zoom for fill mode. 1 if not in fill mode. */
@@ -449,11 +472,16 @@ export class Game {
 	}
 
 	/** Set up CSS-based canvas scaling. */
-	private _setupScaling(mode: "fit" | "fixed" | "fill"): void {
+	private _setupScaling(mode: "fit" | "fixed" | "fill" | "fit-parent"): void {
 		if (mode === "fixed") return;
 
 		const canvas = this.canvas;
 		canvas.style.touchAction = "none";
+
+		if (mode === "fit-parent") {
+			this._setupFitParentScaling();
+			return;
+		}
 
 		if (mode === "fill") {
 			const isMobile =
@@ -511,10 +539,16 @@ export class Game {
 				this.resized.emit({ width: newWidth, height: newHeight });
 			};
 
+			// Named so `stopped` can remove it — an inline arrow would be unremovable.
+			const onOrientationChange = () => setTimeout(resize, 100);
+
 			resize();
 			window.addEventListener("resize", resize);
-			window.addEventListener("orientationchange", () => setTimeout(resize, 100));
-			this.stopped.connect(() => window.removeEventListener("resize", resize));
+			window.addEventListener("orientationchange", onOrientationChange);
+			this.stopped.connect(() => {
+				window.removeEventListener("resize", resize);
+				window.removeEventListener("orientationchange", onOrientationChange);
+			});
 			return;
 		}
 
@@ -530,20 +564,7 @@ export class Game {
 		const resize = () => {
 			const vw = window.innerWidth;
 			const vh = window.innerHeight;
-			const windowAspect = vw / vh;
-
-			let cssWidth: number;
-			let cssHeight: number;
-
-			if (windowAspect > aspect) {
-				// Window is wider than game — fit to height
-				cssHeight = vh;
-				cssWidth = vh * aspect;
-			} else {
-				// Window is taller than game — fit to width
-				cssWidth = vw;
-				cssHeight = vw / aspect;
-			}
+			const { width: cssWidth, height: cssHeight } = _letterbox(vw, vh, aspect);
 
 			canvas.style.width = `${cssWidth}px`;
 			canvas.style.height = `${cssHeight}px`;
@@ -552,13 +573,89 @@ export class Game {
 			canvas.style.top = `${(vh - cssHeight) / 2}px`;
 		};
 
+		// Named so `stopped` can remove it — an inline arrow would be unremovable.
+		const onOrientationChange = () => setTimeout(resize, 100);
+
 		resize();
 		window.addEventListener("resize", resize);
-		window.addEventListener("orientationchange", () => setTimeout(resize, 100));
+		window.addEventListener("orientationchange", onOrientationChange);
 
 		this.stopped.connect(() => {
 			window.removeEventListener("resize", resize);
+			window.removeEventListener("orientationchange", onOrientationChange);
 		});
+	}
+
+	/**
+	 * CSS letterbox scaling into the canvas's parent element — preserves internal
+	 * resolution, stays in normal flow, re-fits via ResizeObserver on parent resize.
+	 */
+	private _setupFitParentScaling(): void {
+		const canvas = this.canvas;
+		const parent = canvas.parentElement;
+
+		if (!parent) {
+			console.warn(
+				'Game: scale: "fit-parent" requires the canvas to have a parent element. Falling back to "fit".',
+			);
+			this._setupFitScaling();
+			return;
+		}
+		if (typeof ResizeObserver === "undefined") {
+			console.warn(
+				'Game: scale: "fit-parent" requires ResizeObserver, which is unavailable here. Falling back to "fit".',
+			);
+			this._setupFitScaling();
+			return;
+		}
+
+		if (typeof document !== "undefined" && parent === document.body) {
+			console.warn(
+				'Game: scale: "fit-parent" is fitting the canvas into <body>, which is usually sized ' +
+					"by its content — the fit degenerates to width-fill and never letterboxes " +
+					'vertically. Put the canvas in an explicitly-sized container, or use scale: "fit".',
+			);
+		}
+
+		const aspect = this._width / this._height;
+		// Last measured parent content box; used to skip redundant re-fits (a content-sized
+		// parent re-triggers the observer with the box the previous fit produced).
+		let lastPw = -1;
+		let lastPh = -1;
+
+		const fit = (entries?: ResizeObserverEntry[]) => {
+			// `contentRect` is the parent's CONTENT box. `clientWidth`/`clientHeight` are the
+			// PADDING box, so they over-measure any padded container and the canvas overflows.
+			// The `??` fallback keeps `fit()` usable outside an observer callback.
+			const box = entries?.[0]?.contentRect;
+			const pw = box?.width ?? parent.clientWidth;
+			const ph = box?.height ?? parent.clientHeight;
+			// Parent not laid out yet (detached, display:none, framework hasn't flushed).
+			// Defer rather than writing a 0-sized canvas — the observer fires again once sized.
+			if (pw === 0 || ph === 0) return;
+			if (pw === lastPw && ph === lastPh) return;
+			lastPw = pw;
+			lastPh = ph;
+
+			const { width: cssWidth, height: cssHeight } = _letterbox(pw, ph, aspect);
+
+			canvas.style.width = `${cssWidth}px`;
+			canvas.style.height = `${cssHeight}px`;
+			// Normal flow — the canvas must not escape its container.
+			canvas.style.display = "block";
+			canvas.style.position = "relative";
+			canvas.style.left = `${(pw - cssWidth) / 2}px`;
+			canvas.style.top = `${(ph - cssHeight) / 2}px`;
+
+			this.resized.emit({ width: this._width, height: this._height });
+		};
+
+		// The observer's initial callback drives the first fit: reading clientWidth here
+		// (in the Game constructor) can be 0 before layout.
+		const observer = new ResizeObserver((entries) => fit(entries));
+		observer.observe(parent);
+
+		this.stopped.connect(() => observer.disconnect());
 	}
 
 	/** Draw "PAUSED [frame N]" overlay on canvas when paused in debug mode. */
@@ -575,6 +672,16 @@ export class Game {
 		ctx.fillText(text, 8, 12);
 		ctx.restore();
 	}
+}
+
+/**
+ * Largest box of the given `aspect` (width/height) that fits inside `boxW`×`boxH`.
+ * Pure — the caller owns positioning, listeners, and any signal emission.
+ */
+function _letterbox(boxW: number, boxH: number, aspect: number): { width: number; height: number } {
+	return boxW / boxH > aspect
+		? { width: boxH * aspect, height: boxH } // box is wider than the game — fit to height
+		: { width: boxW, height: boxW / aspect }; // box is taller than the game — fit to width
 }
 
 /** Detect debug mode from URL query parameter. */

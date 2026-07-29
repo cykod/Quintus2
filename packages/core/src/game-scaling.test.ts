@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MockResizeObserver, setElementSize } from "./__test-utils__/dom-layout.js";
 import { Game, type GameOptions } from "./game.js";
 
 function createGame(opts: Partial<GameOptions> = {}): Game {
@@ -108,6 +109,37 @@ describe("Game scaling", () => {
 
 		vi.unstubAllGlobals();
 	});
+});
+
+describe("Game scaling: teardown invariant", () => {
+	// Invariant for the whole subsystem, not just the listeners any one mode adds:
+	// after game.stop(), _setupScaling has released every window listener it registered.
+	for (const scale of ["fit", "fill"] as const) {
+		it(`scale: '${scale}' removes every window listener it registered on game.stop()`, () => {
+			vi.stubGlobal("innerWidth", 1024);
+			vi.stubGlobal("innerHeight", 768);
+			mockCoarsePointer(); // exercises fill's mobile branch; ignored by "fit"
+
+			const addSpy = vi.spyOn(window, "addEventListener");
+			const removeSpy = vi.spyOn(window, "removeEventListener");
+
+			const game = createGame({ scale });
+			const isScaling = (type: string) => type === "resize" || type === "orientationchange";
+			const added = addSpy.mock.calls.filter(([type]) => isScaling(type));
+			expect(added.length).toBe(2);
+
+			game.stop();
+
+			const removed = removeSpy.mock.calls.filter(([type]) => isScaling(type));
+			for (const [type, handler] of added) {
+				expect(removed).toContainEqual([type, handler]);
+			}
+
+			addSpy.mockRestore();
+			removeSpy.mockRestore();
+			vi.unstubAllGlobals();
+		});
+	}
 });
 
 function mockCoarsePointer() {
@@ -334,5 +366,253 @@ describe("Game scaling: fill mode", () => {
 		expect(game.width).toBe(480);
 
 		vi.unstubAllGlobals();
+	});
+});
+
+function createParent(
+	width: number,
+	height: number,
+	content?: { width: number; height: number },
+): HTMLDivElement {
+	const parent = document.createElement("div");
+	setElementSize(parent, width, height, content);
+	document.body.appendChild(parent);
+	return parent;
+}
+
+/** 800x500 design space (aspect 1.6) inside `parent`. */
+function createGameInParent(parent: HTMLElement, opts: Partial<GameOptions> = {}): Game {
+	const canvas = document.createElement("canvas");
+	parent.appendChild(canvas);
+	return new Game({
+		width: 800,
+		height: 500,
+		canvas,
+		renderer: null,
+		scale: "fit-parent",
+		...opts,
+	});
+}
+
+function onlyObserver(): MockResizeObserver {
+	expect(MockResizeObserver.instances).toHaveLength(1);
+	return MockResizeObserver.instances[0] as MockResizeObserver;
+}
+
+describe("Game scaling: fit-parent mode", () => {
+	beforeEach(() => {
+		MockResizeObserver.instances = [];
+		vi.stubGlobal("ResizeObserver", MockResizeObserver);
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		document.body.innerHTML = "";
+	});
+
+	it("letterboxes the design space into the parent's box", () => {
+		// Success criterion: 400x250 parent, 800x500 design space → CSS 400x250.
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.width).toBe("400px");
+		expect(game.canvas.style.height).toBe("250px");
+	});
+
+	it("preserves internal resolution (backing store unchanged)", () => {
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.width).toBe(800);
+		expect(game.canvas.height).toBe(500);
+		expect(game.width).toBe(800);
+		expect(game.height).toBe(500);
+	});
+
+	it("stays in normal flow inside the parent (not viewport-absolute)", () => {
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.position).toBe("relative");
+		expect(game.canvas.parentElement).toBe(parent);
+	});
+
+	it("fits to height and centers horizontally when the parent is wider than the game", () => {
+		// Parent aspect 3.2 > game aspect 1.6 → height-bound.
+		const parent = createParent(800, 250);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.height).toBe("250px");
+		expect(game.canvas.style.width).toBe("400px");
+		expect(game.canvas.style.left).toBe("200px");
+		expect(game.canvas.style.top).toBe("0px");
+	});
+
+	it("fits to width and centers vertically when the parent is taller than the game", () => {
+		// Parent aspect 0.8 < game aspect 1.6 → width-bound.
+		const parent = createParent(400, 500);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.width).toBe("400px");
+		expect(game.canvas.style.height).toBe("250px");
+		expect(game.canvas.style.left).toBe("0px");
+		expect(game.canvas.style.top).toBe("125px");
+	});
+
+	it("sets touch-action: none", () => {
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.touchAction).toBe("none");
+	});
+
+	it("measures the parent's content box, not its padding box", () => {
+		// A 400x250 content box with padding: 20px reports clientWidth/clientHeight of
+		// 440x290. Fitting into 440x290 would push the canvas out of the container.
+		const parent = createParent(440, 290, { width: 400, height: 250 });
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.width).toBe("400px");
+		expect(game.canvas.style.height).toBe("250px");
+	});
+
+	it("falls back to clientWidth/clientHeight when the callback carries no entries", () => {
+		const parent = createParent(400, 250, { width: 400, height: 250 });
+		const game = createGameInParent(parent);
+
+		setElementSize(parent, 800, 500, { width: 800, height: 500 });
+		onlyObserver().fireWithoutEntries();
+
+		expect(game.canvas.style.width).toBe("800px");
+		expect(game.canvas.style.height).toBe("500px");
+	});
+
+	it("re-fits and emits resized (with the internal, not CSS, size) when the parent resizes", () => {
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+		const resizes: Array<{ width: number; height: number }> = [];
+		game.resized.connect((data) => resizes.push(data));
+
+		// Deliberately NOT the 800x500 design size, so the payload provably differs from
+		// the applied CSS size and the two candidate payload semantics are distinguishable.
+		setElementSize(parent, 1600, 1000);
+		onlyObserver().fire();
+
+		expect(game.canvas.style.width).toBe("1600px");
+		expect(game.canvas.style.height).toBe("1000px");
+		expect(resizes).toEqual([{ width: 800, height: 500 }]);
+	});
+
+	it("skips the re-fit and the resized emission when the parent's size is unchanged", () => {
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+		const resizes: Array<{ width: number; height: number }> = [];
+		game.resized.connect((data) => resizes.push(data));
+
+		onlyObserver().fire();
+		onlyObserver().fire();
+
+		expect(resizes).toHaveLength(0);
+		expect(game.canvas.style.width).toBe("400px");
+	});
+
+	it("warns when the parent is <body>, which is usually content-sized", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		setElementSize(document.body, 800, 500);
+
+		const canvas = document.createElement("canvas");
+		document.body.appendChild(canvas);
+		new Game({ width: 800, height: 500, canvas, renderer: null, scale: "fit-parent" });
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0]?.[0]).toContain("<body>");
+
+		warn.mockRestore();
+	});
+
+	it("defers the fit until the parent has a nonzero size", () => {
+		// Parent not laid out yet (React not flushed / display:none / not attached).
+		const parent = createParent(0, 0);
+		const game = createGameInParent(parent);
+		const resizes: Array<{ width: number; height: number }> = [];
+		game.resized.connect((data) => resizes.push(data));
+
+		expect(game.canvas.style.width).toBe("");
+		expect(game.canvas.style.position).toBe("");
+		expect(resizes).toHaveLength(0);
+
+		// Layout happens; the observer reports the real size.
+		setElementSize(parent, 400, 250);
+		onlyObserver().fire();
+
+		expect(game.canvas.style.width).toBe("400px");
+		expect(game.canvas.style.height).toBe("250px");
+		expect(resizes).toHaveLength(1);
+	});
+
+	it("observes the parent exactly once and disconnects on game.stopped", () => {
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+
+		const observer = onlyObserver();
+		expect(observer.observed).toEqual([parent]);
+		expect(observer.disconnected).toBe(false);
+
+		game.stop();
+
+		expect(observer.disconnected).toBe(true);
+	});
+
+	it("falls back to fit (warning once, registering no observer) with no parent element", () => {
+		vi.stubGlobal("innerWidth", 1024);
+		vi.stubGlobal("innerHeight", 768);
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		// Detached canvas → no parentElement.
+		const canvas = document.createElement("canvas");
+		const game = new Game({
+			width: 800,
+			height: 500,
+			canvas,
+			renderer: null,
+			scale: "fit-parent",
+		});
+
+		expect(game.canvas.style.position).toBe("absolute");
+		expect(game.canvas.style.width).not.toBe("");
+		expect(MockResizeObserver.instances).toHaveLength(0);
+		expect(warn).toHaveBeenCalledTimes(1);
+
+		warn.mockRestore();
+	});
+
+	it("falls back to fit (warning once, registering no observer) without ResizeObserver", () => {
+		vi.stubGlobal("innerWidth", 1024);
+		vi.stubGlobal("innerHeight", 768);
+		vi.stubGlobal("ResizeObserver", undefined);
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent);
+
+		expect(game.canvas.style.position).toBe("absolute");
+		expect(MockResizeObserver.instances).toHaveLength(0);
+		expect(warn).toHaveBeenCalledTimes(1);
+
+		warn.mockRestore();
+	});
+
+	it("scale: 'fit' still letterboxes against the viewport and registers no observer (regression)", () => {
+		vi.stubGlobal("innerWidth", 1024);
+		vi.stubGlobal("innerHeight", 768);
+
+		const parent = createParent(400, 250);
+		const game = createGameInParent(parent, { scale: "fit" });
+
+		// Viewport-sized and viewport-positioned — unchanged by fit-parent's arrival.
+		expect(game.canvas.style.position).toBe("absolute");
+		expect(game.canvas.style.width).toBe("1024px");
+		expect(game.canvas.style.height).toBe("640px");
+		expect(MockResizeObserver.instances).toHaveLength(0);
 	});
 });

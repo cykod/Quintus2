@@ -265,9 +265,10 @@ describe("TouchPlugin lifecycle", () => {
 		const state = getTouchState(game)!;
 		const firstOverlay = state.overlay;
 
-		// Simulate resize
-		vi.stubGlobal("innerWidth", 1024);
-		vi.stubGlobal("innerHeight", 768);
+		// Simulate resize. Must differ from jsdom's default 1024x768 viewport, or fill mode
+		// recomputes the same internal size and there is genuinely nothing to rebuild.
+		vi.stubGlobal("innerWidth", 1280);
+		vi.stubGlobal("innerHeight", 720);
 		window.dispatchEvent(new Event("resize"));
 
 		// createControls should have been called again
@@ -275,6 +276,13 @@ describe("TouchPlugin lifecycle", () => {
 		// Old overlay destroyed, new one created
 		expect(firstOverlay!.isDestroyed).toBe(true);
 		expect(state.overlay).not.toBeNull();
+
+		// A resize that leaves the internal resolution unchanged must NOT rebuild: layouts
+		// position controls in internal coordinates, and `scale: "fit-parent"` emits `resized`
+		// on every parent resize (once per frame during a drag) without ever changing them.
+		const rebuiltCount = callCount;
+		window.dispatchEvent(new Event("resize"));
+		expect(callCount).toBe(rebuiltCount);
 
 		game.stop();
 		vi.unstubAllGlobals();

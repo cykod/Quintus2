@@ -121,8 +121,17 @@ export function TouchPlugin(config: TouchPluginConfig): Plugin {
 				cleanups.push(removeDetection);
 			}
 
-			// --- Resize Hook (fill mode) ---
-			game.resized.connect(() => {
+			// --- Resize Hook ---
+			// Layouts position controls in the game's *internal* coordinate space, so only a
+			// change to that space warrants a rebuild. `scale: "fit-parent"` emits `resized` on
+			// every parent resize without changing the internal size (and a drag-resize emits
+			// once per frame), so rebuilding unconditionally would thrash the overlay.
+			let builtWidth = game.width;
+			let builtHeight = game.height;
+			game.resized.connect(({ width, height }) => {
+				if (width === builtWidth && height === builtHeight) return;
+				builtWidth = width;
+				builtHeight = height;
 				_destroyOverlay(state);
 				_createOverlay(game, state);
 			});

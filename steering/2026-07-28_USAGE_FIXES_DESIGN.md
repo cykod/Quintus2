@@ -14,7 +14,7 @@ This design responds to `steering/QUINTUS_FIXES.md`, which reverse-engineered fi
 | 1 | Relax type-token constraint on `instanceof` queries (`findByType` et al.) | Low | **Done** |
 | 2 | Filter destroyed nodes from tree queries (same-tick consistency) | Medium (bug-prone) | **Done** |
 | 3 | Scope input capture to the game surface (opt-in) + runtime enable | **High** | **Done** |
-| 4 | `scale: "fit-parent"` — fit design space into the parent element | Medium | Pending |
+| 4 | `scale: "fit-parent"` — fit design space into the parent element | Medium | **Done** |
 | 5 | Comprehensive TSDoc contract pass + "Embedding quintus2" guide | Meta (highest leverage) | Pending |
 
 Phases are independent and can land in any order; **Phase 5 depends on 1–4** (it documents their final behavior) and must land last or be updated as each ships.
@@ -340,7 +340,7 @@ case "fit-parent":
 
 **`_setupFitParentScaling()`** — mirror `_setupFitScaling` (game.ts:526) but:
 - Measure `canvas.parentElement` (guard: if none, warn once and fall back to `_setupFitScaling`).
-- Preserve internal resolution (backing store unchanged — same as `"fit"`); compute CSS `width`/`height` from the **parent's** `clientWidth`/`clientHeight` vs the game aspect ratio, letterboxing the shorter axis.
+- Preserve internal resolution (backing store unchanged — same as `"fit"`); compute CSS `width`/`height` from the **parent's content box** vs the game aspect ratio, letterboxing the shorter axis. The content box is `ResizeObserverEntry.contentRect` — take it from the observer callback's `entries`, **not** from `clientWidth`/`clientHeight`, which are the *padding* box and over-measure any padded container (keep `clientWidth`/`clientHeight` only as the fallback for a callback with no entries).
 - Set `position: relative` / `margin: auto` (or `left`/`top` centering **within** the parent) — do **not** use viewport-absolute positioning; the canvas must stay in normal flow so it doesn't escape its container.
 - **Drive the first fit from the `ResizeObserver`'s initial callback, not a constructor read.** `_setupScaling` runs in the `Game` constructor (game.ts:162); reading `parentElement.clientWidth/clientHeight` there can be `0` before layout (React not flushed, `display:none`, not yet attached). A `ResizeObserver` fires once on `observe()` with the laid-out size, so the initial fit lands correctly and re-fits on later resizes — one code path, no stale 0×0. Treat `clientWidth === 0 || clientHeight === 0` as "defer" (skip applying) rather than writing a 0-sized canvas.
 - Observe the parent with a `ResizeObserver` (available in all modern browsers; the engine already targets DOM). Recompute on parent resize instead of listening to `window` resize. Disconnect the observer on `game.stopped` (mirror the listener-removal at game.ts:558-560). The no-parent fallback to `_setupFitScaling` must **not** also register the observer (avoid double-registration / mixed window+parent listeners).
@@ -367,6 +367,77 @@ Because the design→CSS-px factor becomes `canvas.clientWidth / GAME_WIDTH`, th
 **Success criterion:** a canvas whose parent is 400×250 with an 800×500 design space gets CSS ~400×250 (uniform scale, letterboxed), stays inside the parent (no viewport takeover), and re-fits when the parent resizes.
 
 > **`ResizeObserver` in tests:** jsdom lacks `ResizeObserver`; the test provides a minimal polyfill/mock (as `game-scaling.test.ts` already mocks `window` sizing) or drives the recompute method directly.
+
+> **Implementation note (shipped).** Landed as specified in `packages/core/src/game.ts`
+> (`_setupFitParentScaling`, ~60 lines), with these decisions the design left open:
+> 1. **Positioning mirrors `_setupFitScaling`'s shape**, just against the parent instead of the
+>    viewport: `display: block` + `position: relative` + `left`/`top` set to half the letterbox
+>    slack. One of the two offsets is always `0` by construction and the other is at most the
+>    slack. `margin: auto` was rejected — it centers horizontally only, and the vertical
+>    `margin: Npx auto` variant is exposed to margin collapsing.
+>
+>    **Correction (post-review).** An earlier version of this note claimed the canvas
+>    *"provably stays inside the parent's content box"*. That is **false as stated** and was
+>    falsified in Chromium by three independent reviewers. `left`/`top` on a
+>    `position: relative` element offset from the element's **normal-flow** origin, which
+>    coincides with the parent's content-box origin only when the canvas is the parent's
+>    **first in-flow child**. The true contract is:
+>    - The canvas stays inside the parent's content box **when it is the parent's only (or
+>      first) in-flow child.** This is the case the mode is designed for.
+>    - With an in-flow sibling *before* the canvas (a toolbar, caption, or score bar), the
+>      canvas is displaced by the sibling's height and overflows the bottom by that amount —
+>      measured at exactly 40px with a 40px sibling. **Open — see the `/fix` escalation; not
+>      resolved in this pass.**
+>
+>    The separate over-sizing half of that failure (a parent with `padding`) **is fixed**: the
+>    fit now measures `ResizeObserverEntry.contentRect` (the content box) rather than
+>    `clientWidth`/`clientHeight` (the padding box), so a padded wrapper no longer produces an
+>    over-sized, mis-offset canvas. The design's prose and its prescription disagreed on this
+>    point (prose said "content box", the prescription said `clientWidth`); the prescription
+>    has been corrected to match the prose.
+> 2. **A second fallback: `typeof ResizeObserver === "undefined"`** also warns once and falls
+>    back to `_setupFitScaling` (registering no observer). Not in the design, but the design
+>    itself notes jsdom has no `ResizeObserver` — without the guard, an embedder writing jsdom
+>    tests against their own game gets a bare `TypeError` from the `Game` constructor. Same
+>    shape as the no-parent fallback, covered by the same test pattern.
+> 3. **`resized` emits the *internal* dimensions** (`{ width: this._width, height: this._height }`),
+>    which `"fit-parent"` never changes — matching `"fill"`'s payload contract. The signal is
+>    still the embedder's re-fit notification (the design→CSS-px factor
+>    `canvas.clientWidth / GAME_WIDTH` changed), which is what overlay math needs.
+>
+>    **Correction (post-review).** A constant payload is not merely uninformative — it was
+>    actively harmful downstream. `packages/touch/src/touch-plugin.ts` responded to `resized`
+>    with a full `_destroyOverlay` + `_createOverlay`, so with a `ResizeObserver` firing once
+>    per frame during a drag-resize an embedder using touch controls rebuilt the entire overlay
+>    every tick with no way to detect that nothing it cared about had changed. Two fixes landed,
+>    neither of which changes the signal's shape: `fit()` now early-returns when the measured
+>    parent box is unchanged (this also collapses the `ResizeObserver` self-feedback pass on a
+>    content-sized parent), and the touch plugin now rebuilds only when the *internal*
+>    dimensions actually change. `resized`'s TSDoc (`game.ts`) has been rewritten — it still
+>    said "fill mode resize".
+>
+> 4. **Known limitation — a content-sized parent degenerates to width-fill.** When the parent
+>    has no author-determined height (including `<body>`, which is what the auto-created-canvas
+>    path parents to), the parent's height is derived from the canvas, so vertical letterboxing
+>    can never occur. The math is aspect-preserving and converges (no `ResizeObserver loop`
+>    errors were observed), but the result is not a "fit into the parent" in any useful sense.
+>    `"fit-parent"` now warns once when the parent is `<body>`. Phase 5's embedding guide should
+>    state that the parent needs an explicit size.
+>
+> The zero-size deferral was verified RED by deleting the `if (pw === 0 || ph === 0) return;`
+> guard — exactly one test fails ("defers the fit until the parent has a nonzero size") and
+> passes with it. The observer contract is tested as the **invariant** the retro asked for
+> ("observes the parent exactly once and disconnects on `game.stopped`"), and both fallback
+> paths assert `MockResizeObserver.instances` is empty rather than enumerating call sites.
+> The widened `scale` union is pinned in the new **`packages/core/src/game.test-d.ts`**
+> (gated by `pnpm test` via the root `tsconfig.typetest.json`), including a `@ts-expect-error`
+> that keeps the union closed.
+>
+> Beyond jsdom, the success criterion was checked against real Chromium layout via a throwaway
+> page over the built `quintus2` bundle: 400×250 and 700×250 parents both produced a centered,
+> letterboxed canvas fully inside the container with an unchanged 800×500 backing store, and
+> the `ResizeObserver` re-fit correctly when a parent was resized live. (`"fit"` was untouched;
+> its existing tests plus a new "registers no observer" regression cover it.)
 
 ---
 
@@ -434,7 +505,7 @@ Documentation has no unit tests; verify via:
 - [x] Phase 1: `NodeType` added and exported; 7 query methods retyped; required-arg node classes accept in `findByType`/`findAllByType`; construction sites still require zero-arg. Type-level assertions live in `packages/core/src/node.test-d.ts` and are **gated by `pnpm test`** (root `tsconfig.typetest.json` + widened `typecheck.include`).
 - [x] Phase 2: every tree query — receiver included — skips `isDestroyed` nodes and their subtrees; same-tick stale-query test RED→GREEN; sibling-survival test passes; all existing tests green; `destroy()` timing unchanged. `PhysicsWorld` scene queries filter destroyed bodies too, so both query APIs agree.
 - [x] Phase 3: `keyTarget`, `preventDefaultPolicy`, `setEnabled` implemented (with pointer/injection/gamepad gating and `tabIndex` handling); focused-policy and disabled-input tests pass; defaults unchanged and existing input tests green. Decision **(A)** confirmed by the human: defaults stay `document`/always-on, the new controls are opt-in.
-- [ ] Phase 4: `"fit-parent"` mode letterboxes into the parent, re-fits on parent resize, disconnects observer on stop; `"fit"` regression intact.
+- [x] Phase 4: `"fit-parent"` mode letterboxes into the parent, re-fits on parent resize, disconnects observer on stop; `"fit"` regression intact. Verified in jsdom **and** in a real browser (Chromium): a 400×250 parent with an 800×500 design space yields CSS 400×250 inside the container, and re-fits to 200×125 when the parent shrinks to 200×200.
 - [ ] Phase 5: TSDoc runtime contracts on the full load-bearing surface; `docs/embedding.md` created and linked; `pnpm docs` clean.
 - [ ] `pnpm build` succeeds; `pnpm test` passes with no warnings; `pnpm lint` clean.
 - [ ] `steering/QUINTUS_FIXES.md` updated to mark each issue's workaround as droppable once the corresponding phase ships (or a follow-up note added).

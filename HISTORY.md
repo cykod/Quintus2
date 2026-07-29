@@ -1,3 +1,23 @@
+## [FEAT] Add fit-parent scale mode for embedded canvases
+*Wednesday, July 29th at 7pm*
+Implements Phase 4 of the embedded-integration fixes design. scale: 
+"fit-parent" letterboxes the fixed design space into the canvas's parent 
+element and re-fits via a ResizeObserver, so an embedded canvas stays inside 
+its container instead of taking over the viewport the way "fit" does; "fit", 
+"fill", and "fixed" are byte-identical. The first fit comes from the observer's 
+initial callback rather than a constructor read, so an unlaid-out parent defers 
+instead of producing a 0-sized canvas, and the observer is disconnected on 
+game.stopped. Measurement reads the observer entry's contentRect rather than 
+clientWidth/clientHeight - the latter is the padding box, which made a padded 
+wrapper overflow by up to 40px in a bug four reviewers caught independently. 
+Also fixes a per-frame touch-overlay rebuild driven by resized, removes a 
+leaked orientationchange listener from the pre-existing "fit"/"fill" paths, and 
+adds a subsystem-wide teardown invariant test. "fit-parent" centers against the 
+canvas's normal-flow origin, so the game needs its own container element - 
+documented on GameOptions.scale.
+
+---
+
 ## [FEAT] Add opt-in scoped input capture and runtime enable
 *Wednesday, July 29th at 6pm*
 Implements Phase 3 of the embedded-integration fixes design, the 
