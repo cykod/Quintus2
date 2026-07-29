@@ -331,7 +331,9 @@ cmd_status() {
 	need_bridge
 	qblock "
 		var d = window.__quintusDebug;
-		return 'Frame: ' + d.frame + '  Elapsed: ' + d.elapsed.toFixed(3) + 's  Paused: ' + d.paused;
+		var s = 'Frame: ' + d.frame + '  Elapsed: ' + d.elapsed.toFixed(3) + 's  Paused: ' + d.paused;
+		if (d.inputEnabled === false) s += '  Input: DISABLED (press/tap will no-op)';
+		return s;
 	"
 }
 

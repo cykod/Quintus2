@@ -1,5 +1,7 @@
-import { Game, Scene } from "@quintus/core";
+import { Game, installDebugBridge, Scene } from "@quintus/core";
 import { describe, expect, it } from "vitest";
+// The debug bridge reads `game.input`, which the package index installs.
+import "./augment.js";
 import type { Input } from "./input.js";
 import { getInput, InputPlugin } from "./input-plugin.js";
 
@@ -7,6 +9,29 @@ function createGame(debug: boolean): Game {
 	const canvas = document.createElement("canvas");
 	return new Game({ width: 320, height: 240, canvas, renderer: null, debug });
 }
+
+describe("debug bridge input visibility", () => {
+	// Without this, `qdbg press`/`tap` silently no-op against a game that called
+	// setEnabled(false), with no way to tell from `qdbg status`.
+	it("reports input.enabled so a frozen game is diagnosable", () => {
+		const game = createGame(true);
+		game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+		class S extends Scene {}
+		game.start(S);
+		const bridge = installDebugBridge(game);
+		const input = getInput(game) as Input;
+
+		expect(bridge.inputEnabled).toBe(true);
+
+		input.setEnabled(false);
+		expect(bridge.inputEnabled).toBe(false);
+
+		input.setEnabled(true);
+		expect(bridge.inputEnabled).toBe(true);
+
+		game.stop();
+	});
+});
 
 describe("Input debug instrumentation", () => {
 	it("logs action press in debug mode", () => {

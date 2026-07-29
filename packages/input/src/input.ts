@@ -7,6 +7,32 @@ export interface InputConfig {
 	actions: Record<string, string[]>;
 	/** Gamepad stick dead zone. Default: 0.15. */
 	deadZone?: number;
+
+	/**
+	 * Element that receives keyboard listeners. Default: `document` — i.e. the
+	 * game captures keys **globally, for its entire lifetime**.
+	 *
+	 * Pass the game canvas (or a focusable wrapper) to scope key capture to the
+	 * game surface when embedding in a page. Keyboard events only reach a
+	 * non-`document` element while it is focused, so the plugin sets
+	 * `tabIndex = -1` on it if it has none — otherwise the game would silently
+	 * receive no keyboard input. The plugin warns once per install if the
+	 * element is not attached to the document, since a detached target can
+	 * never receive a key event.
+	 */
+	keyTarget?: HTMLElement | Document;
+
+	/**
+	 * When `preventDefault` runs on a bound key. Default: `"always"`.
+	 * `"focused"` only prevents default while {@link InputConfig.keyTarget}
+	 * (or a node inside it) is the active element — so an idle or unfocused
+	 * embedded game never blocks host-page scrolling.
+	 *
+	 * Has **no effect** with the default `document` `keyTarget`: `document`
+	 * always contains the active element, so the policy collapses to
+	 * `"always"`. Pair it with a `keyTarget` (the plugin warns if you don't).
+	 */
+	preventDefaultPolicy?: "always" | "focused";
 }
 
 interface ActionState {
@@ -40,11 +66,23 @@ export class Input {
 	// Mouse state
 	private _mousePosition = new Vec2(0, 0);
 
+	// Capture scope (see InputConfig)
+	private _preventDefaultPolicy: "always" | "focused";
+	private _enabled = true;
+
 	/** @internal Game reference for debug logging. Set by InputPlugin. */
 	_game: Game | null = null;
 
+	/**
+	 * @internal Element the InputPlugin binds keyboard listeners to.
+	 * `null` only outside a DOM environment (headless).
+	 */
+	readonly _keyTarget: HTMLElement | Document | null;
+
 	constructor(config: InputConfig) {
 		this._deadZone = config.deadZone ?? 0.15;
+		this._preventDefaultPolicy = config.preventDefaultPolicy ?? "always";
+		this._keyTarget = config.keyTarget ?? (typeof document !== "undefined" ? document : null);
 		this._actions = new Map();
 		this._bindingToActions = new Map();
 		this._activeBindings = new Set();
@@ -144,6 +182,59 @@ export class Input {
 		return this._bindingToActions.has(code);
 	}
 
+	// === Enable / capture scope ===
+
+	/**
+	 * Whether input is applied. Default: `true`.
+	 *
+	 * **Invariant:** while `false`, no external event source may change action
+	 * state or the mouse position. Concretely: keyboard is not captured (no
+	 * `preventDefault`), pointer presses are not buffered, gamepads are not
+	 * polled, {@link Input.setMousePosition} is ignored, and pending or injected
+	 * input is dropped. (The `@internal` `_setMousePosition` is the one
+	 * deliberate exception — it is the debug/test override path.)
+	 *
+	 * @see {@link Input.setEnabled}
+	 */
+	get enabled(): boolean {
+		return this._enabled;
+	}
+
+	/**
+	 * Enable or disable all input at runtime — e.g. an embedded game in an
+	 * attract/idle state that exists but should not capture anything.
+	 *
+	 * Disabling releases every held action immediately and clears the pending
+	 * input and injection buffers, so nothing buffered before the switch is
+	 * applied after it.
+	 */
+	setEnabled(enabled: boolean): void {
+		if (this._enabled === enabled) return;
+		this._enabled = enabled;
+		if (!enabled) this._releaseAll();
+	}
+
+	/**
+	 * @internal Whether `preventDefault` should run for a bound key right now,
+	 * per the configured `preventDefaultPolicy`.
+	 */
+	_shouldPreventDefault(): boolean {
+		if (this._preventDefaultPolicy !== "focused") return true;
+		if (typeof document === "undefined") return false;
+		const target = this._keyTarget;
+		if (!target) return false;
+
+		// `document.activeElement` reports the shadow *host* when focus is inside
+		// an open shadow root, so walk the focus chain: the target counts as
+		// focused if it contains the host OR anything deeper in that chain.
+		let active: Element | null = document.activeElement;
+		while (active) {
+			if (target.contains(active)) return true;
+			active = active.shadowRoot?.activeElement ?? null;
+		}
+		return false;
+	}
+
 	// === Internal (called by InputPlugin) ===
 
 	/**
@@ -155,6 +246,11 @@ export class Input {
 	 */
 	_beginFrame(): void {
 		this._newlyTransitioned.clear();
+		if (!this._enabled) {
+			// Drop anything buffered while disabled instead of applying it later.
+			this._clearBuffers();
+			return;
+		}
 		this._flushInputBuffers();
 		this._flushInjectionBuffer();
 	}
@@ -263,12 +359,21 @@ export class Input {
 		this._mousePressBuffer.delete(binding);
 	}
 
-	/** Set the mouse position in game coordinates. Used by virtual controls. */
+	/**
+	 * Set the mouse position in game coordinates. Used by virtual controls
+	 * (`@quintus/touch`), which do not go through {@link InputPlugin}'s pointer
+	 * handlers. Ignored while {@link Input.enabled} is `false`.
+	 */
 	setMousePosition(x: number, y: number): void {
+		if (!this._enabled) return;
 		this._mousePosition._set(x, y);
 	}
 
-	/** @internal Alias for setMousePosition (backwards compat with InputPlugin). */
+	/**
+	 * @internal Ungated mouse-position write. Used by InputPlugin's pointer
+	 * handlers (which apply their own `enabled` guard) and by the debug bridge,
+	 * where `qdbg mouse` must work regardless of the game's input state.
+	 */
 	_setMousePosition(x: number, y: number): void {
 		this._mousePosition._set(x, y);
 	}
@@ -282,16 +387,12 @@ export class Input {
 			this._activeBindings.delete(binding);
 			this._updateActionsForBinding(binding);
 		}
-		this._keyPressBuffer.clear();
-		this._keyReleaseBuffer.clear();
-		this._mousePressBuffer.clear();
-		this._mouseReleaseBuffer.clear();
-		this._injectionBuffer.clear();
-		this._injectionAnalogBuffer.clear();
+		this._clearBuffers();
 	}
 
 	/** @internal Poll gamepad state. */
 	_pollGamepad(): void {
+		if (!this._enabled) return;
 		if (typeof navigator === "undefined" || !navigator.getGamepads) return;
 
 		const gamepads = navigator.getGamepads();
@@ -322,6 +423,16 @@ export class Input {
 	}
 
 	// === Private ===
+
+	/** Drop every pending key, mouse, and injection buffer entry. */
+	private _clearBuffers(): void {
+		this._keyPressBuffer.clear();
+		this._keyReleaseBuffer.clear();
+		this._mousePressBuffer.clear();
+		this._mouseReleaseBuffer.clear();
+		this._injectionBuffer.clear();
+		this._injectionAnalogBuffer.clear();
+	}
 
 	private _pollAxis(gp: Gamepad, axisIndex: number, negBinding: string, posBinding: string): void {
 		const value = gp.axes[axisIndex] ?? 0;

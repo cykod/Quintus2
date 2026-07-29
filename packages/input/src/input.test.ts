@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Input } from "./input.js";
 
 function createInput(): Input {
@@ -475,6 +475,316 @@ describe("Input", () => {
 
 			expect(input.isPressed("lookRight")).toBe(true);
 			expect(input.getAxis("lookLeft", "lookRight")).toBeCloseTo(0.9);
+		});
+
+		it("does not poll while disabled", () => {
+			const input = new Input({ actions: { up: ["gamepad:dpad-up"] } });
+			input.setEnabled(false);
+
+			const buttons = Array.from({ length: 16 }, () => ({ pressed: false }));
+			buttons[12] = { pressed: true };
+			mockGamepad(buttons, [0, 0, 0, 0]);
+			input._pollGamepad();
+
+			expect(input.isPressed("up")).toBe(false);
+		});
+	});
+
+	describe("enabled / setEnabled", () => {
+		it("is enabled by default", () => {
+			expect(createInput().enabled).toBe(true);
+		});
+
+		it("releases held actions when disabled", () => {
+			const input = createInput();
+			input._bufferKeyPress("Space");
+			input._beginFrame();
+			expect(input.isPressed("jump")).toBe(true);
+
+			input.setEnabled(false);
+
+			expect(input.enabled).toBe(false);
+			expect(input.isPressed("jump")).toBe(false);
+			expect(input.isJustReleased("jump")).toBe(true);
+		});
+
+		it("drops buffered key presses while disabled", () => {
+			const input = createInput();
+			input.setEnabled(false);
+
+			input._bufferKeyPress("Space");
+			input._beginFrame();
+			expect(input.isPressed("jump")).toBe(false);
+
+			// The dropped press must not resurface once re-enabled.
+			input.setEnabled(true);
+			input._beginFrame();
+			expect(input.isPressed("jump")).toBe(false);
+		});
+
+		it("drops buffered mouse presses while disabled", () => {
+			const input = createInput();
+			input.setEnabled(false);
+
+			input._bufferMousePress(0);
+			input._beginFrame();
+			expect(input.isPressed("attack")).toBe(false);
+
+			input.setEnabled(true);
+			input._beginFrame();
+			expect(input.isPressed("attack")).toBe(false);
+		});
+
+		it("drops injected actions while disabled", () => {
+			const input = createInput();
+			input.setEnabled(false);
+
+			input.inject("jump", true);
+			input.injectAnalog("right", 0.8);
+			input._beginFrame();
+			expect(input.isPressed("jump")).toBe(false);
+			expect(input.getAxis("left", "right")).toBe(0);
+
+			input.setEnabled(true);
+			input._beginFrame();
+			expect(input.isPressed("jump")).toBe(false);
+			expect(input.getAxis("left", "right")).toBe(0);
+		});
+
+		it("drops input buffered before disabling", () => {
+			const input = createInput();
+			input.inject("jump", true);
+			input._bufferKeyPress("KeyD");
+
+			input.setEnabled(false);
+			input.setEnabled(true);
+			input._beginFrame();
+
+			expect(input.isPressed("jump")).toBe(false);
+			expect(input.isPressed("right")).toBe(false);
+		});
+
+		it("restores normal behavior after re-enabling", () => {
+			const input = createInput();
+			input.setEnabled(false);
+			input.setEnabled(true);
+
+			input._bufferKeyPress("Space");
+			input._beginFrame();
+
+			expect(input.isPressed("jump")).toBe(true);
+		});
+	});
+
+	// Invariant: while disabled, NO external event source may change action
+	// state or the mouse position. Table-driven on purpose — an entry point
+	// added later is only covered if someone edits this list, which is a
+	// visible, reviewable act, unlike a missing one-off `it`.
+	describe("disabled invariant — no entry point may mutate input state", () => {
+		afterEach(() => {
+			vi.unstubAllGlobals();
+		});
+
+		function createGatedInput(): Input {
+			return new Input({
+				actions: {
+					left: ["ArrowLeft"],
+					right: ["ArrowRight", "KeyD"],
+					jump: ["Space"],
+					attack: ["mouse:left"],
+					pad: ["gamepad:dpad-up"],
+				},
+			});
+		}
+
+		function stubPressedGamepad(): void {
+			const buttons = Array.from({ length: 16 }, () => ({ pressed: false }));
+			buttons[12] = { pressed: true };
+			const gp = {
+				buttons,
+				axes: [0, 0, 0, 0],
+				connected: true,
+				id: "Test Gamepad",
+				index: 0,
+				mapping: "standard",
+			} as unknown as Gamepad;
+			vi.stubGlobal("navigator", { getGamepads: () => [gp, null, null, null] });
+		}
+
+		function observe(input: Input): Record<string, unknown> {
+			return {
+				left: input.isPressed("left"),
+				right: input.isPressed("right"),
+				jump: input.isPressed("jump"),
+				attack: input.isPressed("attack"),
+				pad: input.isPressed("pad"),
+				axis: input.getAxis("left", "right"),
+				mouseX: input.mousePosition.x,
+				mouseY: input.mousePosition.y,
+			};
+		}
+
+		const entryPoints: Array<[string, (input: Input) => void]> = [
+			["_bufferKeyPress", (i) => i._bufferKeyPress("Space")],
+			["_bufferKeyRelease", (i) => i._bufferKeyRelease("Space")],
+			["_bufferMousePress", (i) => i._bufferMousePress(0)],
+			["_bufferMouseRelease", (i) => i._bufferMouseRelease(0)],
+			["setMousePosition", (i) => i.setMousePosition(123, 456)],
+			["inject", (i) => i.inject("jump", true)],
+			["injectAnalog", (i) => i.injectAnalog("right", 0.8)],
+			["_pollGamepad", (i) => i._pollGamepad()],
+		];
+
+		for (const [name, mutate] of entryPoints) {
+			it(`${name}() changes nothing while disabled`, () => {
+				stubPressedGamepad();
+				const input = createGatedInput();
+				input.setEnabled(false);
+				const before = observe(input);
+
+				mutate(input);
+				input._beginFrame();
+
+				expect(observe(input)).toEqual(before);
+			});
+		}
+
+		// Positive control for the newly gated path, so the loop above cannot
+		// pass merely because nothing ever moves the mouse position.
+		it("setMousePosition() works while enabled", () => {
+			const input = createGatedInput();
+			input.setMousePosition(123, 456);
+			expect(input.mousePosition.x).toBe(123);
+			expect(input.mousePosition.y).toBe(456);
+		});
+
+		it("_setMousePosition() stays ungated as the debug/test override path", () => {
+			const input = createGatedInput();
+			input.setEnabled(false);
+			input._setMousePosition(123, 456);
+			expect(input.mousePosition.x).toBe(123);
+			expect(input.mousePosition.y).toBe(456);
+		});
+	});
+
+	describe("_shouldPreventDefault", () => {
+		it('defaults to "always" — true regardless of focus', () => {
+			const input = createInput();
+			expect(input._shouldPreventDefault()).toBe(true);
+
+			const outside = document.createElement("input");
+			document.body.appendChild(outside);
+			outside.focus();
+			expect(input._shouldPreventDefault()).toBe(true);
+			outside.remove();
+		});
+
+		it('"always" with an element keyTarget still prevents default when unfocused', () => {
+			const canvas = document.createElement("canvas");
+			document.body.appendChild(canvas);
+			const input = new Input({
+				actions: { jump: ["Space"] },
+				keyTarget: canvas,
+				preventDefaultPolicy: "always",
+			});
+
+			expect(input._shouldPreventDefault()).toBe(true);
+			canvas.remove();
+		});
+
+		it('"focused" is false when the active element is outside keyTarget', () => {
+			const canvas = document.createElement("canvas");
+			const outside = document.createElement("input");
+			document.body.append(canvas, outside);
+			const input = new Input({
+				actions: { jump: ["Space"] },
+				keyTarget: canvas,
+				preventDefaultPolicy: "focused",
+			});
+
+			outside.focus();
+			expect(input._shouldPreventDefault()).toBe(false);
+
+			canvas.remove();
+			outside.remove();
+		});
+
+		it('"focused" is true when keyTarget itself is focused', () => {
+			const canvas = document.createElement("canvas");
+			canvas.tabIndex = -1;
+			document.body.appendChild(canvas);
+			const input = new Input({
+				actions: { jump: ["Space"] },
+				keyTarget: canvas,
+				preventDefaultPolicy: "focused",
+			});
+
+			canvas.focus();
+			expect(document.activeElement).toBe(canvas);
+			expect(input._shouldPreventDefault()).toBe(true);
+
+			canvas.remove();
+		});
+
+		it('"focused" is true when a descendant of keyTarget is focused', () => {
+			const wrapper = document.createElement("div");
+			const inner = document.createElement("input");
+			wrapper.appendChild(inner);
+			document.body.appendChild(wrapper);
+			const input = new Input({
+				actions: { jump: ["Space"] },
+				keyTarget: wrapper,
+				preventDefaultPolicy: "focused",
+			});
+
+			inner.focus();
+			expect(input._shouldPreventDefault()).toBe(true);
+
+			wrapper.remove();
+		});
+
+		it('"focused" is a no-op without a keyTarget — document always contains the active element', () => {
+			// Documented footgun, not a feature: the policy collapses to "always"
+			// with the default `document` target. InputPlugin warns about it at
+			// install time (see input-plugin.test.ts).
+			const input = new Input({
+				actions: { jump: ["Space"] },
+				preventDefaultPolicy: "focused",
+			});
+
+			const el = document.createElement("input");
+			document.body.appendChild(el);
+			el.focus();
+			expect(input._shouldPreventDefault()).toBe(true);
+			el.remove();
+		});
+
+		it('"focused" sees focus inside an open shadow root', () => {
+			const host = document.createElement("div");
+			document.body.appendChild(host);
+			const root = host.attachShadow({ mode: "open" });
+			const inner = document.createElement("button");
+			root.appendChild(inner);
+
+			// keyTarget is the shadow host: document.activeElement reports the host.
+			const hostTargeted = new Input({
+				actions: { jump: ["Space"] },
+				keyTarget: host,
+				preventDefaultPolicy: "focused",
+			});
+			// keyTarget is inside the shadow root: only the focus-chain walk finds it.
+			const innerTargeted = new Input({
+				actions: { jump: ["Space"] },
+				keyTarget: inner,
+				preventDefaultPolicy: "focused",
+			});
+
+			inner.focus();
+			expect(hostTargeted._shouldPreventDefault()).toBe(true);
+			expect(innerTargeted._shouldPreventDefault()).toBe(true);
+
+			inner.blur();
+			host.remove();
 		});
 	});
 });

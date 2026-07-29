@@ -10,6 +10,43 @@ export function getInput(game: Game): Input | null {
 	return inputMap.get(game) ?? null;
 }
 
+/**
+ * A non-`document` key target only receives keyboard events while focused, so
+ * give it a `tabIndex` if it has none. Called once per install; warns once if
+ * the element is detached, since a detached target can never receive a key
+ * event no matter what its tab order says.
+ */
+function ensureFocusable(keyTarget: HTMLElement | Document): void {
+	if (!("tabIndex" in keyTarget)) return;
+
+	if (!keyTarget.isConnected) {
+		console.warn(
+			"InputPlugin: keyTarget is not attached to the document, so it will receive no " +
+				"keyboard events. Attach it before starting the game, or use the default " +
+				"document keyTarget.",
+		);
+	}
+
+	// Natively focusable elements (button, input, …) report tabIndex >= 0 —
+	// leave their tab order alone.
+	if (keyTarget.hasAttribute("tabindex") || keyTarget.tabIndex >= 0) return;
+	keyTarget.tabIndex = -1;
+}
+
+/**
+ * Whether a key event originated in a text field or contenteditable element.
+ * Those keystrokes belong to the field, not the game: real key events bubble,
+ * so without this check typing a Space into an `<input>` inside the `keyTarget`
+ * (or anywhere in the page under the default `document` target) would both be
+ * `preventDefault`ed and fire the bound game action.
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+	if (target.isContentEditable) return true;
+	const tag = target.tagName;
+	return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
 /** Create the input plugin. */
 export function InputPlugin(config: InputConfig): Plugin {
 	return definePlugin({
@@ -35,17 +72,38 @@ export function InputPlugin(config: InputConfig): Plugin {
 
 			// --- DOM Listeners (browser only) ---
 			if (typeof document !== "undefined") {
+				// `Input` is the single source of truth for the resolved target —
+				// `_shouldPreventDefault()` reads the same value. The `?? document`
+				// only satisfies the type: `_keyTarget` is non-null inside this branch.
+				const keyTarget = input._keyTarget ?? document;
+				ensureFocusable(keyTarget);
+
+				if (config.preventDefaultPolicy === "focused" && keyTarget === document) {
+					console.warn(
+						'InputPlugin: preventDefaultPolicy "focused" has no effect with the default ' +
+							"document keyTarget, which always contains the active element. Pass a " +
+							"keyTarget (e.g. the game canvas) to scope key capture.",
+					);
+				}
+
 				const onKeyDown = (e: KeyboardEvent) => {
+					if (!input.enabled) return;
 					if (e.repeat) return;
-					if (input._isBoundKey(e.code)) e.preventDefault();
+					// A keystroke typed into a form field belongs to that field.
+					// (Deliberately not applied to keyup, so a key held before focus
+					// moved into the field still gets released and never sticks.)
+					if (isEditableTarget(e.target)) return;
+					if (input._isBoundKey(e.code) && input._shouldPreventDefault()) e.preventDefault();
 					input._bufferKeyPress(e.code);
 				};
 
 				const onKeyUp = (e: KeyboardEvent) => {
+					if (!input.enabled) return;
 					input._bufferKeyRelease(e.code);
 				};
 
 				const onPointerDown = (e: PointerEvent) => {
+					if (!input.enabled) return;
 					if (game.canvas) {
 						const rect = game.canvas.getBoundingClientRect();
 						const scaleX = game.width / rect.width;
@@ -59,10 +117,12 @@ export function InputPlugin(config: InputConfig): Plugin {
 				};
 
 				const onPointerUp = (e: PointerEvent) => {
+					if (!input.enabled) return;
 					input._bufferMouseRelease(e.button);
 				};
 
 				const onPointerMove = (e: PointerEvent) => {
+					if (!input.enabled) return;
 					if (!game.canvas) return;
 					const rect = game.canvas.getBoundingClientRect();
 					const scaleX = game.width / rect.width;
@@ -77,8 +137,8 @@ export function InputPlugin(config: InputConfig): Plugin {
 					input._releaseAll();
 				};
 
-				document.addEventListener("keydown", onKeyDown);
-				document.addEventListener("keyup", onKeyUp);
+				keyTarget.addEventListener("keydown", onKeyDown as EventListener);
+				keyTarget.addEventListener("keyup", onKeyUp as EventListener);
 				if (game.canvas) {
 					game.canvas.addEventListener("pointerdown", onPointerDown);
 					game.canvas.addEventListener("pointermove", onPointerMove);
@@ -88,8 +148,8 @@ export function InputPlugin(config: InputConfig): Plugin {
 
 				// --- Cleanup on stop ---
 				game.stopped.connect(() => {
-					document.removeEventListener("keydown", onKeyDown);
-					document.removeEventListener("keyup", onKeyUp);
+					keyTarget.removeEventListener("keydown", onKeyDown as EventListener);
+					keyTarget.removeEventListener("keyup", onKeyUp as EventListener);
 					if (game.canvas) {
 						game.canvas.removeEventListener("pointerdown", onPointerDown);
 						game.canvas.removeEventListener("pointermove", onPointerMove);

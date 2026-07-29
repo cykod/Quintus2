@@ -355,6 +355,426 @@ describe("InputPlugin", () => {
 		});
 	});
 
+	describe("keyTarget scoping", () => {
+		it("binds key listeners to the configured element, not document", () => {
+			const keyTarget = document.createElement("div");
+			document.body.appendChild(keyTarget);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, keyTarget }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			// A key event on the document never reaches the scoped target.
+			document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+			game.step();
+			expect(input.isPressed("jump")).toBe(false);
+
+			keyTarget.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+			game.step();
+			expect(input.isPressed("jump")).toBe(true);
+
+			keyTarget.dispatchEvent(new KeyboardEvent("keyup", { code: "Space" }));
+			game.step();
+			expect(input.isPressed("jump")).toBe(false);
+
+			game.stop();
+			keyTarget.remove();
+		});
+
+		it("gives a tabIndex-less keyTarget tabIndex = -1 so it can be focused", () => {
+			const keyTarget = document.createElement("div");
+			document.body.appendChild(keyTarget);
+			expect(keyTarget.hasAttribute("tabindex")).toBe(false);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, keyTarget }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(keyTarget.tabIndex).toBe(-1);
+			expect(keyTarget.hasAttribute("tabindex")).toBe(true);
+
+			game.stop();
+			keyTarget.remove();
+		});
+
+		it("leaves an explicit tabIndex alone", () => {
+			const keyTarget = document.createElement("div");
+			keyTarget.tabIndex = 3;
+			document.body.appendChild(keyTarget);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, keyTarget }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(keyTarget.tabIndex).toBe(3);
+
+			game.stop();
+			keyTarget.remove();
+		});
+
+		it("warns when the keyTarget is detached from the document", () => {
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const keyTarget = document.createElement("div"); // never appended
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, keyTarget }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(warn).toHaveBeenCalledTimes(1);
+			expect(warn.mock.calls[0]?.[0]).toContain("not attached to the document");
+			// It still gets a tabIndex, so attaching it later just works.
+			expect(keyTarget.tabIndex).toBe(-1);
+
+			game.stop();
+			warn.mockRestore();
+		});
+
+		it("does not warn for an attached keyTarget", () => {
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const keyTarget = document.createElement("div");
+			document.body.appendChild(keyTarget);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, keyTarget }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(warn).not.toHaveBeenCalled();
+
+			game.stop();
+			keyTarget.remove();
+			warn.mockRestore();
+		});
+
+		it("does not touch tabIndex when keyTarget defaults to document", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect((document as unknown as { tabIndex?: number }).tabIndex).toBeUndefined();
+
+			game.stop();
+		});
+	});
+
+	describe("preventDefault policy", () => {
+		// `bubbles: true` matches a real key event, so a test cannot pass merely
+		// because a mis-targeted listener never saw the event.
+		function dispatchKey(target: EventTarget, code: string): KeyboardEvent {
+			const event = new KeyboardEvent("keydown", { code, cancelable: true, bubbles: true });
+			target.dispatchEvent(event);
+			return event;
+		}
+
+		it('defaults to "always": bound keys prevent default regardless of focus', () => {
+			const outside = document.createElement("input");
+			document.body.appendChild(outside);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			outside.focus();
+			expect(dispatchKey(document, "Space").defaultPrevented).toBe(true);
+
+			game.stop();
+			outside.remove();
+		});
+
+		it("never prevents default for unbound keys", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(dispatchKey(document, "KeyQ").defaultPrevented).toBe(false);
+
+			game.stop();
+		});
+
+		it('"focused" does not prevent default while keyTarget is unfocused, but still drives the action', () => {
+			const keyTarget = document.createElement("div");
+			const outside = document.createElement("input");
+			document.body.append(keyTarget, outside);
+
+			const game = createGame();
+			game.use(
+				InputPlugin({
+					actions: { jump: ["Space"] },
+					keyTarget,
+					preventDefaultPolicy: "focused",
+				}),
+			);
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			outside.focus();
+			// The host page keeps its Space-scrolls-the-page behavior.
+			expect(dispatchKey(keyTarget, "Space").defaultPrevented).toBe(false);
+			// …and the handler demonstrably ran and *chose* not to prevent default,
+			// so this cannot pass just because the event reached no listener.
+			game.step();
+			expect(input.isPressed("jump")).toBe(true);
+
+			game.stop();
+			keyTarget.remove();
+			outside.remove();
+		});
+
+		it('"focused" prevents default while keyTarget is focused', () => {
+			const keyTarget = document.createElement("div");
+			document.body.appendChild(keyTarget);
+
+			const game = createGame();
+			game.use(
+				InputPlugin({
+					actions: { jump: ["Space"] },
+					keyTarget,
+					preventDefaultPolicy: "focused",
+				}),
+			);
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			keyTarget.focus();
+			expect(document.activeElement).toBe(keyTarget);
+			expect(dispatchKey(keyTarget, "Space").defaultPrevented).toBe(true);
+
+			game.stop();
+			keyTarget.remove();
+		});
+
+		it('warns when "focused" is set without a keyTarget, where it is a no-op', () => {
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, preventDefaultPolicy: "focused" }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(warn).toHaveBeenCalledTimes(1);
+			expect(warn.mock.calls[0]?.[0]).toContain("preventDefaultPolicy");
+
+			game.stop();
+			warn.mockRestore();
+		});
+
+		it("does not warn when the policy is paired with a keyTarget", () => {
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const keyTarget = document.createElement("div");
+			document.body.appendChild(keyTarget);
+
+			const game = createGame();
+			game.use(
+				InputPlugin({
+					actions: { jump: ["Space"] },
+					keyTarget,
+					preventDefaultPolicy: "focused",
+				}),
+			);
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			expect(warn).not.toHaveBeenCalled();
+
+			game.stop();
+			keyTarget.remove();
+			warn.mockRestore();
+		});
+	});
+
+	describe("editable targets", () => {
+		function dispatchKeyFrom(target: EventTarget, code: string): KeyboardEvent {
+			const event = new KeyboardEvent("keydown", { code, cancelable: true, bubbles: true });
+			target.dispatchEvent(event);
+			return event;
+		}
+
+		for (const tag of ["input", "textarea", "select"] as const) {
+			it(`ignores keys typed into a <${tag}> inside the keyTarget`, () => {
+				const keyTarget = document.createElement("div");
+				const field = document.createElement(tag);
+				keyTarget.appendChild(field);
+				document.body.appendChild(keyTarget);
+
+				const game = createGame();
+				game.use(
+					InputPlugin({
+						actions: { jump: ["Space"] },
+						keyTarget,
+						preventDefaultPolicy: "focused",
+					}),
+				);
+				class TestScene extends Scene {}
+				game.start(TestScene);
+				const input = getInput(game) as Input;
+
+				field.focus();
+				// Real key events bubble from the focused field up to the keyTarget.
+				const event = dispatchKeyFrom(field, "Space");
+				game.step();
+
+				expect(event.defaultPrevented).toBe(false);
+				expect(input.isPressed("jump")).toBe(false);
+
+				game.stop();
+				keyTarget.remove();
+			});
+		}
+
+		it("ignores keys typed into a contenteditable element", () => {
+			const editable = document.createElement("div");
+			editable.setAttribute("contenteditable", "true");
+			// jsdom does not implement isContentEditable from the attribute.
+			Object.defineProperty(editable, "isContentEditable", { value: true });
+			document.body.appendChild(editable);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			const event = dispatchKeyFrom(editable, "Space");
+			game.step();
+
+			expect(event.defaultPrevented).toBe(false);
+			expect(input.isPressed("jump")).toBe(false);
+
+			game.stop();
+			editable.remove();
+		});
+
+		it("still releases a key whose keyup lands in a field, so actions never stick", () => {
+			const field = document.createElement("input");
+			document.body.appendChild(field);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			// Pressed on the game surface…
+			document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+			game.step();
+			expect(input.isPressed("jump")).toBe(true);
+
+			// …released after focus moved into a field: the release must still land.
+			field.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true }));
+			game.step();
+			expect(input.isPressed("jump")).toBe(false);
+
+			game.stop();
+			field.remove();
+		});
+
+		it("still drives the game for keys typed outside any field", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			const event = dispatchKeyFrom(document.body, "Space");
+			game.step();
+
+			expect(event.defaultPrevented).toBe(true);
+			expect(input.isPressed("jump")).toBe(true);
+
+			game.stop();
+		});
+	});
+
+	describe("setEnabled", () => {
+		it("skips preventDefault and ignores keys while disabled", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			input.setEnabled(false);
+
+			const event = new KeyboardEvent("keydown", { code: "Space", cancelable: true });
+			document.dispatchEvent(event);
+			game.step();
+
+			expect(event.defaultPrevented).toBe(false);
+			expect(input.isPressed("jump")).toBe(false);
+
+			input.setEnabled(true);
+			const event2 = new KeyboardEvent("keydown", { code: "Space", cancelable: true });
+			document.dispatchEvent(event2);
+			game.step();
+
+			expect(event2.defaultPrevented).toBe(true);
+			expect(input.isPressed("jump")).toBe(true);
+
+			game.stop();
+		});
+
+		it("does not buffer pointer presses while disabled", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { attack: ["mouse:left"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			game.canvas.getBoundingClientRect = () =>
+				({ left: 0, top: 0, width: 800, height: 600 }) as DOMRect;
+			input.setEnabled(false);
+
+			game.canvas.dispatchEvent(
+				new MouseEvent("pointerdown", { button: 0, clientX: 200, clientY: 150 }),
+			);
+			game.step();
+
+			expect(input.isPressed("attack")).toBe(false);
+			// Pointer position is not tracked while disabled either.
+			expect(input.mousePosition.x).toBe(0);
+
+			input.setEnabled(true);
+			game.canvas.dispatchEvent(
+				new MouseEvent("pointerdown", { button: 0, clientX: 200, clientY: 150 }),
+			);
+			game.step();
+			expect(input.isPressed("attack")).toBe(true);
+			expect(input.mousePosition.x).toBe(200);
+
+			game.stop();
+		});
+
+		it("drops injected actions while disabled and releases held ones", () => {
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+			const input = getInput(game) as Input;
+
+			input.inject("jump", true);
+			game.step();
+			expect(input.isPressed("jump")).toBe(true);
+
+			input.setEnabled(false);
+			expect(input.isPressed("jump")).toBe(false);
+
+			input.inject("jump", true);
+			game.step();
+			expect(input.isPressed("jump")).toBe(false);
+
+			game.stop();
+		});
+	});
+
 	describe("cleanup", () => {
 		it("removes all DOM listeners on game.stop()", () => {
 			const game = createGame();
@@ -379,6 +799,33 @@ describe("InputPlugin", () => {
 
 			docRemoveSpy.mockRestore();
 			winRemoveSpy.mockRestore();
+		});
+
+		it("removes key listeners from a custom keyTarget, not document", () => {
+			const keyTarget = document.createElement("div");
+			document.body.appendChild(keyTarget);
+
+			const game = createGame();
+			game.use(InputPlugin({ actions: { jump: ["Space"] }, keyTarget }));
+			class TestScene extends Scene {}
+			game.start(TestScene);
+
+			const targetRemoveSpy = vi.spyOn(keyTarget, "removeEventListener");
+			const docRemoveSpy = vi.spyOn(document, "removeEventListener");
+
+			game.stop();
+
+			const targetEvents = targetRemoveSpy.mock.calls.map(([e]) => e);
+			expect(targetEvents).toContain("keydown");
+			expect(targetEvents).toContain("keyup");
+
+			const docEvents = docRemoveSpy.mock.calls.map(([e]) => e);
+			expect(docEvents).not.toContain("keydown");
+			expect(docEvents).not.toContain("keyup");
+
+			targetRemoveSpy.mockRestore();
+			docRemoveSpy.mockRestore();
+			keyTarget.remove();
 		});
 
 		it("getInput returns null after game.stop()", () => {

@@ -1,3 +1,24 @@
+## [FEAT] Add opt-in scoped input capture and runtime enable
+*Wednesday, July 29th at 6pm*
+Implements Phase 3 of the embedded-integration fixes design, the 
+highest-severity issue for embedders: instantiating the engine previously made 
+the host page unable to scroll with Space/arrows/PageDown for the game object's 
+entire lifetime. InputConfig gains keyTarget (default document) and 
+preventDefaultPolicy (default "always"), and Input gains an 
+enabled/setEnabled() runtime switch that gates the keyboard, pointer, gamepad, 
+mouse-position, and buffered/injected paths so a disabled game is genuinely 
+frozen. Per an explicit product decision the defaults are unchanged, so every 
+shipped full-screen example and qdbg's real-key story keeps working untouched; 
+embedders opt in with { keyTarget: canvas, preventDefaultPolicy: "focused" }. 
+Keydown now also bails on events destined for 
+input/textarea/select/contenteditable targets - applied universally, since no 
+shipped example or scaffolded starter contains a form element and a Space in a 
+text field firing jump was plainly a bug. Verified end-to-end in a real 
+browser: an unfocused embedded canvas lets the host page scroll while a focused 
+one drives the game.
+
+---
+
 ## [FEAT] Add NodeType token and hide destroyed nodes from queries
 *Wednesday, July 29th at 5pm*
 Implements Phases 1 and 2 of the embedded-integration fixes design. Phase 1 

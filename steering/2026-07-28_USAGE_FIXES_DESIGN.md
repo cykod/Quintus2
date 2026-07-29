@@ -13,7 +13,7 @@ This design responds to `steering/QUINTUS_FIXES.md`, which reverse-engineered fi
 |-------|-------------|-----------------------|--------|
 | 1 | Relax type-token constraint on `instanceof` queries (`findByType` et al.) | Low | **Done** |
 | 2 | Filter destroyed nodes from tree queries (same-tick consistency) | Medium (bug-prone) | **Done** |
-| 3 | Scope input capture to the game surface (opt-in) + runtime enable | **High** | Pending |
+| 3 | Scope input capture to the game surface (opt-in) + runtime enable | **High** | **Done** |
 | 4 | `scale: "fit-parent"` — fit design space into the parent element | Medium | Pending |
 | 5 | Comprehensive TSDoc contract pass + "Embedding quintus2" guide | Meta (highest leverage) | Pending |
 
@@ -251,7 +251,11 @@ This lets an embedder pass `{ keyTarget: canvas, preventDefaultPolicy: "focused"
 - **(A) Recommended: opt-in options + runtime enable, default unchanged.** *Pro:* zero regression for shipped full-screen examples; embedders get exactly the controls the workaround implemented. *Con:* embedders must know to set them (mitigated by the Phase 5 "Embedding" guide and loud TSDoc).
 - **(B) Flip the default to canvas-scoped + focus-gated.** Matches the source doc's "scope input to the game surface by default." *Pro:* embedded-correct out of the box; nobody hits the footgun. *Con:* **breaking** — every shipped example (platformer, dungeon, breakout, advanced-platformer, artillery) and qdbg's real-key story assumes `document` capture; a full-screen game would stop responding until its canvas is focused. Rejected as the default for `0.x`→ but a candidate for a future major.
 
-> **Decision needed (surface to human):** keep `document`/always-on as the default and ship opt-in controls (A), or make embedded-safe behavior the default (B, breaking)? Recommendation: **(A)** for this release; note (B) as a future-major consideration in the guide.
+> **Decision (resolved by the human, pre-implementation): (A).** `document`-scoped, always-on
+> `preventDefault` stays the default; `keyTarget` / `preventDefaultPolicy` / `setEnabled` ship as
+> opt-in controls. Every shipped full-screen example and qdbg's real-key story keeps working with
+> zero changes. **(B)** is recorded as a future-major consideration only (call it out in the
+> Phase 5 embedding guide).
 
 ### Tests for Phase 3
 **Unit:** `packages/input/src/input.test.ts` (+ a jsdom test for the plugin, matching existing `input-plugin` tests)
@@ -262,6 +266,57 @@ This lets an embedder pass `{ keyTarget: canvas, preventDefaultPolicy: "focused"
 - Cleanup: on `game.stopped`, listeners are removed from the configured `keyTarget` (not `document`).
 
 **Success criterion:** with `{ keyTarget: canvas, preventDefaultPolicy: "focused" }` and the canvas unfocused, a bound Space keydown does **not** call `preventDefault` (host page would scroll); focused, it does. All existing input tests stay green with defaults.
+
+> **Implementation note (shipped).** Landed exactly as specified, plus three small decisions the
+> design left open:
+> 1. **Gamepad polling is gated on `enabled` too** (`Input._pollGamepad` early-returns). `_pollGamepad`
+>    mutates active bindings directly rather than going through a buffer, so without this gate a
+>    disabled `Input` would still respond to a gamepad — contradicting the documented "no input is
+>    applied". One line; covered by a test.
+> 2. **`ensureFocusable` skips natively-focusable targets.** It only sets `tabIndex = -1` when the
+>    element has no `tabindex` attribute *and* reports `tabIndex < 0`, so passing a `<button>`-like
+>    wrapper doesn't get yanked out of the page's tab order.
+>    **Correction (post-review fix pass):** the design asked for a warn when the target "still can't
+>    be focused". As first shipped that branch was **unreachable** — `keyTarget.tabIndex = -1`
+>    reflects to the `tabindex` attribute, so the following `!hasAttribute("tabindex")` was never
+>    true, and the promised warning never fired. It now warns on `!keyTarget.isConnected` instead,
+>    which is the reachable, genuinely-fatal case (a detached element receives no key events); it
+>    fires once per install and is pinned by
+>    `input-plugin.test.ts > "warns when the keyTarget is detached from the document"`.
+> 3. **`keyTarget.addEventListener(...)` needs an `as EventListener` cast.** TypeScript collapses the
+>    `HTMLElement | Document` union to the untyped `addEventListener` overload; the handlers keep
+>    their `KeyboardEvent` parameter types at the declaration site. Verified with `tsc`, not assumed.
+>
+> `_shouldPreventDefault()` is a pure method on `Input` (reads the stored `_keyTarget` /
+> `_preventDefaultPolicy` and `document.activeElement`), so the focused-policy matrix is unit-tested
+> without the DOM plugin. `_releaseAll()` and the disabled `_beginFrame()` path share one
+> `_clearBuffers()` private helper. Type-level contracts for `keyTarget` / `preventDefaultPolicy` /
+> `enabled` / `setEnabled` are pinned in **`packages/input/src/input.test-d.ts`** (gated by
+> `pnpm test` via the root `tsconfig.typetest.json`).
+>
+> **Post-review fix pass (shipped).** Five further changes, each pinned by a test:
+> 1. **`setMousePosition()` is gated on `enabled`.** `@quintus/touch` (`TouchFollowZone`,
+>    `VirtualAimStick`) calls it directly rather than through `InputPlugin`, so a touch drag moved
+>    the pointer while "frozen". The `@internal _setMousePosition` stays ungated as the deliberate
+>    debug/test override (`qdbg mouse` must work regardless of input state). `Input.enabled`'s TSDoc
+>    is now stated as an **invariant** rather than a list of gated call sites, and
+>    `input.test.ts > "disabled invariant"` is one table-driven test over every mutating entry point.
+> 2. **Keys typed into a form field or `contenteditable` no longer reach the game.** Real key events
+>    bubble, so an `<input>`/`<textarea>`/`<select>`/`contenteditable` anywhere under the `keyTarget`
+>    both got `preventDefault`ed and fired the bound action. `onKeyDown` now bails on such targets.
+>    Applied to the **default** config too — it is a bug fix, not a behavior change any game wants
+>    (no shipped example contains a form element; verified). `onKeyUp` deliberately does **not** bail,
+>    so a key held before focus moved into a field still releases and never sticks.
+> 3. **`preventDefaultPolicy: "focused"` without a `keyTarget` warns at install.** `document` always
+>    contains the active element, so the policy silently collapses to `"always"` — the single most
+>    likely embedder mistake. TSDoc says so too.
+> 4. **`keyTarget` is resolved once**, on `Input`; the plugin reads `input._keyTarget` instead of
+>    re-deriving the default, so the listener target and the focus check cannot drift apart.
+> 5. **`_shouldPreventDefault()` walks open shadow roots.** `document.activeElement` reports the
+>    shadow *host*, so a web-component-wrapped game never prevented default while focused.
+>
+> Also: `qdbg status` now appends `Input: DISABLED` when the game's input is disabled, so
+> `press`/`tap` silently no-opping is diagnosable.
 
 ---
 
@@ -378,7 +433,7 @@ Documentation has no unit tests; verify via:
 
 - [x] Phase 1: `NodeType` added and exported; 7 query methods retyped; required-arg node classes accept in `findByType`/`findAllByType`; construction sites still require zero-arg. Type-level assertions live in `packages/core/src/node.test-d.ts` and are **gated by `pnpm test`** (root `tsconfig.typetest.json` + widened `typecheck.include`).
 - [x] Phase 2: every tree query — receiver included — skips `isDestroyed` nodes and their subtrees; same-tick stale-query test RED→GREEN; sibling-survival test passes; all existing tests green; `destroy()` timing unchanged. `PhysicsWorld` scene queries filter destroyed bodies too, so both query APIs agree.
-- [ ] Phase 3: `keyTarget`, `preventDefaultPolicy`, `setEnabled` implemented (with pointer/injection gating and `tabIndex` handling); focused-policy and disabled-input tests pass; defaults unchanged and existing input tests green.
+- [x] Phase 3: `keyTarget`, `preventDefaultPolicy`, `setEnabled` implemented (with pointer/injection/gamepad gating and `tabIndex` handling); focused-policy and disabled-input tests pass; defaults unchanged and existing input tests green. Decision **(A)** confirmed by the human: defaults stay `document`/always-on, the new controls are opt-in.
 - [ ] Phase 4: `"fit-parent"` mode letterboxes into the parent, re-fits on parent resize, disconnects observer on stop; `"fit"` regression intact.
 - [ ] Phase 5: TSDoc runtime contracts on the full load-bearing surface; `docs/embedding.md` created and linked; `pnpm docs` clean.
 - [ ] `pnpm build` succeeds; `pnpm test` passes with no warnings; `pnpm lint` clean.
@@ -388,6 +443,6 @@ Documentation has no unit tests; verify via:
 
 ## Open decisions to confirm before implementation
 
-1. **Phase 3 — input default:** keep `document`/always-on capture as the default and ship the opt-in controls (recommended A), or flip the default to embedded-safe (canvas-scoped + focus-gated) — which is **breaking** for the shipped full-screen examples and belongs in a future major (B)? This is the one genuine product call: it trades the doc's stated embedding goal against back-compat for a published `0.x` package.
+1. ~~**Phase 3 — input default:** keep `document`/always-on capture as the default and ship the opt-in controls (recommended A), or flip the default to embedded-safe (canvas-scoped + focus-gated) — which is **breaking** for the shipped full-screen examples and belongs in a future major (B)?~~ **Resolved by the human as (A)** before implementation: defaults unchanged, `keyTarget` / `preventDefaultPolicy` / `setEnabled` ship as opt-in. (B) is a future-major consideration to note in the Phase 5 embedding guide.
 
 _Resolved during review:_ Phase 2 uses non-mutating query-filtering (safe, non-breaking) rather than a synchronous splice — no sign-off needed. Phase 4 uses the narrower `"fit-parent"` mode name; a general `element?` option is deferred (YAGNI).

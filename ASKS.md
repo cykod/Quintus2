@@ -906,3 +906,13 @@
 [DREV] wed 7/29 5pm - Design-review Phases 1 and 2 of steering/2026-07-28_USAGE_FIXES_DESIGN.md against a reference design — self-gated N/A (engine-internals only, no reference design)
 
 [FIX] wed 7/29 5pm - Fix issues from the Phase 1-2 usage-fixes review, code-review, security-review, and retro (NodeType token + destroyed-node query guards)
+
+[MILE] wed 7/29 5pm - Added NodeType type token for instanceof queries and made tree queries skip destroyed nodes same-tick, with a physics query-filter guard and a repo-wide type-test CI gate
+
+[IMPL] wed 7/29 6pm - Implement Phase 3 of steering/2026-07-28_USAGE_FIXES_DESIGN.md — opt-in keyTarget and preventDefaultPolicy input scoping plus a runtime setEnabled switch, defaults unchanged
+
+[CDRV] wed 7/29 6pm - Code review on current session
+
+[RETR] wed 7/29 6pm - Retro on Phase 3 scoped input capture build from steering/2026-07-28_USAGE_FIXES_DESIGN.md
+
+[FIX] wed 7/29 6pm - Fix Phase 3 (scoped input capture) issues from the review, code-review, security-review, and retro for 2026-07-29-usage-fixes-p3

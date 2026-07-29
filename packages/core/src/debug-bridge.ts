@@ -21,6 +21,12 @@ export interface DebugBridge {
 	readonly paused: boolean;
 	readonly frame: number;
 	readonly elapsed: number;
+	/**
+	 * Whether the game's Input is enabled. `true` when no InputPlugin is
+	 * installed. Surfaced so `press`/`tap` silently no-opping against a game in
+	 * `setEnabled(false)` is diagnosable.
+	 */
+	readonly inputEnabled: boolean;
 	pause(): void;
 	resume(): void;
 	step(frames?: number): NodeSnapshot | null;
@@ -97,6 +103,7 @@ declare global {
 
 interface InputLike {
 	actionNames: string[];
+	enabled?: boolean;
 	inject(action: string, pressed: boolean): void;
 	_setMousePosition(x: number, y: number): void;
 	mousePosition: { x: number; y: number };
@@ -122,6 +129,9 @@ export function installDebugBridge(game: Game): DebugBridge {
 		},
 		get elapsed() {
 			return game.elapsed;
+		},
+		get inputEnabled() {
+			return getGameInput(game)?.enabled ?? true;
 		},
 
 		pause() {
