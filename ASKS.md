@@ -928,3 +928,13 @@
 [RETR] wed 7/29 6pm - Retro on Phase 4 (scale: fit-parent) of steering/2026-07-28_USAGE_FIXES_DESIGN.md, with recurrence ledger vs the p1-p2 and p3 retros
 
 [FIX] wed 7/29 7pm - Fix Phase 4 (scale: fit-parent) issues from the review, code-review, security-review, design-review, and retro for 2026-07-29-usage-fixes-p4
+
+[MILE] wed 7/29 7pm - Added the fit-parent scale mode so embedded canvases letterbox into their container instead of taking over the viewport, with contentRect measurement and observer teardown
+
+[DREV] wed 7/29 7pm - Design-review Phase 4 (scale: fit-parent) canvas letterbox geometry against the stated geometry in steering/2026-07-28_USAGE_FIXES_DESIGN.md
+
+[IMPL] wed 7/29 7pm - Implement Phase 5 of steering/2026-07-28_USAGE_FIXES_DESIGN.md: TSDoc runtime-contract pass on the load-bearing embedding surface plus a docs/embedding.md guide
+
+[CDRV] wed 7/29 7pm - Code review Phase 5 (TSDoc contract pass, docs/embedding.md, doc-lint test, TypeDoc config) of steering/2026-07-28_USAGE_FIXES_DESIGN.md
+
+[RETR] wed 7/29 7pm - Retro on Phase 5 of steering/2026-07-28_USAGE_FIXES_DESIGN.md and consolidation of the four-batch usage-fixes arc

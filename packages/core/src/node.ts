@@ -13,17 +13,44 @@ const CURRENT_BUILD_OWNER = Symbol.for("quintus:currentBuildOwner");
 /** @internal Symbol for the dollar-ref resolver registered by @quintus/jsx. */
 const RESOLVE_BUILD_REFS = Symbol.for("quintus:resolveBuildRefs");
 
-/** A zero-arg class, usable to *construct* a node (`add`, pools, JSX). */
+/**
+ * A zero-arg class, usable to *construct* a node — the engine calls `new NodeClass()`
+ * with no arguments and then assigns props, so the constructor **must** be callable
+ * with zero args. Required by every construction site: {@link Node.add},
+ * `NodePool`, the JSX factory, and `TileMap.spawnObjects`.
+ *
+ * A class with required constructor parameters deliberately fails to compile here.
+ * Instantiate it yourself and pass the instance instead:
+ *
+ * ```ts
+ * class Target extends Node2D {
+ *   constructor(public spot: Vec2) { super(); }
+ * }
+ * scene.add(new Target(new Vec2(10, 20))); // instance overload — always allowed
+ * ```
+ *
+ * @see {@link NodeType} for the looser token used by the query methods.
+ */
 export interface NodeConstructor<T extends Node = Node> {
 	new (): T;
 }
 
 /**
- * A class used purely as a runtime `instanceof` **type token** — for query/guard
- * methods (`is`, `findByType`, `getChild`, …) that never instantiate it.
- * Unlike {@link NodeConstructor}, it accepts node classes with required
- * constructor args (e.g. `class Target extends Sensor { constructor(p: Vec2) }`),
- * because `instanceof` does not care about arity.
+ * A class used purely as a runtime `instanceof` **type token** — for the query and
+ * guard methods ({@link Node.is}, {@link Node.findByType}, {@link Node.getChild}, …)
+ * that never instantiate it.
+ *
+ * Unlike {@link NodeConstructor} it accepts node classes with required constructor
+ * args, because `instanceof` does not care about arity. Abstract base classes are
+ * accepted too, so a query can be written against a shared base.
+ *
+ * ```ts
+ * class Target extends Node2D {
+ *   constructor(public spot: Vec2) { super(); }
+ * }
+ * scene.findAllByType(Target); // OK — no cast, despite the required arg
+ * scene.add(Target);           // compile error — `add` constructs, so it needs NodeConstructor
+ * ```
  */
 export type NodeType<T extends Node = Node> = abstract new (...args: never[]) => T;
 
@@ -247,7 +274,31 @@ export class Node {
 		}
 	}
 
-	/** Remove a child from this node. The child is NOT destroyed — just detached. */
+	/**
+	 * Detach a child **immediately and synchronously**. The child is *not* destroyed:
+	 * `onExitTree`/`treeExited` fire for it and its whole subtree (it is leaving the
+	 * tree), but `destroying`, `onDestroy` and the signal `disconnectAll` teardown do
+	 * **not** run, and `isDestroyed` stays `false`. Use this to move a node between
+	 * parents or to park it for later re-`add()`ing — not to get rid of it.
+	 *
+	 * Because the splice happens immediately, calling this from inside `onFixedUpdate`
+	 * mutates the array the update walk is iterating, so a sibling can be skipped for
+	 * that frame. {@link Node.destroy} has no such hazard — it never mutates the tree.
+	 *
+	 * **Footgun — never pair the two:**
+	 * ```ts
+	 * parent.removeChild(child);
+	 * child.destroy();  // ← silently does nothing
+	 * ```
+	 * `removeChild()` nulls the parent link, so `destroy()` can no longer walk up to the
+	 * scene's destroy queue: the node is flagged `isDestroyed` but is never processed,
+	 * and `onDestroy` never runs. To remove a node *with* its lifecycle, call
+	 * `destroy()` on its own — since a destroyed node is invisible to every tree query
+	 * in the same tick, there is no reason to detach it first.
+	 *
+	 * @see {@link Node.destroy} for removal *with* teardown.
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 */
 	removeChild(node: Node): void {
 		const idx = this._children.indexOf(node);
 		if (idx === -1) return;
@@ -273,7 +324,11 @@ export class Node {
 		node._isInsideTree = false;
 	}
 
-	/** Remove this node from its parent. */
+	/**
+	 * Detach this node from its parent immediately. No-op at the root.
+	 * Identical contract to {@link Node.removeChild} (which it delegates to):
+	 * synchronous, **not** a destroy, and never to be followed by `destroy()`.
+	 */
 	removeSelf(): void {
 		if (this._parent) {
 			this._parent.removeChild(this);
@@ -282,7 +337,19 @@ export class Node {
 
 	// === Type Guard ===
 
-	/** Type-narrowing check: `if (node.is(Actor)) { node.move(dt); }` */
+	/**
+	 * Runtime `instanceof` check that narrows the static type:
+	 * `if (node.is(Actor)) { node.move(dt); }`
+	 *
+	 * Unlike the tree queries below this is a **pure type guard** and deliberately
+	 * ignores `isDestroyed` — narrowing must not depend on lifecycle state, so
+	 * `node.is(Actor)` stays `true` for a node awaiting end-of-frame teardown.
+	 * Check {@link Node.isDestroyed} yourself if you are holding a reference across
+	 * frames.
+	 *
+	 * Accepts any node class (`NodeType`), including abstract ones and ones
+	 * with required constructor arguments.
+	 */
 	is<T extends Node>(type: NodeType<T>): this is T {
 		return this instanceof type;
 	}
@@ -293,6 +360,20 @@ export class Node {
 	// receiver. `destroy()` flags only the receiver (descendants are flagged
 	// later, in `_processDestroy`), so each recursive walk needs both an
 	// `this.isDestroyed` receiver guard and a per-child skip.
+
+	/**
+	 * Depth-first search for the first **descendant** named `name`. Excludes `this`.
+	 * Returns `null` when nothing matches.
+	 *
+	 * Names are not unique or indexed — this is an O(n) walk of the subtree, fine for
+	 * setup and occasional lookups, not for per-frame use. Cache the result instead.
+	 *
+	 * Skips destroyed nodes and their whole subtrees, so a node `destroy()`ed earlier
+	 * in the same tick is never returned even though it is still spliced into
+	 * `parent.children` until end-of-frame cleanup.
+	 *
+	 * @see {@link Node.destroy} for the deferral this compensates for.
+	 */
 	find(name: string): Node | null {
 		if (this.isDestroyed) return null;
 		for (const child of this._children) {
@@ -304,6 +385,22 @@ export class Node {
 		return null;
 	}
 
+	/**
+	 * Collect every node in this subtree carrying `tag`, optionally narrowed by an
+	 * `instanceof` check. **Includes `this`** if it is tagged — `scene.findAll("enemy")`
+	 * and `enemy.findAll("enemy")` therefore differ by the receiver.
+	 *
+	 * Order is depth-first, receiver-first, and stable across runs (the tree order),
+	 * which is what makes tag-driven iteration deterministic.
+	 *
+	 * Destroyed nodes and their subtrees are skipped, so this agrees with
+	 * `Scene.count()` (which delegates here) in the same tick as a `destroy()`.
+	 *
+	 * ```ts
+	 * for (const coin of scene.findAll("coin", Sensor)) coin.destroy();
+	 * scene.findAll("coin").length; // → 0, same tick
+	 * ```
+	 */
 	findAll(tag: string): Node[];
 	findAll<T extends Node>(tag: string, type: NodeType<T>): T[];
 	findAll(tag: string, type?: NodeType<Node>): Node[] {
@@ -313,7 +410,14 @@ export class Node {
 		return result;
 	}
 
-	/** Find the first node with the given tag, optionally narrowed by type. */
+	/**
+	 * First node in this subtree carrying `tag`, optionally narrowed by an
+	 * `instanceof` check. **Includes `this`**, and depth-first order makes the
+	 * receiver the first candidate. Returns `null` when nothing matches.
+	 *
+	 * Skips destroyed nodes and their subtrees. Short-circuits on the first hit, so
+	 * prefer it over `findAll(tag)[0]`.
+	 */
 	findFirst(tag: string): Node | null;
 	findFirst<T extends Node>(tag: string, type: NodeType<T>): T | null;
 	findFirst(tag: string, type?: NodeType<Node>): Node | null {
@@ -338,16 +442,55 @@ export class Node {
 		}
 	}
 
+	/**
+	 * First **direct child** matching `type`. Does not recurse and does not consider
+	 * `this`. Returns `null` when there is none.
+	 *
+	 * This is the standard way to reach a node's own composed parts — e.g. an
+	 * {@link Node.build}-declared `CollisionShape` or sprite:
+	 * ```ts
+	 * const shape = actor.getChild(CollisionShape);
+	 * ```
+	 *
+	 * Destroyed children are skipped in the same tick they are destroyed. Note the
+	 * physics **solver** deliberately does not use this — a body destroyed mid-tick
+	 * stays solid for the rest of that step, so nothing falls through a platform that
+	 * was destroyed during the frame.
+	 */
 	getChild<T extends Node>(type: NodeType<T>): T | null {
 		if (this.isDestroyed) return null;
 		return (this._children.find((c) => !c.isDestroyed && c instanceof type) as T) ?? null;
 	}
 
+	/**
+	 * All **direct children** matching `type`, in child order. Does not recurse and
+	 * does not consider `this`. Returns `[]` (never `null`) when there is no match, and
+	 * `[]` when the receiver itself is destroyed.
+	 *
+	 * Destroyed children are skipped in the same tick they are destroyed.
+	 */
 	getChildren<T extends Node>(type: NodeType<T>): T[] {
 		if (this.isDestroyed) return [];
 		return this._children.filter((c) => !c.isDestroyed && c instanceof type) as T[];
 	}
 
+	/**
+	 * Depth-first search for the first **descendant** matching `type`.
+	 * **Excludes `this`** — contrast {@link Node.findAllByType}, which includes it.
+	 * Returns `null` when nothing matches.
+	 *
+	 * Accepts any node class (`NodeType`) — abstract classes and classes with
+	 * required constructor arguments both work, since the check is a runtime
+	 * `instanceof`:
+	 * ```ts
+	 * class Target extends Node2D {
+	 *   constructor(public spot: Vec2) { super(); }
+	 * }
+	 * const target = scene.findByType(Target); // Target | null, no cast needed
+	 * ```
+	 *
+	 * Skips destroyed nodes and their subtrees.
+	 */
 	findByType<T extends Node>(type: NodeType<T>): T | null {
 		if (this.isDestroyed) return null;
 		for (const child of this._children) {
@@ -359,6 +502,21 @@ export class Node {
 		return null;
 	}
 
+	/**
+	 * Every node in this subtree matching `type`, depth-first. **Includes `this`** —
+	 * `enemy.findAllByType(Enemy)` contains `enemy` itself, unlike
+	 * {@link Node.findByType}, which starts at the children.
+	 *
+	 * Accepts any node class (`NodeType`) — a base class returns every subclass
+	 * instance too, and abstract base classes are allowed.
+	 *
+	 * Skips destroyed nodes and their subtrees, so this is safe to call in the same
+	 * tick as a bulk `destroy()` — the standard "clear and rebuild" reset:
+	 * ```ts
+	 * for (const t of scene.findAllByType(Target)) t.destroy();
+	 * scene.findAllByType(Target).length; // → 0, same tick
+	 * ```
+	 */
 	findAllByType<T extends Node>(type: NodeType<T>): T[] {
 		const result: T[] = [];
 		this._collectByType(type, result);
@@ -526,10 +684,35 @@ export class Node {
 	 * still present in `parent.children` until then, and it is safe to call this
 	 * from `onFixedUpdate` without perturbing the current walk.
 	 *
-	 * @see {@link removeChild} for immediate detach *without* any destroy hooks.
+	 * The physics **solver** deliberately does not follow the query rule: a body
+	 * destroyed mid-tick keeps colliding for the remainder of that step, so an actor
+	 * never falls through a platform destroyed underneath it. Physics *scene* queries
+	 * (`raycast`, `queryCircle`, `findNearest`, …) do follow it and agree with the tree
+	 * queries. In short — queries answer "is it still in the game?" immediately; the
+	 * solver answers "what did this step collide with?" unchanged.
+	 *
+	 * A node with no scene ancestor has nowhere to queue: it is flagged `isDestroyed`,
+	 * but no teardown ever runs. That is why the `removeChild()`-then-`destroy()`
+	 * pairing below is a silent no-op.
+	 *
+	 * @example Destroying from a lifecycle hook, then re-querying in the same tick
+	 * ```ts
+	 * class Wave extends Node {
+	 *   override onFixedUpdate(): void {
+	 *     for (const e of this.findAll("enemy")) {
+	 *       if (e.hasTag("dead")) e.destroy();   // safe: no tree mutation
+	 *     }
+	 *     // Same tick, already consistent — the destroyed enemies are not counted.
+	 *     if (this.findAll("enemy").length === 0) this.tag("wave-cleared");
+	 *   }
+	 * }
+	 * ```
+	 *
+	 * @see {@link Node.removeChild} for immediate detach *without* any destroy hooks.
 	 * Do not call `removeChild()` and then `destroy()`: `removeChild()` nulls the
 	 * parent, so `destroy()` can no longer reach the scene's destroy queue and
 	 * the whole lifecycle is silently skipped.
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
 	 */
 	destroy(): void {
 		if (this._isDestroyed) return;

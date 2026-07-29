@@ -1,3 +1,26 @@
+## [DOC] Document embedding contracts and add embedding guide
+*Wednesday, July 29th at 10pm*
+Implements Phase 5 (final) of the embedded-integration fixes design: a TSDoc 
+runtime-contract pass over the surface an embedder touches, plus a new 
+docs/embedding.md covering scale, input scope, teardown, and headless testing. 
+The rule throughout is to document timing, side effects, scope, and teardown 
+obligations rather than types - so destroy() states its 
+deferred-teardown-but-immediately-invisible split, removeChild states which 
+hooks it does and does not run, inject/injectAnalog are rewritten in step() 
+terms instead of referencing an @internal method, and reactiveState documents 
+its module-singleton lifetime. Three claims inherited from earlier design-doc 
+prose were found wrong against source and corrected: Node.is() deliberately has 
+no isDestroyed guard because narrowing must not depend on lifecycle, 
+removeChild() does fire onExitTree/treeExited, and destruction does not release 
+connections a node made to external signals. Also repairs pnpm run docs, which 
+was fatally broken (exit 3, 23 TS errors, no output) and untouched since the 
+Phase 0 bootstrap; it now exits 0 with the guide rendered, and 
+scripts/docs-contract.test.mjs gates 26 documented contracts. 
+steering/QUINTUS_FIXES.md gains per-issue droppability verdicts for the five 
+app-side workarounds.
+
+---
+
 ## [FEAT] Add fit-parent scale mode for embedded canvases
 *Wednesday, July 29th at 7pm*
 Implements Phase 4 of the embedded-integration fixes design. scale: 

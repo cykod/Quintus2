@@ -2,10 +2,34 @@
 	"$schema": "https://typedoc.org/schema.json",
 	"entryPoints": ["packages/*"],
 	"entryPointStrategy": "packages",
+	"exclude": ["**/packages/create-quintus2"],
+	"projectDocuments": ["docs/embedding.md"],
 	"out": "docs/api",
 	"name": "Quintus 2.0",
 	"readme": "README.md",
 	"excludePrivate": true,
 	"excludeInternal": true,
-	"includeVersion": true
+	"includeVersion": true,
+	"highlightLanguages": [
+		"bash",
+		"console",
+		"css",
+		"html",
+		"javascript",
+		"json",
+		"jsonc",
+		"json5",
+		"tsx",
+		"typescript",
+		"xml",
+		"yaml"
+	],
+	"packageOptions": {
+		"excludePrivate": true,
+		"excludeInternal": true,
+		"exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.test-d.ts", "**/__test-utils__/**"],
+		"skipErrorChecking": true,
+		"suppressCommentWarningsInDeclarationFiles": true,
+		"validation": { "notExported": false, "invalidLink": true, "notDocumented": false }
+	}
 }

@@ -15,7 +15,7 @@ This design responds to `steering/QUINTUS_FIXES.md`, which reverse-engineered fi
 | 2 | Filter destroyed nodes from tree queries (same-tick consistency) | Medium (bug-prone) | **Done** |
 | 3 | Scope input capture to the game surface (opt-in) + runtime enable | **High** | **Done** |
 | 4 | `scale: "fit-parent"` — fit design space into the parent element | Medium | **Done** |
-| 5 | Comprehensive TSDoc contract pass + "Embedding quintus2" guide | Meta (highest leverage) | Pending |
+| 5 | Comprehensive TSDoc contract pass + "Embedding quintus2" guide | Meta (highest leverage) | **Done** |
 
 Phases are independent and can land in any order; **Phase 5 depends on 1–4** (it documents their final behavior) and must land last or be updated as each ships.
 
@@ -479,6 +479,77 @@ Documentation has no unit tests; verify via:
 
 **Success criterion:** hovering `destroy`, `findByType`, `scale`, and `inject` in an editor shows the runtime contract (timing/scope/side-effects), not just the type; `docs/embedding.md` exists and is linked from TypeDoc; `pnpm docs` is clean.
 
+> **Implementation note (shipped).** Landed as specified, documenting the **final** Phase 1–4
+> behavior rather than the design's original intent. Corrections the pass had to make, each
+> verified against source before being written:
+>
+> 1. **`Node.is()` is *not* part of the destroyed-node invariant.** The Phase 5 brief listed it
+>    among the filtered query methods; it isn't, and shouldn't be — it is a pure `instanceof`
+>    type guard with no `isDestroyed` check (node.ts), and `node.test.ts`'s
+>    "queries on a destroyed node itself return nothing" deliberately omits it. Narrowing must
+>    not depend on lifecycle state. Documented as an explicit, deliberate asymmetry on `is()`
+>    and in the guide, alongside the solver's parallel exemption.
+> 2. **`removeChild()` then `destroy()` does *not* skip `onExitTree`/`treeExited`.** The design's
+>    §Phase 2 prose said it skipped "`onDestroy`, `onExitTree`, `treeExited`, signal
+>    `disconnectAll`". `removeChild()` itself runs `_exitTreeRecursive`, so those two *do* fire.
+>    What is silently skipped is `destroying`, `onDestroy`, the child destroy recursion, and
+>    `disconnectAll`. The TSDoc and the guide state the accurate list.
+> 3. **Node destruction does *not* release connections a node made to external signals.** An
+>    earlier draft of the `reactiveState` TSDoc asserted it did. `_processDestroy` only calls
+>    `disconnectAll()` on the node's *own* four signals — a HUD's handler on
+>    `gameState.on("score")` stays connected and keeps the destroyed node alive. Documented as a
+>    teardown obligation with a `SignalConnection`-keeping example. (Note the shipped example
+>    games do not do this; not fixed here, it is outside the doc phase's scope.)
+> 4. **All `file:line` citations in §5a were stale** (`node.ts:494 destroy` → ~534, etc.). Every
+>    symbol was re-located by name. Several §5a rows had already landed opportunistically in
+>    earlier phases (`Node.destroy`, `GameOptions.scale`, `Game.resized`, `Input.enabled`,
+>    `InputConfig`) and were audited and extended rather than rewritten.
+>
+> **Beyond the §5a table**, `Game.stop()` and `Game.step()` gained contracts (they are the
+> teardown and headless-driving entry points the guide leans on), as did `GameOptions.canvas`
+> and `renderer`. `packages/physics/src/collision-object.ts`'s `getShapes()` and
+> `query-filter.ts`'s `matchesQuery` were already documented by Phase 2 and needed nothing.
+>
+> **`pnpm docs` was fatally broken before this phase** and is the reason the verification bar
+> took config work: it exited 3 with **23 TypeScript errors and 2 warnings**, so no docs were
+> produced at all. Four changes in `typedoc.json` (plus a `typedoc` bump `^0.27` → `^0.28`,
+> needed both for TS 5.9 support and for the `packageOptions` key, which is the only way to
+> reach per-package conversion settings under `entryPointStrategy: "packages"`):
+> - `packageOptions.skipErrorChecking` — TypeDoc was typechecking every package's **test**
+>   files, which nothing else in the repo typechecks (`pnpm test` only typechecks `*.test-d.ts`)
+>   and which carry ~170 pre-existing strictness errors. Doc generation is not a type gate;
+>   `pnpm build` and `pnpm test` are.
+> - `packageOptions.exclude` — keeps test files and `__test-utils__` out of the *documented*
+>   surface (`@quintus/three` exports its mock from `exports`).
+> - `packageOptions.validation.notExported: false` — 10 internal types are referenced by public
+>   signatures across 5 packages. Exporting them is a real public-API change and out of scope.
+> - `exclude: create-quintus2` (a CLI, no `exports` → "no entry points" warning) and `xml` added
+>   to `highlightLanguages`.
+>
+> **Result: 0 errors, exit 0, and the guide renders** at `docs/api/documents/Embedding_quintus2.html`.
+> **6 warnings remain and are not fixable here:** they come from `@types/three`'s own malformed
+> TSDoc (two `@remarks` tags on `DirectionalLight`, likewise `InstancedMesh`), surfaced because
+> `@quintus/three`'s public API returns those types. TypeDoc emits them from `postProcessComment`,
+> which — unlike every other comment warning — is not gated by
+> `suppressCommentWarningsInDeclarationFiles` and has no suppression hook. Confirmed by reading
+> TypeDoc 0.28.20's source; excluding `packages/three` only drops 4 of the 6.
+>
+> `{@link NodeType}` had to become a plain code span inside the query methods' TSDoc: those
+> comments are inherited into every `Node` subclass in every other package, where the link
+> resolves to a symbol that package doesn't document, producing an `invalidLink` warning per
+> subclass. Cross-package `{@link}` in an inherited comment is a footgun worth remembering.
+>
+> **Verification.** New doc-lint at **`scripts/docs-contract.test.mjs`** (28 tests, gated by
+> `pnpm test`): every named symbol carries a multi-line TSDoc block directly above its
+> declaration, the guide is registered in `typedoc.json` and covers all four axes, and all four
+> source files carry the `@see` link. It asserts *presence*, not prose. The headless
+> `inject` → `step()` sample in the guide was **executed verbatim** against the built
+> `quintus2` bundle under jsdom rather than eyeballed: frame 0 reports
+> `isPressed === isJustPressed === true`, frame 1 released — confirming the "inject, then step
+> once" contract the doc now states. The `HeadlessGame`-needs-jsdom and
+> `removeChild()`-then-`destroy()` gotchas were both confirmed against source/runtime before
+> being written (`ReferenceError: HTMLCanvasElement is not defined` under bare Node).
+
 ---
 
 ## Files touched (surgical scope)
@@ -493,7 +564,10 @@ Documentation has no unit tests; verify via:
 | `packages/core/src/game.ts` | 4, 5 | `"fit-parent"` mode + `_setupFitParentScaling`; TSDoc on `GameOptions`. |
 | `packages/input/src/input.ts` | 3, 5 | `keyTarget`/`preventDefaultPolicy` on `InputConfig`; `enabled`/`setEnabled`; `_shouldPreventDefault`; TSDoc on `inject`/config. |
 | `packages/input/src/input-plugin.ts` | 3 | Bind to `keyTarget` (+ `tabIndex` handling); `enabled` gates on key/pointer handlers; policy gate in `onKeyDown`; cleanup from configured target. |
+| `packages/core/src/reactive-state.ts` | 5 | TSDoc: module-singleton lifetime, `reset()` on boot *and* teardown, connections not auto-released. |
 | `docs/embedding.md` (new) | 5 | Embedding guide. |
+| `typedoc.json` + `typedoc` `^0.27`→`^0.28` | 5 | `projectDocuments` for the guide; `packageOptions` (`skipErrorChecking`, test-file `exclude`, `validation.notExported: false`) to get `pnpm run docs` from fatal to clean. |
+| `scripts/docs-contract.test.mjs` (new) | 5 | Doc-lint: every contract symbol carries a multi-line TSDoc block; guide registered, complete, and cross-linked. |
 | Test files alongside each source file | 1–4 | Per-phase tests above. |
 
 **Deliberately left alone:** `add`/`NodePool`/JSX factory/`TileMap.spawn*` (keep `NodeConstructor`); `"fit"`/`"fill"` runtime behavior (only documented, not changed); pointer/blur wiring in `input-plugin.ts`; the `reactiveState` implementation (documented, not changed).
@@ -506,9 +580,12 @@ Documentation has no unit tests; verify via:
 - [x] Phase 2: every tree query — receiver included — skips `isDestroyed` nodes and their subtrees; same-tick stale-query test RED→GREEN; sibling-survival test passes; all existing tests green; `destroy()` timing unchanged. `PhysicsWorld` scene queries filter destroyed bodies too, so both query APIs agree.
 - [x] Phase 3: `keyTarget`, `preventDefaultPolicy`, `setEnabled` implemented (with pointer/injection/gamepad gating and `tabIndex` handling); focused-policy and disabled-input tests pass; defaults unchanged and existing input tests green. Decision **(A)** confirmed by the human: defaults stay `document`/always-on, the new controls are opt-in.
 - [x] Phase 4: `"fit-parent"` mode letterboxes into the parent, re-fits on parent resize, disconnects observer on stop; `"fit"` regression intact. Verified in jsdom **and** in a real browser (Chromium): a 400×250 parent with an 800×500 design space yields CSS 400×250 inside the container, and re-fits to 200×125 when the parent shrinks to 200×200.
-- [ ] Phase 5: TSDoc runtime contracts on the full load-bearing surface; `docs/embedding.md` created and linked; `pnpm docs` clean.
-- [ ] `pnpm build` succeeds; `pnpm test` passes with no warnings; `pnpm lint` clean.
-- [ ] `steering/QUINTUS_FIXES.md` updated to mark each issue's workaround as droppable once the corresponding phase ships (or a follow-up note added).
+- [x] Phase 5: TSDoc runtime contracts on the full load-bearing surface; `docs/embedding.md` created, registered via TypeDoc `projectDocuments`, and cross-linked from `@see` tags in `game.ts` / `node.ts` / `reactive-state.ts` / `input.ts`. `pnpm run docs` goes from **fatal (exit 3, 23 errors)** to **0 errors, exit 0**; the 6 residual warnings originate in `@types/three`'s own malformed TSDoc and TypeDoc offers no hook to suppress them (see the implementation note). Pinned by `scripts/docs-contract.test.mjs`.
+- [x] `pnpm build` succeeds; `pnpm test` passes (165 files / 2677 tests, `Type Errors: no errors`); `pnpm lint` clean (841 files).
+- [x] `steering/QUINTUS_FIXES.md` updated — each of the five issues now records which workaround is droppable and what (if anything) replaces it. Issues 1–3 and 5 are fully droppable; issue 4's workaround is droppable but must be **replaced** by config (`keyTarget` + `preventDefaultPolicy` + a `focus()` call), not simply deleted.
+
+> **Note:** `pnpm docs` is a built-in pnpm command that opens a package's npm page — it silently
+> shadows the script. Use **`pnpm run docs`**.
 
 ---
 

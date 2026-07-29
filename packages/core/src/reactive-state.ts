@@ -31,10 +31,54 @@ export type ReactiveState<T extends Record<string, unknown>> = T & ReactiveState
  * Same-value writes are no-ops (no signal emitted).
  *
  * @example
+ * ```ts
  * const state = reactiveState({ health: 3, coins: 0 });
  * state.on("health").connect(({ value }) => updateHearts(value));
  * state.health = 2; // fires changed + on("health")
  * state.reset();    // restores { health: 3, coins: 0 }
+ * ```
+ *
+ * ## Lifetime — it is a module singleton, and nothing resets it for you
+ *
+ * The store has **no tie to any `Game` or `Scene`**: it is created where you call this,
+ * and the conventional (and intended) place is module scope, so a HUD can import it
+ * without threading it through the tree:
+ *
+ * ```ts
+ * // state.ts
+ * export const gameState = reactiveState({ score: 0, lives: 3 });
+ * ```
+ *
+ * A module is evaluated once per page load, so that object outlives everything that uses
+ * it. It survives {@link Scene} switches and re-entry, `game.stop()` and a fresh `Game`,
+ * client-side route changes back to the page, and React's StrictMode double-mount in dev
+ * — a second mount sees the *first* mount's score, not the initial value. Nothing in the
+ * engine clears it.
+ *
+ * The discipline that follows: call `.reset()` **both** when a game boots and when it is
+ * torn down. Booting alone is not enough — an unmounted game leaves stale values visible
+ * to anything else on the page — and teardown alone is not enough, because a hard reload
+ * is not the only way a page arrives at your component.
+ *
+ * ```ts
+ * useEffect(() => {
+ *   gameState.reset();
+ *   const game = new Game({ width: 800, height: 500, canvas });
+ *   game.start("title");
+ *   return () => { game.stop(); gameState.reset(); };
+ * }, []);
+ * ```
+ *
+ * `.reset()` restores the values captured at creation time and emits `changed` plus the
+ * per-key signal for every key that actually differs — so bound HUD labels update.
+ *
+ * It does **not** disconnect handlers, and neither does {@link Node.destroy}: destroying a
+ * node disconnects that node's *own* signals, but a handler the node connected to this
+ * store stays connected and keeps the node alive. A HUD that connects here must keep the
+ * {@link SignalConnection} and disconnect it in `onDestroy`, or every remount adds another
+ * live handler firing into a dead scene.
+ *
+ * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
  */
 export function reactiveState<T extends Record<string, unknown>>(initial: T): ReactiveState<T> {
 	const data = { ...initial } as Record<string, unknown>;

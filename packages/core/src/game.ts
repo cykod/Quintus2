@@ -34,25 +34,70 @@ export interface GameOptions {
 	 * `"fit-parent"` centers the canvas against its own normal-flow origin, so give the game its
 	 * own container element. If the canvas has in-flow siblings (a toolbar, a caption), it is
 	 * displaced by their height and can overflow the parent's bottom edge.
+	 *
+	 * Only `"fill"` changes {@link Game.width}/{@link Game.height}; the other three preserve the
+	 * backing store and scale it with CSS. `"fit-parent"` warns and falls back to `"fit"` when the
+	 * canvas has no parent or `ResizeObserver` is unavailable (e.g. jsdom), and warns when the
+	 * parent is `<body>` — a content-sized parent derives its height from the canvas, so the fit
+	 * degenerates to width-fill. Give the container an explicit size.
+	 *
+	 * @example Embedding in a page, one container per game
+	 * ```ts
+	 * // <div id="game-box" style="width: 100%; max-width: 800px; aspect-ratio: 8 / 5"></div>
+	 * const canvas = document.createElement("canvas");
+	 * document.getElementById("game-box")!.appendChild(canvas);
+	 * const game = new Game({ width: 800, height: 500, canvas, scale: "fit-parent" });
+	 *
+	 * // Design space → CSS px, for positioning HTML overlays on top of the canvas:
+	 * const factor = canvas.clientWidth / game.width;
+	 * ```
+	 *
+	 * @see {@link Game.resized} — emitted after every re-fit.
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
 	 */
 	scale?: "fit" | "fixed" | "fill" | "fit-parent";
 	/**
 	 * Which axis stays fixed in fill mode. Default: "height".
 	 *   - "height" — keeps design height, adjusts width (landscape games)
 	 *   - "width"  — keeps design width, adjusts height (portrait games like breakout)
+	 *
+	 * Only read when `scale` is `"fill"` **and** the device reports a coarse pointer;
+	 * ignored entirely by `"fixed"`, `"fit"` and `"fit-parent"`, which never change the
+	 * internal resolution.
 	 */
 	fillAxis?: "height" | "width";
 	/** Enable pixel-art rendering (disables image smoothing). Default: false. */
 	pixelArt?: boolean;
 	/** Canvas background color. Default: "#000000". */
 	backgroundColor?: string;
-	/** Target canvas element ID or HTMLCanvasElement. Default: auto-create. */
+	/**
+	 * Target canvas: an element ID, an `HTMLCanvasElement`, or omitted.
+	 *
+	 * When omitted — **or when the given ID does not resolve to a canvas** — the
+	 * constructor creates a canvas and appends it to `document.body`. Embedders should
+	 * pass the element itself (already attached to their own container) rather than an
+	 * ID, so a typo cannot silently drop a canvas at the end of the page. The canvas is
+	 * resized to `width` × `height` immediately.
+	 *
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 */
 	canvas?: string | HTMLCanvasElement;
 	/** RNG seed for deterministic simulation. Default: Date.now(). */
 	seed?: number;
 	/** Fixed timestep in seconds. Default: 1/60. */
 	fixedDeltaTime?: number;
-	/** Custom renderer. Pass `null` for headless (no rendering). Default: Canvas2DRenderer. */
+	/**
+	 * Custom renderer. Pass `null` for headless (no rendering). Default: Canvas2DRenderer.
+	 *
+	 * With `renderer: null` the game runs its full simulation — `onReady`, `onFixedUpdate`,
+	 * `onUpdate`, physics, signals — and simply never calls `onDraw`. That is the supported
+	 * headless-testing story, and it needs no canvas mock **as long as no canvas-context
+	 * method is reached off the `onDraw` path**: keep drawing in `onDraw` and keep game
+	 * state in plain data. A `Game` still constructs a canvas element, so a DOM (jsdom) is
+	 * required even headless; see {@link Game.step} for driving frames.
+	 *
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 */
 	renderer?: Renderer | null;
 	/** Start in debug mode (paused, bridge exposed). Default: auto-detect from ?debug URL param. */
 	debug?: boolean;
@@ -123,6 +168,8 @@ export class Game {
 	 *
 	 * Handlers that only care about the internal resolution should compare against the previous
 	 * payload and bail when it is unchanged.
+	 *
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
 	 */
 	readonly resized: Signal<{ width: number; height: number }> = signal();
 
@@ -307,13 +354,60 @@ export class Game {
 	}
 
 	/**
-	 * Advance the game by one fixed timestep. For headless/testing use.
+	 * Advance the game by exactly one fixed timestep, synchronously. For headless and
+	 * deterministic tests; unrelated to {@link Game.pause}/{@link Game.resume}, which
+	 * start and stop the real-time `requestAnimationFrame` loop.
+	 *
+	 * One `step()` runs the whole frame in order: `preFrame` (which is where the input
+	 * plugin drains buffered and injected input) → `onFixedUpdate` → `onUpdate` → render
+	 * → end-of-frame cleanup (deferred `destroy()` teardown). So an action injected
+	 * *before* a `step()` is already readable inside that same step's `onFixedUpdate` —
+	 * inject, then step once.
+	 *
 	 * @param variableDt - Optional delta time for update(). Defaults to fixedDeltaTime.
+	 *
+	 * @example
+	 * ```ts
+	 * input.inject("jump", true);
+	 * game.step();                      // jump is pressed during this step
+	 * input.inject("jump", false);
+	 * game.step();
+	 * ```
 	 */
 	step(variableDt?: number): void {
 		this.loop.step(variableDt);
 	}
 
+	/**
+	 * Stop the game loop and release everything the `Game` attached to the page.
+	 *
+	 * Emits {@link Game.stopped}, which is the teardown hook the engine's own plugins use:
+	 * the input plugin removes its `keydown`/`keyup`/pointer/blur listeners, `scale: "fit"`
+	 * and `"fill"` remove their `window` resize listeners, and `"fit-parent"` disconnects
+	 * its `ResizeObserver`. The renderer is disposed. **Always call this when unmounting an
+	 * embedded game** (React `useEffect` cleanup, route change, component teardown) —
+	 * otherwise those listeners outlive the component and a second mount installs a second
+	 * set.
+	 *
+	 * What `stop()` does *not* do: it leaves the scene tree standing (no `onDestroy` is run),
+	 * leaves the canvas element in the DOM, and does not touch module-level state such as a
+	 * {@link reactiveState} store. Remove the canvas and call `yourState.reset()` yourself.
+	 *
+	 * @example React
+	 * ```ts
+	 * useEffect(() => {
+	 *   const game = new Game({ width: 800, height: 500, canvas, scale: "fit-parent" });
+	 *   gameState.reset();
+	 *   game.start("title");
+	 *   return () => {
+	 *     game.stop();
+	 *     gameState.reset();
+	 *   };
+	 * }, []);
+	 * ```
+	 *
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 */
 	stop(): void {
 		this.loop.stop();
 		this.renderer?.dispose?.();

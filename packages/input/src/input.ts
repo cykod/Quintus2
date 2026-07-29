@@ -2,8 +2,48 @@ import type { Game } from "@quintus/core";
 import { Vec2 } from "@quintus/math";
 import { buttonName, gamepadButtonName } from "./bindings.js";
 
+/**
+ * Configuration for {@link InputPlugin}.
+ *
+ * **The defaults are built for a full-screen game and capture keys globally.** With no
+ * `keyTarget`, the plugin binds `keydown`/`keyup` to `document` and calls
+ * `preventDefault()` on every bound key code for the entire lifetime of the game object —
+ * whether or not the canvas is focused, visible, or even started. Bind `Space` or the
+ * arrows and a host page can no longer be scrolled with them, as a side effect of merely
+ * constructing the game.
+ *
+ * Embedded games should therefore set both {@link InputConfig.keyTarget} and
+ * {@link InputConfig.preventDefaultPolicy}, and use {@link Input.setEnabled} for
+ * attract/idle states. (A future major may flip these defaults to embedded-safe; today
+ * they are opt-in so shipped full-screen games keep working.)
+ *
+ * Regardless of configuration, a `keydown` whose target is an `<input>`, `<textarea>`,
+ * `<select>` or `contenteditable` element is ignored entirely — those keystrokes belong
+ * to the field, not the game. `keyup` is deliberately *not* filtered that way, so a key
+ * held before focus moved into a field still releases and never sticks.
+ *
+ * @example Embedded in a page
+ * ```ts
+ * game.use(InputPlugin({
+ *   actions: { jump: ["Space"], left: ["ArrowLeft"], right: ["ArrowRight"] },
+ *   keyTarget: game.canvas,
+ *   preventDefaultPolicy: "focused",
+ * }));
+ * // The canvas must actually receive focus, or the game gets no keys at all:
+ * game.canvas.addEventListener("pointerdown", () => game.canvas.focus());
+ * ```
+ *
+ * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+ */
 export interface InputConfig {
-	/** Action name → list of bindings. */
+	/**
+	 * Action name → list of binding codes. Keyboard bindings are `KeyboardEvent.code`
+	 * values (`"Space"`, `"ArrowLeft"`, `"KeyW"`); mouse and gamepad use the
+	 * `"mouse:left"` / `"gamepad:a"` prefixes.
+	 *
+	 * This map is also the `preventDefault` allow-list: only codes bound here are ever
+	 * prevented, so an unbound key always reaches the page.
+	 */
 	actions: Record<string, string[]>;
 	/** Gamepad stick dead zone. Default: 0.15. */
 	deadZone?: number;
@@ -19,6 +59,18 @@ export interface InputConfig {
 	 * receive no keyboard input. The plugin warns once per install if the
 	 * element is not attached to the document, since a detached target can
 	 * never receive a key event.
+	 *
+	 * **Setting this alone leaves a game that appears broken.** A `tabIndex` makes
+	 * the element *focusable*, not *focused* — until the user clicks it (or you call
+	 * `.focus()`), keyboard events go to `document.body` and the game responds to
+	 * nothing. Give it focus explicitly:
+	 *
+	 * ```ts
+	 * game.canvas.addEventListener("pointerdown", () => game.canvas.focus());
+	 * ```
+	 *
+	 * Focus it on start as well if play begins without a click, and consider a visible
+	 * focus style so players can tell when the game is listening.
 	 */
 	keyTarget?: HTMLElement | Document;
 
@@ -155,8 +207,35 @@ export class Input {
 	// === Injection (for testing/AI) ===
 
 	/**
-	 * Programmatically press or release an action.
-	 * Buffers the injection — it takes effect during the next `_beginFrame()`.
+	 * Programmatically press or release an action — the deterministic input path used by
+	 * tests, AI drivers and `qdbg`. Unknown action names are ignored.
+	 *
+	 * **Timing: buffered, applied at the start of the next frame, before any
+	 * `onFixedUpdate`.** In headless tests that frame is the next `game.step()`, and one
+	 * `step()` does *both*: it drains the buffer and runs the `onFixedUpdate` that reads
+	 * the action. So **inject, then step once** to observe the effect — there is no extra
+	 * frame of latency to compensate for.
+	 *
+	 * The injected value is a level, not a pulse: it stays held until you inject `false`.
+	 * `isJustPressed` is true for exactly one fixed step after the press lands, so a
+	 * one-frame tap is `inject(a, true); step(); inject(a, false); step();`.
+	 *
+	 * Injections are dropped, not queued, while {@link Input.enabled} is `false`.
+	 *
+	 * @example Headless
+	 * ```ts
+	 * const game = new HeadlessGame({ width: 320, height: 240, seed: 1 });
+	 * game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+	 * game.start(Level);
+	 *
+	 * game.input.inject("jump", true);
+	 * game.step();                     // player.onFixedUpdate() sees isJustPressed("jump")
+	 * game.input.inject("jump", false);
+	 * game.step();
+	 * ```
+	 *
+	 * @see {@link Game.step}
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
 	 */
 	inject(action: string, pressed: boolean): void {
 		if (!this._actions.has(action)) return;
@@ -164,8 +243,13 @@ export class Input {
 	}
 
 	/**
-	 * Inject an analog value for an action (for simulating gamepad sticks).
-	 * Buffers the injection — takes effect during the next `_beginFrame()`.
+	 * Inject an analog value in `[0, 1]` for an action, simulating a gamepad stick or
+	 * trigger. Feeds {@link Input.getAxis}/{@link Input.getVector}; any value `> 0` also
+	 * makes the action read as pressed. Unknown action names are ignored.
+	 *
+	 * Same timing as {@link Input.inject}: buffered, applied at the start of the next
+	 * frame (`game.step()` in headless) before any `onFixedUpdate`, so inject then step
+	 * once. Also dropped while {@link Input.enabled} is `false`.
 	 */
 	injectAnalog(action: string, value: number): void {
 		if (!this._actions.has(action)) return;
@@ -206,7 +290,23 @@ export class Input {
 	 *
 	 * Disabling releases every held action immediately and clears the pending
 	 * input and injection buffers, so nothing buffered before the switch is
-	 * applied after it.
+	 * applied after it. Re-enabling starts from a clean slate: a key physically
+	 * held across the switch is not re-applied until it is pressed again.
+	 *
+	 * This does not remove the DOM listeners (only {@link Game.stop} does) and does not
+	 * pause the game — the loop keeps running and `onFixedUpdate` keeps being called;
+	 * actions simply never become pressed. With the default `preventDefaultPolicy`
+	 * `"always"`, disabling is also what stops the game from swallowing the host page's
+	 * key defaults while idle.
+	 *
+	 * @example Only capture input while actually playing
+	 * ```ts
+	 * const input = getInput(game)!;
+	 * input.setEnabled(false);                       // attract screen: hands off the page
+	 * startButton.addEventListener("click", () => input.setEnabled(true));
+	 * ```
+	 *
+	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
 	 */
 	setEnabled(enabled: boolean): void {
 		if (this._enabled === enabled) return;
