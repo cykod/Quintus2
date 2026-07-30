@@ -1,3 +1,29 @@
+## [DOC] Apply 19 retros to agent instruction docs
+*Thursday, July 30th at 1pm*
+Processes every unapplied retro under .work/retro/ - four from the 
+embedded-integration build plus fifteen older ones from the packaging and 
+artillery builds - and routes their findings into CLAUDE.md and the three 
+AGENT_*_SPEC files. Two were outright corrections: the documented reactiveState 
+HUD example used an onChange(key, cb) API that does not exist (the real one is 
+on(key).connect), and the toolchain table cited a test count that had been 
+stale for months. The rest adds an Engine API Gotchas section (add() overloads, 
+super.onReady(), switchTo throwing on unregistered scenes, Vec2._set, camera 
+seating, destroy timing with its solver and type-guard exemptions, RNG 
+forking), packaging invariants, the create-quintus2 template contract, a 
+known-red baselines table so agents stop re-measuring them, and a note that 
+jsdom never lays out so layout logic needs a real browser. AGENT_DESIGN_SPEC 
+gains a section on specifying behavior precisely - invariants need both a rule 
+and the family it ranges over, the prose guarantee and the prescribed mechanic 
+are two specs and only the mechanic ships, and claims about existing behavior 
+must cite what they were read from. AGENT_IMPLEMENTATION_SPEC gains 
+break-it-and-watch-it-go-RED. Three superseded drafts were deliberately 
+dropped, notably a proposed per-package tsc gate that a later retro measured at 
+16 of 23 packages red. Suggestions targeting the global skill files are 
+collected in steering/2026-07-30_AGENT_TOOLING_SUGGESTIONS.md for 
+out-of-container application.
+
+---
+
 ## [DOC] Fix Phase 5 review findings and ship the embedding guide
 *Thursday, July 30th at 1pm*
 Closes the Phase 5 review, code-review, security-review and design-review 

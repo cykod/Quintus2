@@ -944,3 +944,5 @@
 [DREV] wed 7/29 10pm - Design-review Phase 5 (TSDoc contract pass + embedding guide) rendered TypeDoc site against 5b intent in steering/2026-07-28_USAGE_FIXES_DESIGN.md
 
 [FIX] thu 7/30 1pm - Fix Phase 5 review, code-review, security-review and design-review findings for the embedding docs and TypeDoc pipeline
+
+[MILE] thu 7/30 1pm - Fixed the Phase 5 review findings, moved the embedding guide into the quintus2 tarball, and made the TSDoc cross-links resolve in-site

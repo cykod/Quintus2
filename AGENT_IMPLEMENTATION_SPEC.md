@@ -165,6 +165,28 @@ Follow the patterns in `CLAUDE.md`. Key reminders:
 - Plugin pattern: WeakMap + `getXxx()` accessor + module augmentation
 - Signals for events, not callbacks
 
+## Verifying Your Own Claims
+
+**Break it and watch it go RED.** Before claiming a test verifies something, break the
+thing, confirm the test fails, and state **which class of defect** the test catches — then
+confirm that's the class this change is at risk of. A doc-lint that falsifies a *deleted*
+comment does not falsify a *wrong* one. A mock that models an easier API than the real one
+falsifies nothing (a `ResizeObserver` mock that fired with no entries is why a padding-box
+bug slipped every unit test). Paste the RED output.
+
+**When a test asserts "X, not Y", pick fixtures where X ≠ Y.** An assertion whose expected
+value coincides with the value it's meant to exclude discriminates nothing — a re-fit test
+that resized the parent to exactly the design size could not distinguish the two candidate
+behaviors it existed to pin.
+
+**Every behavioral claim in a design-doc "Implementation note (shipped)" must name the test
+that pins it, or paste the command output that produced it.** A claim with neither — "the
+warn fires once per install", "the canvas provably stays inside the parent's content box" —
+is a hypothesis; either test it or write it as one. Both of those examples shipped false.
+"Provably", "always", and "by construction" are the tell: they assert a property over all
+inputs from evidence gathered on one. Mixing verified and assumed statements in the same
+note, in the same voice, is what makes a ticked checklist unreliable.
+
 ## Common Pitfalls
 
 - **Don't forget `game.stop()`** in tests that call `game.start()` — lingering rAF loops cause stderr warnings

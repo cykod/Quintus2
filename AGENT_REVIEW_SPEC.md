@@ -57,14 +57,20 @@ must be exercised.
 
 ## 2. Quality Gate Stack
 
-Run every gate and capture the full output verbatim, **including the test count** (e.g.
-`1726 passed`). A review without command output is unverifiable. Full-suite green is required —
-a focused `pnpm test:platformer` pass that hides a full-suite break is itself a regression.
+Run every gate and capture the full output verbatim, **including the summary line** — paste
+whatever the run actually prints; never copy a count out of these docs, they go stale. A
+review without command output is unverifiable. Full-suite green is required — a focused
+`pnpm test:platformer` pass that hides a full-suite break is itself a regression.
+
+Before attributing a failure to the diff, check it against the **known-red baselines** table
+in `CLAUDE.md` (example suites, root `tsc`, TypeDoc warnings). Several are red on `main`;
+re-measuring them costs a review cycle each time.
 
 ```bash
 pnpm build          # dependency-ordered; required before cross-package verification
 pnpm test           # full unit suite (jsdom, offline) — must be green, ZERO warnings
 pnpm lint           # Biome — zero warnings (noExplicitAny: error, verbatimModuleSyntax)
+pnpm run docs       # TypeDoc — `pnpm docs` (no `run`) is a builtin that exits 0 without running it
 ```
 
 **Zero warnings is a hard gate** (`AGENT_IMPLEMENTATION_SPEC.md`). A stderr warning about a

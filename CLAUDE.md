@@ -159,6 +159,25 @@ pnpm qdbg disconnect
 7. **`events` drains.** Subsequent calls only return new events. Use `peek` to re-read, or `clear-events` to reset.
 8. **Use the `/debug-game` skill** when asked to debug a game. It loads the full qdbg reference and recipes.
 
+### Verifying DOM/CSS behavior in a real browser
+
+qdbg drives *games* through the debug bridge. For engine-level DOM behavior — canvas
+scaling, layout, element sizing — use `playwright-cli` directly, because **jsdom never lays
+out: `clientWidth`/`clientHeight`/`getBoundingClientRect()` are always `0`.** A passing
+jsdom test of layout logic verifies arithmetic against values the test itself stubbed; it
+is not evidence the layout is correct.
+
+Three gotchas, in the order you'll hit them:
+
+1. **Run `playwright-cli` from the repo root** — elsewhere it misses the CLI config and
+   defaults to channel `chrome`, which isn't installed.
+2. **`file://` is blocked.** Serve the scratch page: `python3 -m http.server 8791` from the
+   scratchpad, then `goto http://localhost:8791/page.html`.
+3. **Await layout before reading** — `ResizeObserver` and style writes land after the
+   frame; wrap the `eval` in two nested `requestAnimationFrame`s.
+
+Scratch pages go in the scratchpad directory, never in the repo.
+
 ## Scene Query API
 
 PhysicsWorld provides spatial queries with composable QueryOptions filtering:
@@ -177,7 +196,7 @@ Actor convenience methods: `raycast()`, `isEdgeAhead()`, `hasLineOfSight()`, `fi
 | pnpm | Package manager + workspace |
 | TypeScript | `strict: true`, no `any`, `target: ES2022` |
 | tsup | Build (ESM + CJS + `.d.ts` per package) |
-| Vitest | Testing (jsdom env, 1726 tests, 95%+ coverage) |
+| Vitest | Testing (jsdom env, 95%+ coverage) — `pnpm test` covers `packages/*` + `scripts/*.test.mjs` only |
 | Biome | Linting + formatting (replaces ESLint + Prettier) |
 | Vite | Dev server for examples (port 3050) |
 | TypeDoc | API documentation |
@@ -195,11 +214,55 @@ pnpm test:coverage    # Tests with coverage
 pnpm lint             # Biome check
 pnpm lint:fix         # Biome auto-fix
 pnpm dev              # Vite dev server (examples on :3050)
-pnpm docs             # TypeDoc generation
+pnpm run docs         # TypeDoc generation — NOTE: `pnpm docs` (no `run`) is a pnpm
+                      # BUILTIN that opens an npm page and exits 0 without running
+                      # the script. Always use `pnpm run docs`.
+pnpm build:examples   # Build all examples for static deploy (QUINTUS_BASE=/Quintus2/ for the deploy path)
 pnpm clean            # Remove all dist/ directories
 pnpm qdbg <cmd>       # CLI game debugger (see qdbg section)
 pnpm release          # CHANGELOG-driven lockstep publish of quintus2 + create-quintus2 (see scripts/release.mjs)
 ```
+
+### What the gates cover — and what they don't
+
+The real gates are `pnpm test`, `pnpm lint`, `pnpm build`, and `pnpm run docs`.
+**A command documented here but absent from `.github/workflows/ci.yml` is a claim, not a
+gate** — `typedoc.json` sat broken from the Phase 0 bootstrap until Phase 9 for exactly
+this reason.
+
+- **`pnpm test` covers `packages/*` and `scripts/*.test.mjs` only.** The 11 example-game
+  suites (`examples/*/vitest.config.ts`) are not in it and not in CI. Run one explicitly
+  when you touch engine code it exercises:
+  `pnpm exec vitest run --config examples/<game>/vitest.config.ts`.
+- **No tool typechecks `*.test.ts`.** `pnpm test` typechecks only `*.test-d.ts` (via the
+  root `tsconfig.typetest.json`); `pnpm build` emits `.d.ts` from non-test `src`; TypeDoc
+  sets `skipErrorChecking`. **Put type-level guarantees in `*.test-d.ts`** — a
+  `@ts-expect-error` or `expectTypeOf` anywhere else is not gated. `pnpm test` prints
+  `Type Errors: no errors` when they pass.
+- **Per-package `tsc` is not a gate.** Don't chase it and don't use it to verify a change.
+
+### Known-red baselines — compare, don't re-derive
+
+Red on `main`. Compare against the number before blaming your diff.
+
+| Check | Baseline |
+|---|---|
+| `pnpm exec vitest run --config examples/advanced-platformer/vitest.config.ts` | **5 failed / 100 passed** — hard-coded coordinates drifted from the TMX data |
+| `npx tsc --noEmit -p tsconfig.json` (root) | **~699 errors**, 574 of them in `*.test.ts` |
+| `npx tsc --noEmit -p packages/core/tsconfig.json` | **1 error** — `asset-loader.test.ts:261` |
+| `pnpm run docs` | **4 warnings**, all from `@types/three`'s own malformed TSDoc |
+
+Don't cite absolute test counts in docs or design notes — they go stale within a commit.
+Report "full suite green" plus the command output instead.
+
+## CI/CD
+
+- `.github/workflows/ci.yml` — lint, test, build, docs on every PR and push to `main`
+- `.github/workflows/deploy-examples.yml` — deploys all examples to GitHub Pages on push
+  to `main` (<https://cykod.github.io/Quintus2/>), building with `QUINTUS_BASE=/Quintus2/`.
+  Manual deploys via `workflow_dispatch`. Repo setting required: Pages source must be
+  "GitHub Actions", not "Deploy from a branch".
+- `.github/workflows/e2e.yml` — packaging E2E (slow, network)
 
 ## Example Games
 
@@ -346,9 +409,124 @@ game.start('title');
 ```typescript
 const gameState = reactiveState({ score: 0, lives: 3, health: 100 });
 
-// In HUD — auto-updates when state changes
-gameState.onChange('score', (val) => { scoreLabel.text = `Score: ${val}`; });
+// In HUD — subscribe to the per-key signal; payload is { value, previous }
+gameState.on('score').connect(({ value }) => { scoreLabel.text = `Score: ${value}`; });
+
+// `changed` fires for any key
+gameState.changed.connect(({ key, value }) => { /* ... */ });
+
+// `reset()` restores creation-time values and emits only for keys that differ.
+// The store is a module-level singleton — it survives scene re-entry and game.stop(),
+// so reset it on boot and on teardown.
 ```
+
+Connections are not released for you: `destroy()` disconnects only a node's four
+built-in lifecycle signals, so a HUD that connects to `gameState` must keep the
+`SignalConnection` and disconnect it in `onDestroy()`.
+
+## Engine API Gotchas
+
+Non-obvious runtime behavior that the type signatures don't convey. Each of these cost a
+phase's worth of debugging at least once.
+
+- **`add()` has two overloads with different return types.** `add(NodeClass, props?)`
+  returns the new node; `add(nodeInstance)` returns the parent (`this`). A class with
+  required constructor args can't use the class overload — construct into a local, `add`
+  it, then configure the local.
+- **Chain `super.onReady()`** in any `Actor`/`CollisionObject` subclass override. It
+  initializes gravity from the world and registers the collision body. Omitting it yields
+  an entity that never falls or collides, with no compile error.
+- **`switchTo(name)` / `game.start(name)` throw** if the scene isn't registered — there is
+  no `hasScene` guard. When an integration phase wires a transition to a scene a later
+  phase owns, register a placeholder now.
+- **`Vec2` in-place mutation is `_set(x, y)`.** Despite the underscore this is the intended
+  public mutator; there is no `set`/`setTo`.
+- **A `Camera` at `(0,0)` centers world origin on screen.** For a fixed, non-scrolling
+  scene where world pixel (x,y) must map 1:1 to screen, seat the camera at
+  `(width/2, height/2)` so the view transform is identity.
+- **`destroy()` is deferred but immediately invisible.** Tree and scene queries stop
+  returning the node in the same tick; the splice and teardown hooks run at end-of-frame.
+  The physics **solver** is deliberately exempt — a body destroyed mid-tick stays solid for
+  the rest of that step, so nothing falls through a platform destroyed underneath it.
+  `Node.is()` is also exempt: it is a type guard, and narrowing must not depend on
+  lifecycle state.
+- **Never pair `removeChild()` with `destroy()`.** `removeChild` nulls the parent, so
+  `destroy()` can't reach the scene queue and silently skips `destroying`, `onDestroy`,
+  child recursion, and signal disconnect. Call `destroy()` alone.
+- **Fork the RNG for gameplay** when FX also draw from `game.random` (camera shake,
+  particles) — otherwise a visual-only change shifts the deterministic stream.
+
+### Testing conventions
+
+- Headless input uses the `InputScript` DSL, not the qdbg verbs:
+  `InputScript.create().press(action, frames)`, `.tap(action)`, `.hold`, `.release`,
+  `.wait(frames)`.
+- Centralize an example's headless plugin set in `examples/<game>/__tests__/helpers.ts`
+  and import it everywhere. Tests that call scene methods directly are coupled to every
+  plugin those methods transitively reach.
+- **Don't hardcode physics outcomes probed offline from a fixed seed** (landing
+  coordinates, hit points) — they rot when any unrelated constant changes and the failure
+  gives no hint that the fix is "re-probe the number". Capture the outcome at runtime, or
+  assert on the outcome (`won`, `score > 0`) and unit-test exact math with synthetic
+  inputs. Overriding a setup method that draws from the seeded RNG shifts the cursor for
+  every later draw.
+- `biome-ignore` must name the exact rule (`lint/style/noNonNullAssertion`), not just the
+  category. A bare `// biome-ignore lint:` is rejected.
+- `pnpm lint` runs Biome across the whole monorepo with no change-scoping, so pre-existing
+  violations in unrelated files fail your gate. Lint your diff first with
+  `biome check --changed --since=<ref>`, and triage the rest rather than silently folding
+  unrelated fixes into your phase.
+- Example runtime assets live in `examples/<game>/assets/` — the deploy build copies only
+  that directory. `examples/dist/` is ephemeral build output; don't check it in.
+
+### Working on `scripts/release.mjs`
+
+`pnpm release` is git- and npm-mutating. Smoke-test it by bumping `CHANGELOG.md` on a
+throwaway branch, running `pnpm release --dry-run`, then discarding the branch — `--dry-run`
+suppresses the script's mutations but its gates still read live git/package state. When
+parsing `git status --porcelain`, split into lines **first**, then slice each line
+(`XY <path>`, path at column 3) — trimming the whole blob eats the first line's leading
+space and shifts every column parse by one.
+
+## Packaging Invariants
+
+Two rules hold across every change to `packages/quintus2/`:
+
+- **`three` is external for the entire tsup build**, not per-entry — tsup applies one
+  `external`/`noExternal` config to all entries. Only the `./three` subpath may reference
+  `three`; the main barrel must never import it, directly or transitively. Before adding a
+  package to the barrel, check: `grep -rl 'from "three"' packages/<pkg>/src`. This is why
+  `particles`, `snapshot`, and `debug` are excluded.
+- **Validate from a tarball, never from `dist/` or `src/`.** The recurring packaging bug is
+  manifest omissions — the published artifact missing something the source tree has. A
+  green build against `dist` can still ship a broken tarball. `npm pack`, install into a
+  temp dir *outside* the workspace (workspace symlinks otherwise resolve `private`
+  packages a real consumer never installs), then `tsc --noEmit` against it.
+
+After `pnpm build`: `dist/index.js` must contain no `@quintus/*` import, and
+`dist/three.js` must retain a bare `from "three"`.
+
+### create-quintus2 template contract
+
+Templates under `packages/create-quintus2/templates/<2d|3d>/` are consumer projects, not
+engine source (excluded from Biome lint). The scaffolder hard-depends on:
+
+- `package.json` declares exactly one engine dep, the sentinel `"quintus2": "0.0.0"` — the
+  CLI rewrites it to the real version. No `@quintus/*`, no `workspace:*`.
+- Dotfiles ship `_`-prefixed (`_gitignore`, `_npmrc`) and are renamed on copy — npm strips
+  real `.gitignore`/`.npmrc` from tarballs.
+- Executables under `bin/` are re-chmod'd to 0755 after copy (npm normalizes to 0644).
+- **`bin/qdbg` and `.claude/skills/debug-game/` are vendored into both templates with no
+  automatic sync.** Edit the root copy and you must update the template copies too.
+- Assets go under `public/assets/`. A project-root `assets/` dir works in `dev` but is
+  absent from `vite build` output.
+
+### Testing a 3D scene headlessly
+
+`ThreePlugin` installs `THREE.WebGLRenderer`, which needs a real WebGL context jsdom does
+not provide. Run the scene via `TestRunner.run({ scene })` with **no plugins** —
+`MeshNode`, the lights, and `Camera3D` all construct fine without a GL context. Keep the
+`ThreePlugin` bootstrap out of any module a test imports.
 
 ## Implementation Phases
 
