@@ -18,6 +18,30 @@ lockstep — every published package shares the version at the top of this file.
 
 _Add changes for the next release here, then promote to a versioned heading._
 
+## [0.1.0] - 2026-07-30 — Embeddable engine
+
+### Added
+
+- `scale: "fit-parent"` letterboxes the fixed design space into the canvas's
+  **parent element** and re-fits it through a `ResizeObserver`, so an embedded
+  canvas stays inside its container instead of taking over the viewport the way
+  `"fit"` does. `"fit"`, `"fill"`, and `"fixed"` are unchanged.
+- Scoped keyboard capture: `InputConfig.keyTarget` (default `document`) and
+  `InputConfig.preventDefaultPolicy` (`"always"` | `"focused"`, default
+  `"always"`). Defaults are unchanged, so every existing full-screen game keeps
+  working; embedders opt in with `{ keyTarget: canvas, preventDefaultPolicy:
+  "focused" }` and the host page stays scrollable when the canvas isn't focused.
+- `Input.enabled` / `Input.setEnabled()` runtime switch that gates keyboard,
+  pointer, gamepad, mouse-position, and buffered/injected input, so a disabled
+  game is genuinely frozen.
+- An embedding guide shipped with the package at `quintus2/docs/embedding.md`,
+  covering scale modes, input scope, teardown, and headless testing, plus a TSDoc
+  runtime-contract pass (timing, side effects, teardown obligations) over the
+  surface an embedder touches.
+- Artillery example — a Worms-style destructible-terrain game built on a custom
+  `Uint8Array` pixel-mask collision surface, with ballistics, per-shot wind,
+  crater carving, breakable crates, and a title/results flow.
+
 ### Changed
 
 - **Destroyed nodes are now invisible to queries in the same tick.** `destroy()`
@@ -35,6 +59,17 @@ _Add changes for the next release here, then promote to a versioned heading._
   constructor args — `class Target extends Sensor { constructor(p: Vec2) }` —
   can be passed with no cast. Construction sites (`add`, `NodePool`, JSX,
   `TileMap.spawn*`) still require a zero-arg constructor.
+
+### Fixed
+
+- Keyboard handling now ignores events aimed at `input`, `textarea`, `select`,
+  and `contenteditable` targets, so typing a space in a form field no longer
+  fires game actions.
+- The touch overlay no longer rebuilds every frame in response to `resized`, and
+  the `orientationchange` listener used by the `"fit"`/`"fill"` scale modes is
+  released on teardown instead of leaking.
+- `pnpm run docs` builds again — it had been broken since the initial bootstrap —
+  and is now enforced in CI.
 
 ## [0.0.4] - 2026-07-03 — Playable 2D starter
 

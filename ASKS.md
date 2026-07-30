@@ -946,3 +946,5 @@
 [FIX] thu 7/30 1pm - Fix Phase 5 review, code-review, security-review and design-review findings for the embedding docs and TypeDoc pipeline
 
 [MILE] thu 7/30 1pm - Fixed the Phase 5 review findings, moved the embedding guide into the quintus2 tarball, and made the TSDoc cross-links resolve in-site
+
+[MILE] thu 7/30 1pm - Applied 19 retros to CLAUDE.md and the AGENT_*_SPEC docs, correcting two wrong API references and collecting global-skill suggestions into a steering doc

@@ -1,6 +1,6 @@
 {
 	"name": "create-quintus2",
-	"version": "0.0.4",
+	"version": "0.1.0",
 	"description": "Scaffolder for Quintus2 games — `npm create quintus2@latest my-game`",
 	"type": "module",
 	"bin": {
