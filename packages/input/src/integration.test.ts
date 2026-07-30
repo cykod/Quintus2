@@ -239,6 +239,42 @@ describe("Input integration", () => {
 		expect(input.isPressed("jump")).toBe(true);
 	});
 
+	// Pins the exact claim docs/embedding.md and Input.inject's TSDoc make: one step()
+	// both drains the injection buffer and runs the reading onFixedUpdate, so the
+	// injected press is visible as isJustPressed INSIDE that same step — not the step
+	// after. Asserting isPressed() after step() returns would not distinguish the two.
+	it("an injected action reads as isJustPressed inside the same step's onFixedUpdate", () => {
+		const game = createGame();
+		game.use(InputPlugin({ actions: { jump: ["Space"] } }));
+
+		const seen: { pressed: boolean; justPressed: boolean }[] = [];
+
+		class Reader extends Node2D {
+			override onFixedUpdate(): void {
+				seen.push({
+					pressed: game.input.isPressed("jump"),
+					justPressed: game.input.isJustPressed("jump"),
+				});
+			}
+		}
+
+		game.start(
+			class TestScene extends Scene {
+				override onReady() {
+					this.add(Reader);
+				}
+			},
+		);
+
+		game.input.inject("jump", true);
+		game.step();
+		game.step();
+
+		expect(seen[0]).toEqual({ pressed: true, justPressed: true });
+		// inject() sets a level, not a pulse: still held, but no longer "just" pressed.
+		expect(seen[1]).toEqual({ pressed: true, justPressed: false });
+	});
+
 	it("game.input accessor works via module augmentation", () => {
 		const game = createGame();
 		game.use(

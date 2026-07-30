@@ -23,9 +23,10 @@ landed and whether the app-side workaround can simply be deleted.
 | 5 | Phase 5 | pinned `INJECT_DRAIN_STEPS` | **Yes.** The contract (`inject`, then one `step()`) is now documented on `Input.inject` and in the embedding guide. |
 
 The umbrella meta-issue is addressed by the Phase 5 TSDoc pass plus a new
-[**Embedding quintus2 in an existing page**](../docs/embedding.md) guide (`docs/embedding.md`,
-also rendered into the TypeDoc site), which covers scale, input scope, teardown, and headless
-testing in one place.
+[**Embedding quintus2 in an existing page**](../packages/quintus2/docs/embedding.md) guide
+(`packages/quintus2/docs/embedding.md` — also rendered into the TypeDoc site, and shipped in the
+npm tarball at `node_modules/quintus2/docs/embedding.md`), which covers scale, input scope,
+teardown, and headless testing in one place.
 
 ---
 
@@ -44,7 +45,7 @@ Four consecutive phases each lost time to a load-bearing behavior that the `.d.t
 - **Impact:** we could not use the documented/recommended `scale:"fit"` at all.
 - **Suggested engine fix:** either (a) add a `scale: "fit-parent"` (or `container`/`element` option) that scales into the canvas's parent element instead of the viewport, or (b) let `fit` observe the parent when the game is not full-screen. Document that `"fit"` is viewport-scoped.
 - **Our workaround:** use the default `scale:"fixed"` (engine leaves the canvas CSS alone) with an intrinsic 800×500 backing store, and do responsive sizing in CSS (`width:100%; height:auto`). The design-space→CSS-px factor is then simply `canvas.clientWidth / GAME_WIDTH`. See `src/game/artillery/boot.ts` and `src/components/ArtilleryEasterEgg.tsx` (`syncShipRect`).
-- **✅ Upstream fix shipped (Phase 4):** new `scale: "fit-parent"` mode letterboxes the design space into the canvas's **parent element**, in normal flow, re-fitting via a `ResizeObserver` on the parent (disconnected on `game.stopped`). `"fit"`'s viewport scope is now documented rather than changed. **Workaround status: optional to drop.** `"fixed"` + CSS remains fully supported and is still the right choice when your own layout sizes the canvas; `canvas.clientWidth / GAME_WIDTH` is the factor in both modes. If you switch to `"fit-parent"`, the container must be the canvas's *only* in-flow child (a preceding sibling displaces the canvas and it overflows the bottom) and must have an author-determined height — a content-sized parent degenerates to width-fill. Both constraints are documented in `docs/embedding.md` §1.
+- **✅ Upstream fix shipped (Phase 4):** new `scale: "fit-parent"` mode letterboxes the design space into the canvas's **parent element**, in normal flow, re-fitting via a `ResizeObserver` on the parent (disconnected on `game.stopped`). `"fit"`'s viewport scope is now documented rather than changed. **Workaround status: optional to drop.** `"fixed"` + CSS remains fully supported and is still the right choice when your own layout sizes the canvas; `canvas.clientWidth / GAME_WIDTH` is the factor in both modes. If you switch to `"fit-parent"`, the container must be the canvas's *only* in-flow child (a preceding sibling displaces the canvas and it overflows the bottom) and must have an author-determined height — a content-sized parent degenerates to width-fill. Both constraints are documented in the embedding guide §1.
 
 ---
 
@@ -88,7 +89,7 @@ Four consecutive phases each lost time to a load-bearing behavior that the `.d.t
   `preventDefaultPolicy: "focused"` **is a no-op without a `keyTarget`** (`document` always
   contains the active element — the plugin warns), and `keyTarget` alone leaves a **silently
   unresponsive game** until something focuses the canvas, since `tabIndex` makes an element
-  focusable, not focused. See `docs/embedding.md` §2.
+  focusable, not focused. See the embedding guide §2.
 
 ---
 
@@ -99,7 +100,7 @@ Four consecutive phases each lost time to a load-bearing behavior that the `.d.t
 - **Impact:** minor — resolved once, then pinned as a shared constant, but it's a papercut for anyone writing input-driven tests.
 - **Suggested engine fix:** document the buffer→apply timing on `input.inject` (and ideally on the headless/`renderer:null` stepping story), or expose a synchronous "flush injected input" helper for tests.
 - **Our workaround:** empirically verified the drain count (one `step()` both drains the buffer and runs the reading `onFixedUpdate`) and pinned it as `INJECT_DRAIN_STEPS` in a shared test helper. See `src/game/artillery/__tests__/helpers.ts`.
-- **✅ Upstream fix shipped (Phase 5):** `Input.inject` / `injectAnalog` now document the timing in terms the consumer controls — "buffered; applied at the start of the next frame (`step()` in headless), **before** any `onFixedUpdate`; one `step()` both drains the buffer and runs the reading `onFixedUpdate`, so inject then step once" — with a runnable `@example`. `Game.step()` documents the full within-frame order (`preFrame` → `onFixedUpdate` → `onUpdate` → render → cleanup), and the injected value is documented as a **level, not a pulse**. The engine's own verification executes the sample verbatim. **Workaround status: fully droppable** — the empirically-derived constant matches the now-documented contract (`INJECT_DRAIN_STEPS === 1`).
+- **✅ Upstream fix shipped (Phase 5):** `Input.inject` / `injectAnalog` now document the timing in terms the consumer controls — "buffered; applied at the start of the next frame (`step()` in headless), **before** any `onFixedUpdate`; one `step()` both drains the buffer and runs the reading `onFixedUpdate`, so inject then step once" — with a runnable `@example`. `Game.step()` documents the full within-frame order (`preFrame` → `onFixedUpdate` → `onUpdate` → render → cleanup), and the injected value is documented as a **level, not a pulse**. A committed regression test pins the exact claim — `packages/input/src/integration.test.ts`, "an injected action reads as isJustPressed inside the same step's onFixedUpdate", which reads the flags *inside* `onFixedUpdate` rather than after `step()` returns, so it would fail if the drain count ever changed. **Workaround status: fully droppable** — the empirically-derived constant matches the now-documented contract (`INJECT_DRAIN_STEPS === 1`).
 
 ---
 
@@ -111,7 +112,7 @@ These bit us during the build but are **not** engine defects; recording them so 
 > TSDoc states the module-singleton lifetime and the reset-on-boot-*and*-teardown discipline (plus
 > a gotcha neither doc had noticed — destroying a node does **not** disconnect handlers that node
 > connected to an external signal, so a HUD must keep and `disconnect()` its `SignalConnection`),
-> and `GameOptions.renderer` plus `docs/embedding.md` §4 state the headless story. One correction
+> and `GameOptions.renderer` plus the embedding guide §4 state the headless story. One correction
 > to the note below: `HeadlessGame` still needs a **DOM** — `Game`'s constructor references
 > `HTMLCanvasElement`/`document` unguarded, so bare Node throws `ReferenceError`. jsdom, not a
 > canvas mock, is the requirement.

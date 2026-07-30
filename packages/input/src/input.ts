@@ -33,7 +33,9 @@ import { buttonName, gamepadButtonName } from "./bindings.js";
  * game.canvas.addEventListener("pointerdown", () => game.canvas.focus());
  * ```
  *
- * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+ * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+ * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+ * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
  */
 export interface InputConfig {
 	/**
@@ -235,7 +237,9 @@ export class Input {
 	 * ```
 	 *
 	 * @see {@link Game.step}
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	inject(action: string, pressed: boolean): void {
 		if (!this._actions.has(action)) return;
@@ -243,9 +247,10 @@ export class Input {
 	}
 
 	/**
-	 * Inject an analog value in `[0, 1]` for an action, simulating a gamepad stick or
-	 * trigger. Feeds {@link Input.getAxis}/{@link Input.getVector}; any value `> 0` also
-	 * makes the action read as pressed. Unknown action names are ignored.
+	 * Inject an analog value for an action, simulating a gamepad stick or trigger.
+	 * Conventionally in `[0, 1]`, but **not clamped** — a larger value propagates
+	 * through {@link Input.getAxis}/{@link Input.getVector} as given. Any value `> 0`
+	 * also makes the action read as pressed. Unknown action names are ignored.
 	 *
 	 * Same timing as {@link Input.inject}: buffered, applied at the start of the next
 	 * frame (`game.step()` in headless) before any `onFixedUpdate`, so inject then step
@@ -301,12 +306,13 @@ export class Input {
 	 *
 	 * @example Only capture input while actually playing
 	 * ```ts
-	 * const input = getInput(game)!;
-	 * input.setEnabled(false);                       // attract screen: hands off the page
-	 * startButton.addEventListener("click", () => input.setEnabled(true));
+	 * game.input.setEnabled(false);                  // attract screen: hands off the page
+	 * startButton.addEventListener("click", () => game.input.setEnabled(true));
 	 * ```
 	 *
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	setEnabled(enabled: boolean): void {
 		if (this._enabled === enabled) return;

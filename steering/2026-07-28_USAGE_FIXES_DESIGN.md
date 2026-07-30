@@ -465,7 +465,7 @@ This is the meta-issue and, per the request, the highest-leverage phase — appl
 
 ### 5b. "Embedding quintus2 in an existing page" guide
 
-New Markdown doc (e.g. `docs/embedding.md`, surfaced via TypeDoc), covering the four axes an embedder hits, each cross-linked from the relevant symbol's `@see`:
+New Markdown doc (`packages/quintus2/docs/embedding.md`, surfaced via TypeDoc **and** shipped in the npm tarball), covering the four axes an embedder hits, each cross-linked from the relevant symbol's `@see`:
 1. **Scale** — use `scale: "fit-parent"` (or `"fixed"` + CSS); why `"fit"`/`"fill"` take the viewport.
 2. **Input scope** — `keyTarget: canvas` + `preventDefaultPolicy: "focused"` + `setEnabled(playing)` for attract/idle states; the default global-capture caveat.
 3. **Teardown** — `game.stop()` obligations; `reactiveState().reset()` on unmount; module-singleton persistence under React StrictMode double-mount.
@@ -477,7 +477,7 @@ Documentation has no unit tests; verify via:
 - A doc-lint check that the six originally-named symbols (`GameOptions.scale`, `Node.destroy`, `findByType`, `findAllByType`, `InputConfig`/`InputPlugin`, `reactiveState`, `input.inject`) each carry a TSDoc block (can be a simple grep-based test or manual checklist).
 - `@example` blocks compile (if the repo runs `typedoc`'s or `tsd`'s example checking; otherwise eyeball against the real API).
 
-**Success criterion:** hovering `destroy`, `findByType`, `scale`, and `inject` in an editor shows the runtime contract (timing/scope/side-effects), not just the type; `docs/embedding.md` exists and is linked from TypeDoc; `pnpm docs` is clean.
+**Success criterion:** hovering `destroy`, `findByType`, `scale`, and `inject` in an editor shows the runtime contract (timing/scope/side-effects), not just the type; the guide exists and is linked from TypeDoc; `pnpm docs` is clean.
 
 > **Implementation note (shipped).** Landed as specified, documenting the **final** Phase 1–4
 > behavior rather than the design's original intent. Corrections the pass had to make, each
@@ -565,7 +565,7 @@ Documentation has no unit tests; verify via:
 | `packages/input/src/input.ts` | 3, 5 | `keyTarget`/`preventDefaultPolicy` on `InputConfig`; `enabled`/`setEnabled`; `_shouldPreventDefault`; TSDoc on `inject`/config. |
 | `packages/input/src/input-plugin.ts` | 3 | Bind to `keyTarget` (+ `tabIndex` handling); `enabled` gates on key/pointer handlers; policy gate in `onKeyDown`; cleanup from configured target. |
 | `packages/core/src/reactive-state.ts` | 5 | TSDoc: module-singleton lifetime, `reset()` on boot *and* teardown, connections not auto-released. |
-| `docs/embedding.md` (new) | 5 | Embedding guide. |
+| `packages/quintus2/docs/embedding.md` (new) | 5 | Embedding guide — inside the package so it ships in the tarball. |
 | `typedoc.json` + `typedoc` `^0.27`→`^0.28` | 5 | `projectDocuments` for the guide; `packageOptions` (`skipErrorChecking`, test-file `exclude`, `validation.notExported: false`) to get `pnpm run docs` from fatal to clean. |
 | `scripts/docs-contract.test.mjs` (new) | 5 | Doc-lint: every contract symbol carries a multi-line TSDoc block; guide registered, complete, and cross-linked. |
 | Test files alongside each source file | 1–4 | Per-phase tests above. |
@@ -580,12 +580,23 @@ Documentation has no unit tests; verify via:
 - [x] Phase 2: every tree query — receiver included — skips `isDestroyed` nodes and their subtrees; same-tick stale-query test RED→GREEN; sibling-survival test passes; all existing tests green; `destroy()` timing unchanged. `PhysicsWorld` scene queries filter destroyed bodies too, so both query APIs agree.
 - [x] Phase 3: `keyTarget`, `preventDefaultPolicy`, `setEnabled` implemented (with pointer/injection/gamepad gating and `tabIndex` handling); focused-policy and disabled-input tests pass; defaults unchanged and existing input tests green. Decision **(A)** confirmed by the human: defaults stay `document`/always-on, the new controls are opt-in.
 - [x] Phase 4: `"fit-parent"` mode letterboxes into the parent, re-fits on parent resize, disconnects observer on stop; `"fit"` regression intact. Verified in jsdom **and** in a real browser (Chromium): a 400×250 parent with an 800×500 design space yields CSS 400×250 inside the container, and re-fits to 200×125 when the parent shrinks to 200×200.
-- [x] Phase 5: TSDoc runtime contracts on the full load-bearing surface; `docs/embedding.md` created, registered via TypeDoc `projectDocuments`, and cross-linked from `@see` tags in `game.ts` / `node.ts` / `reactive-state.ts` / `input.ts`. `pnpm run docs` goes from **fatal (exit 3, 23 errors)** to **0 errors, exit 0**; the 6 residual warnings originate in `@types/three`'s own malformed TSDoc and TypeDoc offers no hook to suppress them (see the implementation note). Pinned by `scripts/docs-contract.test.mjs`.
+- [x] Phase 5: TSDoc runtime contracts on the full load-bearing surface; `packages/quintus2/docs/embedding.md` created, registered via TypeDoc `projectDocuments`, shipped in the npm tarball (`files: ["dist", "docs"]`), and cross-linked from `@see` tags in `game.ts` / `node.ts` / `reactive-state.ts` / `input.ts`. `pnpm run docs` goes from **fatal (exit 3, 23 errors)** to **0 errors, exit 0**; the 4 residual warnings originate in `@types/three`'s own malformed TSDoc and TypeDoc offers no hook to suppress them (see the implementation note). Pinned by `scripts/docs-contract.test.mjs` and guarded by CI. `packageOptions.entryPoints` is pinned to `src/index.ts` — without it, `entryPointStrategy: "packages"` derives entry points from each `package.json`'s `exports`, which emitted one unnamed module per package and published `@quintus/three`'s `__test-utils__` subpaths (entry points are not subject to `exclude`).
 - [x] `pnpm build` succeeds; `pnpm test` passes (165 files / 2677 tests, `Type Errors: no errors`); `pnpm lint` clean (841 files).
 - [x] `steering/QUINTUS_FIXES.md` updated — each of the five issues now records which workaround is droppable and what (if anything) replaces it. Issues 1–3 and 5 are fully droppable; issue 4's workaround is droppable but must be **replaced** by config (`keyTarget` + `preventDefaultPolicy` + a `focus()` call), not simply deleted.
 
 > **Note:** `pnpm docs` is a built-in pnpm command that opens a package's npm page — it silently
-> shadows the script. Use **`pnpm run docs`**.
+> shadows the script. Use **`pnpm run docs`**. CI runs `pnpm run docs` so the TypeDoc config
+> cannot silently return to fatal.
+
+---
+
+## Follow-ups (out of scope for these five phases)
+
+| # | Item | Why it's tracked | Scope estimate |
+|---|------|------------------|----------------|
+| 1 | **No tool typechecks `packages/*/src/**/*.test.ts`.** | `tsup` only walks the `src/index.ts` graph, Vitest's `typecheck.include` is `*.test-d.{ts,tsx}` only, there is no `tsc --noEmit` script, and Phase 5 set TypeDoc's `skipErrorChecking` (correctly — doc generation is not a type gate). The blind spot is real, not an artifact: `packages/core/src/asset-loader.test.ts(261,11): TS2532` reproduces under the repo's own `tsconfig.base.json`. This contradicts `CLAUDE.md`'s `strict: true` / no-`any` posture. | ~170 test-file errors across the repo at the starting line, of which the bulk are `TS2304: Cannot find name 'vi'` from package tsconfigs sweeping `*.test.ts` without `"types": ["vitest/globals"]` — likely one line in `tsconfig.base.json` plus a `"typecheck": "tsc -p tsconfig.check.json --noEmit"` script wired into CI. **Do not** wire CI to a bare `pnpm -r tsc --noEmit`; measured, that hits 16 of 23 packages red. |
+| 2 | **`injectAnalog` does not clamp.** | Phase 5 documented the `[0, 1]` range as a convention rather than a guarantee (the honest fix for a doc phase). Clamping in `_updateAnalogBinding` would make `getVector`'s pre-existing "components in `[-1, 1]`" doc true as well. | One clamp + a test. Behavioural, so it needs its own change. |
+| 3 | **The secondary `@see` GitHub URL is pinned to `main`.** | Each symbol now carries **two** `@see` lines: a relative `../../quintus2/docs/embedding.md` (resolved by TypeDoc to the in-site document, and a real on-disk path from the installed tarball — `scripts/docs-contract.test.mjs` resolves it and fails if it stops reaching the guide), plus a GitHub URL for anyone reading on the web. Only the GitHub one is `main`-pinned, so a consumer on a released version follows it to unreleased prose. | Revisit if a versioned docs site is ever deployed. The relative link is now the primary and is test-guarded, so a move breaks loudly rather than silently 404ing. |
 
 ---
 

@@ -37,3 +37,9 @@ jobs:
       - run: pnpm test
 
       - run: pnpm build
+
+      # `pnpm run docs`, not `pnpm docs` — the latter is a pnpm builtin that prints an
+      # npm page URL and exits 0 without ever running TypeDoc. Guards the TypeDoc config:
+      # a new package or an unresolvable {@link} in an inherited comment returns doc
+      # generation to fatal, and nothing else in this gate would notice.
+      - run: pnpm run docs

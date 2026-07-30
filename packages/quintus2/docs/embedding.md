@@ -4,10 +4,13 @@ title: Embedding quintus2
 
 # Embedding quintus2 in an existing page
 
-quintus2's defaults are tuned for a game that owns the whole browser window: the canvas
-letterboxes into the viewport and the keyboard is captured on `document`. Both are wrong
-when the game is one element inside a larger, scrolling page — a landing-page demo, a
-tutorial widget, an easter egg on an About page.
+quintus2 is tuned for a game that owns the whole browser window. Keyboard capture is the
+default — `InputPlugin` binds to `document` and calls `preventDefault` on every bound key
+unless you say otherwise. Scaling is opt-in: `scale` defaults to `"fixed"`, which leaves
+the canvas CSS alone, but the mode almost every example reaches for, `"fit"`, letterboxes
+into the viewport and escapes its container. Both behaviours are wrong when the game is one
+element inside a larger, scrolling page — a landing-page demo, a tutorial widget, an easter
+egg on an About page.
 
 This guide covers the four things that behave differently when embedded: **scale**, **input
 scope**, **teardown**, and **headless testing**. Everything here is opt-in; a full-screen
@@ -58,17 +61,28 @@ game.start("title");
 
 `GameOptions.scale` has four modes. Only one of them is embedding-safe.
 
-| Mode | What it does | Changes `game.width`/`height`? |
-|------|--------------|-------------------------------|
-| `"fixed"` (default) | Leaves the canvas CSS completely alone. You size it in your own stylesheet. | No |
-| `"fit"` | Letterboxes into the **viewport**: `position: absolute`, offsets measured against `window.innerWidth`/`innerHeight`. **Escapes its container and covers the page.** | No |
-| `"fill"` | On a coarse-pointer (mobile) device, fills the viewport and *changes the internal resolution* along `fillAxis`. On desktop it falls back to `"fit"`. | Yes, on mobile |
-| `"fit-parent"` | Letterboxes into the canvas's **parent element**, staying in normal flow. Re-fits via `ResizeObserver`. | No |
+| Mode | Sizes against | Safe to embed? |
+|------|---------------|----------------|
+| `"fixed"` (default) | nothing — your stylesheet | yes |
+| `"fit"` | the viewport | **no** |
+| `"fill"` | the viewport | **no** |
+| `"fit-parent"` | the parent element | yes |
+
+- **`"fixed"`** leaves the canvas CSS completely alone; you size it yourself.
+- **`"fit"`** letterboxes into the **viewport** — `position: absolute`, offsets measured
+  against `window.innerWidth`/`innerHeight`. **It escapes its container and covers the
+  page.**
+- **`"fill"`** fills the viewport on a coarse-pointer (mobile) device and *changes the
+  internal resolution* along `fillAxis`; on desktop it falls back to `"fit"`. This is the
+  only mode that changes `game.width`/`game.height` — the other three preserve the backing
+  store and scale it with CSS.
+- **`"fit-parent"`** letterboxes into the canvas's **parent element**, staying in normal
+  flow, and re-fits via `ResizeObserver`.
 
 `"fit"` and `"fill"` assume the game owns the window. They are not "responsive sizing"
 modes — they are full-screen modes. In a page they will cover your content.
 
-### Using `"fit-parent"`
+### Using fit-parent
 
 ```ts
 const game = new Game({ width: 800, height: 500, canvas, scale: "fit-parent" });
@@ -130,7 +144,7 @@ game.resized.connect(() => {
 });
 ```
 
-### The `"fixed"` alternative
+### The fixed alternative
 
 `scale: "fixed"` plus CSS is a perfectly good option, and it is what you want if your layout
 already handles the sizing:
@@ -158,7 +172,7 @@ example relies on, and changing it would be breaking. Embedded games opt out wit
 config fields and one runtime switch. (A future major release may flip the defaults to the
 embedded-safe behaviour.)
 
-### `keyTarget` — where the listeners go
+### keyTarget — where the listeners go
 
 ```ts
 InputPlugin({ actions, keyTarget: canvas });
@@ -182,7 +196,7 @@ plugin sets `tabIndex = -1` on a target that has none.
 The plugin warns once if the `keyTarget` is not attached to the document — a detached
 element receives no key events at all.
 
-### `preventDefaultPolicy` — when the page's keys get eaten
+### preventDefaultPolicy — when the page's keys get eaten
 
 ```ts
 InputPlugin({ actions, keyTarget: canvas, preventDefaultPolicy: "focused" });
@@ -199,7 +213,7 @@ InputPlugin({ actions, keyTarget: canvas, preventDefaultPolicy: "focused" });
 
 Only bound key codes are ever prevented. Unbound keys always reach the page, in every mode.
 
-### `setEnabled` — attract and idle states
+### setEnabled — attract and idle states
 
 For a game that exists but should not be capturing anything yet — a disguised easter egg, an
 attract loop, a widget the reader has scrolled past — turn input off entirely:
@@ -233,7 +247,7 @@ An embedded game is mounted and unmounted repeatedly: route changes, component r
 React StrictMode's deliberate double-mount in development. Everything below has to be
 symmetric.
 
-### `game.stop()`
+### Tearing down with game.stop()
 
 `game.stop()` stops the loop, disposes the renderer, and emits `game.stopped`, which is the
 hook the engine's own plugins use to clean up:
@@ -252,7 +266,7 @@ What `stop()` does **not** do — the caller's remaining obligations:
 | Removing the canvas from the DOM | `canvas.remove()`, if you created it. |
 | Resetting module-level state | `yourState.reset()` — see below. |
 
-### `reactiveState` is a module singleton
+### reactiveState is a module singleton
 
 `reactiveState()` has no tie to a `Game` or a `Scene`. The conventional (and intended) usage
 is a module-level store so a HUD can import it directly:
@@ -297,9 +311,11 @@ the per-key signal for every key that actually differs, so bound HUD labels upda
 ### Signal connections are not released for you
 
 `reset()` does not disconnect handlers, and neither does `Node.destroy()` — destroying a node
-disconnects that node's *own* signals, but a handler the node connected to an external signal
-stays connected, keeps firing, and keeps the destroyed node alive. Keep the connection and
-disconnect it:
+disconnects only its four built-in lifecycle signals (`treeEntered`, `treeExited`,
+`readySignal`, `destroying`). A signal the subclass declares itself is not disconnected, and
+— the case that
+actually leaks — a handler the node connected to an *external* signal stays connected, keeps
+firing, and keeps the destroyed node alive. Keep the connection and disconnect it:
 
 ```ts
 class Hud extends Node2D {
@@ -339,7 +355,7 @@ for its own sake.
 > defined` under bare Node. Run headless tests under jsdom (`environment: "jsdom"` in the
 > vitest config, which is what this repo does) or provide equivalent globals.
 
-### `inject` → `step()` timing
+### inject → step() timing
 
 `input.inject(action, pressed)` is **buffered and applied at the start of the next frame,
 before any `onFixedUpdate`**. One `game.step()` does both: it drains the buffer *and* runs the
@@ -374,7 +390,7 @@ start and stop the real-time `requestAnimationFrame` loop.
 
 ## 5. Two gotchas worth knowing
 
-### Don't pair `removeChild()` with `destroy()`
+### Don't pair removeChild() with destroy()
 
 ```ts
 parent.removeChild(child);

@@ -53,7 +53,9 @@ export interface GameOptions {
 	 * ```
 	 *
 	 * @see {@link Game.resized} — emitted after every re-fit.
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	scale?: "fit" | "fixed" | "fill" | "fit-parent";
 	/**
@@ -79,7 +81,9 @@ export interface GameOptions {
 	 * ID, so a typo cannot silently drop a canvas at the end of the page. The canvas is
 	 * resized to `width` × `height` immediately.
 	 *
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	canvas?: string | HTMLCanvasElement;
 	/** RNG seed for deterministic simulation. Default: Date.now(). */
@@ -96,7 +100,9 @@ export interface GameOptions {
 	 * state in plain data. A `Game` still constructs a canvas element, so a DOM (jsdom) is
 	 * required even headless; see {@link Game.step} for driving frames.
 	 *
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	renderer?: Renderer | null;
 	/** Start in debug mode (paused, bridge exposed). Default: auto-detect from ?debug URL param. */
@@ -169,7 +175,9 @@ export class Game {
 	 * Handlers that only care about the internal resolution should compare against the previous
 	 * payload and bail when it is unchanged.
 	 *
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	readonly resized: Signal<{ width: number; height: number }> = signal();
 
@@ -391,7 +399,7 @@ export class Game {
 	 *
 	 * What `stop()` does *not* do: it leaves the scene tree standing (no `onDestroy` is run),
 	 * leaves the canvas element in the DOM, and does not touch module-level state such as a
-	 * {@link reactiveState} store. Remove the canvas and call `yourState.reset()` yourself.
+	 * `reactiveState` store. Remove the canvas and call `yourState.reset()` yourself.
 	 *
 	 * @example React
 	 * ```ts
@@ -406,7 +414,9 @@ export class Game {
 	 * }, []);
 	 * ```
 	 *
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	stop(): void {
 		this.loop.stop();

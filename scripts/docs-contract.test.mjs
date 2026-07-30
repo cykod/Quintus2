@@ -80,12 +80,22 @@ describe("embedding contract is documented", () => {
 	}
 });
 
+const GUIDE_PATH = "packages/quintus2/docs/embedding.md";
+
 describe("embedding guide", () => {
-	const guide = read("docs/embedding.md");
+	const guide = read(GUIDE_PATH);
 
 	it("is registered with TypeDoc", () => {
 		const typedoc = JSON.parse(read("typedoc.json"));
-		expect(typedoc.projectDocuments).toContain("docs/embedding.md");
+		expect(typedoc.projectDocuments).toContain(GUIDE_PATH);
+	});
+
+	// The guide lives inside packages/quintus2 so it ships in the npm tarball — an
+	// installed consumer gets it at node_modules/quintus2/docs/embedding.md. If it moves
+	// back out, the relative @see links below break silently.
+	it("is published in the quintus2 tarball", () => {
+		const pkg = JSON.parse(read("packages/quintus2/package.json"));
+		expect(pkg.files).toContain("docs");
 	});
 
 	it("covers all four axes", () => {
@@ -99,15 +109,38 @@ describe("embedding guide", () => {
 		}
 	});
 
+	// The relative form is what TypeDoc resolves to the in-site rendered document
+	// (`{@link Embedding_quintus2}` does NOT work here — with entryPointStrategy
+	// "packages" each package converts as its own project, so a root-level
+	// projectDocuments entry is out of scope during per-package link resolution).
+	// The same string also resolves on disk from the published tarball, because
+	// packages/core/src/ and node_modules/quintus2/dist/ sit at the same depth.
+	const RELATIVE_LINK = "../../quintus2/docs/embedding.md";
+
 	it("is cross-linked from the TSDoc that needs it", () => {
-		const link = "docs/embedding.md";
 		for (const file of [
 			"packages/core/src/game.ts",
 			"packages/core/src/node.ts",
 			"packages/core/src/reactive-state.ts",
 			"packages/input/src/input.ts",
 		]) {
-			expect(read(file), `${file} has no @see link to the embedding guide`).toContain(link);
+			expect(read(file), `${file} has no @see link to the embedding guide`).toContain(
+				RELATIVE_LINK,
+			);
+		}
+	});
+
+	it("the relative link actually points at the guide from each linking file", () => {
+		for (const file of [
+			"packages/core/src/game.ts",
+			"packages/core/src/node.ts",
+			"packages/core/src/reactive-state.ts",
+			"packages/input/src/input.ts",
+		]) {
+			const resolved = resolve(dirname(resolve(root, file)), RELATIVE_LINK);
+			expect(resolved, `${RELATIVE_LINK} from ${file} does not reach the guide`).toBe(
+				resolve(root, GUIDE_PATH),
+			);
 		}
 	});
 });

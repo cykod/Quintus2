@@ -938,3 +938,9 @@
 [CDRV] wed 7/29 7pm - Code review Phase 5 (TSDoc contract pass, docs/embedding.md, doc-lint test, TypeDoc config) of steering/2026-07-28_USAGE_FIXES_DESIGN.md
 
 [RETR] wed 7/29 7pm - Retro on Phase 5 of steering/2026-07-28_USAGE_FIXES_DESIGN.md and consolidation of the four-batch usage-fixes arc
+
+[MILE] wed 7/29 10pm - Added TSDoc runtime contracts across the embedder-facing surface plus a docs/embedding.md guide, and repaired the long-broken pnpm run docs pipeline
+
+[DREV] wed 7/29 10pm - Design-review Phase 5 (TSDoc contract pass + embedding guide) rendered TypeDoc site against 5b intent in steering/2026-07-28_USAGE_FIXES_DESIGN.md
+
+[FIX] thu 7/30 1pm - Fix Phase 5 review, code-review, security-review and design-review findings for the embedding docs and TypeDoc pipeline

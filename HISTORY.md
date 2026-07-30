@@ -1,3 +1,26 @@
+## [DOC] Fix Phase 5 review findings and ship the embedding guide
+*Thursday, July 30th at 1pm*
+Closes the Phase 5 review, code-review, security-review and design-review 
+findings. The guide moves to packages/quintus2/docs/embedding.md and is added 
+to the published files list, so npm consumers get it at 
+node_modules/quintus2/docs/embedding.md. Each of the 11 cross-references 
+becomes two @see lines: a relative path that TypeDoc resolves to the in-site 
+rendered document, plus a GitHub URL for web readers. The relative form was 
+chosen after testing showed {@link Embedding_quintus2} cannot work here - 
+entryPointStrategy "packages" converts each package as its own project, so a 
+root-level projectDocuments entry is out of scope during per-package link 
+resolution. The same relative string also resolves on disk from an installed 
+tarball, and a new doc-lint assertion resolves it from every linking file so a 
+move fails loudly. Rendering fixes: nine mangled TOC labels (TypeDoc strips 
+inline code spans from nav), mobile horizontal overflow measured down from 
+594px to 390px, six blank-name module pages, and test-util modules no longer 
+published. Pins packageOptions.entryPoints to src/index.ts and lists entry 
+points explicitly so quintus2 leads the module index. Adds pnpm run docs to CI, 
+a regression test pinning isJustPressed inside the same step's onFixedUpdate, 
+and a tracked follow-up for the test-file typecheck blind spot.
+
+---
+
 ## [DOC] Document embedding contracts and add embedding guide
 *Wednesday, July 29th at 10pm*
 Implements Phase 5 (final) of the embedded-integration fixes design: a TSDoc 

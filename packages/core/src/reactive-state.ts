@@ -78,7 +78,7 @@ export type ReactiveState<T extends Record<string, unknown>> = T & ReactiveState
  * {@link SignalConnection} and disconnect it in `onDestroy`, or every remount adds another
  * live handler firing into a dead scene.
  *
- * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+ * @see [Embedding quintus2](../../quintus2/docs/embedding.md)
  */
 export function reactiveState<T extends Record<string, unknown>>(initial: T): ReactiveState<T> {
 	const data = { ...initial } as Record<string, unknown>;

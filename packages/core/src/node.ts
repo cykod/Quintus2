@@ -297,7 +297,9 @@ export class Node {
 	 * in the same tick, there is no reason to detach it first.
 	 *
 	 * @see {@link Node.destroy} for removal *with* teardown.
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	removeChild(node: Node): void {
 		const idx = this._children.indexOf(node);
@@ -452,10 +454,8 @@ export class Node {
 	 * const shape = actor.getChild(CollisionShape);
 	 * ```
 	 *
-	 * Destroyed children are skipped in the same tick they are destroyed. Note the
-	 * physics **solver** deliberately does not use this — a body destroyed mid-tick
-	 * stays solid for the rest of that step, so nothing falls through a platform that
-	 * was destroyed during the frame.
+	 * Destroyed children are skipped in the same tick they are destroyed. The physics
+	 * solver deliberately does not go through this — see {@link Node.destroy}.
 	 */
 	getChild<T extends Node>(type: NodeType<T>): T | null {
 		if (this.isDestroyed) return null;
@@ -712,7 +712,9 @@ export class Node {
 	 * Do not call `removeChild()` and then `destroy()`: `removeChild()` nulls the
 	 * parent, so `destroy()` can no longer reach the scene's destroy queue and
 	 * the whole lifecycle is silently skipped.
-	 * @see [Embedding quintus2](https://github.com/cykod/quintus2/blob/main/docs/embedding.md)
+	 * @see [Embedding quintus2](../../quintus2/docs/embedding.md) — resolves in-site in the
+	 * generated docs, and on disk at `node_modules/quintus2/docs/embedding.md` once installed.
+	 * @see [Embedding quintus2 on GitHub](https://github.com/cykod/quintus2/blob/main/packages/quintus2/docs/embedding.md)
 	 */
 	destroy(): void {
 		if (this._isDestroyed) return;
